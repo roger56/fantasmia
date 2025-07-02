@@ -69,7 +69,7 @@ const CreateStory = () => {
           <Card>
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold text-slate-800 mb-2">
-                Scegli la Modalità di Creazione
+                SCEGLI LA CATEGORIA CHE VUOI USARE PER LA TUA FAVOLA
               </h2>
             </CardContent>
           </Card>
