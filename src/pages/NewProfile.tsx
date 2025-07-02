@@ -6,14 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { saveUser } from '@/utils/userStorage';
+import HomeButton from '@/components/HomeButton';
 
 const NewProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
-    password: '',
-    confirmPassword: ''
+    email: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -30,25 +31,18 @@ const NewProfile = () => {
       return;
     }
 
-    if (!formData.password.trim()) {
-      toast({
-        title: "Password richiesta",
-        description: "Inserisci una password per il profilo",
-        variant: "destructive"
-      });
-      return;
-    }
+    // Create user with password same as name
+    const newUser = {
+      id: Date.now().toString(),
+      name: formData.name.trim(),
+      email: formData.email.trim() || undefined,
+      password: formData.name.trim(), // Password same as name
+      lastAccess: new Date().toISOString(),
+      unreadMessages: []
+    };
 
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Password non corrispondenti",
-        description: "Le password inserite non coincidono",
-        variant: "destructive"
-      });
-      return;
-    }
+    saveUser(newUser);
 
-    // Simulate profile creation
     toast({
       title: "Profilo creato!",
       description: `Il profilo ${formData.name} è stato creato con successo`,
@@ -56,12 +50,13 @@ const NewProfile = () => {
 
     // Navigate to archive with new profile
     setTimeout(() => {
-      navigate('/archive', { state: { profileId: 'new', profileName: formData.name } });
+      navigate('/archive', { state: { profileId: newUser.id, profileName: newUser.name } });
     }, 1500);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <HomeButton />
       <div className="max-w-md mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6 pt-4">
@@ -98,28 +93,21 @@ const NewProfile = () => {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Password
+                Email (facoltativo)
               </label>
               <Input
-                type="password"
-                placeholder="Inserisci la password"
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
+                type="email"
+                placeholder="Inserisci l'email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
                 className="text-lg"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Conferma Password
-              </label>
-              <Input
-                type="password"
-                placeholder="Ripeti la password"
-                value={formData.confirmPassword}
-                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                className="text-lg"
-              />
+            <div className="bg-blue-50 p-3 rounded-md">
+              <p className="text-sm text-blue-800">
+                La password sarà uguale al nome del profilo
+              </p>
             </div>
 
             <div className="flex gap-3 pt-4">

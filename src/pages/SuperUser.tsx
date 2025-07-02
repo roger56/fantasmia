@@ -1,20 +1,63 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Shield, Users, BookOpen, Settings } from 'lucide-react';
+import { ArrowLeft, Shield, Users, BookOpen, Settings, MessageSquare } from 'lucide-react';
+import { getUsers, sendMessage } from '@/utils/userStorage';
+import HomeButton from '@/components/HomeButton';
 
 const SuperUser = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [messageContent, setMessageContent] = useState('');
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setUsers(getUsers());
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = () => {
-    if (password === 'admin123') { // Mock password
+    if (password.toLowerCase() === 'ssss') {
       setIsAuthenticated(true);
+    } else {
+      alert('Password non corretta');
     }
+  };
+
+  const handleSendMessage = (isBroadcast: boolean = false) => {
+    if (!messageContent.trim()) {
+      alert('Inserisci un messaggio');
+      return;
+    }
+
+    const targetUsers = isBroadcast ? users.map(u => u.id) : selectedUsers;
+    
+    if (!isBroadcast && targetUsers.length === 0) {
+      alert('Seleziona almeno un utente');
+      return;
+    }
+
+    sendMessage('superuser', targetUsers, messageContent, isBroadcast);
+    
+    alert(`Messaggio inviato ${isBroadcast ? 'a tutti gli utenti' : `a ${targetUsers.length} utente/i`}`);
+    setMessageContent('');
+    setSelectedUsers([]);
+    setShowMessaging(false);
+  };
+
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
   };
 
   const dashboardOptions = [
@@ -31,6 +74,12 @@ const SuperUser = () => {
       action: () => navigate('/superuser/archive')
     },
     {
+      title: 'Invia Messaggi',
+      description: 'Invia messaggi agli utenti',
+      icon: MessageSquare,
+      action: () => setShowMessaging(true)
+    },
+    {
       title: 'Impostazioni',
       description: 'Configurazioni di sistema',
       icon: Settings,
@@ -40,6 +89,7 @@ const SuperUser = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <HomeButton />
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6 pt-4">
@@ -83,6 +133,69 @@ const SuperUser = () => {
               >
                 Accedi
               </Button>
+            </CardContent>
+          </Card>
+        ) : showMessaging ? (
+          /* Messaging Interface */
+          <Card>
+            <CardHeader>
+              <CardTitle>Invia Messaggi</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Seleziona Utenti
+                </label>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {users.map(user => (
+                    <label key={user.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={() => toggleUserSelection(user.id)}
+                        className="rounded"
+                      />
+                      <span>{user.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Messaggio
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Scrivi il messaggio..."
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  className="text-lg"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button 
+                  onClick={() => setShowMessaging(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Annulla
+                </Button>
+                <Button 
+                  onClick={() => handleSendMessage(true)}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  Invia a Tutti
+                </Button>
+                <Button 
+                  onClick={() => handleSendMessage(false)}
+                  className="flex-1"
+                >
+                  Invia Selezionati
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (

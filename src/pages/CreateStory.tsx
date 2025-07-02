@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Ghost, Sparkles } from 'lucide-react';
+import { ArrowLeft, Ghost, Sparkles, Wand2, MessageCircle } from 'lucide-react';
+import HomeButton from '@/components/HomeButton';
 
 const CreateStory = () => {
   const navigate = useNavigate();
@@ -12,17 +13,23 @@ const CreateStory = () => {
   const creationModes = [
     {
       id: 'GHOST',
-      title: 'Modalità GHOST',
-      description: 'Creazione libera e spontanea della favola',
-      icon: Ghost,
-      features: ['Scrittura libera', 'Senza vincoli strutturali', 'Creatività totale']
+      title: 'GHOST',
+      icon: Ghost
     },
     {
       id: 'PROPP',
-      title: 'Modalità PROPP',
-      description: 'Creazione guidata con struttura narrativa',
-      icon: Sparkles,
-      features: ['Cluster narrativi', 'Carte tematiche', 'Struttura guidata', 'Icone per cluster']
+      title: 'PROPP',
+      icon: Sparkles
+    },
+    {
+      id: 'ALOVAF',
+      title: 'ALOVAF',
+      icon: Wand2
+    },
+    {
+      id: 'PAROLE_CHIAMANO',
+      title: 'Parole Chiamano',
+      icon: MessageCircle
     }
   ];
 
@@ -35,11 +42,15 @@ const CreateStory = () => {
       navigate('/propp-editor');
     } else if (selectedMode === 'GHOST') {
       navigate('/ghost-editor');
+    } else {
+      // For ALOVAF and Parole Chiamano, navigate to a placeholder for now
+      alert(`Modalità ${selectedMode} in fase di sviluppo`);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <HomeButton />
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6 pt-4">
@@ -60,9 +71,6 @@ const CreateStory = () => {
               <h2 className="text-xl font-semibold text-slate-800 mb-2">
                 Scegli la Modalità di Creazione
               </h2>
-              <p className="text-slate-600">
-                Seleziona come vuoi creare la tua favola
-              </p>
             </CardContent>
           </Card>
 
@@ -82,28 +90,17 @@ const CreateStory = () => {
                   onClick={() => handleModeSelect(mode.id)}
                 >
                   <CardHeader>
-                    <div className="flex items-center mb-2">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
+                    <div className="flex items-center justify-center mb-2">
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
                         isSelected ? 'bg-blue-100' : 'bg-slate-100'
                       }`}>
-                        <IconComponent className={`w-6 h-6 ${
+                        <IconComponent className={`w-8 h-8 ${
                           isSelected ? 'text-blue-600' : 'text-slate-600'
                         }`} />
                       </div>
-                      <CardTitle className="text-lg">{mode.title}</CardTitle>
                     </div>
-                    <p className="text-slate-600 text-sm">{mode.description}</p>
+                    <CardTitle className="text-lg text-center">{mode.title}</CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <ul className="space-y-2">
-                      {mode.features.map((feature, index) => (
-                        <li key={index} className="flex items-center text-sm text-slate-700">
-                          <div className="w-1.5 h-1.5 bg-slate-400 rounded-full mr-3"></div>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
                 </Card>
               );
             })}

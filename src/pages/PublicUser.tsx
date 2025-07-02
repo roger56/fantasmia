@@ -3,7 +3,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Play } from 'lucide-react';
+import { ArrowLeft, BookOpen, Plus } from 'lucide-react';
+import HomeButton from '@/components/HomeButton';
 
 const PublicUser = () => {
   const navigate = useNavigate();
@@ -13,18 +14,19 @@ const PublicUser = () => {
       title: 'Leggi Favole Pubbliche',
       description: 'Scopri le favole condivise dalla community',
       icon: BookOpen,
-      action: () => navigate('/public/stories')
+      action: () => navigate('/archive', { state: { profileId: 'public', profileName: 'Utente Pubblico', isPublic: true } })
     },
     {
-      title: 'Modalità Demo',
-      description: 'Prova a creare una favola senza registrarti',
-      icon: Play,
-      action: () => navigate('/demo/create')
+      title: 'Crea Favola',
+      description: 'Crea una nuova favola (sarà visibile a tutti)',
+      icon: Plus,
+      action: () => navigate('/create-story', { state: { isPublic: true } })
     }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <HomeButton />
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6 pt-4">
@@ -45,7 +47,7 @@ const PublicUser = () => {
                 Benvenuto in Fantasmia
               </h2>
               <p className="text-slate-600">
-                Esplora il mondo delle favole anche senza creare un profilo
+                Crea e leggi favole liberamente. Le tue creazioni saranno visibili a tutti
               </p>
             </CardContent>
           </Card>
@@ -72,23 +74,6 @@ const PublicUser = () => {
               );
             })}
           </div>
-
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-6 text-center">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                Vuoi di più?
-              </h3>
-              <p className="text-blue-800 mb-4">
-                Crea un profilo per salvare le tue favole e accedere a tutte le funzionalità
-              </p>
-              <Button 
-                onClick={() => navigate('/new-profile')}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Crea Profilo
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

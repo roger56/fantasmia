@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, UserPlus, Shield, Globe } from 'lucide-react';
+
 const Home = () => {
   const navigate = useNavigate();
   const mainOptions = [{
@@ -30,7 +32,9 @@ const Home = () => {
     description: 'Accesso senza registrazione',
     path: '/public'
   }];
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 px-[12px] py-[12px]">
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 px-[12px] py-[12px]">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8 pt-8 py-[12px]">
@@ -60,6 +64,8 @@ const Home = () => {
         })}
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Home;

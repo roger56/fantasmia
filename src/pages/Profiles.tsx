@@ -1,22 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, User, Lock } from 'lucide-react';
+import { getUsers, authenticateUser, markMessagesAsRead } from '@/utils/userStorage';
+import HomeButton from '@/components/HomeButton';
 
 const Profiles = () => {
   const navigate = useNavigate();
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [password, setPassword] = useState('');
+  const [profiles, setProfiles] = useState<any[]>([]);
   
-  // Mock profiles data
-  const profiles = [
-    { id: '1', name: 'Marco', lastAccess: '2 giorni fa' },
-    { id: '2', name: 'Sofia', lastAccess: '1 settimana fa' },
-    { id: '3', name: 'Alessandro', lastAccess: '3 giorni fa' }
-  ];
+  useEffect(() => {
+    setProfiles(getUsers());
+  }, []);
 
   const handleProfileSelect = (profileId: string) => {
     setSelectedProfile(profileId);
@@ -25,13 +25,30 @@ const Profiles = () => {
 
   const handleLogin = () => {
     if (password.trim()) {
-      // Simulate login
-      navigate('/archive', { state: { profileId: selectedProfile } });
+      const selectedUser = profiles.find(p => p.id === selectedProfile);
+      if (selectedUser) {
+        const user = authenticateUser(selectedUser.name, password);
+        if (user) {
+          // Check for unread messages
+          if (user.unreadMessages && user.unreadMessages.length > 0) {
+            // Show messages and mark as read
+            const messages = user.unreadMessages.filter(m => !m.read);
+            if (messages.length > 0) {
+              alert(`Hai ${messages.length} nuovi messaggi:\n\n${messages.map(m => m.content).join('\n\n')}`);
+              markMessagesAsRead(user.id);
+            }
+          }
+          navigate('/archive', { state: { profileId: selectedProfile, profileName: selectedUser.name } });
+        } else {
+          alert('Password non corretta');
+        }
+      }
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <HomeButton />
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6 pt-4">
@@ -60,7 +77,9 @@ const Profiles = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-slate-800">{profile.name}</h3>
-                    <p className="text-slate-600 text-sm">Ultimo accesso: {profile.lastAccess}</p>
+                    <p className="text-slate-600 text-sm">
+                      Ultimo accesso: {profile.lastAccess ? new Date(profile.lastAccess).toLocaleDateString() : 'Mai'}
+                    </p>
                   </div>
                 </CardContent>
               </Card>

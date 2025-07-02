@@ -1,39 +1,28 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, BookOpen, Plus, Play, Pause, Save } from 'lucide-react';
+import { getStoriesForUser, getStories } from '@/utils/userStorage';
+import HomeButton from '@/components/HomeButton';
 
 const Archive = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profileName } = location.state || {};
+  const { profileName, profileId, isPublic } = location.state || {};
+  const [stories, setStories] = useState<any[]>([]);
 
-  // Mock stories data
-  const [stories] = useState([
-    {
-      id: '1',
-      title: 'La Principessa e il Drago',
-      status: 'completed',
-      lastModified: '2 giorni fa',
-      mode: 'GHOST'
-    },
-    {
-      id: '2',
-      title: 'Il Castello Magico',
-      status: 'suspended',
-      lastModified: '1 settimana fa',
-      mode: 'PROPP'
-    },
-    {
-      id: '3',
-      title: 'L\'Avventura nel Bosco',
-      status: 'completed',
-      lastModified: '3 giorni fa',
-      mode: 'GHOST'
+  useEffect(() => {
+    if (isPublic) {
+      // Show all public stories
+      const allStories = getStories();
+      setStories(allStories.filter(s => s.isPublic));
+    } else if (profileId) {
+      // Show user's stories and public ones
+      setStories(getStoriesForUser(profileId, true));
     }
-  ]);
+  }, [profileId, isPublic]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -61,6 +50,7 @@ const Archive = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <HomeButton />
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 pt-4">
@@ -73,20 +63,24 @@ const Archive = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">Archivio Favole</h1>
+              <h1 className="text-2xl font-bold text-slate-800">
+                {isPublic ? 'Favole Pubbliche' : 'Archivio Favole'}
+              </h1>
               {profileName && (
                 <p className="text-slate-600">Profilo: {profileName}</p>
               )}
             </div>
           </div>
           
-          <Button 
-            onClick={() => navigate('/create-story')}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Nuova Favola
-          </Button>
+          {!isPublic && (
+            <Button 
+              onClick={() => navigate('/create-story', { state: { profileId, profileName } })}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Nuova Favola
+            </Button>
+          )}
         </div>
 
         {/* Stories Grid */}
@@ -95,14 +89,16 @@ const Archive = () => {
             <CardContent className="p-12 text-center">
               <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                Nessuna favola trovata
+                {isPublic ? 'Nessuna favola pubblica trovata' : 'Nessuna favola trovata'}
               </h3>
               <p className="text-slate-600 mb-4">
-                Inizia a creare la tua prima favola!
+                {isPublic ? 'Non ci sono ancora favole pubbliche' : 'Inizia a creare la tua prima favola!'}
               </p>
-              <Button onClick={() => navigate('/create-story')}>
-                Crea Nuova Favola
-              </Button>
+              {!isPublic && (
+                <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
+                  Crea Nuova Favola
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -132,9 +128,21 @@ const Archive = () => {
                         {story.mode}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-600">
-                      Modificata: {story.lastModified}
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-sm text-slate-600">
+                        Modificata: {story.lastModified}
+                      </p>
+                      {story.authorName && (
+                        <p className="text-sm text-slate-500">
+                          Autore: {story.authorName}
+                        </p>
+                      )}
+                      {story.isPublic && (
+                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                          Pubblica
+                        </span>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );
