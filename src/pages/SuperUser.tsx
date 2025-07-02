@@ -65,13 +65,13 @@ const SuperUser = () => {
       title: 'Gestione Utenti',
       description: 'Visualizza e gestisci tutti gli utenti',
       icon: Users,
-      action: () => navigate('/superuser/users')
+      action: () => navigate('/superuser-users')
     },
     {
       title: 'Archivio Completo',
       description: 'Tutte le favole con categorie e autori',
       icon: BookOpen,
-      action: () => navigate('/superuser/archive')
+      action: () => navigate('/superuser-archive')
     },
     {
       title: 'Invia Messaggi',

@@ -13,6 +13,9 @@ import Archive from "./pages/Archive";
 import CreateStory from "./pages/CreateStory";
 import ProppEditor from "./pages/ProppEditor";
 import GhostEditor from "./pages/GhostEditor";
+import StoryViewer from "./pages/StoryViewer";
+import SuperuserArchive from "./pages/SuperuserArchive";
+import SuperuserUsers from "./pages/SuperuserUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +36,9 @@ const App = () => (
           <Route path="/create-story" element={<CreateStory />} />
           <Route path="/propp-editor" element={<ProppEditor />} />
           <Route path="/ghost-editor" element={<GhostEditor />} />
+          <Route path="/story/:storyId" element={<StoryViewer />} />
+          <Route path="/superuser-archive" element={<SuperuserArchive />} />
+          <Route path="/superuser-users" element={<SuperuserUsers />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

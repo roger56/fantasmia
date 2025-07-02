@@ -112,5 +112,5 @@ export const getStories = (): Story[] => {
 
 export const getStoriesForUser = (userId: string, includePublic: boolean = false): Story[] => {
   const stories = getStories();
-  return stories.filter(s => s.authorId === userId || (includePublic && s.isPublic));
+  return stories.filter(s => s.authorId === userId);
 };

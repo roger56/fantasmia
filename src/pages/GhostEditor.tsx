@@ -181,11 +181,36 @@ const GhostEditor = () => {
     setTimeout(() => navigate('/archive'), 1500);
   };
 
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+
   const handleTextToSpeech = () => {
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(finalStory);
-      utterance.lang = 'it-IT';
-      speechSynthesis.speak(utterance);
+      if (isSpeaking && !isPaused) {
+        // Pause speech
+        speechSynthesis.pause();
+        setIsPaused(true);
+      } else if (isPaused) {
+        // Resume speech
+        speechSynthesis.resume();
+        setIsPaused(false);
+      } else {
+        // Start new speech
+        const utterance = new SpeechSynthesisUtterance(finalStory);
+        utterance.lang = 'it-IT';
+        
+        utterance.onstart = () => {
+          setIsSpeaking(true);
+          setIsPaused(false);
+        };
+        
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          setIsPaused(false);
+        };
+        
+        speechSynthesis.speak(utterance);
+      }
     } else {
       toast({
         title: "Non supportato",
@@ -245,7 +270,7 @@ const GhostEditor = () => {
                 </Button>
                 <Button onClick={handleTextToSpeech} variant="outline" className="px-6">
                   <Volume2 className="w-4 h-4 mr-2" />
-                  Ascolta
+                  {isSpeaking && !isPaused ? 'Pausa' : isPaused ? 'Riprendi' : 'Ascolta'}
                 </Button>
                 <Button onClick={() => navigate('/create-story')} variant="outline" className="px-6">
                   Nuova Favola
@@ -341,16 +366,17 @@ const GhostEditor = () => {
             {currentQuestion > 0 && (
               <div className="mb-4">
                 <h4 className="font-medium text-slate-700 mb-2">La tua storia fino a ora:</h4>
-                <div className="space-y-2">
+                <div className="border rounded p-4 bg-slate-50 space-y-2">
                   {answers.slice(0, currentQuestion).map((answer, index) => (
-                    <div key={index} className="border rounded p-3 bg-slate-50">
-                      <div className="text-xs text-slate-500 mb-1">
+                    <div key={index} className="flex items-start gap-2 text-sm">
+                      <span className="font-medium text-slate-600 shrink-0">
                         {questions[index].question}
-                      </div>
-                      <Textarea
+                      </span>
+                      <span className="text-slate-500 shrink-0">–</span>
+                      <Input
                         value={answer}
                         onChange={(e) => handleUpdatePreviousAnswers(index, e.target.value)}
-                        className="min-h-[60px] text-sm"
+                        className="flex-1 h-auto py-1 px-2 text-sm"
                       />
                     </div>
                   ))}

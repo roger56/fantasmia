@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import HomeButton from '@/components/HomeButton';
 
 const CreateStory = () => {
   const navigate = useNavigate();
-  const [selectedMode, setSelectedMode] = useState<string | null>(null);
 
   const creationModes = [
     {
@@ -35,17 +33,13 @@ const CreateStory = () => {
   ];
 
   const handleModeSelect = (mode: string) => {
-    setSelectedMode(mode);
-  };
-
-  const handleStartCreation = () => {
-    if (selectedMode === 'PROPP') {
+    if (mode === 'PROPP') {
       navigate('/propp-editor');
-    } else if (selectedMode === 'GHOST') {
+    } else if (mode === 'GHOST') {
       navigate('/ghost-editor');
     } else {
       // For ALOVAF and Parole Chiamano, navigate to a placeholder for now
-      alert(`Modalità ${selectedMode} in fase di sviluppo`);
+      alert(`Modalità ${mode} in fase di sviluppo`);
     }
   };
 
@@ -78,26 +72,17 @@ const CreateStory = () => {
           <div className="grid md:grid-cols-2 gap-6">
             {creationModes.map((mode) => {
               const IconComponent = mode.icon;
-              const isSelected = selectedMode === mode.id;
               
               return (
                 <Card 
                   key={mode.id}
-                  className={`cursor-pointer transition-all duration-200 border-2 ${
-                    isSelected 
-                      ? 'border-blue-300 bg-blue-50 shadow-md' 
-                      : 'hover:border-slate-300 hover:shadow-md'
-                  }`}
+                  className="cursor-pointer transition-all duration-200 border-2 hover:border-slate-300 hover:shadow-md"
                   onClick={() => handleModeSelect(mode.id)}
                 >
                   <CardHeader>
                     <div className="flex items-center justify-center mb-2">
-                      <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                        isSelected ? 'bg-blue-100' : 'bg-slate-100'
-                      }`}>
-                        <IconComponent className={`w-8 h-8 ${
-                          isSelected ? 'text-blue-600' : 'text-slate-600'
-                        }`} />
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                        <IconComponent className="w-8 h-8 text-slate-600" />
                       </div>
                     </div>
                     <CardTitle className="text-lg text-center">{mode.title}</CardTitle>
@@ -110,24 +95,6 @@ const CreateStory = () => {
                 </Card>
               );
             })}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-4 justify-center pt-4">
-            <Button 
-              onClick={() => navigate('/archive')}
-              variant="outline"
-              className="px-8"
-            >
-              Annulla
-            </Button>
-            <Button 
-              onClick={handleStartCreation}
-              disabled={!selectedMode}
-              className="px-8"
-            >
-              Inizia Creazione
-            </Button>
           </div>
         </div>
       </div>

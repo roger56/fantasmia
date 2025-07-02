@@ -9,9 +9,9 @@ const Home = () => {
   const navigate = useNavigate();
   const mainOptions = [{
     id: 'profiles',
-    title: 'Elenco Profili',
+    title: 'Accedi ai Profili',
     icon: Users,
-    description: 'Gestisci i profili esistenti',
+    description: 'Seleziona un profilo esistente o creane uno nuovo',
     path: '/profiles'
   }, {
     id: 'new-profile',
@@ -19,18 +19,6 @@ const Home = () => {
     icon: UserPlus,
     description: 'Crea un nuovo profilo utente',
     path: '/new-profile'
-  }, {
-    id: 'superuser',
-    title: 'Superuser',
-    icon: Shield,
-    description: 'Accesso amministratore',
-    path: '/superuser'
-  }, {
-    id: 'public',
-    title: 'Utente Pubblico',
-    icon: Globe,
-    description: 'Accesso senza registrazione',
-    path: '/public'
   }];
   
   return (
@@ -43,7 +31,7 @@ const Home = () => {
         </div>
 
         {/* Main Options Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto">
           {mainOptions.map(option => {
           const IconComponent = option.icon;
           return <Card key={option.id} className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-slate-300" onClick={() => navigate(option.path)}>

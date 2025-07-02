@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, User, Lock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, User, Lock, Shield, Globe } from 'lucide-react';
 import { getUsers, authenticateUser, markMessagesAsRead } from '@/utils/userStorage';
 import HomeButton from '@/components/HomeButton';
 
@@ -13,18 +14,55 @@ const Profiles = () => {
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [allProfiles, setAllProfiles] = useState<any[]>([]);
   
   useEffect(() => {
-    setProfiles(getUsers());
+    const users = getUsers();
+    setProfiles(users);
+    
+    // Add special profiles
+    const specialProfiles = [
+      {
+        id: 'public',
+        name: 'Utente Pubblico',
+        type: 'PUBLIC',
+        icon: Globe,
+        requiresPassword: false
+      },
+      {
+        id: 'superuser',
+        name: 'Superuser',
+        type: 'SUPERUSER',
+        icon: Shield,
+        requiresPassword: true
+      }
+    ];
+    
+    setAllProfiles([...users, ...specialProfiles]);
   }, []);
 
   const handleProfileSelect = (profileId: string) => {
     setSelectedProfile(profileId);
     setPassword('');
+    
+    // Handle direct access for PUBLIC profile
+    if (profileId === 'public') {
+      navigate('/archive', { state: { isPublic: true } });
+      return;
+    }
   };
 
   const handleLogin = () => {
     if (password.trim()) {
+      if (selectedProfile === 'superuser') {
+        if (password.toLowerCase() === 'ssss') {
+          navigate('/superuser');
+        } else {
+          alert('Password non corretta');
+        }
+        return;
+      }
+      
       const selectedUser = profiles.find(p => p.id === selectedProfile);
       if (selectedUser) {
         const user = authenticateUser(selectedUser.name, password);
@@ -64,27 +102,39 @@ const Profiles = () => {
 
         {!selectedProfile ? (
           /* Profile Selection */
-          <div className="space-y-4">
-            {profiles.map((profile) => (
-              <Card 
-                key={profile.id}
-                className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-slate-300"
-                onClick={() => handleProfileSelect(profile.id)}
-              >
-                <CardContent className="p-6 flex items-center">
-                  <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mr-4">
-                    <User className="w-6 h-6 text-slate-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-slate-800">{profile.name}</h3>
-                    <p className="text-slate-600 text-sm">
-                      Ultimo accesso: {profile.lastAccess ? new Date(profile.lastAccess).toLocaleDateString() : 'Mai'}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Seleziona Profilo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Profilo
+                </label>
+                <Select onValueChange={handleProfileSelect}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Scegli un profilo..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {allProfiles.map((profile) => {
+                      const IconComponent = profile.icon || User;
+                      return (
+                        <SelectItem key={profile.id} value={profile.id}>
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="w-4 h-4" />
+                            <span>{profile.name}</span>
+                            {profile.type && (
+                              <span className="text-xs text-slate-500">({profile.type})</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           /* Password Input */
           <Card>
@@ -97,7 +147,7 @@ const Profiles = () => {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-slate-600 mb-4">
-                  Profilo selezionato: <strong>{profiles.find(p => p.id === selectedProfile)?.name}</strong>
+                  Profilo selezionato: <strong>{allProfiles.find(p => p.id === selectedProfile)?.name}</strong>
                 </p>
                 <Input
                   type="password"
