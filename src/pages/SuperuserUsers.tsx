@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,10 +18,11 @@ const SuperuserUsers = () => {
     
     setUsers(allUsers);
     
-    // Calculate story count for each user
+    // Calculate story count for each user correctly
     const stats: {[key: string]: number} = {};
     allUsers.forEach(user => {
-      stats[user.id] = allStories.filter(story => story.authorId === user.id).length;
+      const userStories = allStories.filter(story => story.authorId === user.id);
+      stats[user.id] = userStories.length;
     });
     setUserStats(stats);
   }, []);
@@ -80,8 +82,8 @@ const SuperuserUsers = () => {
                   <div className="flex items-center gap-2 text-sm">
                     <Key className="w-4 h-4 text-slate-500" />
                     <span className="font-medium text-slate-700">Password:</span>
-                    <span className="text-slate-600 font-mono">
-                      {'•'.repeat(Math.min(user.password?.length || 0, 8))}
+                    <span className="text-slate-600">
+                      {user.password || 'Non impostata'}
                     </span>
                   </div>
                   

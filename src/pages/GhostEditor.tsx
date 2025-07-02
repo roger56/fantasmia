@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -243,11 +242,17 @@ const GhostEditor = () => {
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Titolo della Storia *
                 </label>
-                <Input
+                <Textarea
                   placeholder="Inserisci il titolo della tua favola..."
                   value={storyTitle}
                   onChange={(e) => setStoryTitle(e.target.value)}
-                  className="text-lg"
+                  className="text-lg resize-none overflow-hidden"
+                  style={{ height: 'auto', minHeight: '2.5rem' }}
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = target.scrollHeight + 'px';
+                  }}
                 />
               </div>
 
@@ -258,7 +263,13 @@ const GhostEditor = () => {
                 <Textarea
                   value={finalStory}
                   onChange={(e) => setFinalStory(e.target.value)}
-                  className="min-h-[300px] text-base leading-relaxed"
+                  className="text-base leading-relaxed resize-none overflow-hidden"
+                  style={{ height: 'auto', minHeight: '12rem' }}
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = Math.min(target.scrollHeight, window.innerHeight * 0.6) + 'px';
+                  }}
                   readOnly
                 />
               </div>
@@ -306,8 +317,14 @@ const GhostEditor = () => {
               <Textarea
                 value={finalStory}
                 onChange={(e) => setFinalStory(e.target.value)}
-                className="min-h-[400px] text-base leading-relaxed"
+                className="text-base leading-relaxed resize-none overflow-hidden"
                 placeholder="La tua storia apparirà qui..."
+                style={{ height: 'auto', minHeight: '20rem' }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = Math.min(target.scrollHeight, window.innerHeight * 0.6) + 'px';
+                }}
               />
 
               <div className="flex gap-3 justify-center">
@@ -334,7 +351,10 @@ const GhostEditor = () => {
           <Button variant="ghost" onClick={handleExit}>
             <Home className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-bold text-slate-800">Modalità GHOST</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold text-slate-800">Modalità GHOST</h1>
+            <span className="text-lg font-semibold text-slate-600">{currentQuestion + 1}/6</span>
+          </div>
           <div></div>
         </div>
 
@@ -362,22 +382,16 @@ const GhostEditor = () => {
             </p>
           </CardHeader>
           <CardContent>
-            {/* Previous Answers */}
+            {/* Previous Answers - Compact Display */}
             {currentQuestion > 0 && (
               <div className="mb-4">
                 <h4 className="font-medium text-slate-700 mb-2">La tua storia fino a ora:</h4>
-                <div className="border rounded p-4 bg-slate-50 space-y-2">
+                <div className="border rounded p-4 bg-slate-50 space-y-1">
                   {answers.slice(0, currentQuestion).map((answer, index) => (
-                    <div key={index} className="flex items-start gap-2 text-sm">
-                      <span className="font-medium text-slate-600 shrink-0">
-                        {questions[index].question}
-                      </span>
-                      <span className="text-slate-500 shrink-0">–</span>
-                      <Input
-                        value={answer}
-                        onChange={(e) => handleUpdatePreviousAnswers(index, e.target.value)}
-                        className="flex-1 h-auto py-1 px-2 text-sm"
-                      />
+                    <div key={index} className="text-sm">
+                      <span className="font-medium text-slate-700">{questions[index].question}</span>
+                      <span className="text-slate-500 mx-2">–</span>
+                      <span className="text-slate-800">{answer}</span>
                     </div>
                   ))}
                 </div>
@@ -397,7 +411,13 @@ const GhostEditor = () => {
                 value={currentAnswer}
                 onChange={(e) => setCurrentAnswer(e.target.value)}
                 placeholder="Scrivi qui la tua risposta..."
-                className="min-h-[120px] text-base"
+                className="text-base resize-none overflow-hidden"
+                style={{ height: 'auto', minHeight: '3rem' }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = target.scrollHeight + 'px';
+                }}
               />
               <Button
                 onClick={handleSpeechToText}

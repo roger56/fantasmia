@@ -112,5 +112,20 @@ export const getStories = (): Story[] => {
 
 export const getStoriesForUser = (userId: string, includePublic: boolean = false): Story[] => {
   const stories = getStories();
-  return stories.filter(s => s.authorId === userId);
+  return stories.filter(s => s.authorId === userId || (includePublic && s.isPublic));
+};
+
+export const getStoryById = (storyId: string): Story | null => {
+  const stories = getStories();
+  return stories.find(s => s.id === storyId) || null;
+};
+
+export const updateStory = (storyId: string, updates: Partial<Story>) => {
+  const stories = getStories();
+  const storyIndex = stories.findIndex(s => s.id === storyId);
+  
+  if (storyIndex >= 0) {
+    stories[storyIndex] = { ...stories[storyIndex], ...updates, lastModified: new Date().toISOString() };
+    localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
+  }
 };

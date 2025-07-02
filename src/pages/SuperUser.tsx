@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +16,14 @@ const SuperUser = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [messageContent, setMessageContent] = useState('');
 
+  // Check if already authenticated from previous session
+  useEffect(() => {
+    const isSuper = localStorage.getItem('fantasmia_superuser_authenticated');
+    if (isSuper === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
       setUsers(getUsers());
@@ -26,6 +33,7 @@ const SuperUser = () => {
   const handleLogin = () => {
     if (password.toLowerCase() === 'ssss') {
       setIsAuthenticated(true);
+      localStorage.setItem('fantasmia_superuser_authenticated', 'true');
     } else {
       alert('Password non corretta');
     }
