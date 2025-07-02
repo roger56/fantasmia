@@ -52,7 +52,7 @@ const GhostEditor = () => {
 
   const handleSpeechToText = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       const recognition = new SpeechRecognition();
       recognition.lang = 'it-IT';
       recognition.continuous = false;
