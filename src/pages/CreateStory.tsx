@@ -14,6 +14,7 @@ const CreateStory = () => {
     {
       id: 'GHOST',
       title: 'GHOST',
+      subtitle: 'per creare favole FANTASMA goriche',
       icon: Ghost
     },
     {
@@ -100,6 +101,11 @@ const CreateStory = () => {
                       </div>
                     </div>
                     <CardTitle className="text-lg text-center">{mode.title}</CardTitle>
+                    {mode.subtitle && (
+                      <p className="text-sm text-center text-slate-600 mt-1">
+                        {mode.subtitle}
+                      </p>
+                    )}
                   </CardHeader>
                 </Card>
               );
