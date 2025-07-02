@@ -10,6 +10,14 @@ import { ArrowLeft, ArrowRight, Home, Mic, Save, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
 
+// TypeScript declarations for Speech Recognition API
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+    SpeechRecognition: any;
+  }
+}
+
 const GhostEditor = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
