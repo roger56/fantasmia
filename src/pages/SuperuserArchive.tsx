@@ -167,26 +167,12 @@ const SuperuserArchive = () => {
                 <StoryScrollViewer
                   stories={filteredStories.map(story => ({
                     ...story,
-                    lastModified: new Date(story.lastModified).toLocaleDateString()
+                    lastModified: new Date(story.lastModified).toLocaleDateString(),
+                    authorName: story.authorName || 'Utente Pubblico'
                   }))}
                   onStorySelect={(storyId) => navigate(`/story/${storyId}`)}
                   showAuthor={true}
                 />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredStories.map((story) => (
-                    <div key={story.id} className="flex gap-2">
-                      <Button
-                        onClick={(e) => handleTextToSpeech(story.content, story.id, e)}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                      >
-                        <Volume2 className="w-4 h-4 mr-2" />
-                        {speechState[story.id]?.playing ? 'Pausa' : 'Ascolta'}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </CardContent>

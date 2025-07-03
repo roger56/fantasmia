@@ -138,10 +138,23 @@ const StoryViewer = () => {
               <Textarea
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}
-                className="min-h-[400px] text-base leading-relaxed"
+                className="resize-none text-base leading-relaxed"
+                style={{ height: 'auto', minHeight: '200px' }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = Math.min(target.scrollHeight, 400) + 'px';
+                }}
               />
             ) : (
-              <div className="text-base leading-relaxed whitespace-pre-wrap">
+              <div 
+                className="text-base leading-relaxed whitespace-pre-wrap p-4 border rounded-lg"
+                style={{ 
+                  minHeight: 'auto',
+                  maxHeight: '60vh',
+                  overflowY: 'auto'
+                }}
+              >
                 {story.content}
               </div>
             )}

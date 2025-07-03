@@ -34,6 +34,8 @@ const ParoleChiamanoEditor = () => {
   const [storyTitle, setStoryTitle] = useState('');
   const [missingWords, setMissingWords] = useState<string[]>([]);
   const [guidingSentence, setGuidingSentence] = useState('');
+  const [usedWords, setUsedWords] = useState<string[]>([]);
+  const [speechState, setSpeechState] = useState<{ isPlaying: boolean, utterance?: SpeechSynthesisUtterance }>({ isPlaying: false });
 
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -130,6 +132,25 @@ const ParoleChiamanoEditor = () => {
     setStep('story');
   };
 
+  // Check for used words in story
+  const checkUsedWords = (text: string) => {
+    if (!selectedSeries) return;
+    const chosenWords = wordSeries[selectedSeries];
+    const used = chosenWords.filter(word => 
+      text.toLowerCase().includes(word.toLowerCase())
+    );
+    setUsedWords(used);
+  };
+
+  // Check if all words are used
+  const allWordsUsed = () => {
+    if (!selectedSeries) return false;
+    const chosenWords = wordSeries[selectedSeries];
+    return chosenWords.every(word => 
+      usedWords.some(usedWord => usedWord.toLowerCase() === word.toLowerCase())
+    );
+  };
+
   const handleRegenerateSeries = () => {
     const series = generateWordSeries(inputWord);
     setWordSeries(series);
@@ -156,6 +177,10 @@ const ParoleChiamanoEditor = () => {
       const newBlocks = [...storyBlocks, currentBlockText.trim()];
       setStoryBlocks(newBlocks);
       setCurrentBlockText('');
+      
+      // Check for used words in the complete story so far
+      const completeStory = newBlocks.join('\n\n');
+      checkUsedWords(completeStory);
       
       if (currentBlock < 8) {
         setCurrentBlock(currentBlock + 1);
@@ -200,10 +225,24 @@ const ParoleChiamanoEditor = () => {
 
   const handleTextToSpeech = (text: string) => {
     if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'it-IT';
-      speechSynthesis.speak(utterance);
+      if (speechState.isPlaying) {
+        speechSynthesis.pause();
+        setSpeechState(prev => ({ ...prev, isPlaying: false }));
+      } else if (speechSynthesis.paused && speechState.utterance) {
+        speechSynthesis.resume();
+        setSpeechState(prev => ({ ...prev, isPlaying: true }));
+      } else {
+        speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'it-IT';
+        
+        utterance.onend = () => {
+          setSpeechState({ isPlaying: false });
+        };
+        
+        setSpeechState({ isPlaying: true, utterance });
+        speechSynthesis.speak(utterance);
+      }
     }
   };
 
@@ -352,11 +391,11 @@ const ParoleChiamanoEditor = () => {
                     ))}
                   </div>
                   <Button 
-                    onClick={() => setStep('choose')}
+                    onClick={() => handleSeriesChoice(seriesKey)}
                     className="w-full mt-4"
-                    variant={selectedSeries === seriesKey ? "default" : "outline"}
+                    variant="default"
                   >
-                    Scegli Serie {seriesKey}
+                    Usa Serie {seriesKey}
                   </Button>
                 </CardContent>
               </Card>
@@ -367,55 +406,36 @@ const ParoleChiamanoEditor = () => {
     );
   }
 
-  if (step === 'choose') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center mb-6">
-            <Button variant="ghost" onClick={() => setStep('series')}>
-              <Home className="w-5 h-5" />
-            </Button>
-            <h1 className="text-2xl font-bold text-slate-800 ml-4">Scegli una Serie</h1>
-          </div>
-          
-          <div className="grid gap-4">
-            {(['A', 'B', 'C'] as const).map((seriesKey) => (
-              <Card key={seriesKey} className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardContent className="p-6" onClick={() => handleSeriesChoice(seriesKey)}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Serie {seriesKey}</h3>
-                      <p className="text-slate-600">{wordSeries[seriesKey].join(' - ')}</p>
-                    </div>
-                    <Button>Usa questa serie</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (step === 'story') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <Button variant="ghost" onClick={() => setStep('choose')}>
+            <Button variant="ghost" onClick={() => setStep('series')}>
               <Home className="w-5 h-5" />
             </Button>
             <h1 className="text-xl font-bold text-slate-800">Crea la tua Storia</h1>
             <div></div>
           </div>
 
-          {/* Guiding sentence */}
+          {/* Guiding sentence with word highlighting */}
           <Card className="mb-4">
             <CardContent className="p-4">
-              <p className="text-lg font-semibold text-center text-slate-800">
-                {guidingSentence}
-              </p>
+              <div className="text-lg font-semibold text-center text-slate-800">
+                {selectedSeries && wordSeries[selectedSeries].map((word, index) => (
+                  <span 
+                    key={index}
+                    className={`mr-2 px-2 py-1 rounded ${
+                      usedWords.some(usedWord => usedWord.toLowerCase() === word.toLowerCase())
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-slate-100 text-slate-800'
+                    }`}
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
@@ -425,8 +445,8 @@ const ParoleChiamanoEditor = () => {
               <CardHeader>
                 <CardTitle>Storia fino a qui:</CardTitle>
               </CardHeader>
-              <CardContent className="max-h-40 overflow-y-auto">
-                <div className="text-slate-700 whitespace-pre-wrap">
+              <CardContent className="max-h-32 overflow-y-auto">
+                <div className="text-slate-700 whitespace-pre-wrap text-sm">
                   {storyBlocks.join('\n\n')}
                 </div>
               </CardContent>
@@ -443,10 +463,15 @@ const ParoleChiamanoEditor = () => {
                 value={currentBlockText}
                 onChange={(e) => setCurrentBlockText(e.target.value)}
                 placeholder="Scrivi il prossimo pezzo della tua storia..."
-                className="min-h-32 resize-none"
-                rows={4}
+                className="min-h-[80px] resize-none"
+                style={{ height: 'auto' }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = target.scrollHeight + 'px';
+                }}
               />
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   onClick={handleSpeechRecognition}
                   variant="outline"
@@ -469,11 +494,16 @@ const ParoleChiamanoEditor = () => {
           <div className="text-center">
             <Button
               onClick={handleFinishStory}
-              disabled={storyBlocks.length === 0}
+              disabled={storyBlocks.length === 0 || !allWordsUsed()}
               size="lg"
             >
               Fine Storia
             </Button>
+            {storyBlocks.length > 0 && !allWordsUsed() && (
+              <p className="text-sm text-orange-600 mt-2">
+                Usa tutte le parole per continuare
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -509,8 +539,13 @@ const ParoleChiamanoEditor = () => {
               <Textarea
                 value={finalStory}
                 onChange={(e) => setFinalStory(e.target.value)}
-                className="min-h-96 resize-none"
-                rows={20}
+                className="resize-none"
+                style={{ height: 'auto', minHeight: '200px' }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = Math.min(target.scrollHeight, 400) + 'px';
+                }}
               />
             </CardContent>
           </Card>
@@ -532,23 +567,26 @@ const ParoleChiamanoEditor = () => {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button 
               onClick={() => handleTextToSpeech(finalStory)}
               variant="outline"
+              className="flex-1"
             >
               <Volume2 className="w-4 h-4 mr-2" />
-              TTS
+              {speechState.isPlaying ? 'Pausa' : speechSynthesis.paused ? 'Riprendi' : 'TTS'}
             </Button>
             <Button 
               onClick={() => navigate('/archive', { state: { profileId, profileName } })}
               variant="outline"
+              className="flex-1"
             >
               Archivio
             </Button>
             <Button 
               onClick={() => navigate('/create-story', { state: { profileId, profileName } })}
               variant="outline"
+              className="flex-1"
             >
               Nuova Favola
             </Button>

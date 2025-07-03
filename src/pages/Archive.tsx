@@ -131,32 +131,6 @@ const Archive = () => {
                   stories={stories}
                   onStorySelect={handleStorySelect}
                 />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {stories.map((story) => (
-                    <div key={story.id} className="flex gap-2">
-                      <Button
-                        onClick={(e) => handleTextToSpeech(story.content || '', e)}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                      >
-                        <Volume2 className="w-4 h-4 mr-2" />
-                        TTS
-                      </Button>
-                      {!isPublic && (
-                        <Button
-                          onClick={(e) => handleEditStory(story.id, e)}
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Modifica
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </CardContent>

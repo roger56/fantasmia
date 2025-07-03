@@ -60,69 +60,38 @@ const SuperuserUsers = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {users.map((user) => (
-              <Card key={user.id} className="border-2">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-slate-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg text-slate-800">
-                        {user.name}
-                      </CardTitle>
-                      <p className="text-sm text-slate-500">
-                        ID: {user.id.slice(0, 8)}...
-                      </p>
+          <div className="overflow-x-auto">
+            <div className="min-w-full">
+              <div className="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">
+                {users.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-slate-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-800 truncate">{user.name}</p>
+                        <p className="text-xs text-slate-500">ID: {user.id.slice(0, 8)}...</p>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm flex-shrink-0">
+                        <Key className="w-3 h-3 text-slate-500" />
+                        <span className="text-slate-600">{user.password || 'N/A'}</span>
+                      </div>
+                      {user.email && (
+                        <div className="flex items-center gap-2 text-sm flex-shrink-0">
+                          <Mail className="w-3 h-3 text-slate-500" />
+                          <span className="text-slate-600 truncate max-w-32">{user.email}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-sm flex-shrink-0">
+                        <BookOpen className="w-3 h-3 text-slate-500" />
+                        <span className="font-semibold text-slate-800">{userStats[user.id] || 0}</span>
+                      </div>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Key className="w-4 h-4 text-slate-500" />
-                    <span className="font-medium text-slate-700">Password:</span>
-                    <span className="text-slate-600">
-                      {user.password || 'Non impostata'}
-                    </span>
-                  </div>
-                  
-                  {user.email && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="w-4 h-4 text-slate-500" />
-                      <span className="font-medium text-slate-700">Email:</span>
-                      <span className="text-slate-600 truncate">{user.email}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center gap-2 text-sm">
-                    <BookOpen className="w-4 h-4 text-slate-500" />
-                    <span className="font-medium text-slate-700">Favole create:</span>
-                    <span className="text-slate-600 font-semibold">
-                      {userStats[user.id] || 0}
-                    </span>
-                  </div>
-                  
-                  {user.lastAccess && (
-                    <div className="text-sm">
-                      <span className="font-medium text-slate-700">Ultimo accesso:</span>
-                      <p className="text-slate-600">
-                        {new Date(user.lastAccess).toLocaleDateString()} alle{' '}
-                        {new Date(user.lastAccess).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {user.unreadMessages && user.unreadMessages.length > 0 && (
-                    <div className="text-sm">
-                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                        {user.unreadMessages.length} messaggi non letti
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
