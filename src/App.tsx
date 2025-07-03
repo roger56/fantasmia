@@ -16,6 +16,7 @@ import GhostEditor from "./pages/GhostEditor";
 import StoryViewer from "./pages/StoryViewer";
 import SuperuserArchive from "./pages/SuperuserArchive";
 import SuperuserUsers from "./pages/SuperuserUsers";
+import ParoleChiamanoEditor from "./pages/ParoleChiamanoEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/story/:storyId" element={<StoryViewer />} />
           <Route path="/superuser-archive" element={<SuperuserArchive />} />
           <Route path="/superuser-users" element={<SuperuserUsers />} />
+          <Route path="/parole-chiamano" element={<ParoleChiamanoEditor />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

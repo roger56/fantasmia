@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, BookOpen, Volume2 } from 'lucide-react';
 import { getStories } from '@/utils/userStorage';
+import { StoryScrollViewer } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 
@@ -29,16 +30,43 @@ const SuperuserArchive = () => {
     }
   }, [selectedCategory, stories]);
 
-  const handleTextToSpeech = (content: string, e: React.MouseEvent) => {
+  const [speechState, setSpeechState] = useState<{[key: string]: {playing: boolean, utterance?: SpeechSynthesisUtterance}}>({});
+
+  const handleTextToSpeech = (content: string, storyId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
     if ('speechSynthesis' in window) {
-      // Stop any currently playing speech
-      speechSynthesis.cancel();
+      const currentState = speechState[storyId];
       
-      const utterance = new SpeechSynthesisUtterance(content);
-      utterance.lang = 'it-IT';
-      speechSynthesis.speak(utterance);
+      if (currentState?.playing) {
+        // Pause speech
+        speechSynthesis.cancel();
+        setSpeechState(prev => ({
+          ...prev,
+          [storyId]: { ...prev[storyId], playing: false }
+        }));
+      } else {
+        // Stop any other playing speech
+        speechSynthesis.cancel();
+        
+        // Create new utterance
+        const utterance = new SpeechSynthesisUtterance(content);
+        utterance.lang = 'it-IT';
+        
+        utterance.onend = () => {
+          setSpeechState(prev => ({
+            ...prev,
+            [storyId]: { ...prev[storyId], playing: false }
+          }));
+        };
+        
+        setSpeechState(prev => ({
+          ...prev,
+          [storyId]: { playing: true, utterance }
+        }));
+        
+        speechSynthesis.speak(utterance);
+      }
     } else {
       toast({
         title: "Non supportato",
@@ -119,71 +147,50 @@ const SuperuserArchive = () => {
           </Card>
         </div>
 
-        {filteredStories.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                Nessuna favola trovata
-              </h3>
-              <p className="text-slate-600">
-                Non ci sono favole per la categoria selezionata
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredStories.map((story) => (
-              <Card 
-                key={story.id}
-                className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-slate-300"
-                onClick={() => navigate(`/story/${story.id}`)}
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-slate-800 line-clamp-2">
-                    {story.title}
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(story.status)}`}>
-                      {getStatusText(story.status)}
-                    </span>
-                    <Button
-                      onClick={(e) => handleTextToSpeech(story.content, e)}
-                      size="sm"
-                      variant="ghost"
-                      className="p-1 h-auto"
-                    >
-                      <Volume2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-slate-700">Autore:</span>
-                      <span className="text-slate-600">{story.authorName}</span>
+        <Card>
+          <CardHeader>
+            <CardTitle>Archivio Completo - {filteredStories.length} favole</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredStories.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                  Nessuna favola trovata
+                </h3>
+                <p className="text-slate-600">
+                  Non ci sono favole per la categoria selezionata
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <StoryScrollViewer
+                  stories={filteredStories.map(story => ({
+                    ...story,
+                    lastModified: new Date(story.lastModified).toLocaleDateString()
+                  }))}
+                  onStorySelect={(storyId) => navigate(`/story/${storyId}`)}
+                  showAuthor={true}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredStories.map((story) => (
+                    <div key={story.id} className="flex gap-2">
+                      <Button
+                        onClick={(e) => handleTextToSpeech(story.content, story.id, e)}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <Volume2 className="w-4 h-4 mr-2" />
+                        {speechState[story.id]?.playing ? 'Pausa' : 'Ascolta'}
+                      </Button>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-slate-700">Categoria:</span>
-                      <span className="text-slate-600">{story.mode}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-slate-700">Modificata:</span>
-                      <span className="text-slate-600">
-                        {new Date(story.lastModified).toLocaleDateString()}
-                      </span>
-                    </div>
-                    {story.isPublic && (
-                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                        Pubblica
-                      </span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

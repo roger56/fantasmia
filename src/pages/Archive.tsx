@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Plus, Play, Pause, Save } from 'lucide-react';
+import { ArrowLeft, BookOpen, Plus, Play, Pause, Save, Edit, Volume2 } from 'lucide-react';
 import { getStoriesForUser, getStories } from '@/utils/userStorage';
+import { StoryScrollViewer } from '@/components/ui/scroll-area';
 import HomeButton from '@/components/HomeButton';
 
 const Archive = () => {
@@ -40,11 +41,29 @@ const Archive = () => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return Save;
-      case 'suspended': return Pause;
-      default: return Play;
+  const handleStorySelect = (storyId: string) => {
+    navigate(`/story/${storyId}`);
+  };
+
+  const handleTextToSpeech = (content: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(content);
+      utterance.lang = 'it-IT';
+      speechSynthesis.speak(utterance);
+    }
+  };
+
+  const handleEditStory = (storyId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const story = stories.find(s => s.id === storyId);
+    if (story) {
+      if (story.mode === 'GHOST') {
+        navigate('/ghost-editor', { state: { profileId, profileName, editStory: story } });
+      } else if (story.mode === 'PAROLE_CHIAMANO') {
+        navigate('/parole-chiamano', { state: { profileId, profileName, editStory: story } });
+      }
     }
   };
 
@@ -83,72 +102,65 @@ const Archive = () => {
           )}
         </div>
 
-        {/* Stories Grid */}
-        {stories.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                {isPublic ? 'Nessuna favola pubblica trovata' : 'Nessuna favola trovata'}
-              </h3>
-              <p className="text-slate-600 mb-4">
-                {isPublic ? 'Non ci sono ancora favole pubbliche' : 'Inizia a creare la tua prima favola!'}
-              </p>
-              {!isPublic && (
-                <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
-                  Crea Nuova Favola
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {stories.map((story) => {
-              const StatusIcon = getStatusIcon(story.status);
-              return (
-                <Card 
-                  key={story.id}
-                  className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-slate-300"
-                  onClick={() => navigate(`/story/${story.id}`)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg text-slate-800 line-clamp-2">
-                        {story.title}
-                      </CardTitle>
-                      <StatusIcon className="w-5 h-5 text-slate-500 flex-shrink-0 ml-2" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(story.status)}`}>
-                        {getStatusText(story.status)}
-                      </span>
-                      <span className="text-xs text-slate-500 font-medium">
-                        {story.mode}
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-slate-600">
-                        Modificata: {story.lastModified}
-                      </p>
-                      {story.authorName && (
-                        <p className="text-sm text-slate-500">
-                          Autore: {story.authorName}
-                        </p>
-                      )}
-                      {story.isPublic && (
-                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                          Pubblica
-                        </span>
+        {/* Stories List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {isPublic ? 'Favole Pubbliche' : 'Le Tue Favole'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {stories.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                  {isPublic ? 'Nessuna favola pubblica trovata' : 'Nessuna favola trovata'}
+                </h3>
+                <p className="text-slate-600 mb-4">
+                  {isPublic ? 'Non ci sono ancora favole pubbliche' : 'Inizia a creare la tua prima favola!'}
+                </p>
+                {!isPublic && (
+                  <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
+                    Crea Nuova Favola
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <StoryScrollViewer
+                  stories={stories}
+                  onStorySelect={handleStorySelect}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {stories.map((story) => (
+                    <div key={story.id} className="flex gap-2">
+                      <Button
+                        onClick={(e) => handleTextToSpeech(story.content || '', e)}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <Volume2 className="w-4 h-4 mr-2" />
+                        TTS
+                      </Button>
+                      {!isPublic && (
+                        <Button
+                          onClick={(e) => handleEditStory(story.id, e)}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Modifica
+                        </Button>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -358,18 +358,6 @@ const GhostEditor = () => {
           <div></div>
         </div>
 
-        {/* Progress Bar */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-600">
-                Domanda {currentQuestion + 1} di 6
-              </span>
-              <span className="text-sm text-slate-500">{Math.round(progress)}%</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </CardContent>
-        </Card>
 
         {/* Current Question and Previous Answers */}
         <Card className="mb-6">

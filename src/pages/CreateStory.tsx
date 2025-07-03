@@ -37,8 +37,10 @@ const CreateStory = () => {
       navigate('/propp-editor');
     } else if (mode === 'GHOST') {
       navigate('/ghost-editor');
+    } else if (mode === 'PAROLE_CHIAMANO') {
+      navigate('/parole-chiamano');
     } else {
-      // For ALOVAF and Parole Chiamano, navigate to a placeholder for now
+      // For ALOVAF, navigate to a placeholder for now
       alert(`Modalità ${mode} in fase di sviluppo`);
     }
   };
