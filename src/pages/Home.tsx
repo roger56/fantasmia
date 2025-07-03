@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, UserPlus, Shield, Globe } from 'lucide-react';
-
 const Home = () => {
   const navigate = useNavigate();
   const mainOptions = [{
@@ -20,13 +18,11 @@ const Home = () => {
     description: 'Crea un nuovo profilo utente',
     path: '/new-profile'
   }];
-  
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 px-[12px] py-[12px]">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 px-[12px] py-[12px]">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8 pt-8 py-[12px]">
-          <h1 className="text-4xl font-bold mb-2 text-red-500">Fantasmia</h1>
+          <h1 className="text-4xl font-bold mb-2 text-red-500">Fantas(m)ia</h1>
           <p className="text-lg text-sky-600">usa la tua FANTASIA FANTASMAGORICA</p>
         </div>
 
@@ -52,8 +48,6 @@ const Home = () => {
         })}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Home;
