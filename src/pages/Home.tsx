@@ -11,12 +11,6 @@ const Home = () => {
     icon: Users,
     description: 'Seleziona un profilo esistente o creane uno nuovo',
     path: '/profiles'
-  }, {
-    id: 'new-profile',
-    title: 'Nuovo Profilo',
-    icon: UserPlus,
-    description: 'Crea un nuovo profilo utente',
-    path: '/new-profile'
   }];
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 px-[12px] py-[12px]">
       <div className="max-w-4xl mx-auto">
@@ -27,7 +21,7 @@ const Home = () => {
         </div>
 
         {/* Main Options Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto">
+        <div className="grid grid-cols-1 gap-6 max-w-lg mx-auto">
           {mainOptions.map(option => {
           const IconComponent = option.icon;
           return <Card key={option.id} className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-slate-300" onClick={() => navigate(option.path)}>

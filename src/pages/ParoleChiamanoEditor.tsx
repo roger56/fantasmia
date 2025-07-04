@@ -590,6 +590,13 @@ const ParoleChiamanoEditor = () => {
             >
               Nuova Favola
             </Button>
+            <Button 
+              onClick={() => navigate('/archive', { state: { profileId, profileName } })}
+              variant="outline"
+              className="flex-1"
+            >
+              Indietro
+            </Button>
           </div>
         </div>
       </div>

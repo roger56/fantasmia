@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,7 +19,9 @@ declare global {
 
 const GhostEditor = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const { profileId, profileName } = location.state || {};
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<string[]>(['', '', '', '', '', '']);
@@ -167,9 +169,9 @@ const GhostEditor = () => {
       status: 'completed' as const,
       lastModified: new Date().toISOString(),
       mode: 'GHOST' as const,
-      authorId: currentUser.id || 'public',
-      authorName: currentUser.name || 'Utente Pubblico',
-      isPublic: !currentUser.id || currentUser.id === 'public'
+      authorId: profileId || currentUser.id || 'anonymous',
+      authorName: profileName || currentUser.name || 'Utente Anonimo',
+      isPublic: false
     };
 
     saveStory(story);
@@ -177,7 +179,7 @@ const GhostEditor = () => {
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",
     });
-    setTimeout(() => navigate('/archive'), 1500);
+    setTimeout(() => navigate('/archive', { state: { profileId, profileName } }), 1500);
   };
 
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -283,8 +285,11 @@ const GhostEditor = () => {
                   <Volume2 className="w-4 h-4 mr-2" />
                   {isSpeaking && !isPaused ? 'Pausa' : isPaused ? 'Riprendi' : 'Ascolta'}
                 </Button>
-                <Button onClick={() => navigate('/create-story')} variant="outline" className="px-6">
+                <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
                   Nuova Favola
+                </Button>
+                <Button onClick={() => navigate('/archive', { state: { profileId, profileName } })} variant="outline" className="px-6">
+                  Indietro
                 </Button>
               </div>
             </CardContent>

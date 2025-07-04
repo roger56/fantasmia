@@ -20,13 +20,13 @@ const Profiles = () => {
     const users = getUsers();
     setProfiles(users);
     
-    // Add special profiles
+    // Add special profiles and new profile option
     const specialProfiles = [
       {
-        id: 'public',
-        name: 'Utente Pubblico',
-        type: 'PUBLIC',
-        icon: Globe,
+        id: 'new-profile',
+        name: 'NUOVO PROFILO',
+        type: 'NEW',
+        icon: User,
         requiresPassword: false
       },
       {
@@ -45,9 +45,9 @@ const Profiles = () => {
     setSelectedProfile(profileId);
     setPassword('');
     
-    // Handle direct access for PUBLIC profile
-    if (profileId === 'public') {
-      navigate('/archive', { state: { isPublic: true } });
+    // Handle direct access for NEW PROFILE
+    if (profileId === 'new-profile') {
+      navigate('/new-profile');
       return;
     }
   };
@@ -92,7 +92,7 @@ const Profiles = () => {
         <div className="flex items-center mb-6 pt-4">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/home')}
             className="mr-4"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -120,13 +120,13 @@ const Profiles = () => {
                       const IconComponent = profile.icon || User;
                       return (
                         <SelectItem key={profile.id} value={profile.id}>
-                          <div className="flex items-center gap-2">
-                            <IconComponent className="w-4 h-4" />
-                            <span>{profile.name}</span>
-                            {profile.type && (
-                              <span className="text-xs text-slate-500">({profile.type})</span>
-                            )}
-                          </div>
+                           <div className="flex items-center gap-2">
+                             <IconComponent className="w-4 h-4" />
+                             <span className={profile.type === 'NEW' ? 'font-bold' : ''}>{profile.name}</span>
+                             {profile.type && profile.type !== 'NEW' && (
+                               <span className="text-xs text-slate-500">({profile.type})</span>
+                             )}
+                           </div>
                         </SelectItem>
                       );
                     })}

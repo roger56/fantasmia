@@ -112,10 +112,7 @@ export const getStories = (): Story[] => {
 
 export const getStoriesForUser = (userId: string, includePublic: boolean = false): Story[] => {
   const stories = getStories();
-  // Only show user's own stories, unless it's SUPERUSER who can see all, or PUBLIC user seeing public stories
-  if (userId === 'PUBLIC') {
-    return stories.filter(s => s.authorId === 'PUBLIC');
-  }
+  // Only show user's own stories
   return stories.filter(s => s.authorId === userId);
 };
 
