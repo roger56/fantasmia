@@ -36,9 +36,39 @@ export const saveUser = (user: User) => {
     users[existingIndex] = user;
   } else {
     users.push(user);
+    // Create directory structure for new user
+    createUserDirectoryStructure(user.id);
   }
   
   localStorage.setItem('fantasmia_users', JSON.stringify(users));
+};
+
+// Create the base directory structure for a new user
+const createUserDirectoryStructure = (userId: string) => {
+  const categories = ['GHOST', 'PROPP', 'ALOVAF', 'PAROLECHIAMANO'];
+  const baseStructureKey = 'fantasmia_directory_structure';
+  
+  // Get existing structure or create new one
+  const existingStructure = JSON.parse(localStorage.getItem(baseStructureKey) || '{}');
+  
+  // Create base FANTASMIA directory if not exists
+  if (!existingStructure['FANTASMIA']) {
+    existingStructure['FANTASMIA'] = {};
+  }
+  
+  // Create user directory
+  if (!existingStructure['FANTASMIA'][userId]) {
+    existingStructure['FANTASMIA'][userId] = {};
+  }
+  
+  // Create category subdirectories
+  categories.forEach(category => {
+    if (!existingStructure['FANTASMIA'][userId][category]) {
+      existingStructure['FANTASMIA'][userId][category] = {};
+    }
+  });
+  
+  localStorage.setItem(baseStructureKey, JSON.stringify(existingStructure));
 };
 
 export const getUsers = (): User[] => {
@@ -96,6 +126,9 @@ export const saveStory = (story: Story) => {
   const stories = getStories();
   const existingIndex = stories.findIndex(s => s.id === story.id);
   
+  // Assicurati che la struttura di directory esista per l'utente
+  ensureUserDirectoryStructure(story.authorId);
+  
   // Crea il path organizzato secondo le specifiche
   const documentPath = `/Documenti/FANTASMIA/${story.authorId}/${story.mode}/${story.title}.txt`;
   
@@ -117,6 +150,50 @@ export const saveStory = (story: Story) => {
   
   // Aggiorna anche l'archivio personale dell'utente
   updateUserStoryArchive(story.authorId, storyWithPath);
+  
+  // Aggiorna la struttura directory virtuale
+  updateDirectoryStructure(story.authorId, story.mode, story.title);
+};
+
+// Assicura che la struttura di directory esista per un utente
+const ensureUserDirectoryStructure = (userId: string) => {
+  const categories = ['GHOST', 'PROPP', 'ALOVAF', 'PAROLECHIAMANO'];
+  const baseStructureKey = 'fantasmia_directory_structure';
+  
+  const existingStructure = JSON.parse(localStorage.getItem(baseStructureKey) || '{}');
+  
+  if (!existingStructure['FANTASMIA']) {
+    existingStructure['FANTASMIA'] = {};
+  }
+  
+  if (!existingStructure['FANTASMIA'][userId]) {
+    existingStructure['FANTASMIA'][userId] = {};
+  }
+  
+  categories.forEach(category => {
+    if (!existingStructure['FANTASMIA'][userId][category]) {
+      existingStructure['FANTASMIA'][userId][category] = {};
+    }
+  });
+  
+  localStorage.setItem(baseStructureKey, JSON.stringify(existingStructure));
+};
+
+// Aggiorna la struttura directory con un nuovo file
+const updateDirectoryStructure = (userId: string, category: string, fileName: string) => {
+  const baseStructureKey = 'fantasmia_directory_structure';
+  const existingStructure = JSON.parse(localStorage.getItem(baseStructureKey) || '{}');
+  
+  if (existingStructure['FANTASMIA'] && 
+      existingStructure['FANTASMIA'][userId] && 
+      existingStructure['FANTASMIA'][userId][category]) {
+    existingStructure['FANTASMIA'][userId][category][`${fileName}.txt`] = {
+      created: new Date().toISOString(),
+      type: 'file'
+    };
+  }
+  
+  localStorage.setItem(baseStructureKey, JSON.stringify(existingStructure));
 };
 
 const updateUserStoryArchive = (userId: string, story: Story) => {
@@ -182,4 +259,29 @@ export const updateStory = (storyId: string, updates: Partial<Story>) => {
     stories[storyIndex] = { ...stories[storyIndex], ...updates, lastModified: new Date().toISOString() };
     localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
   }
+};
+
+// Inizializza la struttura directory per tutti gli utenti esistenti
+export const initializeDirectoryStructureForExistingUsers = () => {
+  const users = getUsers();
+  users.forEach(user => {
+    ensureUserDirectoryStructure(user.id);
+  });
+};
+
+// Ottieni la struttura directory per navigazione
+export const getDirectoryStructure = () => {
+  const baseStructureKey = 'fantasmia_directory_structure';
+  return JSON.parse(localStorage.getItem(baseStructureKey) || '{}');
+};
+
+// Ottieni i file in una directory specifica
+export const getFilesInDirectory = (userId: string, category: string): string[] => {
+  const structure = getDirectoryStructure();
+  if (structure['FANTASMIA'] && 
+      structure['FANTASMIA'][userId] && 
+      structure['FANTASMIA'][userId][category]) {
+    return Object.keys(structure['FANTASMIA'][userId][category]);
+  }
+  return [];
 };

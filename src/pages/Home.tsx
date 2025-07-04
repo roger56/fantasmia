@@ -1,10 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, UserPlus, Shield, Globe } from 'lucide-react';
+import { initializeDirectoryStructureForExistingUsers } from '@/utils/userStorage';
+
 const Home = () => {
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Inizializza la struttura directory per gli utenti esistenti
+    initializeDirectoryStructureForExistingUsers();
+  }, []);
   const mainOptions = [{
     id: 'profiles',
     title: 'Accedi ai Profili',
