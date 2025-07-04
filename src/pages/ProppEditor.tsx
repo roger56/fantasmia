@@ -23,7 +23,7 @@ const ProppEditor = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [currentUtterance, setCurrentUtterance] = useState<SpeechSynthesisUtterance | null>(null);
 
-  // Definizione dei cluster e delle carte secondo le specifiche
+  // Definizione completa dei 9 cluster secondo le funzioni di Propp
   const clusters = [
     {
       id: 1,
@@ -34,6 +34,15 @@ const ProppEditor = () => {
         { id: 3, title: "Infrazione", icon: "⚠️", description: "Il divieto viene infranto." },
         { id: 4, title: "Investigazione", icon: "🔍", description: "L'antagonista tenta di ottenere informazioni." },
         { id: 5, title: "Delazione", icon: "🗣️", description: "L'antagonista riceve informazioni sulla vittima." }
+      ]
+    },
+    {
+      id: 2,
+      title: "Incontro con il Nemico",
+      cards: [
+        { id: 6, title: "Tranello", icon: "🕳️", description: "L'antagonista tenta di ingannare la vittima." },
+        { id: 7, title: "Connivenza", icon: "🤝", description: "La vittima si lascia ingannare." },
+        { id: 8, title: "Danneggiamento", icon: "💥", description: "L'antagonista arreca danno a uno dei membri della famiglia." }
       ]
     },
     {
@@ -73,8 +82,28 @@ const ProppEditor = () => {
       ]
     },
     {
+      id: 7,
+      title: "Post-Ritorno",
+      cards: [
+        { id: 21, title: "Persecuzione", icon: "🏃‍♂️", description: "L'eroe viene perseguitato." },
+        { id: 22, title: "Salvezza", icon: "🛡️", description: "L'eroe si salva dalla persecuzione." },
+        { id: 23, title: "Rientro in incognito", icon: "🎭", description: "L'eroe rientra in incognito a casa." }
+      ]
+    },
+    {
+      id: 8,
+      title: "Riconoscimenti",
+      cards: [
+        { id: 24, title: "Pretese", icon: "👑", description: "Un falso eroe avanza pretese infondate." },
+        { id: 25, title: "Compito difficile", icon: "🏔️", description: "All'eroe viene proposto un compito difficile." },
+        { id: 26, title: "Esecuzione", icon: "🎪", description: "Il compito viene eseguito." },
+        { id: 27, title: "Riconoscimento", icon: "👁️", description: "L'eroe viene riconosciuto." },
+        { id: 28, title: "Smascheramento", icon: "🎪", description: "Il falso eroe o l'antagonista viene smascherato." }
+      ]
+    },
+    {
       id: 9,
-      title: "Trasformazione finale",
+      title: "Ricompense",
       cards: [
         { id: 29, title: "Trasfigurazione", icon: "🦋", description: "L'eroe riceve un nuovo aspetto." },
         { id: 30, title: "Punizione", icon: "⚖️", description: "Il falso eroe o l'antagonista viene punito." },
@@ -83,18 +112,45 @@ const ProppEditor = () => {
     }
   ];
 
+  // 5 fasi narrative principali secondo le specifiche
   const phases = [
-    { title: "Situazione iniziale", cluster: 1, description: "Imposta l'antefatto della tua fiaba" },
-    { title: "Partenza dell'eroe", cluster: 3, description: "L'eroe inizia la sua avventura" },
-    { title: "Peripezie e Prove", cluster: 4, description: "L'eroe affronta sfide e riceve aiuti" },
-    { title: "Conflitto", cluster: 5, description: "L'eroe affronta l'antagonista" },
-    { title: "Ritorno", cluster: 6, description: "L'eroe torna a casa" },
-    { title: "Conclusione", cluster: 9, description: "La storia si conclude" }
+    { 
+      title: "Situazione iniziale", 
+      clusters: [1, 2], 
+      description: "Imposta l'antefatto della tua fiaba - Equilibrio iniziale e presentazione del protagonista" 
+    },
+    { 
+      title: "Partenza dell'eroe", 
+      clusters: [3], 
+      description: "L'evento scatenante che avvia l'avventura" 
+    },
+    { 
+      title: "Peripezie e Prove", 
+      clusters: [4, 5, 7], 
+      description: "L'eroe affronta ostacoli, riceve aiuti e si confronta con antagonisti" 
+    },
+    { 
+      title: "Ritorno", 
+      clusters: [6, 8], 
+      description: "L'eroe torna nel luogo iniziale con nuove consapevolezze" 
+    },
+    { 
+      title: "Conclusione", 
+      clusters: [9], 
+      description: "L'equilibrio viene ristabilito e l'eroe ottiene la ricompensa" 
+    }
   ];
 
-  const getCurrentCluster = () => {
+  const [currentClusterIndex, setCurrentClusterIndex] = useState(0);
+
+  const getCurrentClusters = () => {
     const phase = phases[currentPhase];
-    return clusters.find(c => c.id === phase.cluster);
+    return phase.clusters.map(clusterId => clusters.find(c => c.id === clusterId)).filter(Boolean);
+  };
+
+  const getCurrentCluster = () => {
+    const availableClusters = getCurrentClusters();
+    return availableClusters[currentClusterIndex] || availableClusters[0];
   };
 
   const handleCardSelect = (cardId: number) => {
@@ -116,16 +172,26 @@ const ProppEditor = () => {
     setCurrentParagraph('');
     setSelectedCard(null);
 
-    if (currentPhase < phases.length - 1) {
+    // Controlla se ci sono altri cluster nella fase corrente
+    const availableClusters = getCurrentClusters();
+    if (currentClusterIndex < availableClusters.length - 1) {
+      setCurrentClusterIndex(currentClusterIndex + 1);
+    } else if (currentPhase < phases.length - 1) {
       setCurrentPhase(currentPhase + 1);
+      setCurrentClusterIndex(0);
     } else {
       setShowFinalScreen(true);
     }
   };
 
   const handleSkipCluster = () => {
-    if (currentPhase < phases.length - 1) {
+    const availableClusters = getCurrentClusters();
+    if (currentClusterIndex < availableClusters.length - 1) {
+      setCurrentClusterIndex(currentClusterIndex + 1);
+      setSelectedCard(null);
+    } else if (currentPhase < phases.length - 1) {
       setCurrentPhase(currentPhase + 1);
+      setCurrentClusterIndex(0);
       setSelectedCard(null);
     } else {
       setShowFinalScreen(true);
@@ -346,17 +412,17 @@ const ProppEditor = () => {
         {/* Progress and Phase Info */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-semibold">Fase {currentPhase + 1}/6: {currentPhaseInfo.title}</h2>
+            <h2 className="text-xl font-semibold">Fase {currentPhase + 1}/5: {phases[currentPhase].title}</h2>
             <div className="text-sm text-slate-600">
-              Cluster: {currentCluster?.title}
+              Cluster: {currentCluster?.title} ({currentClusterIndex + 1}/{getCurrentClusters().length})
             </div>
           </div>
-          <p className="text-slate-600">{currentPhaseInfo.description}</p>
+          <p className="text-slate-600">{phases[currentPhase].description}</p>
           
           {/* Progress bar */}
           <div className="w-full bg-slate-200 rounded-full h-2 mt-3">
             <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{ width: `${((currentPhase + 1) / phases.length) * 100}%` }}
             />
           </div>
@@ -388,21 +454,26 @@ const ProppEditor = () => {
           </Card>
         )}
 
-        {/* Dual Pane Layout */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Left Pane - Cards */}
-          <Card>
+        {/* Layout Orizzontale Affiancato secondo le specifiche */}
+        <div className="flex gap-6 h-[calc(100vh-300px)]">
+          {/* Box delle CARTE - Sinistra */}
+          <Card className="flex-1">
             <CardHeader>
-              <CardTitle>{currentCluster?.title}</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>{currentCluster?.title}</span>
+                <span className="text-sm text-slate-600">
+                  Cluster {currentCluster?.id}/9
+                </span>
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <CardContent className="h-full overflow-auto">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
                 {currentCluster?.cards.map((card) => (
                   <div
                     key={card.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 text-center ${
+                    className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 text-center hover-scale ${
                       selectedCard === card.id 
-                        ? 'border-blue-500 bg-blue-50' 
+                        ? 'border-primary bg-primary/10' 
                         : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                     onClick={() => handleCardSelect(card.id)}
@@ -414,7 +485,17 @@ const ProppEditor = () => {
                 ))}
               </div>
               
-              <div className="mt-4 pt-4 border-t">
+              {selectedCardData && (
+                <div className="bg-slate-50 p-4 rounded-lg mb-4 animate-fade-in">
+                  <div className="flex items-center mb-2">
+                    <span className="text-2xl mr-3">{selectedCardData.icon}</span>
+                    <h4 className="font-semibold">{selectedCardData.title}</h4>
+                  </div>
+                  <p className="text-sm text-slate-700">{selectedCardData.description}</p>
+                </div>
+              )}
+              
+              <div className="border-t pt-4">
                 <Button 
                   variant="outline" 
                   onClick={handleSkipCluster}
@@ -426,27 +507,31 @@ const ProppEditor = () => {
             </CardContent>
           </Card>
 
-          {/* Right Pane - Card Description and Editor */}
-          <Card>
+          {/* Box di SCRITTURA/TESTO - Destra */}
+          <Card className="flex-1">
             <CardHeader>
               <CardTitle>
-                {selectedCardData ? selectedCardData.title : 'Seleziona una carta'}
+                La tua Storia - Fase {currentPhase + 1}/5
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {selectedCardData && (
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <span className="text-2xl mr-3">{selectedCardData.icon}</span>
-                    <h4 className="font-semibold">{selectedCardData.title}</h4>
-                  </div>
-                  <p className="text-sm text-slate-700">{selectedCardData.description}</p>
+            <CardContent className="h-full flex flex-col">
+              {/* Storia scritta finora */}
+              {storyParagraphs.length > 0 && (
+                <div className="bg-slate-50 p-4 rounded-lg mb-4 max-h-60 overflow-y-auto">
+                  <h4 className="font-semibold mb-2">Storia finora:</h4>
+                  {storyParagraphs.map((paragraph, index) => (
+                    <p key={index} className="mb-3 text-sm">{paragraph}</p>
+                  ))}
                 </div>
               )}
               
-              <div>
+              {/* Editor per nuovo paragrafo */}
+              <div className="flex-1 flex flex-col">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Scrivi il tuo paragrafo
+                  {selectedCardData ? 
+                    `Scrivi il paragrafo per: ${selectedCardData.title}` : 
+                    "Seleziona prima una carta per iniziare a scrivere..."
+                  }
                 </label>
                 <Textarea
                   placeholder={selectedCardData ? 
@@ -455,12 +540,13 @@ const ProppEditor = () => {
                   }
                   value={currentParagraph}
                   onChange={(e) => setCurrentParagraph(e.target.value)}
-                  className="min-h-[200px] text-base leading-relaxed"
+                  className="flex-1 text-base leading-relaxed resize-none"
                   disabled={!selectedCardData}
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
+              {/* Pulsanti di controllo */}
+              <div className="flex gap-3 pt-4 mt-auto">
                 <Button 
                   onClick={handleContinue} 
                   className="flex-1"

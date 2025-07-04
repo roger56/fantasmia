@@ -20,8 +20,8 @@ const Archive = () => {
       const allStories = getStories();
       setStories(allStories.filter(s => s.isPublic));
     } else if (profileId) {
-      // Show user's stories and public ones
-      setStories(getStoriesForUser(profileId, true));
+      // Show user's personal archive
+      setStories(getStoriesForUser(profileId));
     }
   }, [profileId, isPublic]);
 

@@ -96,13 +96,41 @@ export const saveStory = (story: Story) => {
   const stories = getStories();
   const existingIndex = stories.findIndex(s => s.id === story.id);
   
+  // Crea il path organizzato secondo le specifiche
+  const documentPath = `/Documenti/FANTASMIA/${story.authorId}/${story.mode}/${story.title}.txt`;
+  
+  // Aggiungi il path alla storia
+  const storyWithPath = {
+    ...story,
+    documentPath,
+    createdAt: story.lastModified,
+    category: story.mode // Per compatibilità con il database
+  };
+  
   if (existingIndex >= 0) {
-    stories[existingIndex] = story;
+    stories[existingIndex] = storyWithPath;
   } else {
-    stories.push(story);
+    stories.push(storyWithPath);
   }
   
   localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
+  
+  // Aggiorna anche l'archivio personale dell'utente
+  updateUserStoryArchive(story.authorId, storyWithPath);
+};
+
+const updateUserStoryArchive = (userId: string, story: Story) => {
+  const userArchiveKey = `fantasmia_user_archive_${userId}`;
+  const userArchive = JSON.parse(localStorage.getItem(userArchiveKey) || '[]');
+  
+  const existingIndex = userArchive.findIndex((s: Story) => s.id === story.id);
+  if (existingIndex >= 0) {
+    userArchive[existingIndex] = story;
+  } else {
+    userArchive.push(story);
+  }
+  
+  localStorage.setItem(userArchiveKey, JSON.stringify(userArchive));
 };
 
 export const getStories = (): Story[] => {
@@ -111,8 +139,34 @@ export const getStories = (): Story[] => {
 };
 
 export const getStoriesForUser = (userId: string, includePublic: boolean = false): Story[] => {
+  // Recupera l'archivio personale dell'utente
+  const userArchiveKey = `fantasmia_user_archive_${userId}`;
+  const userArchive = JSON.parse(localStorage.getItem(userArchiveKey) || '[]');
+  
+  // Ordina per data decrescente
+  return userArchive.sort((a: Story, b: Story) => 
+    new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+  );
+};
+
+export const getAllStoriesForSuperuser = (): Story[] => {
   const stories = getStories();
-  return stories.filter(s => s.authorId === userId);
+  // Ordina per data decrescente
+  return stories.sort((a, b) => 
+    new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+  );
+};
+
+export const getStoriesByCategory = (category: string): Story[] => {
+  const stories = getStories();
+  return stories
+    .filter(s => s.mode === category)
+    .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+};
+
+export const getStoriesByUserAndCategory = (userId: string, category: string): Story[] => {
+  const userStories = getStoriesForUser(userId);
+  return userStories.filter(s => s.mode === category);
 };
 
 export const getStoryById = (storyId: string): Story | null => {
