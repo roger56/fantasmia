@@ -518,7 +518,7 @@ const ParoleChiamanoEditor = () => {
             <Button variant="ghost" onClick={() => navigate('/')}>
               <Home className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-slate-800 ml-4">La tua Favola</h1>
+            <h1 className="text-2xl font-bold text-slate-800 ml-4">La tua Favola - {profileName}</h1>
           </div>
 
           {missingWords.length > 0 && (

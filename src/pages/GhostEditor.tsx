@@ -231,7 +231,7 @@ const GhostEditor = () => {
             <Button variant="ghost" onClick={() => navigate('/')}>
               <Home className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-bold text-slate-800">Storia Completata - GHOST</h1>
+            <h1 className="text-xl font-bold text-slate-800">Storia Completata - GHOST - {profileName}</h1>
             <div></div>
           </div>
 
