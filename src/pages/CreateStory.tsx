@@ -31,9 +31,8 @@ const CreateStory = () => {
       navigate('/ghost-editor');
     } else if (mode === 'PAROLE_CHIAMANO') {
       navigate('/parole-chiamano');
-    } else {
-      // For ALOVAF, navigate to a placeholder for now
-      alert(`Modalità ${mode} in fase di sviluppo`);
+    } else if (mode === 'ALOVAF') {
+      navigate('/alovaf-editor');
     }
   };
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">

@@ -436,6 +436,24 @@ const ProppEditor = () => {
           />
         </div>
 
+        {/* Story written so far - show at top */}
+        {storyParagraphs.length > 0 && (
+          <div className="mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Storia scritta finora</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-slate-50 p-4 rounded-lg max-h-60 overflow-y-auto">
+                  {storyParagraphs.map((paragraph, index) => (
+                    <p key={index} className="mb-3 text-sm">{paragraph}</p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Horizontal Layout - Cards and Writing Side by Side */}
         <div className="flex gap-6 h-[calc(100vh-300px)]">
           {/* Cards Box - Left */}
@@ -497,16 +515,6 @@ const ProppEditor = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="h-full flex flex-col">
-              {/* Story written so far - show only in larger preview at top */}
-              {storyParagraphs.length > 0 && (
-                <div className="bg-slate-50 p-4 rounded-lg mb-4 max-h-60 overflow-y-auto">
-                  <h4 className="font-semibold mb-2">Storia finora:</h4>
-                  {storyParagraphs.map((paragraph, index) => (
-                    <p key={index} className="mb-3 text-sm">{paragraph}</p>
-                  ))}
-                </div>
-              )}
-              
               {/* Editor for new paragraph */}
               <div className="flex-1 flex flex-col">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
