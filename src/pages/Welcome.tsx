@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -94,7 +95,7 @@ const Welcome = () => {
                 </h1>
                 <div className="text-lg text-slate-700 space-y-4 leading-relaxed">
                   <p>
-                    🎩✨ <strong>Inventa la tua favola con la TUA FANTASIA FANTASMAGORICA!</strong> ✨🐉
+                    <strong>Inventa la tua favola con la TUA FANTASIA FANTASMAGORICA!</strong>
                   </p>
                   <p>
                     Qui puoi creare storie uniche e divertenti, proprio come fanno i veri scrittori. Ti faremo qualche domanda buffa, oppure ti daremo delle carte magiche o delle parole misteriose… e tu potrai inventare tutto con la tua immaginazione!
@@ -106,7 +107,7 @@ const Welcome = () => {
                     Scegli la tua modalità preferita: <strong>GHOST</strong>, <strong>PROPP</strong>, <strong>ALOVAF</strong> o <strong>PAROLE CHIAMANO</strong>… e inizia subito l'avventura!
                   </p>
                   <p className="text-xl font-semibold text-sky-600">
-                    📚 Pronto? Premi 'Nuova Favola' e… che la magia abbia inizio!
+                    Pronto? scegli un profilo e Premi 'Nuova Favola'… che la magia abbia inizio!
                   </p>
                 </div>
               </CardContent>

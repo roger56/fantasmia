@@ -23,7 +23,6 @@ const ProppEditor = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [currentUtterance, setCurrentUtterance] = useState<SpeechSynthesisUtterance | null>(null);
 
-  // Definizione completa dei 9 cluster secondo le funzioni di Propp
   const clusters = [
     {
       id: 1,
@@ -112,7 +111,6 @@ const ProppEditor = () => {
     }
   ];
 
-  // 5 fasi narrative principali secondo le specifiche
   const phases = [
     { 
       title: "Situazione iniziale", 
@@ -172,7 +170,6 @@ const ProppEditor = () => {
     setCurrentParagraph('');
     setSelectedCard(null);
 
-    // Controlla se ci sono altri cluster nella fase corrente
     const availableClusters = getCurrentClusters();
     if (currentClusterIndex < availableClusters.length - 1) {
       setCurrentClusterIndex(currentClusterIndex + 1);
@@ -365,7 +362,8 @@ const ProppEditor = () => {
             <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
               Nuova Favola
             </Button>
-            <Button onClick={() => navigate('/archive', { state: { profileId, profileName } })} variant="outline" className="px-6">
+            <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Indietro
             </Button>
           </div>
@@ -395,13 +393,13 @@ const ProppEditor = () => {
         </div>
       </div>
 
-      {/* Avviso iniziale */}
+      {/* Updated initial warning */}
       {currentPhase === 0 && (
         <div className="max-w-7xl mx-auto p-4">
           <Card className="mb-4 bg-blue-50 border-blue-200">
             <CardContent className="p-4">
               <p className="text-blue-800 text-sm">
-                <strong>Avviso:</strong> La Modalità PROPP guida l'utente nella creazione di una fiaba attraverso una sequenza di carte ispirate alle 31 funzioni di Propp, suddivise in 9 cluster narrativi. Richiede attenzione e pazienza: ogni carta rappresenta una tappa narrativa, e il bambino scriverà la storia passo dopo passo.
+                <strong>Avviso:</strong> La Modalità PROPP guida l'utente nella creazione di una fiaba attraverso una sequenza di carte ispirate alle funzioni di Propp, suddivise in gruppi narrativi. RICHIEDE ATTENZIONE E PAZIENZA: ogni carta rappresenta una tappa narrativa, e il bambino scriverà la storia passo dopo passo.
               </p>
             </CardContent>
           </Card>
@@ -438,25 +436,9 @@ const ProppEditor = () => {
           />
         </div>
 
-        {/* Story Progress */}
-        {storyParagraphs.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>La tua storia finora:</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-slate-50 p-4 rounded-lg max-h-40 overflow-y-auto">
-                {storyParagraphs.map((paragraph, index) => (
-                  <p key={index} className="mb-3">{paragraph}</p>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Layout Orizzontale Affiancato secondo le specifiche */}
+        {/* Horizontal Layout - Cards and Writing Side by Side */}
         <div className="flex gap-6 h-[calc(100vh-300px)]">
-          {/* Box delle CARTE - Sinistra */}
+          {/* Cards Box - Left */}
           <Card className="flex-1">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -507,7 +489,7 @@ const ProppEditor = () => {
             </CardContent>
           </Card>
 
-          {/* Box di SCRITTURA/TESTO - Destra */}
+          {/* Writing/Text Box - Right */}
           <Card className="flex-1">
             <CardHeader>
               <CardTitle>
@@ -515,7 +497,7 @@ const ProppEditor = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="h-full flex flex-col">
-              {/* Storia scritta finora */}
+              {/* Story written so far - show only in larger preview at top */}
               {storyParagraphs.length > 0 && (
                 <div className="bg-slate-50 p-4 rounded-lg mb-4 max-h-60 overflow-y-auto">
                   <h4 className="font-semibold mb-2">Storia finora:</h4>
@@ -525,7 +507,7 @@ const ProppEditor = () => {
                 </div>
               )}
               
-              {/* Editor per nuovo paragrafo */}
+              {/* Editor for new paragraph */}
               <div className="flex-1 flex flex-col">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   {selectedCardData ? 
@@ -545,7 +527,7 @@ const ProppEditor = () => {
                 />
               </div>
 
-              {/* Pulsanti di controllo */}
+              {/* Control buttons */}
               <div className="flex gap-3 pt-4 mt-auto">
                 <Button 
                   onClick={handleContinue} 

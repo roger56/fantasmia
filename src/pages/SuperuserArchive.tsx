@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,10 +18,14 @@ const SuperuserArchive = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   useEffect(() => {
-    // Usa la nuova funzione per l'archivio completo del SUPERUSER
     const allStories = getAllStoriesForSuperuser();
-    setStories(allStories);
-    setFilteredStories(allStories);
+    // Ensure each story has the correct author name
+    const storiesWithCorrectAuthors = allStories.map(story => ({
+      ...story,
+      authorName: story.authorName || 'Utente Sconosciuto' // Fallback if no author name
+    }));
+    setStories(storiesWithCorrectAuthors);
+    setFilteredStories(storiesWithCorrectAuthors);
   }, []);
 
   useEffect(() => {
@@ -169,7 +174,7 @@ const SuperuserArchive = () => {
                   stories={filteredStories.map(story => ({
                     ...story,
                     lastModified: new Date(story.lastModified).toLocaleDateString(),
-                    authorName: story.authorName || 'Utente Pubblico'
+                    authorName: story.authorName || 'Utente Sconosciuto'
                   }))}
                   onStorySelect={(storyId) => navigate(`/story/${storyId}`)}
                   showAuthor={true}
