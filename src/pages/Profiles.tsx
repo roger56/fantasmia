@@ -76,7 +76,7 @@ const Profiles = () => {
               markMessagesAsRead(user.id);
             }
           }
-          navigate('/archive', { state: { profileId: selectedProfile, profileName: selectedUser.name } });
+          navigate('/create-story', { state: { profileId: selectedProfile, profileName: selectedUser.name } });
         } else {
           alert('Password non corretta');
         }

@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Home, Volume2, Save, Share, Edit, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
+import SpeechToText from '@/components/SpeechToText';
 
 const AlovafEditor = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const AlovafEditor = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentUtterance, setCurrentUtterance] = useState<SpeechSynthesisUtterance | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const stories = {
     POLLICINO: {
@@ -152,7 +154,7 @@ const AlovafEditor = () => {
       description: "La tua favola ALOVAF è stata salvata nell'archivio",
     });
 
-    navigate('/archive', { state: { profileId, profileName } });
+    navigate('/create-story', { state: { profileId, profileName } });
   };
 
   const handleTextToSpeech = () => {
@@ -313,6 +315,7 @@ const AlovafEditor = () => {
                 onChange={(e) => setStoryParts(e.target.value.split('\n\n'))}
                 className="min-h-[400px] text-base leading-relaxed"
                 placeholder="La tua storia al contrario apparirà qui..."
+                readOnly={!isEditing}
               />
             </CardContent>
           </Card>
@@ -329,6 +332,10 @@ const AlovafEditor = () => {
             <Button onClick={handleTextToSpeech} variant="outline" className="px-6">
               <Volume2 className="w-4 h-4 mr-2" />
               {isSpeaking && !isPaused ? 'Pausa' : isPaused ? 'Riprendi' : 'Ascolta'}
+            </Button>
+            <Button onClick={() => setIsEditing(!isEditing)} variant="outline" className="px-6">
+              <Edit className="w-4 h-4 mr-2" />
+              {isEditing ? 'Fine Modifica' : 'Modifica'}
             </Button>
             <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
               Nuova Favola
@@ -423,10 +430,16 @@ const AlovafEditor = () => {
                 onChange={(e) => setCurrentText(e.target.value)}
                 className="flex-1 text-base leading-relaxed resize-none"
                 maxLength={1000}
+                disabled={isEditing}
               />
               
               {/* Control buttons */}
               <div className="flex gap-3 pt-4 mt-auto">
+                <SpeechToText 
+                  onResult={(text) => setCurrentText(prev => prev + (prev ? ' ' : '') + text)}
+                  isDisabled={isEditing}
+                  className="mr-2"
+                />
                 <Button 
                   onClick={handleContinue} 
                   className="flex-1"

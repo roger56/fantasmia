@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Home, Pause, Save, CheckCircle, Volume2, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
+import SpeechToText from '@/components/SpeechToText';
 
 const ProppEditor = () => {
   const navigate = useNavigate();
@@ -224,7 +225,7 @@ const ProppEditor = () => {
       description: "Puoi riprenderla dall'archivio",
     });
 
-    navigate('/archive', { state: { profileId, profileName } });
+            navigate('/create-story', { state: { profileId, profileName } });
   };
 
   const handleSaveStory = () => {
@@ -266,7 +267,7 @@ const ProppEditor = () => {
       description: "La tua favola è stata salvata nell'archivio",
     });
 
-    navigate('/archive', { state: { profileId, profileName } });
+    navigate('/create-story', { state: { profileId, profileName } });
   };
 
   const handleTextToSpeech = () => {
@@ -537,6 +538,11 @@ const ProppEditor = () => {
 
               {/* Control buttons */}
               <div className="flex gap-3 pt-4 mt-auto">
+                <SpeechToText 
+                  onResult={(text) => setCurrentParagraph(prev => prev + (prev ? ' ' : '') + text)}
+                  isDisabled={!selectedCardData}
+                  className="mr-2"
+                />
                 <Button 
                   onClick={handleContinue} 
                   className="flex-1"

@@ -91,7 +91,8 @@ const Archive = () => {
             </div>
           </div>
           
-          {!isPublic && (
+          {/* Temporary removal of archive functionality */}
+          {false && !isPublic && profileId && (
             <Button 
               onClick={() => navigate('/create-story', { state: { profileId, profileName } })}
               className="flex items-center gap-2"
