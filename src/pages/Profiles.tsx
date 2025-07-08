@@ -56,7 +56,8 @@ const Profiles = () => {
     if (password.trim()) {
       if (selectedProfile === 'superuser') {
         if (password.toLowerCase() === 'ssss') {
-          navigate('/superuser');
+          // Navigate directly to create-story for superuser instead of superuser page
+          navigate('/create-story', { state: { profileId: 'superuser', profileName: 'Superuser' } });
         } else {
           alert('Password non corretta');
         }

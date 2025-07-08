@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, ArrowRight, Home, Mic, Save, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
+import SpeechToText from '@/components/SpeechToText';
 
 // TypeScript declarations for Speech Recognition API
 declare global {
@@ -21,83 +22,42 @@ const GhostEditor = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { profileId, profileName } = location.state || {};
+  const { profileId, profileName, editStory } = location.state || {};
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<string[]>(['', '', '', '', '', '']);
-  const [currentAnswer, setCurrentAnswer] = useState('');
-  const [isListening, setIsListening] = useState(false);
+  const [answers, setAnswers] = useState<string[]>(editStory ? editStory.answers || ['', '', '', '', '', ''] : ['', '', '', '', '', '']);
+  const [currentAnswer, setCurrentAnswer] = useState(editStory && editStory.answers ? editStory.answers[0] || '' : '');
   const [showFinalDraft, setShowFinalDraft] = useState(false);
-  const [finalStory, setFinalStory] = useState('');
-  const [storyTitle, setStoryTitle] = useState('');
+  const [finalStory, setFinalStory] = useState(editStory ? editStory.content || '' : '');
+  const [storyTitle, setStoryTitle] = useState(editStory ? editStory.title || '' : '');
   const [showFinalScreen, setShowFinalScreen] = useState(false);
 
   const questions = [
     {
       question: "Chi era?",
-      suggestion: "Scrivi un personaggio con almeno una caratteristica curiosa o particolare: colore, forma, materiale, dimensione o comportamento insolito."
+      suggestion: "💡 Prova a immaginare un personaggio che abbia qualcosa di davvero strano o unico: può essere una persona, un animale, un oggetto fatto di qualcosa di bizzarro, avere una forma buffa o muoversi in modo imprevedibile."
     },
     {
       question: "Dove si trovava?",
-      suggestion: "Indica un luogo originale o sorprendente, reale o immaginario. Può essere vicino, lontano, in alto, sotto o dentro qualcosa di inusuale."
+      suggestion: "💡 Racconta dove si trovava questo personaggio: un posto speciale, magari nascosto o impossibile, come sopra una nuvola, dentro un orologio o in fondo a un barattolo magico."
     },
     {
       question: "Cosa faceva?",
-      suggestion: "Descrivi un'azione insolita o buffa, qualcosa di impossibile o esagerato che faccia sorridere o stupire."
+      suggestion: "💡 Pensa a un gesto o un'azione fuori dal comune: magari stava facendo qualcosa che nessuno si aspetta, come cucinare il vento o insegnare a volare a un sasso."
     },
     {
       question: "Cosa diceva?",
-      suggestion: "Scrivi una frase che il personaggio pronuncia. Può essere divertente, poetica, assurda, misteriosa o senza senso."
+      suggestion: "💡 Fai parlare il tuo personaggio! Inventagli una frase che suoni buffa, stramba, poetica o anche completamente pazza. L'importante è che sia originale!"
     },
     {
       question: "Cosa diceva la gente?",
-      suggestion: "Scrivi una frase collettiva o il commento di altri personaggi o creature presenti nella storia. Può essere una protesta, un consiglio, una domanda, un'esclamazione."
+      suggestion: "💡 Immagina come reagiscono gli altri: amici, animali o oggetti parlanti. Che cosa pensano? Dicono qualcosa insieme o a turno? Gridano, sussurrano, fanno domande?"
     },
     {
       question: "Come è andata a finire?",
-      suggestion: "Scrivi un finale sorprendente, divertente, poetico o buffo. Può essere positivo, imprevisto o stravagante."
+      suggestion: "💡 Concludi con un finale speciale: può essere felice, tenero, assurdo o pieno di sorprese. Qualcosa che faccia dire \"Wow!\" o \"Che bella idea!\""
     }
   ];
-
-  const handleSpeechToText = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'it-IT';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setCurrentAnswer(prev => prev + (prev ? ' ' : '') + transcript);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-        toast({
-          title: "Errore",
-          description: "Impossibile utilizzare il riconoscimento vocale",
-          variant: "destructive"
-        });
-      };
-
-      recognition.start();
-    } else {
-      toast({
-        title: "Non supportato",
-        description: "Il riconoscimento vocale non è supportato da questo browser",
-        variant: "destructive"
-      });
-    }
-  };
 
   const handleContinue = () => {
     if (!currentAnswer.trim()) {
@@ -134,17 +94,11 @@ const GhostEditor = () => {
   const handleExit = () => {
     if (answers.some(answer => answer.trim())) {
       if (confirm("Sei sicuro di voler uscire? Tutte le modifiche andranno perse.")) {
-        navigate('/');
+        navigate('/create-story', { state: { profileId, profileName } });
       }
     } else {
-      navigate('/');
+      navigate('/create-story', { state: { profileId, profileName } });
     }
-  };
-
-  const handleUpdatePreviousAnswers = (index: number, value: string) => {
-    const newAnswers = [...answers];
-    newAnswers[index] = value;
-    setAnswers(newAnswers);
   };
 
   const handleFinalizeDraft = () => {
@@ -161,17 +115,17 @@ const GhostEditor = () => {
       return;
     }
 
-    const currentUser = JSON.parse(localStorage.getItem('fantasmia_currentUser') || '{}');
     const story = {
-      id: Date.now().toString(),
+      id: editStory ? editStory.id : Date.now().toString(),
       title: storyTitle,
       content: finalStory,
       status: 'completed' as const,
       lastModified: new Date().toISOString(),
       mode: 'GHOST' as const,
-      authorId: profileId || currentUser.id || 'anonymous',
-      authorName: profileName || currentUser.name || 'Utente Anonimo',
-      isPublic: false
+      authorId: profileId || 'anonymous',
+      authorName: profileName || 'Utente Anonimo',
+      isPublic: false,
+      answers: answers
     };
 
     saveStory(story);
@@ -179,7 +133,7 @@ const GhostEditor = () => {
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",
     });
-    setTimeout(() => navigate('/archive', { state: { profileId, profileName } }), 1500);
+    setTimeout(() => navigate('/create-story', { state: { profileId, profileName } }), 1500);
   };
 
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -228,7 +182,7 @@ const GhostEditor = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <Button variant="ghost" onClick={() => navigate('/')}>
+            <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
               <Home className="w-5 h-5" />
             </Button>
             <h1 className="text-xl font-bold text-slate-800">Storia Completata - GHOST - {profileName}</h1>
@@ -288,7 +242,7 @@ const GhostEditor = () => {
                 <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
                   Nuova Favola
                 </Button>
-                <Button onClick={() => navigate('/archive', { state: { profileId, profileName } })} variant="outline" className="px-6">
+                <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
                   Indietro
                 </Button>
               </div>
@@ -304,7 +258,7 @@ const GhostEditor = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <Button variant="ghost" onClick={() => navigate('/')}>
+            <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
               <Home className="w-5 h-5" />
             </Button>
             <h1 className="text-xl font-bold text-slate-800">Bozza Finale - GHOST</h1>
@@ -363,7 +317,6 @@ const GhostEditor = () => {
           <div></div>
         </div>
 
-
         {/* Current Question and Previous Answers */}
         <Card className="mb-6">
           <CardHeader>
@@ -412,19 +365,11 @@ const GhostEditor = () => {
                   target.style.height = target.scrollHeight + 'px';
                 }}
               />
-              <Button
-                onClick={handleSpeechToText}
-                variant="outline"
-                size="icon"
-                className={`shrink-0 ${isListening ? 'bg-red-100 border-red-300' : ''}`}
-                disabled={isListening}
-              >
-                <Mic className={`w-5 h-5 ${isListening ? 'text-red-600' : 'text-slate-600'}`} />
-              </Button>
+              <SpeechToText
+                onResult={(text) => setCurrentAnswer(prev => prev + (prev ? ' ' : '') + text)}
+                className="shrink-0"
+              />
             </div>
-            {isListening && (
-              <p className="text-sm text-red-600">🎙️ Sto ascoltando...</p>
-            )}
           </CardContent>
         </Card>
 
