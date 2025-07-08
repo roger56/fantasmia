@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, ArrowRight, Home, Save, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
+import SpeechToText from '@/components/SpeechToText';
 
 const ProppEditor = () => {
   const navigate = useNavigate();
@@ -312,18 +314,24 @@ const ProppEditor = () => {
             <CardTitle className="text-lg">Scrivi la tua risposta</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Textarea
-              value={currentPhaseText}
-              onChange={handlePhaseTextChange}
-              placeholder="Scrivi qui la tua risposta..."
-              className="text-base resize-none overflow-hidden"
-              style={{ height: 'auto', minHeight: '3rem' }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = target.scrollHeight + 'px';
-              }}
-            />
+            <div className="flex gap-2">
+              <Textarea
+                value={currentPhaseText}
+                onChange={handlePhaseTextChange}
+                placeholder="Scrivi qui la tua risposta..."
+                className="text-base resize-none overflow-hidden"
+                style={{ height: 'auto', minHeight: '3rem' }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = target.scrollHeight + 'px';
+                }}
+              />
+              <SpeechToText
+                onResult={(text) => setCurrentPhaseText(prev => prev + (prev ? ' ' : '') + text)}
+                className="shrink-0"
+              />
+            </div>
           </CardContent>
         </Card>
 
