@@ -25,6 +25,7 @@ interface Story {
   authorId: string;
   authorName: string;
   isPublic: boolean;
+  language?: 'italian' | 'english';
 }
 
 export const saveUser = (user: User) => {

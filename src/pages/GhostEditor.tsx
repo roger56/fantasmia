@@ -173,7 +173,7 @@ const GhostEditor = () => {
       authorName: profileName || 'Utente Anonimo',
       isPublic: false,
       answers: answers,
-      language: isTranslated ? 'english' : 'italian'
+      language: (isTranslated ? 'english' : 'italian') as 'italian' | 'english'
     };
 
     saveStory(story);

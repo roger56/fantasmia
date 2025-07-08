@@ -234,7 +234,7 @@ const AlovafEditor = () => {
       isPublic: false,
       answers: answers,
       selectedFairyTale: selectedFairyTale,
-      language: isTranslated ? 'english' : 'italian'
+      language: (isTranslated ? 'english' : 'italian') as 'italian' | 'english'
     };
 
     saveStory(story);
