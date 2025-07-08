@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Home, Mic, MicOff, Volume2, Check, RotateCcw } from 'lucide-react';
+import { Home, Mic, MicOff, Volume2, Check, RotateCcw, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
+import { translateToEnglish, translateToItalian } from '@/utils/translation';
 
 interface WordSeries {
   A: string[];
@@ -36,6 +37,9 @@ const ParoleChiamanoEditor = () => {
   const [guidingSentence, setGuidingSentence] = useState('');
   const [usedWords, setUsedWords] = useState<string[]>([]);
   const [speechState, setSpeechState] = useState<{ isPlaying: boolean, utterance?: SpeechSynthesisUtterance }>({ isPlaying: false });
+  const [isTranslated, setIsTranslated] = useState(false);
+  const [originalStory, setOriginalStory] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -243,6 +247,43 @@ const ParoleChiamanoEditor = () => {
         setSpeechState({ isPlaying: true, utterance });
         speechSynthesis.speak(utterance);
       }
+    }
+  };
+
+  const handleTranslate = async () => {
+    setIsTranslating(true);
+    
+    try {
+      if (!isTranslated) {
+        // Translate to English
+        setOriginalStory(finalStory);
+        
+        const translatedStory = await translateToEnglish(finalStory);
+        setFinalStory(translatedStory);
+        setIsTranslated(true);
+        
+        toast({
+          title: "Traduzione completata",
+          description: "La storia è stata tradotta in inglese",
+        });
+      } else {
+        // Return to Italian
+        setFinalStory(originalStory);
+        setIsTranslated(false);
+        
+        toast({
+          title: "Traduzione completata",
+          description: "La storia è stata riportata in italiano",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Errore traduzione",
+        description: "Non è stato possibile tradurre la storia",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -569,6 +610,16 @@ const ParoleChiamanoEditor = () => {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Button 
+              onClick={handleTranslate} 
+              variant="outline" 
+              disabled={isTranslating || !finalStory.trim()}
+              className="flex-1"
+            >
+              <Globe className="w-4 h-4 mr-2" />
+              {isTranslating ? 'Traduzione...' : (isTranslated ? 'ITALIANO' : 'INGLESE')}
+            </Button>
+            
+            <Button 
               onClick={() => handleTextToSpeech(finalStory)}
               variant="outline"
               className="flex-1"
@@ -576,6 +627,7 @@ const ParoleChiamanoEditor = () => {
               <Volume2 className="w-4 h-4 mr-2" />
               {speechState.isPlaying ? 'Pausa' : speechSynthesis.paused ? 'Riprendi' : 'TTS'}
             </Button>
+            
             <Button 
               onClick={() => navigate('/archive', { state: { profileId, profileName } })}
               variant="outline"
@@ -583,19 +635,13 @@ const ParoleChiamanoEditor = () => {
             >
               Archivio
             </Button>
+            
             <Button 
               onClick={() => navigate('/create-story', { state: { profileId, profileName } })}
               variant="outline"
               className="flex-1"
             >
               Nuova Favola
-            </Button>
-            <Button 
-              onClick={() => navigate('/archive', { state: { profileId, profileName } })}
-              variant="outline"
-              className="flex-1"
-            >
-              Indietro
             </Button>
           </div>
         </div>
