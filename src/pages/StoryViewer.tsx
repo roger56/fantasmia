@@ -32,7 +32,7 @@ const StoryViewer = () => {
       setStory(foundStory);
       setEditedContent(foundStory.content || '');
       // Check if story was saved in a specific language
-      if (foundStory.language === 'english') {
+      if ((foundStory as any).language === 'english') {
         setIsTranslated(true);
       }
     }
