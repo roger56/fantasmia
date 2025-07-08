@@ -3,10 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Volume2, Edit, Save } from 'lucide-react';
+import { ArrowLeft, Volume2, Edit, Save, Globe } from 'lucide-react';
 import { getStories, saveStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
+import { translateToEnglish, translateToItalian } from '@/utils/translation';
 
 const StoryViewer = () => {
   const { storyId } = useParams();
@@ -18,6 +19,11 @@ const StoryViewer = () => {
   const [editedContent, setEditedContent] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isTranslated, setIsTranslated] = useState(false);
+  const [originalStory, setOriginalStory] = useState('');
+  const [originalTitle, setOriginalTitle] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatedTitle, setTranslatedTitle] = useState('');
 
   useEffect(() => {
     const stories = getStories();
@@ -25,8 +31,56 @@ const StoryViewer = () => {
     if (foundStory) {
       setStory(foundStory);
       setEditedContent(foundStory.content || '');
+      // Check if story was saved in a specific language
+      if (foundStory.language === 'english') {
+        setIsTranslated(true);
+      }
     }
   }, [storyId]);
+
+  const handleTranslate = async () => {
+    if (!story) return;
+    
+    setIsTranslating(true);
+    
+    try {
+      if (!isTranslated) {
+        // Translate to English
+        setOriginalStory(story.content);
+        setOriginalTitle(story.title);
+        
+        const translatedStory = await translateToEnglish(story.content);
+        const translatedStoryTitle = await translateToEnglish(story.title);
+        
+        setEditedContent(translatedStory);
+        setTranslatedTitle(translatedStoryTitle);
+        setIsTranslated(true);
+        
+        toast({
+          title: "Traduzione completata",
+          description: "La storia è stata tradotta in inglese",
+        });
+      } else {
+        // Return to Italian
+        setEditedContent(originalStory || story.content);
+        setTranslatedTitle('');
+        setIsTranslated(false);
+        
+        toast({
+          title: "Traduzione completata",
+          description: "La storia è stata riportata in italiano",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Errore traduzione",
+        description: "Non è stato possibile tradurre la storia",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const handleTextToSpeech = () => {
     if ('speechSynthesis' in window) {
@@ -66,8 +120,14 @@ const StoryViewer = () => {
       const updatedStory = {
         ...story,
         content: editedContent,
-        lastModified: new Date().toISOString()
+        lastModified: new Date().toISOString(),
+        language: isTranslated ? 'english' : 'italian'
       };
+      
+      // If we have a translated title, update that too
+      if (isTranslated && translatedTitle) {
+        updatedStory.title = translatedTitle;
+      }
       
       saveStory(updatedStory);
       setStory(updatedStory);
@@ -75,7 +135,7 @@ const StoryViewer = () => {
       
       toast({
         title: "Favola aggiornata",
-        description: "Le modifiche sono state salvate con successo"
+        description: `Le modifiche sono state salvate con successo${isTranslated ? ' in inglese' : ''}`
       });
     }
   };
@@ -89,6 +149,8 @@ const StoryViewer = () => {
       </div>
     );
   }
+
+  const displayTitle = isTranslated && translatedTitle ? translatedTitle : story.title;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
@@ -105,6 +167,15 @@ const StoryViewer = () => {
           </Button>
           
           <div className="flex gap-2">
+            <Button 
+              onClick={handleTranslate} 
+              variant="outline" 
+              disabled={isTranslating}
+            >
+              <Globe className="w-4 h-4 mr-2" />
+              {isTranslating ? 'Traduzione...' : (isTranslated ? 'ITALIANO' : 'INGLESE')}
+            </Button>
+            
             <Button onClick={handleTextToSpeech} variant="outline">
               <Volume2 className="w-4 h-4 mr-2" />
               {isSpeaking && !isPaused ? 'Pausa' : isPaused ? 'Riprendi' : 'Ascolta'}
@@ -126,11 +197,12 @@ const StoryViewer = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">{story.title}</CardTitle>
+            <CardTitle className="text-2xl">{displayTitle}</CardTitle>
             <div className="flex items-center gap-4 text-sm text-slate-600">
               <span>Autore: {story.authorName}</span>
               <span>Modalità: {story.mode}</span>
               <span>Modificato: {new Date(story.lastModified).toLocaleDateString()}</span>
+              {isTranslated && <span className="text-blue-600 font-medium">🇬🇧 English</span>}
             </div>
           </CardHeader>
           <CardContent>
@@ -155,7 +227,7 @@ const StoryViewer = () => {
                   overflowY: 'auto'
                 }}
               >
-                {story.content}
+                {editedContent}
               </div>
             )}
           </CardContent>

@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Home, Mic, Save, Volume2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, Mic, Save, Volume2, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
 import SpeechToText from '@/components/SpeechToText';
+import { translateToEnglish, translateToItalian } from '@/utils/translation';
 
 // TypeScript declarations for Speech Recognition API
 declare global {
@@ -31,6 +32,10 @@ const GhostEditor = () => {
   const [finalStory, setFinalStory] = useState(editStory ? editStory.content || '' : '');
   const [storyTitle, setStoryTitle] = useState(editStory ? editStory.title || '' : '');
   const [showFinalScreen, setShowFinalScreen] = useState(false);
+  const [isTranslated, setIsTranslated] = useState(false);
+  const [originalStory, setOriginalStory] = useState('');
+  const [originalTitle, setOriginalTitle] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const questions = [
     {
@@ -105,6 +110,48 @@ const GhostEditor = () => {
     setShowFinalScreen(true);
   };
 
+  const handleTranslate = async () => {
+    setIsTranslating(true);
+    
+    try {
+      if (!isTranslated) {
+        // Translate to English
+        setOriginalStory(finalStory);
+        setOriginalTitle(storyTitle);
+        
+        const translatedStory = await translateToEnglish(finalStory);
+        const translatedTitle = await translateToEnglish(storyTitle);
+        
+        setFinalStory(translatedStory);
+        setStoryTitle(translatedTitle);
+        setIsTranslated(true);
+        
+        toast({
+          title: "Traduzione completata",
+          description: "La storia è stata tradotta in inglese",
+        });
+      } else {
+        // Return to Italian
+        setFinalStory(originalStory);
+        setStoryTitle(originalTitle);
+        setIsTranslated(false);
+        
+        toast({
+          title: "Traduzione completata",
+          description: "La storia è stata riportata in italiano",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Errore traduzione",
+        description: "Non è stato possibile tradurre la storia",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const handleSave = () => {
     if (!storyTitle.trim()) {
       toast({
@@ -125,13 +172,14 @@ const GhostEditor = () => {
       authorId: profileId || 'anonymous',
       authorName: profileName || 'Utente Anonimo',
       isPublic: false,
-      answers: answers
+      answers: answers,
+      language: isTranslated ? 'english' : 'italian'
     };
 
     saveStory(story);
     toast({
       title: "Storia salvata!",
-      description: "La storia è stata salvata nell'archivio",
+      description: `La storia è stata salvata nell'archivio${isTranslated ? ' in inglese' : ''}`,
     });
     setTimeout(() => navigate('/create-story', { state: { profileId, profileName } }), 1500);
   };
@@ -234,6 +282,15 @@ const GhostEditor = () => {
                 <Button onClick={handleSave} className="px-6">
                   <Save className="w-4 h-4 mr-2" />
                   Salva
+                </Button>
+                <Button 
+                  onClick={handleTranslate} 
+                  variant="outline" 
+                  className="px-6" 
+                  disabled={isTranslating}
+                >
+                  <Globe className="w-4 h-4 mr-2" />
+                  {isTranslating ? 'Traduzione...' : (isTranslated ? 'ITALIANO' : 'INGLESE')}
                 </Button>
                 <Button onClick={handleTextToSpeech} variant="outline" className="px-6">
                   <Volume2 className="w-4 h-4 mr-2" />

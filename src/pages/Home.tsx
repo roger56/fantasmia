@@ -36,7 +36,7 @@ const Home = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8 pt-8 py-[12px]">
-          <h1 className="text-4xl font-bold mb-2 text-red-500">Fantas(m)ia</h1>
+          <h1 className="text-4xl font-bold mb-2 text-red-500">FANTAS(m)IA</h1>
           <p className="text-lg text-sky-600">usa la tua FANTASIA FANTASMAGORICA</p>
         </div>
 

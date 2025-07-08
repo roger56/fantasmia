@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, ArrowRight, Home, Save, Volume2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, Save, Volume2, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
 import SpeechToText from '@/components/SpeechToText';
+import { translateToEnglish, translateToItalian } from '@/utils/translation';
 
 const ProppEditor = () => {
   const navigate = useNavigate();
@@ -24,10 +24,14 @@ const ProppEditor = () => {
   const [showFinalScreen, setShowFinalScreen] = useState(false);
   const [showEditScreen, setShowEditScreen] = useState(false);
   const [finalStory, setFinalStory] = useState(editStory ? editStory.content || '' : '');
+  const [isTranslated, setIsTranslated] = useState(false);
+  const [originalStory, setOriginalStory] = useState('');
+  const [originalTitle, setOriginalTitle] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const phases = [
     "Allontanamento",
-    "Divieto",
+    "Divieto", 
     "Infrazione",
     "Investigazione",
     "Delazione",
@@ -118,6 +122,48 @@ const ProppEditor = () => {
     setShowEditScreen(true);
   };
 
+  const handleTranslate = async () => {
+    setIsTranslating(true);
+    
+    try {
+      if (!isTranslated) {
+        // Translate to English
+        setOriginalStory(finalStory);
+        setOriginalTitle(storyTitle);
+        
+        const translatedStory = await translateToEnglish(finalStory);
+        const translatedTitle = await translateToEnglish(storyTitle);
+        
+        setFinalStory(translatedStory);
+        setStoryTitle(translatedTitle);
+        setIsTranslated(true);
+        
+        toast({
+          title: "Traduzione completata",
+          description: "La storia è stata tradotta in inglese",
+        });
+      } else {
+        // Return to Italian
+        setFinalStory(originalStory);
+        setStoryTitle(originalTitle);
+        setIsTranslated(false);
+        
+        toast({
+          title: "Traduzione completata",
+          description: "La storia è stata riportata in italiano",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Errore traduzione",
+        description: "Non è stato possibile tradurre la storia",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const handleSave = () => {
     if (!storyTitle.trim()) {
       toast({
@@ -138,13 +184,14 @@ const ProppEditor = () => {
       authorId: profileId || 'anonymous',
       authorName: profileName || 'Utente Anonimo',
       isPublic: false,
-      answers: answers
+      answers: answers,
+      language: isTranslated ? 'english' : 'italian'
     };
 
     saveStory(story);
     toast({
       title: "Storia salvata!",
-      description: "La storia è stata salvata nell'archivio",
+      description: `La storia è stata salvata nell'archivio${isTranslated ? ' in inglese' : ''}`,
     });
     setTimeout(() => navigate('/create-story', { state: { profileId, profileName } }), 1500);
   };
@@ -206,6 +253,15 @@ const ProppEditor = () => {
                 <Button onClick={handleSave} className="px-6">
                   <Save className="w-4 h-4 mr-2" />
                   Salva
+                </Button>
+                <Button 
+                  onClick={handleTranslate} 
+                  variant="outline" 
+                  className="px-6" 
+                  disabled={isTranslating}
+                >
+                  <Globe className="w-4 h-4 mr-2" />
+                  {isTranslating ? 'Traduzione...' : (isTranslated ? 'ITALIANO' : 'INGLESE')}
                 </Button>
                 <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
                   Nuova Favola
