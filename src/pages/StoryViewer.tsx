@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Volume2, Edit, Save, Globe } from 'lucide-react';
-import { getStories, saveStory } from '@/utils/userStorage';
+import { getStories, saveStory, Story } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
@@ -14,7 +14,7 @@ const StoryViewer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [story, setStory] = useState<any>(null);
+  const [story, setStory] = useState<Story | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -32,7 +32,7 @@ const StoryViewer = () => {
       setStory(foundStory);
       setEditedContent(foundStory.content || '');
       // Check if story was saved in a specific language
-      if ((foundStory as any).language === 'english') {
+      if (foundStory.language === 'english') {
         setIsTranslated(true);
       }
     }
@@ -121,7 +121,7 @@ const StoryViewer = () => {
         ...story,
         content: editedContent,
         lastModified: new Date().toISOString(),
-        language: isTranslated ? 'english' : 'italian'
+        language: isTranslated ? ('english' as const) : ('italian' as const)
       };
       
       // If we have a translated title, update that too
