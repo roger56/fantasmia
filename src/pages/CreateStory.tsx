@@ -9,19 +9,22 @@ const CreateStory = () => {
   const creationModes = [{
     id: 'GHOST',
     title: 'GHOST',
-    subtitle: 'per creare favole FANTASMA goriche',
+    subtitle: 'Per creare favole FANTASMAgoriche!',
     icon: Ghost
   }, {
     id: 'PROPP',
     title: 'PROPP',
+    subtitle: 'L\'eroe affronta difficoltà e vince.',
     icon: Sparkles
   }, {
     id: 'ALOVAF',
     title: 'ALOVAF',
+    subtitle: 'La favola… al contrario!',
     icon: Wand2
   }, {
     id: 'PAROLE_CHIAMANO',
     title: 'Parole Chiamano',
+    subtitle: 'Una parola ne suggerisce altre per costruire il racconto.',
     icon: MessageCircle
   }];
   const handleModeSelect = (mode: string) => {
@@ -56,23 +59,23 @@ const CreateStory = () => {
             </CardContent>
           </Card>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {creationModes.map(mode => {
-            const IconComponent = mode.icon;
-            return <Card key={mode.id} className="cursor-pointer transition-all duration-200 border-2 hover:border-slate-300 hover:shadow-md" onClick={() => handleModeSelect(mode.id)}>
-                  <CardHeader>
-                    <div className="flex items-center justify-center mb-2">
-                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
-                        <IconComponent className="w-8 h-8 text-slate-600" />
-                      </div>
-                    </div>
-                    <CardTitle className="text-lg text-center">{mode.title}</CardTitle>
-                    {mode.subtitle && <p className="text-sm text-center text-slate-600 mt-1">
-                        {mode.subtitle}
-                      </p>}
-                  </CardHeader>
-                </Card>;
-          })}
+           <div className="grid md:grid-cols-2 gap-4">
+             {creationModes.map(mode => {
+             const IconComponent = mode.icon;
+             return <Card key={mode.id} className="cursor-pointer transition-all duration-200 border-2 hover:border-slate-300 hover:shadow-md h-32" onClick={() => handleModeSelect(mode.id)}>
+                   <CardHeader className="p-3">
+                     <div className="flex items-center justify-center mb-1">
+                       <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                         <IconComponent className="w-4 h-4 text-slate-600" />
+                       </div>
+                     </div>
+                     <CardTitle className="text-sm text-center">{mode.title}</CardTitle>
+                     {mode.subtitle && <p className="text-xs text-center text-slate-600 mt-1 leading-tight">
+                         {mode.subtitle}
+                       </p>}
+                   </CardHeader>
+                 </Card>;
+           })}
           </div>
         </div>
       </div>

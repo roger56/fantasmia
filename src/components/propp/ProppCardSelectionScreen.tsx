@@ -56,20 +56,20 @@ const ProppCardSelectionScreen: React.FC<ProppCardSelectionScreenProps> = ({
             <CardContent>
               <p className="text-slate-600 mb-4">Scegli una carta da questo cluster per continuare la tua favola:</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {currentCards.map((card) => (
-                  <Card 
-                    key={card.id} 
-                    className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-2 hover:border-blue-300"
-                    onClick={() => onCardSelect(card)}
-                  >
-                    <CardContent className="p-4 text-center">
-                      <div className="text-3xl mb-2">{card.icon}</div>
-                      <h3 className="font-semibold text-slate-800 mb-2">{card.title}</h3>
-                      <p className="text-sm text-slate-600">{card.description}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                 {currentCards.map((card) => (
+                   <Card 
+                     key={card.id} 
+                     className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-2 hover:border-blue-300 h-32"
+                     onClick={() => onCardSelect(card)}
+                   >
+                     <CardContent className="p-2 text-center h-full flex flex-col justify-between">
+                       <div className="text-lg mb-1">{card.icon}</div>
+                       <h3 className="text-xs font-semibold text-slate-800 mb-1 leading-tight">{card.title}</h3>
+                       <p className="text-xs text-slate-600 leading-tight">{card.description}</p>
+                     </CardContent>
+                   </Card>
+                 ))}
               </div>
             </CardContent>
           </Card>

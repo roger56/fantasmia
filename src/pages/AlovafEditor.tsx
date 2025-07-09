@@ -3,11 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ArrowRight, Home, Save, Volume2, Globe } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, Save, Volume2, Share, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
 import SpeechToText from '@/components/SpeechToText';
-import { translateToEnglish, translateToItalian } from '@/utils/translation';
 
 const AlovafEditor = () => {
   const navigate = useNavigate();
@@ -23,56 +22,44 @@ const AlovafEditor = () => {
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [showFinalScreen, setShowFinalScreen] = useState(false);
   const [storyTitle, setStoryTitle] = useState(editStory?.title || '');
-  const [finalStory, setFinalStory] = useState('');
-  const [isTranslated, setIsTranslated] = useState(false);
-  const [originalStory, setOriginalStory] = useState('');
-  const [originalTitle, setOriginalTitle] = useState('');
-  const [isTranslating, setIsTranslating] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const fairyTales = {
-    "Cappuccetto Rosso": [
-      "C'era una volta una bambina di nome Cappuccetto Rosso...",
-      "Un giorno, la sua mamma le chiese di portare una torta alla nonna...",
-      "Nel bosco incontrò il lupo...",
-      "Il lupo arrivò prima alla casa della nonna e la mangiò...",
-      "Poi si travestì da nonna e aspettò Cappuccetto Rosso...",
-      "Quando Cappuccetto Rosso arrivò, il lupo la mangiò...",
-      "Per fortuna, un cacciatore passò di lì e salvò nonna e nipote tagliando la pancia del lupo."
+    "POLLICINO": [
+      "In un tempo di miseria, un taglialegna e sua moglie decidono di abbandonare nel bosco i loro sette figli, tra cui il più piccolo e astuto: Pollicino.",
+      "Pollicino, sospettando l'abbandono, lascia una scia di briciole per ritrovare la strada. Ma gli uccelli le mangiano e i fratellini si perdono.",
+      "I bambini trovano rifugio in una casa che scoprono essere di un orco che mangia i bambini. La moglie dell'orco li nasconde, ma l'orco li scopre.",
+      "Pollicino inganna l'orco scambiando i berretti dei fratelli con le corone delle figlie dell'orco, che durante la notte uccide per errore le sue figlie.",
+      "Pollicino ruba all'orco i suoi stivali magici che permettono di fare passi enormi e fugge con i fratelli.",
+      "Pollicino usa gli stivali per fare fortuna, diventa messaggero del re e torna a casa ricco, salvando la famiglia dalla miseria."
     ],
-    "I Tre Porcellini": [
-      "C'erano una volta tre porcellini...",
-      "Decisero di costruirsi una casa...",
-      "Il primo porcellino costruì una casa di paglia...",
-      "Il secondo porcellino costruì una casa di legno...",
-      "Il terzo porcellino costruì una casa di mattoni...",
-      "Il lupo cattivo soffiò sulla casa di paglia e la distrusse...",
-      "Soffiò anche sulla casa di legno e la distrusse...",
-      "Ma non riuscì a distruggere la casa di mattoni...",
-      "Alla fine, i porcellini sconfissero il lupo cattivo."
+    "CAPPUCCETTO ROSSO": [
+      "Una bambina soprannominata Cappuccetto Rosso riceve dalla mamma il compito di portare una cesta di cibo alla nonna malata, attraversando il bosco.",
+      "Nel bosco incontra un lupo furbo che la distrae con domande e le suggerisce due strade: lei prende quella più lunga, mentre il lupo sceglie la più corta.",
+      "Il lupo arriva per primo a casa della nonna, la mangia e si traveste con i suoi vestiti per ingannare Cappuccetto Rosso.",
+      "Quando la bambina arriva, trova il lupo travestito e nota stranezze (\"Che occhi grandi hai…\"). Alla fine il lupo la divora.",
+      "Un cacciatore o un boscaiolo entra nella casa, uccide il lupo e salva Cappuccetto Rosso e la nonna, ancora vive nella pancia del lupo.",
+      "Cappuccetto Rosso promette di non disubbidire più alla mamma e di non parlare con gli sconosciuti."
     ],
-    "Biancaneve": [
-      "C'era una volta una principessa di nome Biancaneve...",
-      "La sua matrigna, la regina cattiva, era invidiosa della sua bellezza...",
-      "Ordinò a un cacciatore di portare Biancaneve nel bosco e ucciderla...",
-      "Ma il cacciatore ebbe pietà di lei e la lasciò scappare...",
-      "Biancaneve trovò una casetta abitata da sette nani...",
-      "La regina cattiva scoprì che Biancaneve era ancora viva...",
-      "Si travestì da vecchia e le offrì una mela avvelenata...",
-      "Biancaneve morse la mela e cadde in un sonno profondo...",
-      "Un principe passò di lì, si innamorò di lei e la svegliò con un bacio."
+    "CENERENTOLA": [
+      "Cenerentola vive con la matrigna e le sorellastre che la trattano come una serva, facendole fare tutti i lavori di casa.",
+      "Il re organizza un grande ballo per trovare una sposa al principe, ma Cenerentola non può andarci perché la matrigna le proibisce di partecipare.",
+      "Una fata madrina appare e, con la magia, trasforma una zucca in carrozza e dona a Cenerentola un vestito meraviglioso e scarpette di cristallo. Ma l'incantesimo finirà a mezzanotte.",
+      "Al ballo, il principe rimane incantato da Cenerentola. Ma allo scoccare della mezzanotte, lei scappa di corsa e perde una scarpetta.",
+      "Il principe cerca in tutto il regno la ragazza che può calzare la scarpetta. Le sorellastre provano, ma solo Cenerentola riesce a infilarla.",
+      "Cenerentola sposa il principe e va a vivere felice con lui, lasciando per sempre la casa della matrigna."
+    ],
+    "BIANCANEVE": [
+      "La regina cattiva, invidiosa della bellezza di Biancaneve, ordina al cacciatore di ucciderla. Lui la risparmia e la lascia fuggire nel bosco.",
+      "Biancaneve trova rifugio nella casa di sette nani e si prende cura della loro casa, vivendo serena.",
+      "La regina, scoperto che Biancaneve è viva, la inganna più volte con travestimenti: un corpetto stretto, un pettine avvelenato e infine una mela avvelenata.",
+      "Biancaneve morde la mela avvelenata e cade in un sonno profondo, creduta morta dai nani che la pongono in una bara di vetro.",
+      "Un principe, vedendola, se ne innamora e la bacia. Grazie a quel bacio, Biancaneve si risveglia.",
+      "Biancaneve e il principe si sposano. La regina viene punita e la storia si conclude con un matrimonio felice."
     ]
   };
-
-  const questions = [
-    "Cosa è successo alla fine?",
-    "Cosa dicevano i personaggi?",
-    "Cosa facevano i personaggi?",
-    "Dove si trovavano i personaggi?",
-    "Chi erano i personaggi?",
-    "Come inizia la storia?"
-  ];
 
   const handleStart = () => {
     setShowIntro(false);
@@ -106,12 +93,6 @@ const AlovafEditor = () => {
     if (currentPhase < 5) {
       setCurrentPhase(currentPhase + 1);
     } else {
-      // Genera la storia al contrario
-      let story = '';
-      for (let i = 0; i < 6; i++) {
-        story += `${answers[i]}\n`;
-      }
-      setFinalStory(story);
       setShowFinalScreen(true);
     }
   };
@@ -146,6 +127,7 @@ const AlovafEditor = () => {
         speechSynthesis.resume();
         setIsPaused(false);
       } else {
+        const finalStory = answers.join('\n\n');
         const utterance = new SpeechSynthesisUtterance(finalStory);
         utterance.lang = 'it-IT';
 
@@ -170,48 +152,6 @@ const AlovafEditor = () => {
     }
   };
 
-  const handleTranslate = async () => {
-    setIsTranslating(true);
-    
-    try {
-      if (!isTranslated) {
-        // Translate to English
-        setOriginalStory(finalStory);
-        setOriginalTitle(storyTitle);
-        
-        const translatedStory = await translateToEnglish(finalStory);
-        const translatedTitle = await translateToEnglish(storyTitle);
-        
-        setFinalStory(translatedStory);
-        setStoryTitle(translatedTitle);
-        setIsTranslated(true);
-        
-        toast({
-          title: "Traduzione completata",
-          description: "La storia è stata tradotta in inglese",
-        });
-      } else {
-        // Return to Italian
-        setFinalStory(originalStory);
-        setStoryTitle(originalTitle);
-        setIsTranslated(false);
-        
-        toast({
-          title: "Traduzione completata",
-          description: "La storia è stata riportata in italiano",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Errore traduzione",
-        description: "Non è stato possibile tradurre la storia",
-        variant: "destructive"
-      });
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
   const handleSave = () => {
     if (!storyTitle.trim()) {
       toast({
@@ -222,6 +162,7 @@ const AlovafEditor = () => {
       return;
     }
 
+    const finalStory = answers.join('\n\n');
     const story = {
       id: editStory ? editStory.id : Date.now().toString(),
       title: storyTitle,
@@ -234,15 +175,25 @@ const AlovafEditor = () => {
       isPublic: false,
       answers: answers,
       selectedFairyTale: selectedFairyTale,
-      language: (isTranslated ? 'english' : 'italian') as 'italian' | 'english'
+      language: 'italian' as 'italian' | 'english'
     };
 
     saveStory(story);
     toast({
       title: "Storia salvata!",
-      description: `La storia è stata salvata nell'archivio${isTranslated ? ' in inglese' : ''}`,
+      description: "La storia è stata salvata nell'archivio",
     });
     setTimeout(() => navigate('/create-story', { state: { profileId, profileName } }), 1500);
+  };
+
+  const handleShare = () => {
+    const finalStory = `${storyTitle}\n\n${answers.join('\n\n')}`;
+    navigator.clipboard.writeText(finalStory).then(() => {
+      toast({
+        title: "Copiato!",
+        description: "La storia è stata copiata negli appunti",
+      });
+    });
   };
 
   if (showIntro) {
@@ -258,13 +209,13 @@ const AlovafEditor = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Benvenuto nella modalità ALOVAF!</CardTitle>
+              <CardTitle>Modalità ALOVAF - Favola al Contrario</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p>
-                In questa modalità, creeremo una favola al contrario!
+              <p className="text-sm leading-relaxed">
+                Per inventare una favola al contrario si parte da una storia nota, ribaltando ruoli e azioni: i cattivi diventano protettori e gli eroi traditori, mentre ogni gesto (come "cade") diventa il suo opposto ("si solleva"). Si riscrive la trama originale applicando queste inversioni, aggiungendo dettagli ironici o surreali per sottolineare il contrasto e mantenendo uno stile coerente. Infine si definisce un finale capovolto e si sceglie un titolo che ne riveli l'essenza rovesciata.
               </p>
-              <Button onClick={handleStart}>Inizia</Button>
+              <Button onClick={handleStart}>Avanti</Button>
             </CardContent>
           </Card>
         </div>
@@ -285,14 +236,24 @@ const AlovafEditor = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Seleziona una favola</CardTitle>
+              <CardTitle>Scelta della Favola di Base</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {Object.keys(fairyTales).map((fairyTale) => (
-                <Button key={fairyTale} onClick={() => handleFairyTaleSelection(fairyTale)}>
-                  {fairyTale}
-                </Button>
-              ))}
+              <p className="text-sm text-slate-600 mb-4">
+                Seleziona una fiaba classica da trasformare "al contrario":
+              </p>
+              <div className="grid gap-3">
+                {Object.keys(fairyTales).map((fairyTale) => (
+                  <Button 
+                    key={fairyTale} 
+                    onClick={() => handleFairyTaleSelection(fairyTale)}
+                    variant="outline"
+                    className="text-left justify-start p-4 h-auto"
+                  >
+                    {fairyTale}
+                  </Button>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -301,6 +262,8 @@ const AlovafEditor = () => {
   }
 
   if (showFinalScreen) {
+    const finalStory = answers.join('\n\n');
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
         <div className="max-w-4xl mx-auto">
@@ -308,7 +271,7 @@ const AlovafEditor = () => {
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
               <Home className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-bold text-slate-800">Storia Completata - ALOVAF</h1>
+            <h1 className="text-xl font-bold text-slate-800">Conclusione - ALOVAF</h1>
             <div></div>
           </div>
 
@@ -319,12 +282,13 @@ const AlovafEditor = () => {
             <CardContent className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Titolo della Storia *
+                  Titolo della Favola al Contrario *
                 </label>
                 <Textarea
-                  placeholder="Inserisci il titolo della tua favola al contrario..."
+                  placeholder="Inserisci un titolo che riveli l'essenza rovesciata..."
                   value={storyTitle}
                   onChange={handleTitleChange}
+                  disabled={!isEditing}
                   className="text-lg resize-none overflow-hidden"
                   style={{ height: 'auto', minHeight: '2.5rem' }}
                   onInput={(e) => {
@@ -337,11 +301,11 @@ const AlovafEditor = () => {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  La tua storia
+                  La tua favola completa
                 </label>
                 <Textarea
                   value={finalStory}
-                  onChange={(e) => setFinalStory(e.target.value)}
+                  disabled={!isEditing}
                   className="text-base leading-relaxed resize-none overflow-hidden"
                   style={{ height: 'auto', minHeight: '12rem' }}
                   onInput={(e) => {
@@ -355,26 +319,26 @@ const AlovafEditor = () => {
               <div className="flex flex-wrap gap-3 justify-center">
                 <Button onClick={handleSave} className="px-6">
                   <Save className="w-4 h-4 mr-2" />
-                  Salva
+                  SALVA
                 </Button>
-                <Button 
-                  onClick={handleTranslate} 
-                  variant="outline" 
-                  className="px-6" 
-                  disabled={isTranslating}
-                >
-                  <Globe className="w-4 h-4 mr-2" />
-                  {isTranslating ? 'Traduzione...' : (isTranslated ? 'ITALIANO' : 'INGLESE')}
+                <Button onClick={handleShare} variant="outline" className="px-6">
+                  <Share className="w-4 h-4 mr-2" />
+                  CONDIVIDI
                 </Button>
                 <Button onClick={handleTextToSpeech} variant="outline" className="px-6">
                   <Volume2 className="w-4 h-4 mr-2" />
-                  {isSpeaking && !isPaused ? 'Pausa' : isPaused ? 'Riprendi' : 'Ascolta'}
+                  {isSpeaking && !isPaused ? 'Pausa' : isPaused ? 'Riprendi' : 'TTS'}
+                </Button>
+                <Button 
+                  onClick={() => setIsEditing(!isEditing)} 
+                  variant="outline" 
+                  className="px-6"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  {isEditing ? 'SALVA MODIFICHE' : 'MODIFICA'}
                 </Button>
                 <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
-                  Nuova Favola
-                </Button>
-                <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
-                  Indietro
+                  NUOVA FAVOLA
                 </Button>
               </div>
             </CardContent>
@@ -384,73 +348,97 @@ const AlovafEditor = () => {
     );
   }
 
+  if (!selectedFairyTale || !fairyTales[selectedFairyTale as keyof typeof fairyTales]) {
+    return null;
+  }
+
+  const selectedFairyTaleData = fairyTales[selectedFairyTale as keyof typeof fairyTales];
+  const originalPhrase = selectedFairyTaleData[currentPhase];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" onClick={handleExit}>
             <Home className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-slate-800">Modalità ALOVAF</h1>
+            <h1 className="text-xl font-bold text-slate-800">Modalità ALOVAF - {selectedFairyTale}</h1>
             <span className="text-lg font-semibold text-slate-600">{currentPhase + 1}/6</span>
           </div>
           <div></div>
         </div>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-xl text-blue-800">
-              {questions[currentPhase]}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {currentPhase > 0 && (
-              <div className="mb-4">
-                <h4 className="font-medium text-slate-700 mb-2">La tua storia fino a ora:</h4>
-                <div className="border rounded p-4 bg-slate-50 space-y-1">
-                  {answers.slice(0, currentPhase).map((answer, index) => (
+        {/* Mostra storia scritta finora */}
+        {answers.some(answer => answer.trim()) && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">La tua storia fino a ora:</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-slate-50 rounded p-4 space-y-3">
+                {answers.map((answer, index) => 
+                  answer.trim() && (
                     <div key={index} className="text-sm">
-                      <span className="font-medium text-slate-700">{questions[index]}</span>
+                      <span className="font-medium text-slate-700">Fase {index + 1}:</span>
                       <span className="text-slate-500 mx-2">–</span>
                       <span className="text-slate-800">{answer}</span>
                     </div>
-                  ))}
-                </div>
+                  )
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Scrivi la tua risposta</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Textarea
-                value={currentAnswer}
-                onChange={handleAnswerChange}
-                placeholder="Scrivi qui la tua risposta..."
-                className="text-base resize-none overflow-hidden"
-                style={{ height: 'auto', minHeight: '3rem' }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = target.scrollHeight + 'px';
-                }}
-              />
-              <SpeechToText
-                onResult={(text) => setCurrentAnswer(prev => prev + (prev ? ' ' : '') + text)}
-                className="shrink-0"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Layout a due colonne */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-6">
+          {/* Colonna sinistra: Frase originale */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg text-blue-800">Fase {currentPhase + 1} - Originale</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-blue-50 rounded p-4">
+                <p className="text-sm leading-relaxed text-blue-900 whitespace-pre-line">
+                  {originalPhrase}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
+          {/* Colonna destra: Riscrittura al contrario */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg text-red-800">Riscrittura "al contrario"</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Textarea
+                  value={currentAnswer}
+                  onChange={handleAnswerChange}
+                  placeholder="Riscrivi questa parte ribaltando ruoli, azioni e intenzioni... (massimo 10 righe)"
+                  className="text-base resize-none overflow-hidden min-h-[120px]"
+                  rows={5}
+                  maxLength={800}
+                />
+                <SpeechToText
+                  onResult={(text) => setCurrentAnswer(prev => prev + (prev ? ' ' : '') + text)}
+                  className="shrink-0"
+                />
+              </div>
+              <div className="text-xs text-slate-500">
+                {currentAnswer.length}/800 caratteri
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Navigazione */}
         <div className="flex gap-3 justify-center">
           <Button onClick={handleExit} variant="outline">
-            Exit
+            <Home className="w-4 h-4 mr-2" />
+            Home
           </Button>
           {currentPhase > 0 && (
             <Button onClick={handleBack} variant="outline">
@@ -460,7 +448,7 @@ const AlovafEditor = () => {
           )}
           <Button onClick={handleContinue} disabled={!currentAnswer.trim()}>
             <ArrowRight className="w-4 h-4 mr-2" />
-            Continua
+            {currentPhase < 5 ? 'Continua' : 'Finisci'}
           </Button>
         </div>
       </div>
