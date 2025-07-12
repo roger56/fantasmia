@@ -29,7 +29,7 @@ const ProppWarningScreen: React.FC<ProppWarningScreenProps> = ({ onExit, onStart
               Questa modalità richiede tempo e attenzione: la stesura sarà lunga e piena di colpi di scena.
             </p>
             <p className="text-base text-slate-600">
-              Alla fine otterrai una vera favola pronta per essere pubblicata!
+              Alla fine otterrai una vera storia pronta per essere pubblicata!
             </p>
             <div className="flex gap-4 justify-center mt-6">
               <Button onClick={onExit} variant="outline">
@@ -38,7 +38,7 @@ const ProppWarningScreen: React.FC<ProppWarningScreenProps> = ({ onExit, onStart
               </Button>
               <Button onClick={onStart} className="px-8">
                 <Shuffle className="w-4 h-4 mr-2" />
-                Inizia Favola Propp
+                Inizia Storia Propp
               </Button>
             </div>
           </CardContent>

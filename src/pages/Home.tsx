@@ -26,7 +26,7 @@ const Home = () => {
       id: 'archive-complete',
       title: 'Archivio Completo',
       icon: BookOpen,
-      description: 'Visualizza tutte le favole create dagli utenti',
+      description: 'Visualizza tutte le storie create dagli utenti',
       path: '/superuser-archive'
     }
   ];

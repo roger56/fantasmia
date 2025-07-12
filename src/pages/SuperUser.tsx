@@ -77,7 +77,7 @@ const SuperUser = () => {
     },
     {
       title: 'Archivio Completo',
-      description: 'Tutte le favole con categorie e autori',
+      description: 'Tutte le storie con categorie e autori',
       icon: BookOpen,
       action: () => navigate('/superuser-archive')
     },

@@ -121,7 +121,7 @@ const SuperuserArchive = () => {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-slate-800">Archivio Completo</h1>
-              <p className="text-slate-600">Tutte le favole degli utenti</p>
+              <p className="text-slate-600">Tutte le storie degli utenti</p>
             </div>
           </div>
         </div>
@@ -146,7 +146,7 @@ const SuperuserArchive = () => {
                   </SelectContent>
                 </Select>
                 <span className="text-sm text-slate-600">
-                  {filteredStories.length} favole trovate
+                  {filteredStories.length} storie trovate
                 </span>
               </div>
             </CardContent>
@@ -155,17 +155,17 @@ const SuperuserArchive = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Archivio Completo - {filteredStories.length} favole</CardTitle>
+            <CardTitle>Archivio Completo - {filteredStories.length} storie</CardTitle>
           </CardHeader>
           <CardContent>
             {filteredStories.length === 0 ? (
               <div className="text-center py-12">
                 <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                  Nessuna favola trovata
+                  Nessuna storia trovata
                 </h3>
                 <p className="text-slate-600">
-                  Non ci sono favole per la categoria selezionata
+                  Non ci sono storie per la categoria selezionata
                 </p>
               </div>
             ) : (

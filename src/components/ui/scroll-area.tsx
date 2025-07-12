@@ -66,7 +66,7 @@ export const StoryScrollViewer: React.FC<StoryListProps> = ({
       <div className="p-4">
         {stories.length === 0 ? (
           <div className="text-center text-slate-500 py-8">
-            Nessuna favola trovata
+            Nessuna storia trovata
           </div>
         ) : (
           <div className="space-y-2">

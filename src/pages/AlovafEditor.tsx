@@ -209,11 +209,11 @@ const AlovafEditor = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Modalità ALOVAF - Favola al Contrario</CardTitle>
+              <CardTitle>Modalità ALOVAF - Storia al Contrario</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm leading-relaxed">
-                Per inventare una favola al contrario si parte da una storia nota, ribaltando ruoli e azioni: i cattivi diventano protettori e gli eroi traditori, mentre ogni gesto (come "cade") diventa il suo opposto ("si solleva"). Si riscrive la trama originale applicando queste inversioni, aggiungendo dettagli ironici o surreali per sottolineare il contrasto e mantenendo uno stile coerente. Infine si definisce un finale capovolto e si sceglie un titolo che ne riveli l'essenza rovesciata.
+                Per inventare una storia al contrario si parte da una storia nota, ribaltando ruoli e azioni: i cattivi diventano protettori e gli eroi traditori, mentre ogni gesto (come "cade") diventa il suo opposto ("si solleva"). Si riscrive la trama originale applicando queste inversioni, aggiungendo dettagli ironici o surreali per sottolineare il contrasto e mantenendo uno stile coerente. Infine si definisce un finale capovolto e si sceglie un titolo che ne riveli l'essenza rovesciata.
               </p>
               <Button onClick={handleStart}>Avanti</Button>
             </CardContent>
@@ -236,7 +236,7 @@ const AlovafEditor = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Scelta della Favola di Base</CardTitle>
+              <CardTitle>Scelta della Storia di Base</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-slate-600 mb-4">
@@ -277,12 +277,12 @@ const AlovafEditor = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>La tua favola al contrario è pronta!</CardTitle>
+              <CardTitle>La tua storia al contrario è pronta!</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Titolo della Favola al Contrario *
+                  Titolo della Storia al Contrario *
                 </label>
                 <Textarea
                   placeholder="Inserisci un titolo che riveli l'essenza rovesciata..."
@@ -301,7 +301,7 @@ const AlovafEditor = () => {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  La tua favola completa
+                  La tua storia completa
                 </label>
                 <Textarea
                   value={finalStory}
@@ -338,7 +338,7 @@ const AlovafEditor = () => {
                   {isEditing ? 'SALVA MODIFICHE' : 'MODIFICA'}
                 </Button>
                 <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
-                  NUOVA FAVOLA
+                  NUOVA STORIA
                 </Button>
               </div>
             </CardContent>

@@ -43,22 +43,22 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
           <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
             <Home className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-bold text-slate-800">La Tua Favola Propp</h1>
+          <h1 className="text-xl font-bold text-slate-800">La Tua Storia Propp</h1>
           <div></div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>🎉 La tua favola è pronta!</CardTitle>
+            <CardTitle>🎉 La tua storia è pronta!</CardTitle>
             <p className="text-slate-600">Inserisci un titolo e salva la tua creazione</p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Titolo della Favola *
+                Titolo della Storia *
               </label>
               <Textarea
-                placeholder="Inserisci il titolo della tua favola..."
+                placeholder="Inserisci il titolo della tua storia..."
                 value={storyTitle}
                 onChange={(e) => onTitleChange(e.target.value)}
                 className="text-lg resize-none overflow-hidden"
@@ -73,7 +73,7 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                La tua favola completa
+                La tua storia completa
               </label>
               <Textarea
                 value={finalStory}
@@ -116,7 +116,7 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
                 variant="outline" 
                 className="px-6"
               >
-                Nuova Favola
+                Nuova Storia
               </Button>
               <Button 
                 onClick={() => navigate('/archive', { state: { profileId, profileName } })} 

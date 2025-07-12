@@ -83,7 +83,7 @@ const Archive = () => {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-slate-800">
-                {isPublic ? 'Favole Pubbliche' : 'Archivio Favole'}
+                {isPublic ? 'Storie Pubbliche' : 'Archivio Storie'}
               </h1>
               {profileName && (
                 <p className="text-slate-600">Profilo: {profileName}</p>
@@ -98,7 +98,7 @@ const Archive = () => {
               className="flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Nuova Favola
+              Nuova Storia
             </Button>
           )}
         </div>
@@ -107,7 +107,7 @@ const Archive = () => {
         <Card>
           <CardHeader>
             <CardTitle>
-              {isPublic ? 'Favole Pubbliche' : 'Le Tue Favole'}
+              {isPublic ? 'Storie Pubbliche' : 'Le Tue Storie'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -115,14 +115,14 @@ const Archive = () => {
               <div className="text-center py-12">
                 <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                  {isPublic ? 'Nessuna favola pubblica trovata' : 'Nessuna favola trovata'}
+                  {isPublic ? 'Nessuna storia pubblica trovata' : 'Nessuna storia trovata'}
                 </h3>
                 <p className="text-slate-600 mb-4">
-                  {isPublic ? 'Non ci sono ancora favole pubbliche' : 'Inizia a creare la tua prima favola!'}
+                  {isPublic ? 'Non ci sono ancora storie pubbliche' : 'Inizia a creare la tua prima storia!'}
                 </p>
                 {!isPublic && (
                   <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
-                    Crea Nuova Favola
+                    Crea Nuova Storia
                   </Button>
                 )}
               </div>

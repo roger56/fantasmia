@@ -134,7 +134,7 @@ const StoryViewer = () => {
       setIsEditing(false);
       
       toast({
-        title: "Favola aggiornata",
+        title: "Storia aggiornata",
         description: `Le modifiche sono state salvate con successo${isTranslated ? ' in inglese' : ''}`
       });
     }
@@ -144,7 +144,7 @@ const StoryViewer = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
         <div className="max-w-4xl mx-auto">
-          <p className="text-center text-slate-600">Favola non trovata</p>
+          <p className="text-center text-slate-600">Storia non trovata</p>
         </div>
       </div>
     );

@@ -291,7 +291,7 @@ const ParoleChiamanoEditor = () => {
     if (!storyTitle.trim()) {
       toast({
         title: "Titolo richiesto",
-        description: "Inserisci un titolo per la favola",
+        description: "Inserisci un titolo per la storia",
         variant: "destructive"
       });
       return;
@@ -321,8 +321,8 @@ const ParoleChiamanoEditor = () => {
     saveStory(story);
     
     toast({
-      title: "Favola salvata!",
-      description: "La tua favola è stata salvata nell'archivio",
+      title: "Storia salvata!",
+      description: "La tua storia è stata salvata nell'archivio",
     });
 
     navigate('/archive', { state: { profileId, profileName } });
@@ -559,7 +559,7 @@ const ParoleChiamanoEditor = () => {
             <Button variant="ghost" onClick={() => navigate('/')}>
               <Home className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-slate-800 ml-4">La tua Favola - {profileName}</h1>
+            <h1 className="text-2xl font-bold text-slate-800 ml-4">La tua Storia - {profileName}</h1>
           </div>
 
           {missingWords.length > 0 && (
@@ -597,7 +597,7 @@ const ParoleChiamanoEditor = () => {
                 <Input
                   value={storyTitle}
                   onChange={(e) => setStoryTitle(e.target.value)}
-                  placeholder="Titolo della favola..."
+                  placeholder="Titolo della storia..."
                   className="flex-1"
                 />
                 <Button onClick={handleSaveStory} disabled={!storyTitle.trim() || missingWords.length > 0}>
@@ -641,7 +641,7 @@ const ParoleChiamanoEditor = () => {
               variant="outline"
               className="flex-1"
             >
-              Nuova Favola
+              Nuova Storia
             </Button>
           </div>
         </div>

@@ -239,7 +239,7 @@ const GhostEditor = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>La tua favola è pronta!</CardTitle>
+              <CardTitle>La tua storia è pronta!</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
@@ -247,7 +247,7 @@ const GhostEditor = () => {
                   Titolo della Storia *
                 </label>
                 <Textarea
-                  placeholder="Inserisci il titolo della tua favola..."
+                  placeholder="Inserisci il titolo della tua storia..."
                   value={storyTitle}
                   onChange={(e) => setStoryTitle(e.target.value)}
                   className="text-lg resize-none overflow-hidden"
@@ -297,7 +297,7 @@ const GhostEditor = () => {
                   {isSpeaking && !isPaused ? 'Pausa' : isPaused ? 'Riprendi' : 'Ascolta'}
                 </Button>
                 <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
-                  Nuova Favola
+                  Nuova Storia
                 </Button>
                 <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
                   Indietro

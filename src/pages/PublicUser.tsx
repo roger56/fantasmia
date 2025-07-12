@@ -11,14 +11,14 @@ const PublicUser = () => {
 
   const publicOptions = [
     {
-      title: 'Leggi Favole Pubbliche',
-      description: 'Scopri le favole condivise dalla community',
+      title: 'Leggi Storie Pubbliche',
+      description: 'Scopri le storie condivise dalla community',
       icon: BookOpen,
       action: () => navigate('/archive', { state: { profileId: 'public', profileName: 'Utente Pubblico', isPublic: true } })
     },
     {
-      title: 'Crea Favola',
-      description: 'Crea una nuova favola (sarà visibile a tutti)',
+      title: 'Crea Storia',
+      description: 'Crea una nuova storia (sarà visibile a tutti)',
       icon: Plus,
       action: () => navigate('/create-story', { state: { isPublic: true } })
     }
@@ -47,7 +47,7 @@ const PublicUser = () => {
                 Benvenuto in Fantasmia
               </h2>
               <p className="text-slate-600">
-                Crea e leggi favole liberamente. Le tue creazioni saranno visibili a tutti
+                Crea e leggi storie liberamente. Le tue creazioni saranno visibili a tutti
               </p>
             </CardContent>
           </Card>

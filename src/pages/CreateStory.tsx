@@ -9,7 +9,7 @@ const CreateStory = () => {
   const creationModes = [{
     id: 'GHOST',
     title: 'GHOST',
-    subtitle: 'Per creare favole FANTASMAgoriche!',
+    subtitle: 'Per creare storie FANTASMAgoriche!',
     icon: Ghost
   }, {
     id: 'PROPP',
@@ -19,7 +19,7 @@ const CreateStory = () => {
   }, {
     id: 'ALOVAF',
     title: 'ALOVAF',
-    subtitle: 'La favola… al contrario!',
+    subtitle: 'La storia… al contrario!',
     icon: Wand2
   }, {
     id: 'PAROLE_CHIAMANO',
@@ -46,7 +46,7 @@ const CreateStory = () => {
           <Button variant="ghost" onClick={() => navigate('/archive')} className="mr-4">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-2xl font-bold text-slate-800">Crea Nuova Favola</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Crea Nuova Storia</h1>
         </div>
 
         {/* Mode Selection */}
@@ -54,7 +54,7 @@ const CreateStory = () => {
           <Card>
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-2 text-red-600 text-center">
-                SCEGLI LA CATEGORIA CHE VUOI USARE PER LA TUA FAVOLA
+                SCEGLI LA CATEGORIA CHE VUOI USARE PER LA TUA STORIA
               </h2>
             </CardContent>
           </Card>
