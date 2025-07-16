@@ -114,7 +114,7 @@ const SuperuserArchive = () => {
           <div className="flex items-center">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/superuser')}
+              onClick={() => navigate('/home')}
               className="mr-4"
             >
               <ArrowLeft className="w-5 h-5" />
