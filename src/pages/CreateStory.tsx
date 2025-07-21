@@ -29,7 +29,7 @@ const CreateStory = () => {
   }];
   const handleModeSelect = (mode: string) => {
     if (mode === 'PROPP') {
-      navigate('/propp-editor');
+      navigate('/propp-mode-selector');
     } else if (mode === 'GHOST') {
       navigate('/ghost-editor');
     } else if (mode === 'PAROLE_CHIAMANO') {

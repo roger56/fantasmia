@@ -6,13 +6,14 @@ import { GamePhase, ProppCard, StoryPhase } from '@/types/propp';
 import ProppWarningScreen from '@/components/propp/ProppWarningScreen';
 import ProppCardSelectionScreen from '@/components/propp/ProppCardSelectionScreen';
 import ProppWritingScreen from '@/components/propp/ProppWritingScreen';
+import ProppFreeWritingScreen from '@/components/propp/ProppFreeWritingScreen';
 import ProppFinalScreen from '@/components/propp/ProppFinalScreen';
 
 const ProppEditor = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { profileId, profileName, editStory } = location.state || {};
+  const { profileId, profileName, editStory, mode = 'serial' } = location.state || {};
 
   // Game state
   const [gamePhase, setGamePhase] = useState<GamePhase>('warning');
@@ -22,6 +23,10 @@ const ProppEditor = () => {
   const [currentParagraph, setCurrentParagraph] = useState('');
   const [storyTitle, setStoryTitle] = useState('');
   const [finalStory, setFinalStory] = useState('');
+  
+  // Free mode state
+  const [usedCards, setUsedCards] = useState<number[]>([]);
+  const [freeStoryText, setFreeStoryText] = useState('');
 
   const handleCardSelect = (card: ProppCard) => {
     setSelectedCard(card);
@@ -76,12 +81,16 @@ const ProppEditor = () => {
   };
 
   const handleExit = () => {
-    if (storyPhases.length > 0 || currentParagraph.trim()) {
+    const hasContent = mode === 'free' 
+      ? (freeStoryText.trim() || currentParagraph.trim())
+      : (storyPhases.length > 0 || currentParagraph.trim());
+      
+    if (hasContent) {
       if (confirm("Sei sicuro di voler uscire? Tutte le modifiche andranno perse.")) {
-        navigate('/create-story', { state: { profileId, profileName } });
+        navigate('/propp-mode-selector', { state: { profileId, profileName } });
       }
     } else {
-      navigate('/create-story', { state: { profileId, profileName } });
+      navigate('/propp-mode-selector', { state: { profileId, profileName } });
     }
   };
 
@@ -94,7 +103,30 @@ const ProppEditor = () => {
   };
 
   const handleStartGame = () => {
-    setGamePhase('card-selection');
+    if (mode === 'free') {
+      setGamePhase('free-writing');
+    } else {
+      setGamePhase('card-selection');
+    }
+  };
+
+  // Free mode handlers
+  const handleFreeCardSelect = (card: ProppCard) => {
+    setSelectedCard(card);
+    setUsedCards([...usedCards, card.id]);
+  };
+
+  const handleFinishStory = () => {
+    setFinalStory(freeStoryText);
+    setGamePhase('final');
+  };
+
+  const handleFreeSave = () => {
+    // TODO: Implement free mode save functionality
+    toast({
+      title: "Funzione non ancora disponibile",
+      description: "Il salvataggio per la modalità carte libere sarà disponibile presto",
+    });
   };
 
   const handleSave = () => {
@@ -113,7 +145,7 @@ const ProppEditor = () => {
       content: finalStory,
       status: 'completed' as const,
       lastModified: new Date().toISOString(),
-      mode: 'PROPP' as const,
+      mode: mode === 'free' ? 'PROPP_FREE' as const : 'PROPP' as const,
       authorId: profileId || 'anonymous',
       authorName: profileName || 'Utente Anonimo',
       isPublic: false,
@@ -126,7 +158,7 @@ const ProppEditor = () => {
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",
     });
-    setTimeout(() => navigate('/create-story', { state: { profileId, profileName } }), 1500);
+    setTimeout(() => navigate('/propp-mode-selector', { state: { profileId, profileName } }), 1500);
   };
 
   // Render appropriate screen based on game phase
@@ -165,6 +197,23 @@ const ProppEditor = () => {
           onSuspend={handleSuspend}
           canGoBack={storyPhases.length > 0}
           isLastCluster={currentCluster === 9}
+        />
+      );
+
+    case 'free-writing':
+      return (
+        <ProppFreeWritingScreen
+          selectedCard={selectedCard}
+          usedCards={usedCards}
+          storyText={freeStoryText}
+          currentParagraph={currentParagraph}
+          onStoryTextChange={setFreeStoryText}
+          onCurrentParagraphChange={setCurrentParagraph}
+          onCardSelect={handleFreeCardSelect}
+          onFinishStory={handleFinishStory}
+          onSuspend={handleSuspend}
+          onSave={handleFreeSave}
+          onExit={handleExit}
         />
       );
 

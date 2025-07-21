@@ -21,7 +21,7 @@ export interface Story {
   content?: string;
   status: 'completed' | 'suspended' | 'in-progress';
   lastModified: string;
-  mode: 'GHOST' | 'PROPP' | 'ALOVAF' | 'PAROLE_CHIAMANO';
+  mode: 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'ALOVAF' | 'PAROLE_CHIAMANO';
   authorId: string;
   authorName: string;
   isPublic: boolean;

@@ -13,6 +13,7 @@ import PublicUser from "./pages/PublicUser";
 import Archive from "./pages/Archive";
 import CreateStory from "./pages/CreateStory";
 import ProppEditor from "./pages/ProppEditor";
+import ProppModeSelector from "./pages/ProppModeSelector";
 import GhostEditor from "./pages/GhostEditor";
 import StoryViewer from "./pages/StoryViewer";
 import SuperuserArchive from "./pages/SuperuserArchive";
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/public" element={<PublicUser />} />
           <Route path="/archive" element={<Archive />} />
           <Route path="/create-story" element={<CreateStory />} />
+          <Route path="/propp-mode-selector" element={<ProppModeSelector />} />
           <Route path="/propp-editor" element={<ProppEditor />} />
           <Route path="/ghost-editor" element={<GhostEditor />} />
           <Route path="/story/:storyId" element={<StoryViewer />} />
