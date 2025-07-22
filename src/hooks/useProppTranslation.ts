@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { translateToEnglish } from '@/utils/translation';
+import { translateToEnglish, translateToItalian } from '@/utils/translation';
 
 export const useProppTranslation = () => {
   const [isTranslated, setIsTranslated] = useState(false);
@@ -35,9 +35,12 @@ export const useProppTranslation = () => {
           description: "La storia è stata tradotta in inglese",
         });
       } else {
-        // Return to Italian
-        setFinalStory(originalStory);
-        setStoryTitle(originalTitle);
+        // Translate back to Italian
+        const retranslatedStory = await translateToItalian(finalStory);
+        const retranslatedTitle = await translateToItalian(storyTitle);
+        
+        setFinalStory(retranslatedStory);
+        setStoryTitle(retranslatedTitle);
         setIsTranslated(false);
         
         toast({

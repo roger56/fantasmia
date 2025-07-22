@@ -12,6 +12,7 @@ interface ProppCardSelectionScreenProps {
   onExit: () => void;
   onSuspend: () => void;
   onBack: () => void;
+  onSkip: () => void;
   canGoBack: boolean;
 }
 
@@ -21,6 +22,7 @@ const ProppCardSelectionScreen: React.FC<ProppCardSelectionScreenProps> = ({
   onExit,
   onSuspend,
   onBack,
+  onSkip,
   canGoBack
 }) => {
   const currentCards = proppClusters[currentCluster] || [];
@@ -75,14 +77,19 @@ const ProppCardSelectionScreen: React.FC<ProppCardSelectionScreenProps> = ({
           </Card>
         </div>
 
-        {canGoBack && (
-          <div className="flex justify-center">
+        <div className="flex justify-center gap-3">
+          {canGoBack && (
             <Button onClick={onBack} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Torna alla Carta Precedente
             </Button>
-          </div>
-        )}
+          )}
+          {currentCluster < 9 && (
+            <Button onClick={onSkip} variant="outline">
+              Salta
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

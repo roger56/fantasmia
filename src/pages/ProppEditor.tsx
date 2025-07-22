@@ -95,11 +95,31 @@ const ProppEditor = () => {
   };
 
   const handleSuspend = () => {
-    // TODO: Implement story suspension
+    const story = {
+      id: editStory ? editStory.id : Date.now().toString(),
+      title: storyTitle || `Storia sospesa - ${new Date().toLocaleDateString()}`,
+      content: finalStory,
+      status: 'suspended' as const,
+      lastModified: new Date().toISOString(),
+      mode: mode === 'free' ? 'PROPP_FREE' as const : 'PROPP' as const,
+      authorId: profileId || 'anonymous',
+      authorName: profileName || 'Utente Anonimo',
+      isPublic: false,
+      answers: storyPhases.map(phase => phase.content),
+      language: 'italian' as const,
+      currentCluster: currentCluster,
+      currentParagraph: currentParagraph,
+      selectedCard: selectedCard,
+      usedCards: mode === 'free' ? usedCards : undefined,
+      freeStoryText: mode === 'free' ? freeStoryText : undefined
+    };
+
+    saveStory(story);
     toast({
-      title: "Funzione non ancora disponibile",
-      description: "La sospensione delle storie sarà disponibile presto",
+      title: "Storia sospesa!",
+      description: "La storia è stata salvata e può essere ripresa dall'archivio",
     });
+    setTimeout(() => navigate('/propp-mode-selector', { state: { profileId, profileName } }), 1500);
   };
 
   const handleStartGame = () => {
@@ -127,6 +147,15 @@ const ProppEditor = () => {
   const handleFinishStory = () => {
     setFinalStory(freeStoryText);
     setGamePhase('final');
+  };
+
+  const handleSkip = () => {
+    if (currentCluster < 9) {
+      setCurrentCluster(currentCluster + 1);
+      setSelectedCard(null);
+    } else {
+      setGamePhase('final');
+    }
   };
 
   const handleFreeSave = () => {
@@ -187,6 +216,7 @@ const ProppEditor = () => {
           onExit={handleExit}
           onSuspend={handleSuspend}
           onBack={handleBack}
+          onSkip={handleSkip}
           canGoBack={storyPhases.length > 0}
         />
       );
