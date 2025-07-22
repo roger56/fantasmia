@@ -86,7 +86,7 @@ const SuperuserArchive = () => {
     { value: 'all', label: 'Tutte le categorie' },
     { value: 'GHOST', label: 'GHOST' },
     { value: 'PROPP', label: 'PROPP' },
-    { value: 'ALOVAF', label: 'ALOVAF' },
+    { value: 'AIROTS', label: 'AIROTS' },
     { value: 'PAROLE_CHIAMANO', label: 'Una Parola, Tante Storie' }
   ];
 

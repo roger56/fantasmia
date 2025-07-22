@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
 import SpeechToText from '@/components/SpeechToText';
 
-const AlovafEditor = () => {
+const AirotsEditor = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -169,7 +169,7 @@ const AlovafEditor = () => {
       content: finalStory,
       status: 'completed' as const,
       lastModified: new Date().toISOString(),
-      mode: 'ALOVAF' as const,
+      mode: 'AIROTS' as const,
       authorId: profileId || 'anonymous',
       authorName: profileName || 'Utente Anonimo',
       isPublic: false,
@@ -209,7 +209,7 @@ const AlovafEditor = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Modalità ALOVAF - Storia al Contrario</CardTitle>
+              <CardTitle>Modalità AIROTS - Storia al Contrario</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm leading-relaxed">
@@ -240,7 +240,7 @@ const AlovafEditor = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-slate-600 mb-4">
-                Seleziona una fiaba classica da trasformare "al contrario":
+                Seleziona una storia classica da trasformare "al contrario":
               </p>
               <div className="grid gap-3">
                 {Object.keys(fairyTales).map((fairyTale) => (
@@ -271,7 +271,7 @@ const AlovafEditor = () => {
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
               <Home className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-bold text-slate-800">Conclusione - ALOVAF</h1>
+            <h1 className="text-xl font-bold text-slate-800">Conclusione - AIROTS</h1>
             <div></div>
           </div>
 
@@ -363,7 +363,7 @@ const AlovafEditor = () => {
             <Home className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-slate-800">Modalità ALOVAF - {selectedFairyTale}</h1>
+            <h1 className="text-xl font-bold text-slate-800">Modalità AIROTS - {selectedFairyTale}</h1>
             <span className="text-lg font-semibold text-slate-600">{currentPhase + 1}/6</span>
           </div>
           <div></div>
@@ -456,4 +456,4 @@ const AlovafEditor = () => {
   );
 };
 
-export default AlovafEditor;
+export default AirotsEditor;

@@ -104,7 +104,7 @@ const Welcome = () => {
                     Puoi scrivere o parlare, leggere la tua storia ad alta voce o ascoltarla con la voce magica dell'app. E se vuoi, puoi anche salvare le tue storie e rileggerle ogni volta che vuoi!
                   </p>
                   <p>
-                    Scegli la tua modalità preferita: <strong>GHOST</strong>, <strong>PROPP</strong>, <strong>ALOVAF</strong> o <strong>UNA PAROLA, TANTE STORIE</strong>… e inizia subito l'avventura!
+                    Scegli la tua modalità preferita: <strong>GHOST</strong>, <strong>PROPP</strong>, <strong>AIROTS</strong> o <strong>UNA PAROLA, TANTE STORIE</strong>… e inizia subito l'avventura!
                   </p>
                   <p className="text-xl font-semibold text-sky-600">
                     Pronto? scegli un profilo e Premi 'Nuova Storia'… che la magia abbia inizio!

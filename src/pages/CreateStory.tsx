@@ -17,8 +17,8 @@ const CreateStory = () => {
     subtitle: 'L\'eroe affronta difficoltà e vince.',
     icon: Sparkles
   }, {
-    id: 'ALOVAF',
-    title: 'ALOVAF',
+    id: 'AIROTS',
+    title: 'AIROTS',
     subtitle: 'La storia… al contrario!',
     icon: Wand2
   }, {
@@ -34,8 +34,8 @@ const CreateStory = () => {
       navigate('/ghost-editor');
     } else if (mode === 'PAROLE_CHIAMANO') {
       navigate('/parole-chiamano');
-    } else if (mode === 'ALOVAF') {
-      navigate('/alovaf-editor');
+    } else if (mode === 'AIROTS') {
+      navigate('/airots-editor');
     }
   };
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">

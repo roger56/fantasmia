@@ -166,28 +166,29 @@ const StoryViewer = () => {
             Indietro
           </Button>
           
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button 
               onClick={handleTranslate} 
               variant="outline" 
               disabled={isTranslating}
+              className="w-full sm:w-auto"
             >
               <Globe className="w-4 h-4 mr-2" />
               {isTranslating ? 'Traduzione...' : (isTranslated ? 'ITALIANO' : 'INGLESE')}
             </Button>
             
-            <Button onClick={handleTextToSpeech} variant="outline">
+            <Button onClick={handleTextToSpeech} variant="outline" className="w-full sm:w-auto">
               <Volume2 className="w-4 h-4 mr-2" />
               ASCOLTA
             </Button>
             
             {!isEditing ? (
-              <Button onClick={() => setIsEditing(true)} variant="outline">
+              <Button onClick={() => setIsEditing(true)} variant="outline" className="w-full sm:w-auto">
                 <Edit className="w-4 h-4 mr-2" />
-                Modifica
+                MODIFICA
               </Button>
             ) : (
-              <Button onClick={handleSaveEdit}>
+              <Button onClick={handleSaveEdit} className="w-full sm:w-auto">
                 <Save className="w-4 h-4 mr-2" />
                 Salva
               </Button>

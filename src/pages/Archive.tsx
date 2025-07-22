@@ -16,12 +16,14 @@ const Archive = () => {
 
   useEffect(() => {
     if (isPublic) {
-      // Show all public stories
+      // Show all public stories, sorted by lastModified descending
       const allStories = getStories();
-      setStories(allStories.filter(s => s.isPublic));
+      const publicStories = allStories.filter(s => s.isPublic);
+      setStories(publicStories.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()));
     } else if (profileId) {
-      // Show user's personal archive
-      setStories(getStoriesForUser(profileId));
+      // Show user's personal archive, sorted by lastModified descending
+      const userStories = getStoriesForUser(profileId);
+      setStories(userStories.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()));
     }
   }, [profileId, isPublic]);
 

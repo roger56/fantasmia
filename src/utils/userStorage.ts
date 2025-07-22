@@ -21,7 +21,7 @@ export interface Story {
   content?: string;
   status: 'completed' | 'suspended' | 'in-progress';
   lastModified: string;
-  mode: 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'ALOVAF' | 'PAROLE_CHIAMANO';
+  mode: 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO';
   authorId: string;
   authorName: string;
   isPublic: boolean;
@@ -45,7 +45,7 @@ export const saveUser = (user: User) => {
 
 // Create the base directory structure for a new user
 const createUserDirectoryStructure = (userId: string) => {
-  const categories = ['GHOST', 'PROPP', 'ALOVAF', 'UNA_PAROLA_TANTE_STORIE'];
+  const categories = ['GHOST', 'PROPP', 'AIROTS', 'UNA_PAROLA_TANTE_STORIE'];
   const baseStructureKey = 'fantasmia_directory_structure';
   
   // Get existing structure or create new one
@@ -157,7 +157,7 @@ export const saveStory = (story: Story) => {
 
 // Ensure user directory structure exists
 const ensureUserDirectoryStructure = (userId: string) => {
-  const categories = ['GHOST', 'PROPP', 'ALOVAF', 'UNA_PAROLA_TANTE_STORIE'];
+  const categories = ['GHOST', 'PROPP', 'AIROTS', 'UNA_PAROLA_TANTE_STORIE'];
   const baseStructureKey = 'fantasmia_directory_structure';
   
   const existingStructure = JSON.parse(localStorage.getItem(baseStructureKey) || '{}');
