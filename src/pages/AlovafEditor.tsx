@@ -127,7 +127,7 @@ const AlovafEditor = () => {
         speechSynthesis.resume();
         setIsPaused(false);
       } else {
-        const finalStory = answers.join('\n\n');
+    const finalStory = answers.join('\n');
         const utterance = new SpeechSynthesisUtterance(finalStory);
         utterance.lang = 'it-IT';
 
@@ -162,7 +162,7 @@ const AlovafEditor = () => {
       return;
     }
 
-    const finalStory = answers.join('\n\n');
+    const finalStory = answers.join('\n');
     const story = {
       id: editStory ? editStory.id : Date.now().toString(),
       title: storyTitle,
@@ -187,7 +187,7 @@ const AlovafEditor = () => {
   };
 
   const handleShare = () => {
-    const finalStory = `${storyTitle}\n\n${answers.join('\n\n')}`;
+    const finalStory = `${storyTitle}\n\n${answers.join('\n')}`;
     navigator.clipboard.writeText(finalStory).then(() => {
       toast({
         title: "Copiato!",
@@ -262,7 +262,7 @@ const AlovafEditor = () => {
   }
 
   if (showFinalScreen) {
-    const finalStory = answers.join('\n\n');
+    const finalStory = answers.join('\n');
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">

@@ -62,7 +62,7 @@ export const StoryScrollViewer: React.FC<StoryListProps> = ({
   showAuthor = false 
 }) => {
   return (
-    <ScrollArea className="h-64 w-full border rounded-md">
+    <ScrollArea className="h-80 w-full border rounded-md">
       <div className="p-4">
         {stories.length === 0 ? (
           <div className="text-center text-slate-500 py-8">

@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ArrowLeft, Home, Pause } from 'lucide-react';
 import { ProppCard } from '@/types/propp';
 import { proppClusters, clusterNames, narrativePhases, getCurrentNarrativePhase } from '@/data/proppCards';
@@ -58,21 +59,31 @@ const ProppCardSelectionScreen: React.FC<ProppCardSelectionScreenProps> = ({
             <CardContent>
               <p className="text-slate-600 mb-4">Scegli una carta da questo cluster per continuare la tua storia:</p>
               
-               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-                 {currentCards.map((card) => (
-                   <Card 
-                     key={card.id} 
-                     className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-2 hover:border-blue-300 h-32"
-                     onClick={() => onCardSelect(card)}
-                   >
-                     <CardContent className="p-2 text-center h-full flex flex-col justify-between">
-                       <div className="text-lg mb-1">{card.icon}</div>
-                       <h3 className="text-xs font-semibold text-slate-800 mb-1 leading-tight">{card.title}</h3>
-                       <p className="text-xs text-slate-600 leading-tight">{card.description}</p>
-                     </CardContent>
-                   </Card>
-                 ))}
-              </div>
+               <TooltipProvider>
+                 <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+                    {currentCards.map((card) => (
+                      <Tooltip key={card.id}>
+                        <TooltipTrigger asChild>
+                          <Card 
+                            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-2 hover:border-blue-300 h-16"
+                            onClick={() => onCardSelect(card)}
+                          >
+                            <CardContent className="p-2 text-center h-full flex items-center justify-center">
+                              <div className="text-lg mr-2">{card.icon}</div>
+                              <h3 className="text-xs font-semibold text-slate-800 truncate">{card.name}</h3>
+                            </CardContent>
+                          </Card>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="max-w-xs">
+                            <p className="font-semibold">{card.title}</p>
+                            <p className="text-sm">{card.description}</p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                 </div>
+               </TooltipProvider>
             </CardContent>
           </Card>
         </div>

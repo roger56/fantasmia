@@ -53,7 +53,7 @@ const ProppEditor = () => {
     setStoryPhases(updatedPhases);
     
     // Update final story
-    const story = updatedPhases.map(phase => phase.content).join('\n\n');
+    const story = updatedPhases.map(phase => phase.content).join('\n');
     setFinalStory(story);
     
     // Clear current paragraph
