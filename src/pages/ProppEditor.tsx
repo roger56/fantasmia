@@ -116,6 +116,14 @@ const ProppEditor = () => {
     setUsedCards([...usedCards, card.id]);
   };
 
+  const handleFreeCardChange = () => {
+    if (selectedCard) {
+      // Remove the current selected card from used cards
+      setUsedCards(usedCards.filter(id => id !== selectedCard.id));
+      setSelectedCard(null);
+    }
+  };
+
   const handleFinishStory = () => {
     setFinalStory(freeStoryText);
     setGamePhase('final');
@@ -210,6 +218,7 @@ const ProppEditor = () => {
           onStoryTextChange={setFreeStoryText}
           onCurrentParagraphChange={setCurrentParagraph}
           onCardSelect={handleFreeCardSelect}
+          onCardChange={handleFreeCardChange}
           onFinishStory={handleFinishStory}
           onSuspend={handleSuspend}
           onSave={handleFreeSave}
