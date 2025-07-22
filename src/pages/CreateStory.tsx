@@ -23,7 +23,7 @@ const CreateStory = () => {
     icon: Wand2
   }, {
     id: 'PAROLE_CHIAMANO',
-    title: 'Parole Chiamano',
+    title: 'Una Parola, Tante Storie',
     subtitle: 'Una parola ne suggerisce altre per costruire il racconto.',
     icon: MessageCircle
   }];

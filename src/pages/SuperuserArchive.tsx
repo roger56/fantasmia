@@ -87,7 +87,7 @@ const SuperuserArchive = () => {
     { value: 'GHOST', label: 'GHOST' },
     { value: 'PROPP', label: 'PROPP' },
     { value: 'ALOVAF', label: 'ALOVAF' },
-    { value: 'PAROLE_CHIAMANO', label: 'Parole Chiamano' }
+    { value: 'PAROLE_CHIAMANO', label: 'Una Parola, Tante Storie' }
   ];
 
   const getStatusColor = (status: string) => {

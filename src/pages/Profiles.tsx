@@ -56,6 +56,7 @@ const Profiles = () => {
     if (password.trim()) {
       if (selectedProfile === 'superuser') {
         if (password.toLowerCase() === 'ssss') {
+          localStorage.setItem('fantasmia_superuser_authenticated', 'true');
           navigate('/superuser');
         } else {
           alert('Password non corretta');

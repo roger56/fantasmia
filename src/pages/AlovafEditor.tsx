@@ -327,7 +327,7 @@ const AlovafEditor = () => {
                 </Button>
                 <Button onClick={handleTextToSpeech} variant="outline" className="px-6">
                   <Volume2 className="w-4 h-4 mr-2" />
-                  {isSpeaking && !isPaused ? 'Pausa' : isPaused ? 'Riprendi' : 'TTS'}
+                  ASCOLTA
                 </Button>
                 <Button 
                   onClick={() => setIsEditing(!isEditing)} 

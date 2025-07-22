@@ -45,7 +45,7 @@ export const saveUser = (user: User) => {
 
 // Create the base directory structure for a new user
 const createUserDirectoryStructure = (userId: string) => {
-  const categories = ['GHOST', 'PROPP', 'ALOVAF', 'PAROLECHIAMANO'];
+  const categories = ['GHOST', 'PROPP', 'ALOVAF', 'UNA_PAROLA_TANTE_STORIE'];
   const baseStructureKey = 'fantasmia_directory_structure';
   
   // Get existing structure or create new one
@@ -157,7 +157,7 @@ export const saveStory = (story: Story) => {
 
 // Ensure user directory structure exists
 const ensureUserDirectoryStructure = (userId: string) => {
-  const categories = ['GHOST', 'PROPP', 'ALOVAF', 'PAROLECHIAMANO'];
+  const categories = ['GHOST', 'PROPP', 'ALOVAF', 'UNA_PAROLA_TANTE_STORIE'];
   const baseStructureKey = 'fantasmia_directory_structure';
   
   const existingStructure = JSON.parse(localStorage.getItem(baseStructureKey) || '{}');

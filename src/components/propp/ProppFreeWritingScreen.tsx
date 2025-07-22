@@ -214,7 +214,7 @@ const ProppFreeWritingScreen: React.FC<ProppFreeWritingScreenProps> = ({
                   className="flex-1"
                 >
                   <Volume2 className="w-4 h-4 mr-2" />
-                  {isReading ? 'Stop' : 'Ascolta'}
+                  ASCOLTA
                 </Button>
                 <Button
                   variant="outline"

@@ -183,17 +183,13 @@ const ParoleChiamanoEditor = () => {
       setCurrentBlockText('');
       
       // Check for used words in the complete story so far
-      const completeStory = newBlocks.join('\n\n');
+      const completeStory = newBlocks.join('\n');
       checkUsedWords(completeStory);
-      
-      if (currentBlock < 8) {
-        setCurrentBlock(currentBlock + 1);
-      }
     }
   };
 
   const handleFinishStory = () => {
-    const completeStory = storyBlocks.join('\n\n');
+    const completeStory = storyBlocks.join('\n');
     setFinalStory(completeStory);
     
     // Check if all words from selected series are used
@@ -336,7 +332,7 @@ const ParoleChiamanoEditor = () => {
             <Button variant="ghost" onClick={() => navigate('/')}>
               <Home className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-slate-800 ml-4">Parole Chiamano</h1>
+            <h1 className="text-2xl font-bold text-slate-800 ml-4">Una Parola, Tante Storie</h1>
           </div>
           
           <Card>
@@ -488,7 +484,7 @@ const ParoleChiamanoEditor = () => {
               </CardHeader>
               <CardContent className="max-h-32 overflow-y-auto">
                 <div className="text-slate-700 whitespace-pre-wrap text-sm">
-                  {storyBlocks.join('\n\n')}
+                  {storyBlocks.join('\n')}
                 </div>
               </CardContent>
             </Card>
@@ -497,7 +493,7 @@ const ParoleChiamanoEditor = () => {
           {/* Current block editor */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Blocco {currentBlock + 1} di 9</CardTitle>
+              <CardTitle>Continua la tua storia</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <Textarea
@@ -526,7 +522,7 @@ const ParoleChiamanoEditor = () => {
                   disabled={!currentBlockText.trim()}
                   className="flex-1"
                 >
-                  Aggiungi Blocco
+                  Aggiungi alla Storia
                 </Button>
               </div>
             </CardContent>
@@ -542,7 +538,9 @@ const ParoleChiamanoEditor = () => {
             </Button>
             {storyBlocks.length > 0 && !allWordsUsed() && (
               <p className="text-sm text-orange-600 mt-2">
-                Usa tutte le parole per continuare
+                Usa tutte le parole per concludere: {selectedSeries && wordSeries[selectedSeries].filter(word => 
+                  !usedWords.some(usedWord => usedWord.toLowerCase() === word.toLowerCase())
+                ).join(', ')}
               </p>
             )}
           </div>
@@ -625,7 +623,7 @@ const ParoleChiamanoEditor = () => {
               className="flex-1"
             >
               <Volume2 className="w-4 h-4 mr-2" />
-              {speechState.isPlaying ? 'Pausa' : speechSynthesis.paused ? 'Riprendi' : 'TTS'}
+              ASCOLTA
             </Button>
             
             <Button 
