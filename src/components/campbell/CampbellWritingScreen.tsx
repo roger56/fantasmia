@@ -35,6 +35,7 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
   const [isListening, setIsListening] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [storyTitle, setStoryTitle] = useState('');
+  const [isPlaying, setIsPlaying] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
@@ -70,9 +71,17 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
 
   const handleListen = () => {
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(allContent + (content ? '\n' + content : ''));
-      utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
-      speechSynthesis.speak(utterance);
+      if (isPlaying) {
+        speechSynthesis.cancel();
+        setIsPlaying(false);
+      } else {
+        const utterance = new SpeechSynthesisUtterance(allContent + (content ? '\n' + content : ''));
+        utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
+        utterance.onend = () => setIsPlaying(false);
+        utterance.onerror = () => setIsPlaying(false);
+        speechSynthesis.speak(utterance);
+        setIsPlaying(true);
+      }
     } else {
       toast({
         title: "Funzione non disponibile",
@@ -213,7 +222,7 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
               
               <Button variant="outline" onClick={handleListen}>
                 <Volume2 className="w-4 h-4 mr-2" />
-                ASCOLTA
+                {isPlaying ? 'PAUSA' : 'ASCOLTA'}
               </Button>
               
               <Button variant="outline" onClick={onLanguageToggle}>

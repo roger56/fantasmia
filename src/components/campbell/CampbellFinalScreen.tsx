@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Share, Volume2, Languages, Save, ArrowLeft } from 'lucide-react';
+import { Share, Volume2, Languages, Save, ArrowLeft, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 
@@ -23,16 +23,27 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
   onLanguageToggle
 }) => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [storyTitle, setStoryTitle] = useState('');
+  const [editableContent, setEditableContent] = useState(storyContent);
+  const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
 
-  const cleanedContent = storyContent.replace(/\n\n+/g, '\n');
+  const cleanedContent = editableContent.replace(/\n\n+/g, '\n');
 
   const handleListen = () => {
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(cleanedContent);
-      utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
-      speechSynthesis.speak(utterance);
+      if (isPlaying) {
+        speechSynthesis.cancel();
+        setIsPlaying(false);
+      } else {
+        const utterance = new SpeechSynthesisUtterance(cleanedContent);
+        utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
+        utterance.onend = () => setIsPlaying(false);
+        utterance.onerror = () => setIsPlaying(false);
+        speechSynthesis.speak(utterance);
+        setIsPlaying(true);
+      }
     } else {
       toast({
         title: "Funzione non disponibile",
@@ -68,6 +79,18 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
     setShowSaveDialog(false);
   };
 
+  const handleEditClick = () => {
+    setShowEditDialog(true);
+  };
+
+  const handleEditSave = () => {
+    setShowEditDialog(false);
+    toast({
+      title: "Modifiche salvate",
+      description: "Il testo è stato aggiornato con successo",
+    });
+  };
+
   if (showSaveDialog) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
@@ -94,6 +117,36 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
                 </Button>
                 <Button onClick={handleSaveConfirm} className="bg-green-600 hover:bg-green-700">
                   Salva
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (showEditDialog) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <div className="max-w-4xl mx-auto pt-20">
+          <Card>
+            <CardHeader>
+              <CardTitle>Modifica la tua storia</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <textarea
+                value={editableContent}
+                onChange={(e) => setEditableContent(e.target.value)}
+                className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[400px] font-mono text-sm"
+                placeholder="Modifica il testo della tua storia..."
+              />
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                  Annulla
+                </Button>
+                <Button onClick={handleEditSave} className="bg-blue-600 hover:bg-blue-700">
+                  Salva modifiche
                 </Button>
               </div>
             </CardContent>
@@ -140,12 +193,17 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
         <div className="flex flex-wrap gap-3 justify-center">
           <Button onClick={handleListen} className="bg-blue-600 hover:bg-blue-700">
             <Volume2 className="w-4 h-4 mr-2" />
-            ASCOLTA
+            {isPlaying ? 'PAUSA' : 'ASCOLTA'}
           </Button>
           
           <Button variant="outline" onClick={onLanguageToggle}>
             <Languages className="w-4 h-4 mr-2" />
             {language === 'italian' ? 'ENGLISH' : 'ITALIANO'}
+          </Button>
+          
+          <Button variant="outline" onClick={handleEditClick}>
+            <Edit className="w-4 h-4 mr-2" />
+            MODIFICA
           </Button>
           
           <Button variant="outline" onClick={handleSaveClick}>

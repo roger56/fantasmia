@@ -4,6 +4,7 @@ import { CampbellCard, CampbellGamePhase, CampbellStoryPhase } from '@/types/cam
 import { campbellCards } from '@/data/campbellCards';
 import { saveStory, updateStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
+import { translateToEnglish, translateToItalian } from '@/utils/translation';
 import CampbellWarningScreen from '@/components/campbell/CampbellWarningScreen';
 import CampbellCardSelectionScreen from '@/components/campbell/CampbellCardSelectionScreen';
 import CampbellWritingScreen from '@/components/campbell/CampbellWritingScreen';
@@ -20,6 +21,7 @@ const CampbellEditor = () => {
   const [storyPhases, setStoryPhases] = useState<CampbellStoryPhase[]>([]);
   const [currentCard, setCurrentCard] = useState<CampbellCard | null>(null);
   const [language, setLanguage] = useState<'italian' | 'english'>('italian');
+  const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     if (editStory) {
@@ -73,14 +75,9 @@ const CampbellEditor = () => {
   };
 
   const handleSaveStory = (title: string) => {
-    if (!profileId) {
-      toast({
-        title: "Errore",
-        description: "Profilo non trovato",
-        variant: "destructive"
-      });
-      return;
-    }
+    // Check if we have a profile or allow anonymous save
+    const authorId = profileId || 'anonymous';
+    const authorName = profileName || 'Anonimo';
 
     const storyContent = storyPhases
       .filter(phase => phase.content.trim())
@@ -94,8 +91,8 @@ const CampbellEditor = () => {
       status: 'completed' as const,
       lastModified: new Date().toISOString(),
       mode: 'CAMPBELL' as const,
-      authorId: profileId,
-      authorName: profileName || 'Anonimo',
+      authorId,
+      authorName,
       isPublic: false,
       language
     };
@@ -127,8 +124,36 @@ const CampbellEditor = () => {
     }
   };
 
-  const handleLanguageToggle = () => {
-    setLanguage(prev => prev === 'italian' ? 'english' : 'italian');
+  const handleLanguageToggle = async () => {
+    if (isTranslating) return;
+    
+    setIsTranslating(true);
+    const newLanguage = language === 'italian' ? 'english' : 'italian';
+    
+    try {
+      const updatedPhases = await Promise.all(
+        storyPhases.map(async (phase) => {
+          if (!phase.content.trim()) return phase;
+          
+          const translatedContent = newLanguage === 'english' 
+            ? await translateToEnglish(phase.content)
+            : await translateToItalian(phase.content);
+            
+          return { ...phase, content: translatedContent };
+        })
+      );
+      
+      setStoryPhases(updatedPhases);
+      setLanguage(newLanguage);
+    } catch (error) {
+      toast({
+        title: "Errore traduzione",
+        description: "Impossibile tradurre il testo",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranslating(false);
+    }
   };
 
   const getCurrentContent = () => {

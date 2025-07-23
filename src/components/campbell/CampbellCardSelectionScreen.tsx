@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ArrowLeft, Home as HomeIcon } from 'lucide-react';
 import { CampbellCard } from '@/types/campbell';
 import { campbellCards } from '@/data/campbellCards';
-import { icons } from 'lucide-react';
+import CampbellCardIcon from './CampbellCardIcon';
 import HomeButton from '@/components/HomeButton';
 
 interface CampbellCardSelectionScreenProps {
@@ -72,7 +72,6 @@ const CampbellCardSelectionScreen: React.FC<CampbellCardSelectionScreenProps> = 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {campbellCards.map((card) => {
               const isSelected = selectedCards.has(card.id);
-              const IconComponent = icons[card.icon as keyof typeof icons] || HomeIcon;
               
               return (
                 <Tooltip key={card.id}>
@@ -86,9 +85,7 @@ const CampbellCardSelectionScreen: React.FC<CampbellCardSelectionScreenProps> = 
                       onClick={() => !isSelected && onCardSelect(card)}
                     >
                       <CardContent className="p-4 flex flex-col items-center justify-center h-full">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-2">
-                          <IconComponent className="w-4 h-4 text-blue-600" />
-                        </div>
+                        <CampbellCardIcon cardId={card.id} className="w-10 h-10 mb-2" />
                         <div className="text-center">
                           <span className="text-xs font-medium text-slate-600">#{card.id}</span>
                           <p className="text-sm font-medium text-slate-800 mt-1 leading-tight">
