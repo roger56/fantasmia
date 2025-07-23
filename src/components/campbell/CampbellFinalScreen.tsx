@@ -27,9 +27,16 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
   const [storyTitle, setStoryTitle] = useState('');
   const [editableContent, setEditableContent] = useState(storyContent);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentContent, setCurrentContent] = useState(storyContent);
   const { toast } = useToast();
 
-  const cleanedContent = editableContent.replace(/\n\n+/g, '\n');
+  const cleanedContent = currentContent.replace(/\n\n+/g, '\n');
+
+  // Update content when props change (for translation)
+  React.useEffect(() => {
+    setCurrentContent(storyContent);
+    setEditableContent(storyContent);
+  }, [storyContent]);
 
   const handleListen = () => {
     if ('speechSynthesis' in window) {
@@ -84,6 +91,7 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
   };
 
   const handleEditSave = () => {
+    setCurrentContent(editableContent);
     setShowEditDialog(false);
     toast({
       title: "Modifiche salvate",

@@ -87,7 +87,9 @@ const SuperuserArchive = () => {
     { value: 'GHOST', label: 'GHOST' },
     { value: 'PROPP', label: 'PROPP' },
     { value: 'AIROTS', label: 'AIROTS' },
-    { value: 'PAROLE_CHIAMANO', label: 'Una Parola, Tante Storie' }
+    { value: 'PAROLE_CHIAMANO', label: 'Una Parola, Tante Storie' },
+    { value: 'CAMPBELL', label: 'Carte di Campbell' },
+    { value: 'CSS', label: 'Cosa Succede se...' }
   ];
 
   const getStatusColor = (status: string) => {

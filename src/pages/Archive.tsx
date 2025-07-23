@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, BookOpen, Plus, Play, Pause, Save, Edit, Volume2 } from 'lucide-react';
 import { getStoriesForUser, getStories } from '@/utils/userStorage';
 import { StoryScrollViewer } from '@/components/ui/scroll-area';
@@ -13,19 +14,34 @@ const Archive = () => {
   const location = useLocation();
   const { profileName, profileId, isPublic } = location.state || {};
   const [stories, setStories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [filteredStories, setFilteredStories] = useState<any[]>([]);
+  const [speechState, setSpeechState] = useState<{[key: string]: {playing: boolean, paused: boolean, utterance?: SpeechSynthesisUtterance, position: number}}>({});
 
   useEffect(() => {
     if (isPublic) {
       // Show all public stories, sorted by lastModified descending
       const allStories = getStories();
       const publicStories = allStories.filter(s => s.isPublic);
-      setStories(publicStories.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()));
+      const sortedStories = publicStories.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+      setStories(sortedStories);
+      setFilteredStories(sortedStories);
     } else if (profileId) {
       // Show user's personal archive, sorted by lastModified descending
       const userStories = getStoriesForUser(profileId);
-      setStories(userStories.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()));
+      const sortedStories = userStories.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+      setStories(sortedStories);
+      setFilteredStories(sortedStories);
     }
   }, [profileId, isPublic]);
+
+  useEffect(() => {
+    if (selectedCategory === 'all') {
+      setFilteredStories(stories);
+    } else {
+      setFilteredStories(stories.filter(story => story.mode === selectedCategory));
+    }
+  }, [selectedCategory, stories]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -47,13 +63,54 @@ const Archive = () => {
     navigate(`/story/${storyId}`);
   };
 
-  const handleTextToSpeech = (content: string, e: React.MouseEvent) => {
+  const handleTextToSpeech = (content: string, storyId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    
     if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(content);
-      utterance.lang = 'it-IT';
-      speechSynthesis.speak(utterance);
+      const currentState = speechState[storyId] || { playing: false, paused: false, position: 0 };
+      
+      if (currentState.playing && !currentState.paused) {
+        // Pause speech
+        speechSynthesis.pause();
+        setSpeechState(prev => ({
+          ...prev,
+          [storyId]: { ...prev[storyId], paused: true }
+        }));
+      } else if (currentState.paused) {
+        // Resume speech
+        speechSynthesis.resume();
+        setSpeechState(prev => ({
+          ...prev,
+          [storyId]: { ...prev[storyId], paused: false }
+        }));
+      } else {
+        // Start new speech
+        speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(content);
+        utterance.lang = 'it-IT';
+        
+        utterance.onend = () => {
+          setSpeechState(prev => ({
+            ...prev,
+            [storyId]: { playing: false, paused: false, position: 0 }
+          }));
+        };
+        
+        utterance.onerror = () => {
+          setSpeechState(prev => ({
+            ...prev,
+            [storyId]: { playing: false, paused: false, position: 0 }
+          }));
+        };
+        
+        setSpeechState(prev => ({
+          ...prev,
+          [storyId]: { playing: true, paused: false, utterance, position: 0 }
+        }));
+        
+        speechSynthesis.speak(utterance);
+      }
     }
   };
 
@@ -69,6 +126,10 @@ const Archive = () => {
         navigate('/campbell-editor', { state: { profileId, profileName, editStory: story } });
       } else if (story.mode === 'CSS') {
         navigate('/css-editor', { state: { profileId, profileName, editStory: story } });
+      } else if (story.mode === 'PROPP') {
+        navigate('/propp-editor', { state: { profileId, profileName, editStory: story } });
+      } else if (story.mode === 'AIROTS') {
+        navigate('/airots-editor', { state: { profileId, profileName, editStory: story } });
       }
     }
   };
@@ -109,6 +170,36 @@ const Archive = () => {
           )}
         </div>
 
+        {/* Category Filter */}
+        <div className="mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-slate-700">
+                  Filtra per categoria:
+                </label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="all">Tutte le categorie</SelectItem>
+                    <SelectItem value="GHOST">GHOST</SelectItem>
+                    <SelectItem value="PROPP">PROPP</SelectItem>
+                    <SelectItem value="AIROTS">AIROTS</SelectItem>
+                    <SelectItem value="PAROLE_CHIAMANO">Una Parola, Tante Storie</SelectItem>
+                    <SelectItem value="CAMPBELL">Carte di Campbell</SelectItem>
+                    <SelectItem value="CSS">Cosa Succede se...</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-slate-600">
+                  {filteredStories.length} storie trovate
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Stories List */}
         <Card>
           <CardHeader>
@@ -117,7 +208,7 @@ const Archive = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {stories.length === 0 ? (
+            {filteredStories.length === 0 ? (
               <div className="text-center py-12">
                 <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">
@@ -135,7 +226,7 @@ const Archive = () => {
             ) : (
               <div className="space-y-4">
                 <StoryScrollViewer
-                  stories={stories}
+                  stories={filteredStories}
                   onStorySelect={handleStorySelect}
                 />
               </div>
