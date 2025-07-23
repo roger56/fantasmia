@@ -26,6 +26,11 @@ const CreateStory = () => {
     title: 'Una Parola, Tante Storie',
     subtitle: 'Una parola ne suggerisce altre per costruire il racconto.',
     icon: MessageCircle
+  }, {
+    id: 'CAMPBELL',
+    title: 'CARTE DI CAMPBELL',
+    subtitle: 'Il Viaggio dell\'Eroe in 12 tappe narrative.',
+    icon: Sparkles
   }];
   const handleModeSelect = (mode: string) => {
     if (mode === 'PROPP') {
@@ -36,6 +41,8 @@ const CreateStory = () => {
       navigate('/parole-chiamano');
     } else if (mode === 'AIROTS') {
       navigate('/airots-editor');
+    } else if (mode === 'CAMPBELL') {
+      navigate('/campbell-editor');
     }
   };
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
@@ -59,7 +66,7 @@ const CreateStory = () => {
             </CardContent>
           </Card>
 
-           <div className="grid md:grid-cols-2 gap-4">
+           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
              {creationModes.map(mode => {
              const IconComponent = mode.icon;
              return <Card key={mode.id} className="cursor-pointer transition-all duration-200 border-2 hover:border-slate-300 hover:shadow-md h-32" onClick={() => handleModeSelect(mode.id)}>

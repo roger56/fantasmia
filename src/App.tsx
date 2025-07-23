@@ -20,6 +20,7 @@ import SuperuserArchive from "./pages/SuperuserArchive";
 import SuperuserUsers from "./pages/SuperuserUsers";
 import ParoleChiamanoEditor from "./pages/ParoleChiamanoEditor";
 import AirotsEditor from "./pages/AirotsEditor";
+import CampbellEditor from "./pages/CampbellEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/superuser-users" element={<SuperuserUsers />} />
           <Route path="/parole-chiamano" element={<ParoleChiamanoEditor />} />
           <Route path="/airots-editor" element={<AirotsEditor />} />
+          <Route path="/campbell-editor" element={<CampbellEditor />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
