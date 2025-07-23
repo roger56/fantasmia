@@ -65,6 +65,10 @@ const Archive = () => {
         navigate('/ghost-editor', { state: { profileId, profileName, editStory: story } });
       } else if (story.mode === 'PAROLE_CHIAMANO') {
         navigate('/parole-chiamano', { state: { profileId, profileName, editStory: story } });
+      } else if (story.mode === 'CAMPBELL') {
+        navigate('/campbell-editor', { state: { profileId, profileName, editStory: story } });
+      } else if (story.mode === 'CSS') {
+        navigate('/css-editor', { state: { profileId, profileName, editStory: story } });
       }
     }
   };

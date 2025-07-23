@@ -31,6 +31,11 @@ const CreateStory = () => {
     title: 'CARTE DI CAMPBELL',
     subtitle: 'Il Viaggio dell\'Eroe in 12 tappe narrative.',
     icon: Sparkles
+  }, {
+    id: 'CSS',
+    title: 'COSA SUCCEDE SE...?',
+    subtitle: 'Parti da una domanda fantastica e costruisci la storia.',
+    icon: Sparkles
   }];
   const handleModeSelect = (mode: string) => {
     if (mode === 'PROPP') {
@@ -43,6 +48,8 @@ const CreateStory = () => {
       navigate('/airots-editor');
     } else if (mode === 'CAMPBELL') {
       navigate('/campbell-editor');
+    } else if (mode === 'CSS') {
+      navigate('/css-editor');
     }
   };
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">

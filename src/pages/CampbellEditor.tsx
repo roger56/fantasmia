@@ -131,6 +131,11 @@ const CampbellEditor = () => {
     const newLanguage = language === 'italian' ? 'english' : 'italian';
     
     try {
+      if (storyPhases.length === 0) {
+        setLanguage(newLanguage);
+        return;
+      }
+
       const updatedPhases = await Promise.all(
         storyPhases.map(async (phase) => {
           if (!phase.content.trim()) return phase;
@@ -145,6 +150,11 @@ const CampbellEditor = () => {
       
       setStoryPhases(updatedPhases);
       setLanguage(newLanguage);
+      
+      toast({
+        title: "Traduzione completata",
+        description: `Testo tradotto in ${newLanguage === 'english' ? 'inglese' : 'italiano'}`,
+      });
     } catch (error) {
       toast({
         title: "Errore traduzione",
