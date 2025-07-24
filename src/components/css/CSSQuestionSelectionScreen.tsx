@@ -77,7 +77,8 @@ const CSSQuestionSelectionScreen: React.FC<CSSQuestionSelectionScreenProps> = ({
                 value={customQuestion}
                 onChange={(e) => setCustomQuestion(e.target.value)}
                 placeholder="Esempio: i gatti imparano a leggere"
-                className="min-h-[100px]"
+                className="min-h-[80px]"
+                style={{ minHeight: '80px' }}
               />
               <Button 
                 onClick={handleCustomQuestionSubmit}

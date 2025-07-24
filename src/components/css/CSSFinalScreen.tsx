@@ -30,6 +30,8 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [storyTitle, setStoryTitle] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editedContent, setEditedContent] = useState(storyContent);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -48,18 +50,34 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
 
   const handleListen = () => {
     if ('speechSynthesis' in window) {
-      if (isPlaying) {
-        speechSynthesis.cancel();
-        setIsPlaying(false);
+      if (isPlaying && isPaused) {
+        // Resume from pause
+        speechSynthesis.resume();
+        setIsPaused(false);
+      } else if (isPlaying) {
+        // Pause current speech
+        speechSynthesis.pause();
+        setIsPaused(true);
       } else {
+        // Start new speech
         const content = editMode ? editedContent : storyContent;
         if (content) {
           const utterance = new SpeechSynthesisUtterance(content);
           utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
-          utterance.onend = () => setIsPlaying(false);
-          utterance.onerror = () => setIsPlaying(false);
+          utterance.onend = () => {
+            setIsPlaying(false);
+            setIsPaused(false);
+            setSpeechUtterance(null);
+          };
+          utterance.onerror = () => {
+            setIsPlaying(false);
+            setIsPaused(false);
+            setSpeechUtterance(null);
+          };
           speechSynthesis.speak(utterance);
+          setSpeechUtterance(utterance);
           setIsPlaying(true);
+          setIsPaused(false);
         }
       }
     } else {
@@ -181,14 +199,14 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
           </CardHeader>
           <CardContent className="space-y-4">
             {editMode ? (
-              <Textarea
-                ref={textareaRef}
-                value={editedContent}
-                onChange={(e) => setEditedContent(e.target.value)}
-                className="min-h-[300px] resize-none overflow-hidden"
-                style={{ height: 'auto' }}
-                placeholder="Modifica la tua storia qui..."
-              />
+                <Textarea
+                  ref={textareaRef}
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  className="min-h-[80px] resize-none overflow-hidden"
+                  style={{ height: 'auto', minHeight: '80px' }}
+                  placeholder="Modifica la tua storia qui..."
+                />
             ) : (
               <div className="bg-slate-50 p-6 rounded-lg min-h-[300px]">
                 <p className="text-slate-800 whitespace-pre-line leading-relaxed">
@@ -201,7 +219,7 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
             <div className="flex flex-wrap gap-3 pt-4">
               <Button onClick={handleListen} variant="outline">
                 <Volume2 className="w-4 h-4 mr-2" />
-                {isPlaying ? 'PAUSA' : 'ASCOLTA'}
+                {isPlaying && isPaused ? 'RIPRENDI' : isPlaying ? 'PAUSA' : 'ASCOLTA'}
               </Button>
               
               <Button 

@@ -3,9 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ArrowRight, Home, Save, Volume2, Share, Edit } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, Save, Volume2, Share, Edit, Languages } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
+import { translateToEnglish, translateToItalian } from '@/utils/translation';
 import SpeechToText from '@/components/SpeechToText';
 
 const AirotsEditor = () => {
@@ -25,6 +26,8 @@ const AirotsEditor = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [language, setLanguage] = useState<'italian' | 'english'>('italian');
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const fairyTales = {
     "POLLICINO": [
@@ -127,9 +130,9 @@ const AirotsEditor = () => {
         speechSynthesis.resume();
         setIsPaused(false);
       } else {
-    const finalStory = answers.join('\n');
+        const finalStory = answers.join('\n');
         const utterance = new SpeechSynthesisUtterance(finalStory);
-        utterance.lang = 'it-IT';
+        utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
 
         utterance.onstart = () => {
           setIsSpeaking(true);
@@ -149,6 +152,50 @@ const AirotsEditor = () => {
         description: "La sintesi vocale non è supportata da questo browser",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleLanguageToggle = async () => {
+    if (isTranslating) return;
+    
+    setIsTranslating(true);
+    const newLanguage = language === 'italian' ? 'english' : 'italian';
+    
+    try {
+      const updatedAnswers = await Promise.all(
+        answers.map(async (answer) => {
+          if (!answer.trim()) return answer;
+          
+          return newLanguage === 'english' 
+            ? await translateToEnglish(answer)
+            : await translateToItalian(answer);
+        })
+      );
+      
+      // Also translate title if it exists
+      let translatedTitle = storyTitle;
+      if (storyTitle.trim()) {
+        translatedTitle = newLanguage === 'english' 
+          ? await translateToEnglish(storyTitle)
+          : await translateToItalian(storyTitle);
+      }
+      
+      setAnswers(updatedAnswers);
+      setStoryTitle(translatedTitle);
+      setLanguage(newLanguage);
+      
+      toast({
+        title: "Traduzione completata",
+        description: `Testo tradotto in ${newLanguage === 'english' ? 'inglese' : 'italiano'}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Errore traduzione",
+        description: "Impossibile tradurre il testo",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -175,7 +222,7 @@ const AirotsEditor = () => {
       isPublic: false,
       answers: answers,
       selectedFairyTale: selectedFairyTale,
-      language: 'italian' as 'italian' | 'english'
+      language: language
     };
 
     saveStory(story);
@@ -183,7 +230,7 @@ const AirotsEditor = () => {
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",
     });
-    setTimeout(() => navigate('/create-story', { state: { profileId, profileName } }), 1500);
+    setTimeout(() => navigate('/archive', { state: { profileId, profileName } }), 1500);
   };
 
   const handleShare = () => {
@@ -289,8 +336,8 @@ const AirotsEditor = () => {
                   value={storyTitle}
                   onChange={handleTitleChange}
                   disabled={!isEditing}
-                  className="text-lg resize-none overflow-hidden"
-                  style={{ height: 'auto', minHeight: '2.5rem' }}
+                  className="text-lg resize-none overflow-hidden min-h-[80px]"
+                  style={{ height: 'auto', minHeight: '80px' }}
                   onInput={(e) => {
                     const target = e.target as HTMLTextAreaElement;
                     target.style.height = 'auto';
@@ -306,8 +353,8 @@ const AirotsEditor = () => {
                 <Textarea
                   value={finalStory}
                   disabled={!isEditing}
-                  className="text-base leading-relaxed resize-none overflow-hidden"
-                  style={{ height: 'auto', minHeight: '12rem' }}
+                  className="text-base leading-relaxed resize-none overflow-hidden min-h-[80px]"
+                  style={{ height: 'auto', minHeight: '80px' }}
                   onInput={(e) => {
                     const target = e.target as HTMLTextAreaElement;
                     target.style.height = 'auto';
@@ -327,7 +374,16 @@ const AirotsEditor = () => {
                 </Button>
                 <Button onClick={handleTextToSpeech} variant="outline" className="px-6">
                   <Volume2 className="w-4 h-4 mr-2" />
-                  ASCOLTA
+                  {isSpeaking && isPaused ? 'RIPRENDI' : isSpeaking ? 'PAUSA' : 'ASCOLTA'}
+                </Button>
+                <Button 
+                  onClick={handleLanguageToggle} 
+                  variant="outline" 
+                  className="px-6"
+                  disabled={isTranslating}
+                >
+                  <Languages className="w-4 h-4 mr-2" />
+                  {isTranslating ? 'Traduzione...' : (language === 'italian' ? 'ENGLISH' : 'ITALIANO')}
                 </Button>
                 <Button 
                   onClick={() => setIsEditing(!isEditing)} 
@@ -418,8 +474,9 @@ const AirotsEditor = () => {
                   value={currentAnswer}
                   onChange={handleAnswerChange}
                   placeholder="Riscrivi questa parte ribaltando ruoli, azioni e intenzioni... (massimo 10 righe)"
-                  className="text-base resize-none overflow-hidden min-h-[120px]"
-                  rows={5}
+                  className="text-base resize-none overflow-hidden min-h-[80px]"
+                  style={{ minHeight: '80px' }}
+                  rows={3}
                   maxLength={800}
                 />
                 <SpeechToText

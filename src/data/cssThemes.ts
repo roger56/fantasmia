@@ -59,10 +59,11 @@ export const cssThemes: CSSTheme[] = [
 ];
 
 export const guidedQuestions = [
-  "Chi è il protagonista di questa storia?",
-  "Cosa succede per primo?",
-  "Chi o cosa si oppone al protagonista?",
-  "Qual è il momento più divertente o strano?",
-  "Come si risolve la situazione?",
-  "Cosa impara il protagonista alla fine?"
+  "Chi lo vede per primo?",
+  "Che cosa succede nel villaggio / a scuola / in casa?",
+  "Chi è contento e chi no?",
+  "C'è qualcuno che dice NO?",
+  "Qual è il momento più buffo o spaventoso?",
+  "Cosa decide il personaggio?",
+  "E adesso com'è il mondo?"
 ];

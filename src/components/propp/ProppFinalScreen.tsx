@@ -61,8 +61,8 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
                 placeholder="Inserisci il titolo della tua storia..."
                 value={storyTitle}
                 onChange={(e) => onTitleChange(e.target.value)}
-                className="text-lg resize-none overflow-hidden"
-                style={{ height: 'auto', minHeight: '2.5rem' }}
+                className="text-lg resize-none overflow-hidden min-h-[80px]"
+                style={{ height: 'auto', minHeight: '80px' }}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;
                   target.style.height = 'auto';
@@ -78,8 +78,8 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
               <Textarea
                 value={finalStory}
                 onChange={(e) => onStoryChange(e.target.value)}
-                className="text-base leading-relaxed resize-none overflow-hidden"
-                style={{ height: 'auto', minHeight: '12rem' }}
+                className="text-base leading-relaxed resize-none overflow-hidden min-h-[80px]"
+                style={{ height: 'auto', minHeight: '80px' }}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;
                   target.style.height = 'auto';

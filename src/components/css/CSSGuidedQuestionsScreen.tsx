@@ -90,20 +90,39 @@ const CSSGuidedQuestionsScreen: React.FC<CSSGuidedQuestionsScreenProps> = ({
     return completedPhases.map(p => p.answer.trim()).join('\n\n');
   };
 
+  const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
   const handleListen = () => {
     if ('speechSynthesis' in window) {
-      if (isPlaying) {
-        speechSynthesis.cancel();
-        setIsPlaying(false);
+      if (isPlaying && isPaused) {
+        // Resume from pause
+        speechSynthesis.resume();
+        setIsPaused(false);
+      } else if (isPlaying) {
+        // Pause current speech
+        speechSynthesis.pause();
+        setIsPaused(true);
       } else {
+        // Start new speech
         const content = getStoryContent();
         if (content) {
           const utterance = new SpeechSynthesisUtterance(content);
           utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
-          utterance.onend = () => setIsPlaying(false);
-          utterance.onerror = () => setIsPlaying(false);
+          utterance.onend = () => {
+            setIsPlaying(false);
+            setIsPaused(false);
+            setSpeechUtterance(null);
+          };
+          utterance.onerror = () => {
+            setIsPlaying(false);
+            setIsPaused(false);
+            setSpeechUtterance(null);
+          };
           speechSynthesis.speak(utterance);
+          setSpeechUtterance(utterance);
           setIsPlaying(true);
+          setIsPaused(false);
         }
       }
     } else {
@@ -139,13 +158,13 @@ const CSSGuidedQuestionsScreen: React.FC<CSSGuidedQuestionsScreenProps> = ({
             </Button>
             <div>
               <h1 className="text-xl font-bold text-slate-800">
-                Domanda {currentQuestionIndex + 1} di {guidedQuestions.length}
+                Cosa Succede Se...?
               </h1>
               <p className="text-slate-600">Domanda iniziale: {initialQuestion}</p>
             </div>
           </div>
           <div className="text-sm text-slate-500">
-            {phases.filter(p => p.answer.trim()).length} / {guidedQuestions.length} completate
+            {phases.filter(p => p.answer.trim()).length} risposte date
           </div>
         </div>
 
@@ -174,8 +193,8 @@ const CSSGuidedQuestionsScreen: React.FC<CSSGuidedQuestionsScreenProps> = ({
               value={answer}
               onChange={(e) => handleAnswerChange(e.target.value)}
               placeholder="Scrivi la tua risposta qui..."
-              className="min-h-[120px] resize-none overflow-hidden"
-              style={{ height: 'auto' }}
+              className="min-h-[80px] resize-none overflow-hidden"
+              style={{ height: 'auto', minHeight: '80px' }}
             />
             
             {/* Speech to text */}
@@ -193,9 +212,15 @@ const CSSGuidedQuestionsScreen: React.FC<CSSGuidedQuestionsScreenProps> = ({
                 {currentQuestionIndex < guidedQuestions.length - 1 ? 'Avanti' : 'Finisci'}
               </Button>
               
+              {phases.filter(p => p.answer.trim()).length >= 3 && (
+                <Button onClick={onFinish} variant="outline" className="bg-green-600 hover:bg-green-700 text-white">
+                  Finisci Storia
+                </Button>
+              )}
+              
               <Button variant="outline" onClick={handleListen}>
                 <Volume2 className="w-4 h-4 mr-2" />
-                {isPlaying ? 'PAUSA' : 'ASCOLTA'}
+                {isPlaying && isPaused ? 'RIPRENDI' : isPlaying ? 'PAUSA' : 'ASCOLTA'}
               </Button>
               
               <Button 

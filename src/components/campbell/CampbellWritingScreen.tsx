@@ -205,8 +205,8 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
               value={content}
               onChange={(e) => handleContentUpdate(e.target.value)}
               placeholder="Scrivi qui il seguito della tua storia..."
-              className="min-h-[120px] resize-none overflow-hidden"
-              style={{ height: 'auto' }}
+              className="min-h-[80px] resize-none overflow-hidden"
+              style={{ height: 'auto', minHeight: '80px' }}
             />
             
             {/* Speech to text */}

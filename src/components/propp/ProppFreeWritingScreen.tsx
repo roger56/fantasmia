@@ -172,7 +172,8 @@ const ProppFreeWritingScreen: React.FC<ProppFreeWritingScreenProps> = ({
                   `Scrivi utilizzando la carta "${selectedCard.name}"...` : 
                   "Seleziona una carta per iniziare a scrivere..."
                 }
-                className="min-h-[150px] resize-none"
+                className="min-h-[80px] resize-none"
+                style={{ minHeight: '80px' }}
                 disabled={!selectedCard}
               />
               
@@ -204,7 +205,8 @@ const ProppFreeWritingScreen: React.FC<ProppFreeWritingScreenProps> = ({
                 value={storyText}
                 onChange={(e) => onStoryTextChange(e.target.value)}
                 placeholder="La tua storia apparirà qui..."
-                className="min-h-[200px] resize-none"
+                className="min-h-[80px] resize-none"
+                style={{ minHeight: '80px' }}
               />
               <div className="flex gap-2 mt-4">
                 <Button

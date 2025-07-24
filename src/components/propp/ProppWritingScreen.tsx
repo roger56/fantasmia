@@ -97,8 +97,8 @@ const ProppWritingScreen: React.FC<ProppWritingScreenProps> = ({
                 value={currentParagraph}
                 onChange={(e) => onParagraphChange(e.target.value)}
                 placeholder="Scrivi qui il paragrafo per questa carta..."
-                className="text-base resize-none overflow-hidden"
-                style={{ height: 'auto', minHeight: '8rem' }}
+                className="text-base resize-none overflow-hidden min-h-[80px]"
+                style={{ height: 'auto', minHeight: '80px' }}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;
                   target.style.height = 'auto';
