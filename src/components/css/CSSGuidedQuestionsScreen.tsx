@@ -175,8 +175,13 @@ const CSSGuidedQuestionsScreen: React.FC<CSSGuidedQuestionsScreenProps> = ({
               <CardTitle className="text-lg">La tua storia finora:</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-slate-50 p-4 rounded-lg max-h-48 overflow-y-auto">
-                <p className="text-slate-700 whitespace-pre-line">{getStoryContent()}</p>
+              <div className="bg-slate-50 p-4 rounded-lg max-h-48 overflow-y-auto space-y-2">
+                {phases.filter(p => p.answer.trim()).map((phase, index) => (
+                  <div key={index} className="border-b border-slate-200 pb-2 last:border-b-0 last:pb-0">
+                    <p className="text-sm text-slate-600 font-medium mb-1">{phase.question}</p>
+                    <p className="text-slate-700">{phase.answer}</p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

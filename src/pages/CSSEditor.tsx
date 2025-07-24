@@ -81,10 +81,7 @@ const CSSEditor = () => {
     const authorId = profileId || 'anonymous';
     const authorName = profileName || 'Anonimo';
 
-    const storyContent = storyPhases
-      .filter(phase => phase.answer.trim())
-      .map(phase => phase.answer.trim())
-      .join('\n\n');
+    const storyContent = getFullStoryWithQuestions();
 
     const storyData = {
       id: editStory?.id || Date.now().toString(),
@@ -175,6 +172,14 @@ const CSSEditor = () => {
       .join('\n\n');
   };
 
+  const getFullStoryWithQuestions = () => {
+    const allParts = [
+      { question: 'Domanda iniziale', answer: initialQuestion },
+      ...storyPhases.filter(phase => phase.answer.trim())
+    ];
+    return allParts.map(part => `${part.question}:\n${part.answer}`).join('\n\n');
+  };
+
   if (currentPhase === 'warning') {
     return (
       <CSSWarningScreen 
@@ -215,8 +220,10 @@ const CSSEditor = () => {
       <CSSFinalScreen
         initialQuestion={initialQuestion}
         storyContent={getStoryContent()}
+        storyPhases={storyPhases}
         onExit={handleExit}
         onSave={handleSaveStory}
+        onPhaseUpdate={handlePhaseUpdate}
         profileName={profileName}
         language={language}
         onLanguageToggle={handleLanguageToggle}

@@ -9,8 +9,10 @@ import HomeButton from '@/components/HomeButton';
 interface CSSFinalScreenProps {
   initialQuestion: string;
   storyContent: string;
+  storyPhases: { question: string; answer: string }[];
   onExit: () => void;
   onSave: (title: string) => void;
+  onPhaseUpdate?: (phases: { question: string; answer: string }[]) => void;
   profileName?: string;
   language: 'italian' | 'english';
   onLanguageToggle: () => void;
@@ -20,8 +22,10 @@ interface CSSFinalScreenProps {
 const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
   initialQuestion,
   storyContent,
+  storyPhases,
   onExit,
   onSave,
+  onPhaseUpdate,
   profileName,
   language,
   onLanguageToggle,
@@ -34,12 +38,15 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
   const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editedContent, setEditedContent] = useState(storyContent);
+  const [editingPhaseIndex, setEditingPhaseIndex] = useState<number | null>(null);
+  const [editedPhases, setEditedPhases] = useState(storyPhases);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     setEditedContent(storyContent);
-  }, [storyContent]);
+    setEditedPhases(storyPhases);
+  }, [storyContent, storyPhases]);
 
   useEffect(() => {
     if (textareaRef.current && editMode) {
@@ -198,22 +205,50 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {editMode ? (
-                <Textarea
-                  ref={textareaRef}
-                  value={editedContent}
-                  onChange={(e) => setEditedContent(e.target.value)}
-                  className="min-h-[80px] resize-none overflow-hidden"
-                  style={{ height: 'auto', minHeight: '80px' }}
-                  placeholder="Modifica la tua storia qui..."
-                />
-            ) : (
-              <div className="bg-slate-50 p-6 rounded-lg min-h-[300px]">
-                <p className="text-slate-800 whitespace-pre-line leading-relaxed">
-                  {editMode ? editedContent : storyContent}
-                </p>
+            <div className="space-y-4">
+              {/* Domanda iniziale */}
+              <div className="border border-slate-200 rounded-lg p-4 bg-purple-50">
+                <h3 className="font-medium text-purple-800 mb-2">Domanda iniziale:</h3>
+                <p className="text-purple-700">{initialQuestion}</p>
               </div>
-            )}
+
+              {/* Tutte le fasi della storia */}
+              {editedPhases.map((phase, index) => (
+                <div key={index} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-slate-700">{phase.question}</h4>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingPhaseIndex(editingPhaseIndex === index ? null : index)}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      {editingPhaseIndex === index ? 'Salva' : 'Modifica'}
+                    </Button>
+                  </div>
+                  
+                  {editingPhaseIndex === index ? (
+                    <Textarea
+                      value={phase.answer}
+                      onChange={(e) => {
+                        const newPhases = [...editedPhases];
+                        newPhases[index] = { ...phase, answer: e.target.value };
+                        setEditedPhases(newPhases);
+                        if (onPhaseUpdate) {
+                          onPhaseUpdate(newPhases);
+                        }
+                      }}
+                      className="min-h-[80px] resize-none"
+                      placeholder="Modifica la risposta..."
+                    />
+                  ) : (
+                    <p className="text-slate-800 whitespace-pre-line leading-relaxed">
+                      {phase.answer}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
 
             {/* Action buttons */}
             <div className="flex flex-wrap gap-3 pt-4">
