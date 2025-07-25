@@ -37,37 +37,62 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [editedContent, setEditedContent] = useState(storyContent);
-  const [editingPhaseIndex, setEditingPhaseIndex] = useState<number | null>(null);
-  const [editedPhases, setEditedPhases] = useState(storyPhases);
+  const [unifiedContent, setUnifiedContent] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
+  // Generate unified content from initial question and phases
+  const generateUnifiedContent = () => {
+    const allParts = [
+      { question: 'Domanda iniziale: Cosa succede se...?', answer: initialQuestion },
+      ...storyPhases.filter(phase => phase.answer.trim())
+    ];
+    return allParts.map(part => `${part.question}\n${part.answer}`).join('\n\n');
+  };
+
   useEffect(() => {
-    setEditedContent(storyContent);
-    setEditedPhases(storyPhases);
-  }, [storyContent, storyPhases]);
+    setUnifiedContent(generateUnifiedContent());
+  }, [initialQuestion, storyPhases]);
 
   useEffect(() => {
     if (textareaRef.current && editMode) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
     }
-  }, [editedContent, editMode]);
+  }, [unifiedContent, editMode]);
+
+  const parseUnifiedContent = (content: string) => {
+    const sections = content.split('\n\n').filter(section => section.trim());
+    const newPhases: { question: string; answer: string }[] = [];
+    
+    sections.forEach((section, index) => {
+      const lines = section.split('\n');
+      if (lines.length >= 2) {
+        const question = lines[0];
+        const answer = lines.slice(1).join('\n');
+        
+        if (index === 0) {
+          // First section is the initial question - we don't add it to phases
+          return;
+        } else {
+          newPhases.push({ question, answer });
+        }
+      }
+    });
+    
+    return newPhases;
+  };
 
   const handleListen = () => {
     if ('speechSynthesis' in window) {
       if (isPlaying && isPaused) {
-        // Resume from pause
         speechSynthesis.resume();
         setIsPaused(false);
       } else if (isPlaying) {
-        // Pause current speech
         speechSynthesis.pause();
         setIsPaused(true);
       } else {
-        // Start new speech
-        const content = editMode ? editedContent : storyContent;
+        const content = unifiedContent;
         if (content) {
           const utterance = new SpeechSynthesisUtterance(content);
           utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
@@ -97,8 +122,7 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
   };
 
   const handleShare = () => {
-    const content = editMode ? editedContent : storyContent;
-    navigator.clipboard.writeText(content).then(() => {
+    navigator.clipboard.writeText(unifiedContent).then(() => {
       toast({
         title: "Copiato!",
         description: "La storia è stata copiata negli appunti",
@@ -107,8 +131,7 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
   };
 
   const handleSaveClick = () => {
-    const content = editMode ? editedContent : storyContent;
-    if (!content.trim()) {
+    if (!unifiedContent.trim()) {
       toast({
         title: "Attenzione",
         description: "Non c'è nessuna storia da salvare!",
@@ -128,8 +151,24 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
       });
       return;
     }
+    
+    // Update phases from unified content if in edit mode
+    if (editMode && onPhaseUpdate) {
+      const newPhases = parseUnifiedContent(unifiedContent);
+      onPhaseUpdate(newPhases);
+    }
+    
     onSave(storyTitle);
     setShowSaveDialog(false);
+  };
+
+  const handleEditToggle = () => {
+    if (editMode && onPhaseUpdate) {
+      // Save changes when exiting edit mode
+      const newPhases = parseUnifiedContent(unifiedContent);
+      onPhaseUpdate(newPhases);
+    }
+    setEditMode(!editMode);
   };
 
   if (showSaveDialog) {
@@ -196,7 +235,7 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
               <CardTitle className="text-lg">La tua storia</CardTitle>
               <Button
                 variant="outline"
-                onClick={() => setEditMode(!editMode)}
+                onClick={handleEditToggle}
                 size="sm"
               >
                 <Edit className="w-4 h-4 mr-2" />
@@ -205,50 +244,21 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-4">
-              {/* Domanda iniziale */}
-              <div className="border border-slate-200 rounded-lg p-4 bg-purple-50">
-                <h3 className="font-medium text-purple-800 mb-2">Domanda iniziale:</h3>
-                <p className="text-purple-700">{initialQuestion}</p>
-              </div>
-
-              {/* Tutte le fasi della storia */}
-              {editedPhases.map((phase, index) => (
-                <div key={index} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-slate-700">{phase.question}</h4>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingPhaseIndex(editingPhaseIndex === index ? null : index)}
-                    >
-                      <Edit className="w-3 h-3 mr-1" />
-                      {editingPhaseIndex === index ? 'Salva' : 'Modifica'}
-                    </Button>
-                  </div>
-                  
-                  {editingPhaseIndex === index ? (
-                    <Textarea
-                      value={phase.answer}
-                      onChange={(e) => {
-                        const newPhases = [...editedPhases];
-                        newPhases[index] = { ...phase, answer: e.target.value };
-                        setEditedPhases(newPhases);
-                        if (onPhaseUpdate) {
-                          onPhaseUpdate(newPhases);
-                        }
-                      }}
-                      className="min-h-[80px] resize-none"
-                      placeholder="Modifica la risposta..."
-                    />
-                  ) : (
-                    <p className="text-slate-800 whitespace-pre-line leading-relaxed">
-                      {phase.answer}
-                    </p>
-                  )}
+            {editMode ? (
+              <Textarea
+                ref={textareaRef}
+                value={unifiedContent}
+                onChange={(e) => setUnifiedContent(e.target.value)}
+                className="min-h-[400px] resize-none"
+                placeholder="Modifica la tua storia..."
+              />
+            ) : (
+              <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                <div className="text-slate-800 whitespace-pre-line leading-relaxed">
+                  {unifiedContent}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
 
             {/* Action buttons */}
             <div className="flex flex-wrap gap-3 pt-4">

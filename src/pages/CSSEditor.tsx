@@ -130,11 +130,19 @@ const CSSEditor = () => {
     const newLanguage = language === 'italian' ? 'english' : 'italian';
     
     try {
-      if (storyPhases.length === 0) {
+      if (storyPhases.length === 0 && !initialQuestion.trim()) {
         setLanguage(newLanguage);
         return;
       }
 
+      // Translate initial question
+      const translatedInitialQuestion = newLanguage === 'english' 
+        ? await translateToEnglish(initialQuestion)
+        : await translateToItalian(initialQuestion);
+      
+      setInitialQuestion(translatedInitialQuestion);
+
+      // Translate all phases
       const updatedPhases = await Promise.all(
         storyPhases.map(async (phase) => {
           if (!phase.answer.trim()) return phase;
