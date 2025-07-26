@@ -10,14 +10,14 @@ const Welcome = () => {
   const [currentPage, setCurrentPage] = useState(0);
 
   const handleSkip = () => {
-    navigate('/home');
+    navigate('/introductory-screens');
   };
 
   const handleNext = () => {
     if (currentPage === 0) {
       setCurrentPage(1);
     } else {
-      navigate('/home');
+      navigate('/introductory-screens');
     }
   };
 

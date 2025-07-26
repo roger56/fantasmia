@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Welcome from "./pages/Welcome";
+import IntroductoryScreens from "./components/IntroductoryScreens";
 import Home from "./pages/Home";
 import Profiles from "./pages/Profiles";
 import NewProfile from "./pages/NewProfile";
@@ -34,6 +35,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Welcome />} />
+          <Route path="/introductory-screens" element={<IntroductoryScreens />} />
           <Route path="/home" element={<Home />} />
           <Route path="/profiles" element={<Profiles />} />
           <Route path="/new-profile" element={<NewProfile />} />
