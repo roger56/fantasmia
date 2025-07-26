@@ -142,16 +142,20 @@ const CSSEditor = () => {
       
       setInitialQuestion(translatedInitialQuestion);
 
-      // Translate all phases
+      // Translate all phases (both questions and answers)
       const updatedPhases = await Promise.all(
         storyPhases.map(async (phase) => {
           if (!phase.answer.trim()) return phase;
+          
+          const translatedQuestion = newLanguage === 'english' 
+            ? await translateToEnglish(phase.question)
+            : await translateToItalian(phase.question);
           
           const translatedAnswer = newLanguage === 'english' 
             ? await translateToEnglish(phase.answer)
             : await translateToItalian(phase.answer);
             
-          return { ...phase, answer: translatedAnswer };
+          return { ...phase, question: translatedQuestion, answer: translatedAnswer };
         })
       );
       
