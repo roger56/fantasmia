@@ -113,7 +113,7 @@ const CampbellEditor = () => {
       }
       
       setTimeout(() => {
-        navigate('/archive', { state: { profileId, profileName } });
+        navigate('/superuser-archive', { state: { profileId, profileName } });
       }, 1500);
     } catch (error) {
       toast({

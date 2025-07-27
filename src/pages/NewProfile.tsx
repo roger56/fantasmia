@@ -48,9 +48,9 @@ const NewProfile = () => {
       description: `Il profilo ${formData.name} è stato creato con successo`,
     });
 
-    // Navigate to archive with new profile
+    // Navigate to privacy acceptance screen with new profile
     setTimeout(() => {
-      navigate('/archive', { state: { profileId: newUser.id, profileName: newUser.name } });
+      navigate('/privacy-acceptance', { state: { profileId: newUser.id, profileName: newUser.name } });
     }, 1500);
   };
 

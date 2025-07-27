@@ -119,7 +119,7 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
                 Nuova Storia
               </Button>
               <Button 
-                onClick={() => navigate('/archive', { state: { profileId, profileName } })} 
+                onClick={() => navigate('/superuser-archive', { state: { profileId, profileName } })} 
                 variant="outline" 
                 className="px-6"
               >

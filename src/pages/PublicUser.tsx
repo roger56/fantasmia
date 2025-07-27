@@ -14,7 +14,7 @@ const PublicUser = () => {
       title: 'Leggi Storie Pubbliche',
       description: 'Scopri le storie condivise dalla community',
       icon: BookOpen,
-      action: () => navigate('/archive', { state: { profileId: 'public', profileName: 'Utente Pubblico', isPublic: true } })
+      action: () => navigate('/superuser-archive', { state: { profileId: 'public', profileName: 'Utente Pubblico', isPublic: true } })
     },
     {
       title: 'Crea Storia',

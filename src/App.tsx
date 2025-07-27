@@ -11,8 +11,8 @@ import Profiles from "./pages/Profiles";
 import NewProfile from "./pages/NewProfile";
 import SuperUser from "./pages/SuperUser";
 import PublicUser from "./pages/PublicUser";
-import Archive from "./pages/Archive";
 import CreateStory from "./pages/CreateStory";
+import PrivacyAcceptanceScreen from "./pages/PrivacyAcceptanceScreen";
 import ProppEditor from "./pages/ProppEditor";
 import ProppModeSelector from "./pages/ProppModeSelector";
 import GhostEditor from "./pages/GhostEditor";
@@ -41,8 +41,8 @@ const App = () => (
           <Route path="/new-profile" element={<NewProfile />} />
           <Route path="/superuser" element={<SuperUser />} />
           <Route path="/public" element={<PublicUser />} />
-          <Route path="/archive" element={<Archive />} />
           <Route path="/create-story" element={<CreateStory />} />
+          <Route path="/privacy-acceptance" element={<PrivacyAcceptanceScreen />} />
           <Route path="/propp-mode-selector" element={<ProppModeSelector />} />
           <Route path="/propp-editor" element={<ProppEditor />} />
           <Route path="/ghost-editor" element={<GhostEditor />} />

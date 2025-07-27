@@ -230,7 +230,7 @@ const AirotsEditor = () => {
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",
     });
-    setTimeout(() => navigate('/archive', { state: { profileId, profileName } }), 1500);
+    setTimeout(() => navigate('/superuser-archive', { state: { profileId, profileName } }), 1500);
   };
 
   const handleShare = () => {

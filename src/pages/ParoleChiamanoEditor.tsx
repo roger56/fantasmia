@@ -321,7 +321,7 @@ const ParoleChiamanoEditor = () => {
       description: "La tua storia è stata salvata nell'archivio",
     });
 
-    navigate('/archive', { state: { profileId, profileName } });
+    navigate('/superuser-archive', { state: { profileId, profileName } });
   };
 
   if (step === 'intro') {
@@ -627,7 +627,7 @@ const ParoleChiamanoEditor = () => {
             </Button>
             
             <Button 
-              onClick={() => navigate('/archive', { state: { profileId, profileName } })}
+              onClick={() => navigate('/superuser-archive', { state: { profileId, profileName } })}
               variant="outline"
               className="flex-1"
             >

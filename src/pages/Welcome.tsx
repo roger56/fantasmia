@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 const Welcome = () => {
@@ -88,28 +89,30 @@ const Welcome = () => {
         {/* Page 2 - Description */}
         <div className="min-w-full h-screen flex flex-col items-center justify-center p-4">
           <div className="flex-1 flex items-center justify-center">
-            <Card className="max-w-2xl w-full">
-              <CardContent className="p-8 text-center">
+            <Card className="max-w-2xl w-full h-[60vh]">
+              <CardContent className="p-8 text-center h-full flex flex-col">
                 <h1 className="text-3xl font-bold mb-6 text-red-500">
                   Ciao e benvenuto su FANTAS(m)IA!
                 </h1>
-                <div className="text-lg text-slate-700 space-y-4 leading-relaxed">
-                  <p>
-                    <strong>Inventa la tua storia con la TUA FANTASIA FANTASMAGORICA!</strong>
-                  </p>
-                  <p>
-                    Qui puoi creare storie uniche e divertenti, proprio come fanno i veri scrittori. Ti faremo qualche domanda buffa, oppure ti daremo delle carte magiche o delle parole misteriose… e tu potrai inventare tutto con la tua immaginazione!
-                  </p>
-                  <p>
-                    Puoi scrivere o parlare, leggere la tua storia ad alta voce o ascoltarla con la voce magica dell'app. E se vuoi, puoi anche salvare le tue storie e rileggerle ogni volta che vuoi!
-                  </p>
-                  <p>
-                    Scegli la tua modalità preferita: <strong>GHOST</strong>, <strong>PROPP</strong>, <strong>AIROTS</strong> o <strong>UNA PAROLA, TANTE STORIE</strong>… e inizia subito l'avventura!
-                  </p>
-                  <p className="text-xl font-semibold text-sky-600">
-                    Pronto? scegli un profilo e Premi 'Nuova Storia'… che la magia abbia inizio!
-                  </p>
-                </div>
+                <ScrollArea className="flex-1">
+                  <div className="text-lg text-slate-700 space-y-4 leading-relaxed">
+                    <p>
+                      <strong>Inventa la tua storia con la TUA FANTASIA FANTASMAGORICA!</strong>
+                    </p>
+                    <p>
+                      Qui puoi creare storie uniche e divertenti, proprio come fanno i veri scrittori. Ti faremo qualche domanda buffa, oppure ti daremo delle carte magiche o delle parole misteriose… e tu potrai inventare tutto con la tua immaginazione!
+                    </p>
+                    <p>
+                      Puoi scrivere o parlare, leggere la tua storia ad alta voce o ascoltarla con la voce magica dell'app. E se vuoi, puoi anche salvare le tue storie e rileggerle ogni volta che vuoi!
+                    </p>
+                    <p>
+                      Scegli la tua modalità preferita: <strong>GHOST</strong>, <strong>PROPP</strong>, <strong>AIROTS</strong> o <strong>UNA PAROLA, TANTE STORIE</strong>… e inizia subito l'avventura!
+                    </p>
+                    <p className="text-xl font-semibold text-sky-600">
+                      Pronto? scegli un profilo e Premi 'Nuova Storia'… che la magia abbia inizio!
+                    </p>
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
           </div>
