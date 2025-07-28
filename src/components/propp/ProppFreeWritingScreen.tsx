@@ -40,6 +40,7 @@ const ProppFreeWritingScreen: React.FC<ProppFreeWritingScreenProps> = ({
 }) => {
   const { toast } = useToast();
   const [isReading, setIsReading] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   const handleSpeechResult = (text: string) => {
     onCurrentParagraphChange(currentParagraph + ' ' + text);
@@ -76,16 +77,28 @@ const ProppFreeWritingScreen: React.FC<ProppFreeWritingScreenProps> = ({
     }
 
     if ('speechSynthesis' in window) {
-      if (isReading) {
-        window.speechSynthesis.cancel();
-        setIsReading(false);
+      if (isReading && !isPaused) {
+        window.speechSynthesis.pause();
+        setIsPaused(true);
+      } else if (isPaused) {
+        window.speechSynthesis.resume();
+        setIsPaused(false);
       } else {
         const utterance = new SpeechSynthesisUtterance(storyText);
         utterance.lang = 'it-IT';
-        utterance.onend = () => setIsReading(false);
-        utterance.onerror = () => setIsReading(false);
+        utterance.onstart = () => {
+          setIsReading(true);
+          setIsPaused(false);
+        };
+        utterance.onend = () => {
+          setIsReading(false);
+          setIsPaused(false);
+        };
+        utterance.onerror = () => {
+          setIsReading(false);
+          setIsPaused(false);
+        };
         window.speechSynthesis.speak(utterance);
-        setIsReading(true);
       }
     } else {
       toast({
@@ -216,7 +229,7 @@ const ProppFreeWritingScreen: React.FC<ProppFreeWritingScreenProps> = ({
                   className="flex-1"
                 >
                   <Volume2 className="w-4 h-4 mr-2" />
-                  ASCOLTA
+                  {isReading && isPaused ? 'RIPRENDI' : isReading ? 'PAUSA' : 'ASCOLTA'}
                 </Button>
                 <Button
                   variant="outline"

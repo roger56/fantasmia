@@ -27,6 +27,7 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
   const [storyTitle, setStoryTitle] = useState('');
   const [editableContent, setEditableContent] = useState(storyContent);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [currentContent, setCurrentContent] = useState(storyContent);
   const { toast } = useToast();
 
@@ -40,16 +41,28 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
 
   const handleListen = () => {
     if ('speechSynthesis' in window) {
-      if (isPlaying) {
-        speechSynthesis.cancel();
-        setIsPlaying(false);
+      if (isPlaying && !isPaused) {
+        speechSynthesis.pause();
+        setIsPaused(true);
+      } else if (isPaused) {
+        speechSynthesis.resume();
+        setIsPaused(false);
       } else {
         const utterance = new SpeechSynthesisUtterance(cleanedContent);
         utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
-        utterance.onend = () => setIsPlaying(false);
-        utterance.onerror = () => setIsPlaying(false);
+        utterance.onstart = () => {
+          setIsPlaying(true);
+          setIsPaused(false);
+        };
+        utterance.onend = () => {
+          setIsPlaying(false);
+          setIsPaused(false);
+        };
+        utterance.onerror = () => {
+          setIsPlaying(false);
+          setIsPaused(false);
+        };
         speechSynthesis.speak(utterance);
-        setIsPlaying(true);
       }
     } else {
       toast({
@@ -201,7 +214,7 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
         <div className="flex flex-wrap gap-3 justify-center">
           <Button onClick={handleListen} className="bg-blue-600 hover:bg-blue-700">
             <Volume2 className="w-4 h-4 mr-2" />
-            {isPlaying ? 'PAUSA' : 'ASCOLTA'}
+            {isPlaying && isPaused ? 'RIPRENDI' : isPlaying ? 'PAUSA' : 'ASCOLTA'}
           </Button>
           
           <Button variant="outline" onClick={onLanguageToggle}>

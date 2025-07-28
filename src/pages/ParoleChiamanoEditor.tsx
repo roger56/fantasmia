@@ -36,7 +36,7 @@ const ParoleChiamanoEditor = () => {
   const [missingWords, setMissingWords] = useState<string[]>([]);
   const [guidingSentence, setGuidingSentence] = useState('');
   const [usedWords, setUsedWords] = useState<string[]>([]);
-  const [speechState, setSpeechState] = useState<{ isPlaying: boolean, utterance?: SpeechSynthesisUtterance }>({ isPlaying: false });
+  const [speechState, setSpeechState] = useState<{ isPlaying: boolean, isPaused: boolean, utterance?: SpeechSynthesisUtterance }>({ isPlaying: false, isPaused: false });
   const [isTranslated, setIsTranslated] = useState(false);
   const [originalStory, setOriginalStory] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
@@ -225,22 +225,26 @@ const ParoleChiamanoEditor = () => {
 
   const handleTextToSpeech = (text: string) => {
     if ('speechSynthesis' in window) {
-      if (speechState.isPlaying) {
-        speechSynthesis.pause();
-        setSpeechState(prev => ({ ...prev, isPlaying: false }));
-      } else if (speechSynthesis.paused && speechState.utterance) {
+      if (speechState.isPlaying && speechState.isPaused) {
         speechSynthesis.resume();
-        setSpeechState(prev => ({ ...prev, isPlaying: true }));
+        setSpeechState(prev => ({ ...prev, isPaused: false }));
+      } else if (speechState.isPlaying) {
+        speechSynthesis.pause();
+        setSpeechState(prev => ({ ...prev, isPaused: true }));
       } else {
         speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'it-IT';
         
         utterance.onend = () => {
-          setSpeechState({ isPlaying: false });
+          setSpeechState({ isPlaying: false, isPaused: false });
         };
         
-        setSpeechState({ isPlaying: true, utterance });
+        utterance.onerror = () => {
+          setSpeechState({ isPlaying: false, isPaused: false });
+        };
+        
+        setSpeechState({ isPlaying: true, isPaused: false, utterance });
         speechSynthesis.speak(utterance);
       }
     }
@@ -459,11 +463,11 @@ const ParoleChiamanoEditor = () => {
           {/* Guiding sentence with word highlighting */}
           <Card className="mb-4">
             <CardContent className="p-4">
-              <div className="text-lg font-semibold text-center text-slate-800">
+              <div className="text-lg font-semibold text-center text-slate-800 flex flex-wrap justify-center gap-2">
                 {selectedSeries && wordSeries[selectedSeries].map((word, index) => (
                   <span 
                     key={index}
-                    className={`mr-2 px-2 py-1 rounded ${
+                    className={`px-2 py-1 rounded ${
                       usedWords.some(usedWord => usedWord.toLowerCase() === word.toLowerCase())
                         ? 'bg-green-100 text-green-800'
                         : 'bg-slate-100 text-slate-800'
@@ -623,7 +627,7 @@ const ParoleChiamanoEditor = () => {
               className="flex-1"
             >
               <Volume2 className="w-4 h-4 mr-2" />
-              ASCOLTA
+              {speechState.isPlaying && speechState.isPaused ? 'RIPRENDI' : speechState.isPlaying ? 'PAUSA' : 'ASCOLTA'}
             </Button>
             
             <Button 

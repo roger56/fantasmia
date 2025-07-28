@@ -36,6 +36,7 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [storyTitle, setStoryTitle] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
@@ -71,16 +72,28 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
 
   const handleListen = () => {
     if ('speechSynthesis' in window) {
-      if (isPlaying) {
-        speechSynthesis.cancel();
-        setIsPlaying(false);
+      if (isPlaying && !isPaused) {
+        speechSynthesis.pause();
+        setIsPaused(true);
+      } else if (isPaused) {
+        speechSynthesis.resume();
+        setIsPaused(false);
       } else {
         const utterance = new SpeechSynthesisUtterance(allContent + (content ? '\n' + content : ''));
         utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
-        utterance.onend = () => setIsPlaying(false);
-        utterance.onerror = () => setIsPlaying(false);
+        utterance.onstart = () => {
+          setIsPlaying(true);
+          setIsPaused(false);
+        };
+        utterance.onend = () => {
+          setIsPlaying(false);
+          setIsPaused(false);
+        };
+        utterance.onerror = () => {
+          setIsPlaying(false);
+          setIsPaused(false);
+        };
         speechSynthesis.speak(utterance);
-        setIsPlaying(true);
       }
     } else {
       toast({
@@ -222,7 +235,7 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
               
               <Button variant="outline" onClick={handleListen}>
                 <Volume2 className="w-4 h-4 mr-2" />
-                {isPlaying ? 'PAUSA' : 'ASCOLTA'}
+                {isPlaying && isPaused ? 'RIPRENDI' : isPlaying ? 'PAUSA' : 'ASCOLTA'}
               </Button>
               
               <Button variant="outline" onClick={onLanguageToggle}>
