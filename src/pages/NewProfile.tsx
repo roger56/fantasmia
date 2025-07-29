@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveUser } from '@/utils/userStorage';
+import { validateUserName, validateUserEmail } from '@/utils/validation';
 import HomeButton from '@/components/HomeButton';
 
 const NewProfile = () => {
@@ -22,16 +23,29 @@ const NewProfile = () => {
   };
 
   const handleSubmit = () => {
-    if (!formData.name.trim()) {
+    // Validate name with security checks
+    const nameError = validateUserName(formData.name);
+    if (nameError) {
       toast({
-        title: "Nome richiesto",
-        description: "Inserisci un nome per il profilo",
+        title: "Nome non valido",
+        description: nameError,
         variant: "destructive"
       });
       return;
     }
 
-    // Create user with password same as name
+    // Validate email if provided
+    const emailError = validateUserEmail(formData.email);
+    if (emailError) {
+      toast({
+        title: "Email non valida",
+        description: emailError,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create user with password same as name (temporary solution)
     const newUser = {
       id: Date.now().toString(),
       name: formData.name.trim(),

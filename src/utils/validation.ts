@@ -1,4 +1,6 @@
-// Form validation utilities
+import { sanitizeInput, isValidEmail } from './authSecurity';
+
+// Form validation utilities with security enhancements
 export const validators = {
   required: (value: string, fieldName = "Field") => {
     if (!value || !value.trim()) {
@@ -22,9 +24,23 @@ export const validators = {
   },
 
   email: (value: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (value && !emailRegex.test(value)) {
+    if (value && !isValidEmail(value)) {
       return "Please enter a valid email address";
+    }
+    return null;
+  },
+
+  // Security-focused validators
+  noScriptTags: (value: string, fieldName = "Field") => {
+    if (/<script|javascript:|data:|onload|onerror/i.test(value)) {
+      return `${fieldName} contains invalid content`;
+    }
+    return null;
+  },
+
+  alphanumericAndBasic: (value: string, fieldName = "Field") => {
+    if (value && !/^[a-zA-ZÀ-ÿ0-9\s\-_\.]+$/.test(value)) {
+      return `${fieldName} contains invalid characters`;
     }
     return null;
   }
@@ -39,19 +55,52 @@ export const validateField = (value: string, rules: Array<(value: string) => str
   return null;
 };
 
-// Form validation for common patterns in the app
+// Form validation for common patterns in the app with security
 export const validateStoryTitle = (title: string): string | null => {
-  return validateField(title, [
+  const sanitizedTitle = sanitizeInput(title);
+  return validateField(sanitizedTitle, [
     (value) => validators.required(value, "Titolo"),
     (value) => validators.minLength(value, 3, "Titolo"),
-    (value) => validators.maxLength(value, 100, "Titolo")
+    (value) => validators.maxLength(value, 100, "Titolo"),
+    (value) => validators.noScriptTags(value, "Titolo")
   ]);
 };
 
 export const validateStoryContent = (content: string): string | null => {
-  return validateField(content, [
+  const sanitizedContent = sanitizeInput(content);
+  return validateField(sanitizedContent, [
     (value) => validators.required(value, "Contenuto"),
-    (value) => validators.minLength(value, 10, "Contenuto")
+    (value) => validators.minLength(value, 10, "Contenuto"),
+    (value) => validators.maxLength(value, 10000, "Contenuto"),
+    (value) => validators.noScriptTags(value, "Contenuto")
+  ]);
+};
+
+export const validateUserName = (name: string): string | null => {
+  const sanitizedName = sanitizeInput(name);
+  return validateField(sanitizedName, [
+    (value) => validators.required(value, "Nome"),
+    (value) => validators.minLength(value, 2, "Nome"),
+    (value) => validators.maxLength(value, 50, "Nome"),
+    (value) => validators.alphanumericAndBasic(value, "Nome")
+  ]);
+};
+
+export const validateUserEmail = (email: string): string | null => {
+  if (!email.trim()) return null; // Email is optional
+  const sanitizedEmail = sanitizeInput(email);
+  return validateField(sanitizedEmail, [
+    (value) => validators.email(value),
+    (value) => validators.maxLength(value, 254, "Email")
+  ]);
+};
+
+export const validateMessage = (message: string): string | null => {
+  const sanitizedMessage = sanitizeInput(message);
+  return validateField(sanitizedMessage, [
+    (value) => validators.required(value, "Messaggio"),
+    (value) => validators.maxLength(value, 1000, "Messaggio"),
+    (value) => validators.noScriptTags(value, "Messaggio")
   ]);
 };
 

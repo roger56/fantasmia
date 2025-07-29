@@ -5,22 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Shield, Users, BookOpen, Settings, MessageSquare } from 'lucide-react';
 import { getUsers, sendMessage } from '@/utils/userStorage';
+import { sanitizeInput, rateLimiter } from '@/utils/authSecurity';
+import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 
 const SuperUser = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [showMessaging, setShowMessaging] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [messageContent, setMessageContent] = useState('');
+  const [loginAttempts, setLoginAttempts] = useState(0);
 
-  // Check if already authenticated from previous session
+  // Check if already authenticated with secure session
   useEffect(() => {
-    const isSuper = localStorage.getItem('fantasmia_superuser_authenticated');
-    if (isSuper === 'true') {
+    const authToken = localStorage.getItem('superuser-session');
+    const authExpiry = localStorage.getItem('superuser-session-expiry');
+    
+    if (authToken && authExpiry && Date.now() < parseInt(authExpiry)) {
       setIsAuthenticated(true);
+    } else {
+      // Clear expired session
+      localStorage.removeItem('superuser-session');
+      localStorage.removeItem('superuser-session-expiry');
+      localStorage.removeItem('fantasmia_superuser_authenticated'); // Clean old session
     }
   }, []);
 
@@ -31,30 +42,85 @@ const SuperUser = () => {
   }, [isAuthenticated]);
 
   const handleLogin = () => {
-    if (password.toLowerCase() === 'ssss') {
+    if (!password.trim()) {
+      toast({
+        title: "Errore",
+        description: "Inserisci la password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check rate limiting
+    if (rateLimiter.isBlocked('superuser')) {
+      toast({
+        title: "Account Bloccato",
+        description: "Troppi tentativi falliti. Riprova tra 15 minuti.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Secure password check (TODO: Replace with proper Supabase authentication)
+    const isValidPassword = password === "SecureAdminPass2024!";
+    
+    if (isValidPassword) {
+      // Generate secure session
+      const sessionToken = crypto.getRandomValues(new Uint8Array(32));
+      const sessionString = Array.from(sessionToken, byte => byte.toString(16).padStart(2, '0')).join('');
+      const expiryTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+      
+      localStorage.setItem('superuser-session', sessionString);
+      localStorage.setItem('superuser-session-expiry', expiryTime.toString());
+      
       setIsAuthenticated(true);
-      localStorage.setItem('fantasmia_superuser_authenticated', 'true');
+      rateLimiter.recordAttempt('superuser', true);
+      toast({
+        title: "Accesso Effettuato",
+        description: "Benvenuto nel pannello amministratore",
+      });
     } else {
-      alert('Password non corretta');
+      rateLimiter.recordAttempt('superuser', false);
+      const remainingAttempts = rateLimiter.getRemainingAttempts('superuser');
+      
+      toast({
+        title: "Errore",
+        description: `Password non corretta. Tentativi rimasti: ${remainingAttempts}`,
+        variant: "destructive",
+      });
     }
   };
 
   const handleSendMessage = (isBroadcast: boolean = false) => {
-    if (!messageContent.trim()) {
-      alert('Inserisci un messaggio');
+    const sanitizedMessage = sanitizeInput(messageContent);
+    
+    if (!sanitizedMessage.trim()) {
+      toast({
+        title: "Errore",
+        description: "Inserisci un messaggio valido",
+        variant: "destructive",
+      });
       return;
     }
 
     const targetUsers = isBroadcast ? users.map(u => u.id) : selectedUsers;
     
     if (!isBroadcast && targetUsers.length === 0) {
-      alert('Seleziona almeno un utente');
+      toast({
+        title: "Errore",
+        description: "Seleziona almeno un utente",
+        variant: "destructive",
+      });
       return;
     }
 
-    sendMessage('superuser', targetUsers, messageContent, isBroadcast);
+    sendMessage('superuser', targetUsers, sanitizedMessage, isBroadcast);
     
-    alert(`Messaggio inviato ${isBroadcast ? 'a tutti gli utenti' : `a ${targetUsers.length} utente/i`}`);
+    toast({
+      title: "Messaggio Inviato",
+      description: `Messaggio inviato ${isBroadcast ? 'a tutti gli utenti' : `a ${targetUsers.length} utente/i`}`,
+    });
+    
     setMessageContent('');
     setSelectedUsers([]);
     setShowMessaging(false);

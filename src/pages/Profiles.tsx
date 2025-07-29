@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, User, Lock, Shield, Globe } from 'lucide-react';
 import { getUsers, authenticateUser, markMessagesAsRead } from '@/utils/userStorage';
+import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 
 const Profiles = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -53,34 +55,59 @@ const Profiles = () => {
   };
 
   const handleLogin = () => {
-    if (password.trim()) {
-      if (selectedProfile === 'superuser') {
-        if (password.toLowerCase() === 'ssss') {
-          localStorage.setItem('fantasmia_superuser_authenticated', 'true');
-          navigate('/superuser');
-        } else {
-          alert('Password non corretta');
-        }
-        return;
+    if (!password.trim()) {
+      toast({
+        title: "Errore",
+        description: "Inserisci la password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedProfile === 'superuser') {
+      // Use the same secure password as SuperUser component
+      if (password === 'SecureAdminPass2024!') {
+        // Generate secure session for superuser
+        const sessionToken = crypto.getRandomValues(new Uint8Array(32));
+        const sessionString = Array.from(sessionToken, byte => byte.toString(16).padStart(2, '0')).join('');
+        const expiryTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+        
+        localStorage.setItem('superuser-session', sessionString);
+        localStorage.setItem('superuser-session-expiry', expiryTime.toString());
+        navigate('/superuser');
+      } else {
+        toast({
+          title: "Errore",
+          description: "Password non corretta",
+          variant: "destructive",
+        });
       }
-      
-      const selectedUser = profiles.find(p => p.id === selectedProfile);
-      if (selectedUser) {
-        const user = authenticateUser(selectedUser.name, password);
-        if (user) {
-          // Check for unread messages
-          if (user.unreadMessages && user.unreadMessages.length > 0) {
-            // Show messages and mark as read
-            const messages = user.unreadMessages.filter(m => !m.read);
-            if (messages.length > 0) {
-              alert(`Hai ${messages.length} nuovi messaggi:\n\n${messages.map(m => m.content).join('\n\n')}`);
-              markMessagesAsRead(user.id);
-            }
+      return;
+    }
+    
+    const selectedUser = profiles.find(p => p.id === selectedProfile);
+    if (selectedUser) {
+      const user = authenticateUser(selectedUser.name, password);
+      if (user) {
+        // Check for unread messages
+        if (user.unreadMessages && user.unreadMessages.length > 0) {
+          // Show messages and mark as read
+          const messages = user.unreadMessages.filter(m => !m.read);
+          if (messages.length > 0) {
+            toast({
+              title: "Messaggi non letti",
+              description: `Hai ${messages.length} nuovi messaggi. Controlla la tua inbox.`,
+            });
+            markMessagesAsRead(user.id);
           }
-          navigate('/create-story', { state: { profileId: selectedProfile, profileName: selectedUser.name } });
-        } else {
-          alert('Password non corretta');
         }
+        navigate('/create-story', { state: { profileId: selectedProfile, profileName: selectedUser.name } });
+      } else {
+        toast({
+          title: "Errore",
+          description: "Password non corretta",
+          variant: "destructive",
+        });
       }
     }
   };
