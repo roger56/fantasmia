@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FileText, Globe, Home, Save } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
 
 interface ProppFinalScreenProps {
   storyTitle: string;
@@ -46,6 +47,12 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
           <h1 className="text-xl font-bold text-slate-800">La Tua Storia Propp</h1>
           <div></div>
         </div>
+
+        {/* Creative Media Menu */}
+        <CreativeMediaMenu 
+          storyContent={finalStory}
+          storyTitle={storyTitle || "Storia Propp"}
+        />
 
         <Card>
           <CardHeader>

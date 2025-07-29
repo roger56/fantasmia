@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
+import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
 
 interface CampbellFinalScreenProps {
   storyContent: string;
@@ -130,6 +131,12 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Creative Media Menu */}
+        <CreativeMediaMenu 
+          storyContent={cleanedContent}
+          storyTitle="Il Viaggio dell'Eroe"
+        />
 
         {/* Story display */}
         <Card className="mb-6">

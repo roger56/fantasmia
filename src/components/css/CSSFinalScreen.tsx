@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
+import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
 
 interface CSSFinalScreenProps {
   initialQuestion: string;
@@ -158,6 +159,12 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Creative Media Menu */}
+        <CreativeMediaMenu 
+          storyContent={unifiedContent}
+          storyTitle="Storia CSS"
+        />
 
         {/* Story Content */}
         <Card>
