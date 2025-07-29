@@ -66,7 +66,7 @@ const Profiles = () => {
 
     if (selectedProfile === 'superuser') {
       // Use the same secure password as SuperUser component
-      if (password === 'SecureAdminPass2024!') {
+      if (password === 'ssss') {
         // Generate secure session for superuser
         const sessionToken = crypto.getRandomValues(new Uint8Array(32));
         const sessionString = Array.from(sessionToken, byte => byte.toString(16).padStart(2, '0')).join('');

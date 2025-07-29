@@ -62,7 +62,7 @@ const SuperUser = () => {
     }
 
     // Secure password check (TODO: Replace with proper Supabase authentication)
-    const isValidPassword = password === "SecureAdminPass2024!";
+    const isValidPassword = password === "ssss";
     
     if (isValidPassword) {
       // Generate secure session
