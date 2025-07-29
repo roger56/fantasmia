@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CampbellCard } from '@/types/campbell';
 import { useToast } from '@/hooks/use-toast';
-import { useTTS } from '@/hooks/useTTS';
+import { validateBeforeContinue, validateBeforeSave, createToastMessage } from '@/utils/validation';
 import StoryLayout from '@/components/shared/StoryLayout';
 import StoryDisplayCard from '@/components/shared/StoryDisplayCard';
 import WritingCard from '@/components/shared/WritingCard';
@@ -42,24 +42,18 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
   };
 
   const handleContinue = () => {
-    if (content.trim()) {
-      onBack();
-    } else {
-      toast({
-        title: "Attenzione",
-        description: "Scrivi qualcosa prima di continuare!",
-        variant: "destructive"
-      });
+    const validation = validateBeforeContinue(content);
+    if (validation) {
+      toast(validation);
+      return;
     }
+    onBack();
   };
 
   const handleSaveClick = () => {
-    if (!content.trim()) {
-      toast({
-        title: "Attenzione",
-        description: "Scrivi qualcosa prima di salvare!",
-        variant: "destructive"
-      });
+    const validation = validateBeforeContinue(content);
+    if (validation) {
+      toast(validation);
       return;
     }
     setShowSaveDialog(true);
