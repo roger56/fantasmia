@@ -3,12 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { ArrowLeft, Volume2, Edit, Save, Globe } from 'lucide-react';
 import { getStories, saveStory, Story } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import { useTranslation } from '@/hooks/useTranslation';
 import HomeButton from '@/components/HomeButton';
+import MediaButton from '@/components/shared/MediaButton';
 
 const StoryViewer = () => {
   const { storyId } = useParams();
@@ -18,6 +20,7 @@ const StoryViewer = () => {
   const [story, setStory] = useState<Story | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState('');
+  const [editedTitle, setEditedTitle] = useState('');
   const [translatedTitle, setTranslatedTitle] = useState('');
   
   const { speak, getButtonText } = useTTS();
@@ -29,6 +32,7 @@ const StoryViewer = () => {
     if (foundStory) {
       setStory(foundStory);
       setEditedContent(foundStory.content || '');
+      setEditedTitle(foundStory.title || '');
     }
   }, [storyId]);
 
@@ -51,6 +55,7 @@ const StoryViewer = () => {
     if (story) {
       const updatedStory = {
         ...story,
+        title: editedTitle,
         content: editedContent,
         lastModified: new Date().toISOString(),
         language: isTranslated ? ('english' as const) : ('italian' as const)
@@ -82,7 +87,7 @@ const StoryViewer = () => {
     );
   }
 
-  const displayTitle = isTranslated && translatedTitle ? translatedTitle : story.title;
+  const displayTitle = isTranslated && translatedTitle ? translatedTitle : (isEditing ? editedTitle : story.title);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
@@ -114,6 +119,12 @@ const StoryViewer = () => {
               {getButtonText()}
             </Button>
             
+            <MediaButton 
+              storyContent={editedContent}
+              storyTitle={displayTitle}
+              className="w-full sm:w-auto"
+            />
+            
             {!isEditing ? (
               <Button onClick={() => setIsEditing(true)} variant="outline" className="w-full sm:w-auto">
                 <Edit className="w-4 h-4 mr-2" />
@@ -130,7 +141,21 @@ const StoryViewer = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">{displayTitle}</CardTitle>
+            {isEditing ? (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">
+                  Titolo della Storia
+                </label>
+                <Input
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  className="text-xl font-semibold"
+                  placeholder="Inserisci il titolo..."
+                />
+              </div>
+            ) : (
+              <CardTitle className="text-2xl">{displayTitle}</CardTitle>
+            )}
             <div className="flex items-center gap-4 text-sm text-slate-600">
               <span>Autore: {story.authorName}</span>
               <span>Modalità: {story.mode}</span>

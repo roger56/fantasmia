@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
-import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
+import MediaButton from '@/components/shared/MediaButton';
 
 interface CSSFinalScreenProps {
   initialQuestion: string;
@@ -160,11 +160,6 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
           </div>
         </div>
 
-        {/* Creative Media Menu */}
-        <CreativeMediaMenu 
-          storyContent={unifiedContent}
-          storyTitle="Storia CSS"
-        />
 
         {/* Story Content */}
         <Card>
@@ -213,6 +208,11 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
                 <Languages className="w-4 h-4 mr-2" />
                 {isTranslating ? 'Traduzione...' : (language === 'italian' ? 'ENGLISH' : 'ITALIANO')}
               </Button>
+              
+              <MediaButton 
+                storyContent={unifiedContent}
+                storyTitle="Storia CSS"
+              />
               
               <Button variant="outline" onClick={handleShare}>
                 <Share className="w-4 h-4 mr-2" />

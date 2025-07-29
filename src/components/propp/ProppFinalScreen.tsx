@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FileText, Globe, Home, Save } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
-import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
+import MediaButton from '@/components/shared/MediaButton';
 
 interface ProppFinalScreenProps {
   storyTitle: string;
@@ -48,11 +48,6 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
           <div></div>
         </div>
 
-        {/* Creative Media Menu */}
-        <CreativeMediaMenu 
-          storyContent={finalStory}
-          storyTitle={storyTitle || "Storia Propp"}
-        />
 
         <Card>
           <CardHeader>
@@ -109,6 +104,11 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
                 <Globe className="w-4 h-4 mr-2" />
                 {getButtonText()}
               </Button>
+              <MediaButton 
+                storyContent={finalStory}
+                storyTitle={storyTitle || "Storia Propp"}
+                className="px-6"
+              />
               <Button 
                 onClick={handleCopyToClipboard}
                 variant="outline" 
