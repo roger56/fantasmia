@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Volume2, Edit, Save, Globe } from 'lucide-react';
 import { getStories, saveStory, Story } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
+import { useTTS } from '@/hooks/useTTS';
+import { useTranslation } from '@/hooks/useTranslation';
 import HomeButton from '@/components/HomeButton';
-import { translateToEnglish, translateToItalian } from '@/utils/translation';
 
 const StoryViewer = () => {
   const { storyId } = useParams();
@@ -17,13 +18,10 @@ const StoryViewer = () => {
   const [story, setStory] = useState<Story | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState('');
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isTranslated, setIsTranslated] = useState(false);
-  const [originalStory, setOriginalStory] = useState('');
-  const [originalTitle, setOriginalTitle] = useState('');
-  const [isTranslating, setIsTranslating] = useState(false);
   const [translatedTitle, setTranslatedTitle] = useState('');
+  
+  const { speak, getButtonText } = useTTS();
+  const { isTranslated, isTranslating, translateContent, getCurrentLanguage } = useTranslation();
 
   useEffect(() => {
     const stories = getStories();
@@ -31,90 +29,22 @@ const StoryViewer = () => {
     if (foundStory) {
       setStory(foundStory);
       setEditedContent(foundStory.content || '');
-      // Check if story was saved in a specific language
-      if (foundStory.language === 'english') {
-        setIsTranslated(true);
-      }
     }
   }, [storyId]);
 
   const handleTranslate = async () => {
     if (!story) return;
     
-    setIsTranslating(true);
-    
-    try {
-      if (!isTranslated) {
-        // Translate to English
-        setOriginalStory(story.content);
-        setOriginalTitle(story.title);
-        
-        const translatedStory = await translateToEnglish(story.content);
-        const translatedStoryTitle = await translateToEnglish(story.title);
-        
-        setEditedContent(translatedStory);
-        setTranslatedTitle(translatedStoryTitle);
-        setIsTranslated(true);
-        
-        toast({
-          title: "Traduzione completata",
-          description: "La storia è stata tradotta in inglese",
-        });
-      } else {
-        // Return to Italian
-        setEditedContent(originalStory || story.content);
-        setTranslatedTitle('');
-        setIsTranslated(false);
-        
-        toast({
-          title: "Traduzione completata",
-          description: "La storia è stata riportata in italiano",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Errore traduzione",
-        description: "Non è stato possibile tradurre la storia",
-        variant: "destructive"
-      });
-    } finally {
-      setIsTranslating(false);
-    }
+    await translateContent(
+      editedContent,
+      story.title,
+      setEditedContent,
+      setTranslatedTitle
+    );
   };
 
   const handleTextToSpeech = () => {
-    if ('speechSynthesis' in window) {
-      if (isSpeaking && !isPaused) {
-        speechSynthesis.pause();
-        setIsPaused(true);
-      } else if (isPaused) {
-        speechSynthesis.resume();
-        setIsPaused(false);
-      } else {
-        // Stop any existing speech
-        speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(editedContent);
-        utterance.lang = isTranslated ? 'en-US' : 'it-IT';
-        
-        utterance.onstart = () => {
-          setIsSpeaking(true);
-          setIsPaused(false);
-        };
-        
-        utterance.onend = () => {
-          setIsSpeaking(false);
-          setIsPaused(false);
-        };
-        
-        speechSynthesis.speak(utterance);
-      }
-    } else {
-      toast({
-        title: "Non supportato",
-        description: "La sintesi vocale non è supportata da questo browser",
-        variant: "destructive"
-      });
-    }
+    speak(editedContent, getCurrentLanguage());
   };
 
   const handleSaveEdit = () => {
@@ -181,7 +111,7 @@ const StoryViewer = () => {
             
             <Button onClick={handleTextToSpeech} variant="outline" className="w-full sm:w-auto">
               <Volume2 className="w-4 h-4 mr-2" />
-              ASCOLTA
+              {getButtonText()}
             </Button>
             
             {!isEditing ? (

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FileText, Globe, Home, Save } from 'lucide-react';
-import { useProppTranslation } from '@/hooks/useProppTranslation';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ProppFinalScreenProps {
   storyTitle: string;
@@ -26,10 +26,10 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
   profileName
 }) => {
   const navigate = useNavigate();
-  const { isTranslated, isTranslating, handleTranslate } = useProppTranslation();
+  const { isTranslated, isTranslating, translateContent, getButtonText } = useTranslation();
 
   const handleTranslateClick = () => {
-    handleTranslate(finalStory, storyTitle, onStoryChange, onTitleChange);
+    translateContent(finalStory, storyTitle, onStoryChange, onTitleChange);
   };
 
   const handleCopyToClipboard = () => {
@@ -100,7 +100,7 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
                 disabled={isTranslating || !finalStory.trim()}
               >
                 <Globe className="w-4 h-4 mr-2" />
-                {isTranslating ? 'Traduzione...' : (isTranslated ? 'ITALIANO' : 'INGLESE')}
+                {getButtonText()}
               </Button>
               <Button 
                 onClick={handleCopyToClipboard}

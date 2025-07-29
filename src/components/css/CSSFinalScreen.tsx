@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Volume2, Languages, Save, Share, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTTS } from '@/hooks/useTTS';
+import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
 
 interface CSSFinalScreenProps {
@@ -32,14 +34,11 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
   isTranslating
 }) => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [storyTitle, setStoryTitle] = useState('');
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [unifiedContent, setUnifiedContent] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
+  const { speak, getButtonText } = useTTS();
 
   // Generate unified content from initial question and phases
   const generateUnifiedContent = () => {
@@ -84,43 +83,7 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
   };
 
   const handleListen = () => {
-    if ('speechSynthesis' in window) {
-      if (isPlaying && isPaused) {
-        speechSynthesis.resume();
-        setIsPaused(false);
-      } else if (isPlaying) {
-        speechSynthesis.pause();
-        setIsPaused(true);
-      } else {
-        // Stop any existing speech
-        speechSynthesis.cancel();
-        const content = unifiedContent;
-        if (content) {
-          const utterance = new SpeechSynthesisUtterance(content);
-          utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
-          utterance.onend = () => {
-            setIsPlaying(false);
-            setIsPaused(false);
-            setSpeechUtterance(null);
-          };
-          utterance.onerror = () => {
-            setIsPlaying(false);
-            setIsPaused(false);
-            setSpeechUtterance(null);
-          };
-          speechSynthesis.speak(utterance);
-          setSpeechUtterance(utterance);
-          setIsPlaying(true);
-          setIsPaused(false);
-        }
-      }
-    } else {
-      toast({
-        title: "Funzione non disponibile",
-        description: "Il tuo browser non supporta la sintesi vocale",
-        variant: "destructive"
-      });
-    }
+    speak(unifiedContent, language);
   };
 
   const handleShare = () => {
@@ -144,23 +107,14 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
     setShowSaveDialog(true);
   };
 
-  const handleSaveConfirm = () => {
-    if (!storyTitle.trim()) {
-      toast({
-        title: "Attenzione",
-        description: "Inserisci un titolo per la storia!",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+  const handleSaveConfirm = (title: string) => {
     // Update phases from unified content if in edit mode
     if (editMode && onPhaseUpdate) {
       const newPhases = parseUnifiedContent(unifiedContent);
       onPhaseUpdate(newPhases);
     }
     
-    onSave(storyTitle);
+    onSave(title);
     setShowSaveDialog(false);
   };
 
@@ -175,36 +129,11 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
 
   if (showSaveDialog) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
-        <div className="max-w-2xl mx-auto pt-20">
-          <Card>
-            <CardHeader>
-              <CardTitle>Salva la tua storia</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Titolo della storia:</label>
-                <input
-                  type="text"
-                  value={storyTitle}
-                  onChange={(e) => setStoryTitle(e.target.value)}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Inserisci il titolo..."
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
-                  Annulla
-                </Button>
-                <Button onClick={handleSaveConfirm} className="bg-green-600 hover:bg-green-700">
-                  Salva
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <SaveDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        onSave={handleSaveConfirm}
+      />
     );
   }
 
@@ -266,7 +195,7 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
             <div className="flex flex-wrap gap-3 pt-4">
               <Button onClick={handleListen} variant="outline">
                 <Volume2 className="w-4 h-4 mr-2" />
-                {isPlaying && isPaused ? 'RIPRENDI' : isPlaying ? 'PAUSA' : 'ASCOLTA'}
+                {getButtonText()}
               </Button>
               
               <Button 

@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Share, Volume2, Languages, Save, ArrowLeft, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTTS } from '@/hooks/useTTS';
+import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
 
 interface CampbellFinalScreenProps {
@@ -24,12 +26,10 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
 }) => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [storyTitle, setStoryTitle] = useState('');
   const [editableContent, setEditableContent] = useState(storyContent);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [currentContent, setCurrentContent] = useState(storyContent);
   const { toast } = useToast();
+  const { speak, getButtonText } = useTTS();
 
   const cleanedContent = currentContent.replace(/\n\n+/g, '\n');
 
@@ -40,37 +40,7 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
   }, [storyContent]);
 
   const handleListen = () => {
-    if ('speechSynthesis' in window) {
-      if (isPlaying && !isPaused) {
-        speechSynthesis.pause();
-        setIsPaused(true);
-      } else if (isPaused) {
-        speechSynthesis.resume();
-        setIsPaused(false);
-      } else {
-        const utterance = new SpeechSynthesisUtterance(cleanedContent);
-        utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
-        utterance.onstart = () => {
-          setIsPlaying(true);
-          setIsPaused(false);
-        };
-        utterance.onend = () => {
-          setIsPlaying(false);
-          setIsPaused(false);
-        };
-        utterance.onerror = () => {
-          setIsPlaying(false);
-          setIsPaused(false);
-        };
-        speechSynthesis.speak(utterance);
-      }
-    } else {
-      toast({
-        title: "Funzione non disponibile",
-        description: "Il tuo browser non supporta la sintesi vocale",
-        variant: "destructive"
-      });
-    }
+    speak(cleanedContent, language);
   };
 
   const handleShare = () => {
@@ -86,16 +56,8 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
     setShowSaveDialog(true);
   };
 
-  const handleSaveConfirm = () => {
-    if (!storyTitle.trim()) {
-      toast({
-        title: "Attenzione",
-        description: "Inserisci un titolo per la storia!",
-        variant: "destructive"
-      });
-      return;
-    }
-    onSave(storyTitle);
+  const handleSaveConfirm = (title: string) => {
+    onSave(title);
     setShowSaveDialog(false);
   };
 
@@ -114,36 +76,11 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
 
   if (showSaveDialog) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-        <div className="max-w-2xl mx-auto pt-20">
-          <Card>
-            <CardHeader>
-              <CardTitle>Salva la tua storia</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Titolo della storia:</label>
-                <input
-                  type="text"
-                  value={storyTitle}
-                  onChange={(e) => setStoryTitle(e.target.value)}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Inserisci il titolo..."
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
-                  Annulla
-                </Button>
-                <Button onClick={handleSaveConfirm} className="bg-green-600 hover:bg-green-700">
-                  Salva
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <SaveDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        onSave={handleSaveConfirm}
+      />
     );
   }
 
@@ -214,7 +151,7 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
         <div className="flex flex-wrap gap-3 justify-center">
           <Button onClick={handleListen} className="bg-blue-600 hover:bg-blue-700">
             <Volume2 className="w-4 h-4 mr-2" />
-            {isPlaying && isPaused ? 'RIPRENDI' : isPlaying ? 'PAUSA' : 'ASCOLTA'}
+            {getButtonText()}
           </Button>
           
           <Button variant="outline" onClick={onLanguageToggle}>
