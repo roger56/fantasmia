@@ -92,6 +92,8 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
         speechSynthesis.pause();
         setIsPaused(true);
       } else {
+        // Stop any existing speech
+        speechSynthesis.cancel();
         const content = unifiedContent;
         if (content) {
           const utterance = new SpeechSynthesisUtterance(content);

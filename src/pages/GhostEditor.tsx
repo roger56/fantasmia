@@ -198,9 +198,11 @@ const GhostEditor = () => {
         speechSynthesis.resume();
         setIsPaused(false);
       } else {
+        // Stop any existing speech
+        speechSynthesis.cancel();
         // Start new speech
         const utterance = new SpeechSynthesisUtterance(finalStory);
-        utterance.lang = 'it-IT';
+        utterance.lang = isTranslated ? 'en-US' : 'it-IT';
         
         utterance.onstart = () => {
           setIsSpeaking(true);

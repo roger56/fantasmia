@@ -91,8 +91,10 @@ const StoryViewer = () => {
         speechSynthesis.resume();
         setIsPaused(false);
       } else {
-        const utterance = new SpeechSynthesisUtterance(story.content);
-        utterance.lang = 'it-IT';
+        // Stop any existing speech
+        speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(editedContent);
+        utterance.lang = isTranslated ? 'en-US' : 'it-IT';
         
         utterance.onstart = () => {
           setIsSpeaking(true);
