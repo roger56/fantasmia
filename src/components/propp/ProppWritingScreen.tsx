@@ -1,10 +1,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, ArrowRight, FileText, Home, Pause } from 'lucide-react';
 import { ProppCard, StoryPhase } from '@/types/propp';
-import SpeechToText from '@/components/SpeechToText';
+import WritingCard from '@/components/shared/WritingCard';
 
 interface ProppWritingScreenProps {
   currentCluster: number;
@@ -86,32 +85,15 @@ const ProppWritingScreen: React.FC<ProppWritingScreenProps> = ({
         )}
 
         {/* Writing area */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Scrivi il nuovo paragrafo</CardTitle>
-            <p className="text-slate-600">Massimo 10 righe suggerite</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Textarea
-                value={currentParagraph}
-                onChange={(e) => onParagraphChange(e.target.value)}
-                placeholder="Scrivi qui il paragrafo per questa carta..."
-                className="text-base resize-none overflow-hidden min-h-[80px]"
-                style={{ height: 'auto', minHeight: '80px' }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = Math.min(target.scrollHeight, 200) + 'px';
-                }}
-              />
-              <SpeechToText
-                onResult={(text) => onParagraphChange(currentParagraph + (currentParagraph ? ' ' : '') + text)}
-                className="shrink-0"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <WritingCard
+          title="Scrivi il nuovo paragrafo"
+          subtitle="Massimo 10 righe suggerite"
+          value={currentParagraph}
+          onChange={onParagraphChange}
+          placeholder="Scrivi qui il paragrafo per questa carta..."
+          maxLines={10}
+          onSpeechResult={(text) => onParagraphChange(currentParagraph + (currentParagraph ? ' ' : '') + text)}
+        />
 
         {/* Navigation */}
         <div className="flex gap-3 justify-center">
