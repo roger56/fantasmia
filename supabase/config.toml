@@ -1,1 +1,20 @@
 project_id = "kbczaumjqcctsxbheejf"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+port = 54320
+external_url = "https://kbczaumjqcctsxbheejf.supabase.co"
+additional_redirect_urls = ["https://lvh.me:3000/**"]
+jwt_expiry = 3600
+enable_signup = true
+enable_confirmations = false
+
+[functions.generate-image]
+verify_jwt = true

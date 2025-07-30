@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings } from 'lucide-react';
+import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 
@@ -43,6 +43,12 @@ const SuperuserSettings = () => {
       description: 'Configura i metodi di pagamento disponibili',
       icon: CreditCard,
       action: () => handleSettingClick('Modalità di pagamento')
+    },
+    {
+      title: 'Sicurezza',
+      description: 'Modifica password e impostazioni di sicurezza',
+      icon: Shield,
+      action: () => navigate('/superuser-password-change')
     },
     {
       title: 'SPARE (funzione futura)',

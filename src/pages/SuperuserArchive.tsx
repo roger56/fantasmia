@@ -1,39 +1,119 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, BookOpen, Volume2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, BookOpen, Volume2, Eye, Image } from 'lucide-react';
 import { getAllStoriesForSuperuser } from '@/utils/userStorage';
-import { StoryScrollViewer } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import HomeButton from '@/components/HomeButton';
+
+interface StoryWithMedia {
+  id: string;
+  title: string;
+  content: string;
+  authorName: string;
+  lastModified: string;
+  mode: string;
+  status: string;
+  mediaGenerations?: {
+    id: string;
+    media_url: string;
+    media_type: string;
+    media_style: string;
+    cost: number;
+    created_at: string;
+  }[];
+}
+
+interface TableRow {
+  storyId: string;
+  storyTitle: string;
+  author: string;
+  date: string;
+  imageUrl?: string;
+  imageStyle?: string;
+  cost: number;
+  mediaId?: string;
+}
 
 const SuperuserArchive = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [stories, setStories] = useState<any[]>([]);
-  const [filteredStories, setFilteredStories] = useState<any[]>([]);
+  const [stories, setStories] = useState<StoryWithMedia[]>([]);
+  const [filteredStories, setFilteredStories] = useState<StoryWithMedia[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [tableRows, setTableRows] = useState<TableRow[]>([]);
 
   useEffect(() => {
-    const allStories = getAllStoriesForSuperuser();
-    // Ensure each story has the correct author name
-    const storiesWithCorrectAuthors = allStories.map(story => ({
-      ...story,
-      authorName: story.authorName || 'Utente Sconosciuto' // Fallback if no author name
-    }));
-    setStories(storiesWithCorrectAuthors);
-    setFilteredStories(storiesWithCorrectAuthors);
+    const fetchStoriesWithMedia = async () => {
+      // Since the database relation doesn't exist yet, use only localStorage for now
+      try {
+        const localStories = getAllStoriesForSuperuser();
+        const allStories: StoryWithMedia[] = localStories.map(story => ({
+          id: story.id,
+          title: story.title,
+          content: story.content || '',
+          authorName: story.authorName || 'Utente Sconosciuto',
+          lastModified: story.lastModified,
+          mode: story.mode,
+          status: story.status,
+          mediaGenerations: [] // For now, no media from database
+        }));
+        
+        setStories(allStories);
+      } catch (error) {
+        console.error('Error fetching stories:', error);
+        setStories([]);
+      }
+    };
+
+    fetchStoriesWithMedia();
   }, []);
 
   useEffect(() => {
-    if (selectedCategory === 'all') {
-      setFilteredStories(stories);
-    } else {
-      setFilteredStories(stories.filter(story => story.mode === selectedCategory));
+    let filtered = stories;
+    if (selectedCategory !== 'all') {
+      filtered = stories.filter(story => story.mode === selectedCategory);
     }
+    setFilteredStories(filtered);
+
+    // Create table rows - one row per story, and separate rows for each image
+    const rows: TableRow[] = [];
+    
+    filtered.forEach(story => {
+      const images = story.mediaGenerations?.filter(media => media.media_type === 'image') || [];
+      
+      if (images.length === 0) {
+        // Story without images
+        rows.push({
+          storyId: story.id,
+          storyTitle: story.title,
+          author: story.authorName,
+          date: new Date(story.lastModified).toLocaleDateString('it-IT'),
+          cost: 0
+        });
+      } else {
+        // One row per image
+        images.forEach(image => {
+          rows.push({
+            storyId: story.id,
+            storyTitle: story.title,
+            author: story.authorName,
+            date: new Date(story.lastModified).toLocaleDateString('it-IT'),
+            imageUrl: image.media_url,
+            imageStyle: image.media_style,
+            cost: image.cost,
+            mediaId: image.id
+          });
+        });
+      }
+    });
+
+    setTableRows(rows);
   }, [selectedCategory, stories]);
 
   const [speechState, setSpeechState] = useState<{[key: string]: {playing: boolean, utterance?: SpeechSynthesisUtterance}}>({});
@@ -45,17 +125,14 @@ const SuperuserArchive = () => {
       const currentState = speechState[storyId];
       
       if (currentState?.playing) {
-        // Pause speech
         speechSynthesis.cancel();
         setSpeechState(prev => ({
           ...prev,
           [storyId]: { ...prev[storyId], playing: false }
         }));
       } else {
-        // Stop any other playing speech
         speechSynthesis.cancel();
         
-        // Create new utterance
         const utterance = new SpeechSynthesisUtterance(content);
         utterance.lang = 'it-IT';
         
@@ -92,26 +169,10 @@ const SuperuserArchive = () => {
     { value: 'CSS', label: 'Cosa Succede se...' }
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'suspended': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-slate-100 text-slate-800';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed': return 'Completata';
-      case 'suspended': return 'Sospesa';
-      default: return 'In Corso';
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <HomeButton />
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6 pt-4">
           <div className="flex items-center">
             <Button 
@@ -123,7 +184,7 @@ const SuperuserArchive = () => {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-slate-800">Archivio Completo</h1>
-              <p className="text-slate-600">Tutte le storie degli utenti</p>
+              <p className="text-slate-600">Tutte le storie degli utenti con media</p>
             </div>
           </div>
         </div>
@@ -148,7 +209,7 @@ const SuperuserArchive = () => {
                   </SelectContent>
                 </Select>
                 <span className="text-sm text-slate-600">
-                  {filteredStories.length} storie trovate
+                  {tableRows.length} righe trovate
                 </span>
               </div>
             </CardContent>
@@ -156,11 +217,11 @@ const SuperuserArchive = () => {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Archivio Completo - {filteredStories.length} storie</CardTitle>
+          <CardHeader className="sticky top-0 bg-white z-10 border-b">
+            <CardTitle>Archivio Completo - {tableRows.length} righe</CardTitle>
           </CardHeader>
-          <CardContent>
-            {filteredStories.length === 0 ? (
+          <CardContent className="p-0">
+            {tableRows.length === 0 ? (
               <div className="text-center py-12">
                 <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">
@@ -171,16 +232,81 @@ const SuperuserArchive = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                <StoryScrollViewer
-                  stories={filteredStories.map(story => ({
-                    ...story,
-                    lastModified: new Date(story.lastModified).toLocaleDateString(),
-                    authorName: story.authorName || 'Utente Sconosciuto'
-                  }))}
-                  onStorySelect={(storyId) => navigate(`/story/${storyId}`)}
-                  showAuthor={true}
-                />
+              <div className="overflow-auto max-h-[70vh]">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-white">
+                    <TableRow>
+                      <TableHead className="font-semibold">Storia</TableHead>
+                      <TableHead className="font-semibold">Autore</TableHead>
+                      <TableHead className="font-semibold">Data</TableHead>
+                      <TableHead className="font-semibold">Immagini</TableHead>
+                      <TableHead className="font-semibold text-right">Costo (€)</TableHead>
+                      <TableHead className="font-semibold">Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tableRows.map((row, index) => (
+                      <TableRow key={`${row.storyId}-${row.mediaId || index}`} className="hover:bg-slate-50">
+                        <TableCell className="font-medium max-w-xs">
+                          <div className="truncate" title={row.storyTitle}>
+                            {row.storyTitle}
+                          </div>
+                        </TableCell>
+                        <TableCell>{row.author}</TableCell>
+                        <TableCell>{row.date}</TableCell>
+                        <TableCell>
+                          {row.imageUrl ? (
+                            <div className="flex items-center gap-2">
+                              <img 
+                                src={row.imageUrl} 
+                                alt="Anteprima" 
+                                className="w-16 h-16 object-cover rounded border"
+                              />
+                              <div className="text-xs text-slate-600">
+                                <Badge variant="outline" className="text-xs">
+                                  {row.imageStyle}
+                                </Badge>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-slate-400">
+                              <Image className="w-4 h-4" />
+                              <span className="text-xs">Nessuna immagine</span>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {row.cost > 0 ? `€${row.cost.toFixed(3)}` : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/story/${row.storyId}`)}
+                              title="Visualizza storia"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                const story = stories.find(s => s.id === row.storyId);
+                                if (story) {
+                                  handleTextToSpeech(story.content, row.storyId, e);
+                                }
+                              }}
+                              title="Leggi ad alta voce"
+                            >
+                              <Volume2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
