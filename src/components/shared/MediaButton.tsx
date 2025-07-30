@@ -107,29 +107,35 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
             <DropdownMenuSeparator />
 
-            {/* Colonna sonora */}
+            {/* Voci */}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="cursor-pointer">
-                Colonna sonora
+                Voci
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="bg-white border shadow-lg">
                 <DropdownMenuItem 
                   className="cursor-pointer"
-                  onClick={() => handleMediaAction('Colonna sonora', 'Musica classica')}
+                  onClick={() => handleMediaAction('Voci', 'Uomo')}
                 >
-                  Musica classica
+                  Uomo
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   className="cursor-pointer"
-                  onClick={() => handleMediaAction('Colonna sonora', 'Musica rock')}
+                  onClick={() => handleMediaAction('Voci', 'Donna')}
                 >
-                  Musica rock
+                  Donna
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   className="cursor-pointer"
-                  onClick={() => handleMediaAction('Colonna sonora', 'Musica jazz')}
+                  onClick={() => handleMediaAction('Voci', 'Bambino')}
                 >
-                  Musica jazz
+                  Bambino
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="cursor-pointer"
+                  onClick={() => handleMediaAction('Voci', 'Bambina')}
+                >
+                  Bambina
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>

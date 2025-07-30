@@ -2,6 +2,7 @@ interface User {
   id: string;
   name: string;
   email?: string;
+  age?: number;
   password: string;
   lastAccess?: string;
   unreadMessages?: Message[];
@@ -41,6 +42,16 @@ export const saveUser = (user: User) => {
   }
   
   localStorage.setItem('fantasmia_users', JSON.stringify(users));
+};
+
+export const updateUser = (user: User) => {
+  const users = getUsers();
+  const existingIndex = users.findIndex(u => u.id === user.id);
+  
+  if (existingIndex >= 0) {
+    users[existingIndex] = user;
+    localStorage.setItem('fantasmia_users', JSON.stringify(users));
+  }
 };
 
 // Create the base directory structure for a new user

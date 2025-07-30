@@ -89,18 +89,16 @@ const Profiles = () => {
     if (selectedUser) {
       const user = authenticateUser(selectedUser.name, password);
       if (user) {
-        // Check for unread messages
+        // Check for unread messages and navigate to home first to show them
         if (user.unreadMessages && user.unreadMessages.length > 0) {
-          // Show messages and mark as read
           const messages = user.unreadMessages.filter(m => !m.read);
           if (messages.length > 0) {
-            toast({
-              title: "Messaggi non letti",
-              description: `Hai ${messages.length} nuovi messaggi. Controlla la tua inbox.`,
-            });
-            markMessagesAsRead(user.id);
+            // Navigate to home with userId to show messages
+            navigate('/home', { state: { userId: user.id, profileName: selectedUser.name } });
+            return;
           }
         }
+        // If no messages, go directly to create-story
         navigate('/create-story', { state: { profileId: selectedProfile, profileName: selectedUser.name } });
       } else {
         toast({

@@ -1,18 +1,51 @@
 
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, UserPlus, Shield, Globe, BookOpen } from 'lucide-react';
-import { initializeDirectoryStructureForExistingUsers } from '@/utils/userStorage';
+import { initializeDirectoryStructureForExistingUsers, getUserById, markMessagesAsRead } from '@/utils/userStorage';
+import MessageDialog from '@/components/shared/MessageDialog';
 
 const Home = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   useEffect(() => {
     // Inizializza la struttura directory per gli utenti esistenti
     initializeDirectoryStructureForExistingUsers();
-  }, []);
+    
+    // Check for user from navigation state
+    const userId = location.state?.userId;
+    if (userId) {
+      setCurrentUserId(userId);
+      const user = getUserById(userId);
+      if (user && user.unreadMessages && user.unreadMessages.length > 0) {
+        const unread = user.unreadMessages.filter(m => !m.read);
+        if (unread.length > 0) {
+          setUnreadMessages(unread);
+          setShowMessageDialog(true);
+        }
+      }
+    }
+  }, [location.state]);
+
+  const handleMarkMessagesAsRead = () => {
+    if (currentUserId) {
+      markMessagesAsRead(currentUserId);
+      setUnreadMessages([]);
+      // Navigate to create-story after reading messages
+      navigate('/create-story', { 
+        state: { 
+          profileId: currentUserId, 
+          profileName: location.state?.profileName 
+        } 
+      });
+    }
+  };
 
   const mainOptions = [
     {
@@ -67,6 +100,14 @@ const Home = () => {
             );
           })}
         </div>
+
+        {/* Message Dialog */}
+        <MessageDialog
+          messages={unreadMessages}
+          isOpen={showMessageDialog}
+          onClose={() => setShowMessageDialog(false)}
+          onMarkAsRead={handleMarkMessagesAsRead}
+        />
       </div>
     </div>
   );

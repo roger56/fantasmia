@@ -3,14 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Mail, Key, BookOpen } from 'lucide-react';
-import { getUsers, getStories } from '@/utils/userStorage';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ArrowLeft, User, Mail, Key, BookOpen, Edit } from 'lucide-react';
+import { getUsers, getStories, updateUser } from '@/utils/userStorage';
+import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 
 const SuperuserUsers = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
   const [userStats, setUserStats] = useState<{[key: string]: number}>({});
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     const allUsers = getUsers();
@@ -26,6 +34,50 @@ const SuperuserUsers = () => {
     });
     setUserStats(stats);
   }, []);
+
+  const handlePasswordChange = (user: any) => {
+    setSelectedUser(user);
+    setNewPassword('');
+    setConfirmPassword('');
+    setIsDialogOpen(true);
+  };
+
+  const handlePasswordUpdate = () => {
+    if (!newPassword.trim()) {
+      toast({
+        title: "Errore",
+        description: "Inserisci una nuova password",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Errore",
+        description: "Le password non corrispondono",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Update user password
+    const updatedUser = { ...selectedUser, password: newPassword };
+    updateUser(updatedUser);
+    
+    // Update local state
+    setUsers(prev => prev.map(u => u.id === selectedUser.id ? updatedUser : u));
+    
+    toast({
+      title: "Password aggiornata",
+      description: `Password di ${selectedUser.name} aggiornata con successo`,
+    });
+
+    setIsDialogOpen(false);
+    setSelectedUser(null);
+    setNewPassword('');
+    setConfirmPassword('');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
@@ -83,17 +135,77 @@ const SuperuserUsers = () => {
                           <span className="text-slate-600 truncate max-w-32">{user.email}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-sm flex-shrink-0">
-                        <BookOpen className="w-3 h-3 text-slate-500" />
-                        <span className="font-semibold text-slate-800">{userStats[user.id] || 0}</span>
-                      </div>
-                    </div>
-                  </div>
+                       <div className="flex items-center gap-2 text-sm flex-shrink-0">
+                         <BookOpen className="w-3 h-3 text-slate-500" />
+                         <span className="font-semibold text-slate-800">{userStats[user.id] || 0}</span>
+                       </div>
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handlePasswordChange(user);
+                         }}
+                         className="ml-2"
+                       >
+                         <Edit className="w-3 h-3 mr-1" />
+                         Password
+                       </Button>
+                     </div>
+                   </div>
                 ))}
               </div>
             </div>
           </div>
         )}
+
+        {/* Password Change Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="bg-white">
+            <DialogHeader>
+              <DialogTitle>Modifica Password - {selectedUser?.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Nuova Password
+                </label>
+                <Input
+                  type="password"
+                  placeholder="Inserisci nuova password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Conferma Password
+                </label>
+                <Input
+                  type="password"
+                  placeholder="Conferma nuova password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Annulla
+                </Button>
+                <Button 
+                  onClick={handlePasswordUpdate}
+                  className="flex-1"
+                >
+                  Aggiorna Password
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

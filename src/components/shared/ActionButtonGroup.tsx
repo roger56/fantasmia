@@ -1,6 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Volume2, Languages, Save, Share, Edit } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Volume2, Languages, Save, Share, Edit, Mail, Upload } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 
 interface ActionButtonGroupProps {
@@ -31,13 +34,34 @@ const ActionButtonGroup: React.FC<ActionButtonGroupProps> = ({
   className = ""
 }) => {
   const { speak, getButtonText } = useTTS();
+  const { toast } = useToast();
 
   const handleListen = () => {
     speak(content, language);
   };
 
-  const handleShare = () => {
+  const handleClipboard = () => {
     navigator.clipboard.writeText(content);
+    toast({
+      title: "Copiato negli appunti",
+      description: "Il contenuto è stato copiato negli appunti",
+    });
+  };
+
+  const handleSendMail = () => {
+    toast({
+      title: "Funzione in sviluppo",
+      description: "Invio mail sarà presto disponibile",
+      variant: "default"
+    });
+  };
+
+  const handlePublish = () => {
+    toast({
+      title: "Funzione in sviluppo", 
+      description: "Pubblicazione sul sito sarà presto disponibile",
+      variant: "default"
+    });
   };
 
   return (
@@ -73,10 +97,62 @@ const ActionButtonGroup: React.FC<ActionButtonGroupProps> = ({
       )}
       
       {showShare && (
-        <Button variant="outline" onClick={handleShare}>
-          <Share className="w-4 h-4 mr-2" />
-          CONDIVIDI
-        </Button>
+        <TooltipProvider>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Share className="w-4 h-4 mr-2" />
+                CONDIVIDI
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 bg-white border shadow-lg z-50">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuItem 
+                    className="cursor-pointer"
+                    onClick={handleClipboard}
+                  >
+                    <Share className="w-4 h-4 mr-2" />
+                    Appunti
+                  </DropdownMenuItem>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Copia negli appunti</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuItem 
+                    className="cursor-pointer"
+                    onClick={handleSendMail}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Invia mail
+                  </DropdownMenuItem>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Invia mail all'indirizzo indicato nelle impostazioni</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuItem 
+                    className="cursor-pointer"
+                    onClick={handlePublish}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Pubblica
+                  </DropdownMenuItem>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Pubblica la storia sul sito web di Fantasmia visibile a tutti gli iscritti. L'invio ne autorizza la pubblicazione.</p>
+                </TooltipContent>
+              </Tooltip>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TooltipProvider>
       )}
     </div>
   );

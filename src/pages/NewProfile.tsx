@@ -15,7 +15,8 @@ const NewProfile = () => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
-    email: ''
+    email: '',
+    age: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -45,11 +46,23 @@ const NewProfile = () => {
       return;
     }
 
+    // Validate age
+    const age = parseInt(formData.age);
+    if (!formData.age || isNaN(age) || age < 1 || age > 120) {
+      toast({
+        title: "Età non valida",
+        description: "Inserisci un'età valida tra 1 e 120 anni",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Create user with password same as name (temporary solution)
     const newUser = {
       id: Date.now().toString(),
       name: formData.name.trim(),
       email: formData.email.trim() || undefined,
+      age: parseInt(formData.age),
       password: formData.name.trim(), // Password same as name
       lastAccess: new Date().toISOString(),
       unreadMessages: []
@@ -102,6 +115,21 @@ const NewProfile = () => {
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 className="text-lg"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Età *
+              </label>
+              <Input
+                type="number"
+                placeholder="Inserisci l'età"
+                value={formData.age}
+                onChange={(e) => handleInputChange('age', e.target.value)}
+                className="text-lg"
+                min="1"
+                max="120"
               />
             </div>
 

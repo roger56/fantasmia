@@ -19,6 +19,7 @@ import GhostEditor from "./pages/GhostEditor";
 import StoryViewer from "./pages/StoryViewer";
 import SuperuserArchive from "./pages/SuperuserArchive";
 import SuperuserUsers from "./pages/SuperuserUsers";
+import SuperuserSettings from "./pages/SuperuserSettings";
 import ParoleChiamanoEditor from "./pages/ParoleChiamanoEditor";
 import AirotsEditor from "./pages/AirotsEditor";
 import CampbellEditor from "./pages/CampbellEditor";
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/story/:storyId" element={<StoryViewer />} />
           <Route path="/superuser-archive" element={<SuperuserArchive />} />
           <Route path="/superuser-users" element={<SuperuserUsers />} />
+          <Route path="/superuser/settings" element={<SuperuserSettings />} />
           <Route path="/parole-chiamano" element={<ParoleChiamanoEditor />} />
           <Route path="/airots-editor" element={<AirotsEditor />} />
         <Route path="/campbell-editor" element={<CampbellEditor />} />
