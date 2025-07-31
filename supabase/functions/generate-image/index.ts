@@ -78,6 +78,8 @@ serve(async (req) => {
 
     // Calculate cost based on size (DALL-E 3 standard quality cost)
     const cost = style === 'fumetto' ? 0.020 : 0.040 // $0.020 for 512x512, $0.040 for 1024x1024
+    
+    console.log(`Generated image with style: ${style}, size: ${style === 'fumetto' ? '512x512' : '1024x1024'}, cost: ${cost}`)
 
     // Save media generation record
     const { data: mediaGeneration, error: mediaError } = await supabase

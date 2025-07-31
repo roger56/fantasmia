@@ -6,6 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Palette, Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface MediaButtonProps {
   storyContent: string;
@@ -26,10 +28,14 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
+  const [userComment, setUserComment] = useState('');
+  const [showCommentDialog, setShowCommentDialog] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState('');
 
   const handleMediaAction = async (type: string, subtype: string) => {
     if (type === 'Disegno') {
-      await handleImageGeneration(subtype.toLowerCase());
+      setSelectedStyle(subtype.toLowerCase());
+      setShowCommentDialog(true);
     } else {
       toast({
         title: "Funzione in sviluppo",
@@ -37,6 +43,11 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         variant: "default"
       });
     }
+  };
+
+  const handleGenerateWithComment = async () => {
+    setShowCommentDialog(false);
+    await handleImageGeneration(selectedStyle);
   };
 
   const handleImageGeneration = async (style: string) => {
@@ -57,9 +68,14 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         throw new Error('User ID is required');
       }
 
+      // Create enhanced prompt with user comment
+      const enhancedPrompt = userComment 
+        ? `${storyContent}\n\nNote aggiuntive: ${userComment}`
+        : storyContent;
+
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
-          prompt: storyContent,
+          prompt: enhancedPrompt,
           style: style,
           storyId: storyId,
           storyTitle: storyTitle,
@@ -74,6 +90,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       if (data?.imageUrl) {
         setGeneratedImage(data.imageUrl);
         setShowImageDialog(true);
+        setUserComment(''); // Reset comment after generation
         toast({
           title: "Immagine generata!",
           description: `Costo: €${data.cost.toFixed(3)}`,
@@ -96,7 +113,16 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     if (!generatedImage) return;
     
     try {
-      const response = await fetch(generatedImage);
+      // Use a proxy or different approach for CORS-protected images
+      const response = await fetch(generatedImage, {
+        mode: 'cors',
+        method: 'GET'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -113,9 +139,10 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         variant: "default"
       });
     } catch (error) {
+      console.error('Download error:', error);
       toast({
         title: "Errore nel download",
-        description: "Non è stato possibile scaricare l'immagine",
+        description: "Non è stato possibile scaricare l'immagine. Prova a cliccare destro sull'immagine e seleziona 'Salva immagine'.",
         variant: "destructive"
       });
     }
@@ -277,6 +304,37 @@ const MediaButton: React.FC<MediaButtonProps> = ({
               </p>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Comment Dialog */}
+      <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Aggiungi un commento (opzionale)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Aggiungi delle specifiche per personalizzare l'immagine:
+            </p>
+            <Textarea
+              value={userComment}
+              onChange={(e) => setUserComment(e.target.value)}
+              placeholder="es. 'in stile fiabesco', 'con ambientazione spaziale', 'con colori vivaci'..."
+              className="min-h-[100px]"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowCommentDialog(false)}
+              >
+                Annulla
+              </Button>
+              <Button onClick={handleGenerateWithComment}>
+                Genera Immagine
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>
