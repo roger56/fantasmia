@@ -122,6 +122,7 @@ const StoryViewer = () => {
             <MediaButton 
               storyContent={editedContent}
               storyTitle={displayTitle}
+              userId={story.authorId}
               className="w-full sm:w-auto"
             />
             

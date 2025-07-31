@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, BookOpen, Volume2, Eye, Image } from 'lucide-react';
-import { getAllStoriesForSuperuser } from '@/utils/userStorage';
+import { ArrowLeft, BookOpen, Volume2, Eye, Image, Trash2 } from 'lucide-react';
+import { getAllStoriesForSuperuser, deleteStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import HomeButton from '@/components/HomeButton';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface StoryWithMedia {
   id: string;
@@ -47,6 +48,7 @@ const SuperuserArchive = () => {
   const [filteredStories, setFilteredStories] = useState<StoryWithMedia[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [tableRows, setTableRows] = useState<TableRow[]>([]);
+  const [storyToDelete, setStoryToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStoriesWithMedia = async () => {
@@ -154,6 +156,33 @@ const SuperuserArchive = () => {
       toast({
         title: "Non supportato",
         description: "La sintesi vocale non è supportata da questo browser",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteStory = (storyId: string) => {
+    try {
+      // Delete the story using the utility function
+      const deleted = deleteStory(storyId);
+      
+      if (deleted) {
+        // Remove from local state and update the view
+        const updatedStories = stories.filter(story => story.id !== storyId);
+        setStories(updatedStories);
+
+        toast({
+          title: "Storia eliminata",
+          description: "La storia è stata eliminata con successo"
+        });
+      } else {
+        throw new Error('Storia non trovata');
+      }
+    } catch (error) {
+      console.error('Error deleting story:', error);
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante l'eliminazione della storia",
         variant: "destructive"
       });
     }
@@ -301,6 +330,36 @@ const SuperuserArchive = () => {
                             >
                               <Volume2 className="w-4 h-4" />
                             </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Elimina storia"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Sei sicuro di voler eliminare la storia "{row.storyTitle}"? 
+                                    Questa azione non può essere annullata.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Annulla</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => handleDeleteStory(row.storyId)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Elimina
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </TableCell>
                       </TableRow>

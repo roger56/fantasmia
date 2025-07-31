@@ -277,6 +277,18 @@ export const updateStory = (storyId: string, updates: Partial<Story>) => {
   }
 };
 
+export const deleteStory = (storyId: string): boolean => {
+  const stories = getStories();
+  const storyIndex = stories.findIndex(s => s.id === storyId);
+  
+  if (storyIndex >= 0) {
+    stories.splice(storyIndex, 1);
+    localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
+    return true;
+  }
+  return false;
+};
+
 // Initialize directory structure for existing users
 export const initializeDirectoryStructureForExistingUsers = () => {
   const users = getUsers();

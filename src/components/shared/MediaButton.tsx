@@ -12,13 +12,15 @@ interface MediaButtonProps {
   storyTitle?: string;
   storyId?: string;
   className?: string;
+  userId?: string;
 }
 
 const MediaButton: React.FC<MediaButtonProps> = ({
   storyContent,
   storyTitle,
   storyId,
-  className = ""
+  className = "",
+  userId
 }) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -49,10 +51,10 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
     setIsGenerating(true);
     try {
-      // Get current user ID from localStorage
-      const currentUserId = localStorage.getItem('currentUserId');
+      // Use userId prop or fallback to localStorage
+      const currentUserId = userId || localStorage.getItem('currentUserId');
       if (!currentUserId) {
-        throw new Error('Nessun utente attivo trovato');
+        throw new Error('User ID is required');
       }
 
       const { data, error } = await supabase.functions.invoke('generate-image', {
