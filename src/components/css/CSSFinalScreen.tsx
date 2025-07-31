@@ -17,6 +17,7 @@ interface CSSFinalScreenProps {
   onSave: (title: string) => void;
   onPhaseUpdate?: (phases: { question: string; answer: string }[]) => void;
   profileName?: string;
+  profileId?: string;
   language: 'italian' | 'english';
   onLanguageToggle: () => void;
   isTranslating: boolean;
@@ -30,6 +31,7 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
   onSave,
   onPhaseUpdate,
   profileName,
+  profileId,
   language,
   onLanguageToggle,
   isTranslating
@@ -212,6 +214,7 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
               <MediaButton 
                 storyContent={unifiedContent}
                 storyTitle="Storia CSS"
+                userId={profileId}
               />
               
               <Button variant="outline" onClick={handleShare}>

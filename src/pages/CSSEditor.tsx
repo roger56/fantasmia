@@ -237,6 +237,7 @@ const CSSEditor = () => {
         onSave={handleSaveStory}
         onPhaseUpdate={handlePhaseUpdate}
         profileName={profileName}
+        profileId={profileId}
         language={language}
         onLanguageToggle={handleLanguageToggle}
         isTranslating={isTranslating}
