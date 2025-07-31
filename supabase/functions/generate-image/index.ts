@@ -91,11 +91,12 @@ serve(async (req) => {
         cost: cost
       })
       .select()
-      .single()
+      .maybeSingle()
 
     if (mediaError) {
       console.error('Error saving media generation:', mediaError)
-      throw new Error('Failed to save media generation record')
+      // Don't throw error, just log it - we can still return the image
+      console.log('Continuing without saving to database...')
     }
 
     return new Response(
@@ -103,7 +104,7 @@ serve(async (req) => {
         imageUrl,
         cost,
         style,
-        mediaId: mediaGeneration.id
+        mediaId: mediaGeneration?.id || null
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

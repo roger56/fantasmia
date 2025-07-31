@@ -41,6 +41,39 @@ export type Database = {
         }
         Relationships: []
       }
+      media_generations: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          media_style: string | null
+          media_type: string
+          media_url: string
+          story_id: string | null
+          user_id: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          id?: string
+          media_style?: string | null
+          media_type: string
+          media_url: string
+          story_id?: string | null
+          user_id: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          media_style?: string | null
+          media_type?: string
+          media_url?: string
+          story_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           category: string
