@@ -17,4 +17,4 @@ enable_signup = true
 enable_confirmations = false
 
 [functions.generate-image]
-verify_jwt = true
+verify_jwt = false

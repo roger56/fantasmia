@@ -13,10 +13,14 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, style, storyId, storyTitle } = await req.json()
+    const { prompt, style, storyId, storyTitle, userId } = await req.json()
 
     if (!prompt) {
       throw new Error('Prompt is required')
+    }
+
+    if (!userId) {
+      throw new Error('User ID is required')
     }
 
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
@@ -70,20 +74,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get current user from JWT
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
-    }
-
-    const jwt = authHeader.replace('Bearer ', '')
-    const { data: userData, error: userError } = await supabase.auth.getUser(jwt)
-    
-    if (userError || !userData.user) {
-      throw new Error('Invalid or expired token')
-    }
-
-    const userId = userData.user.id
+    // Use userId from request body (no JWT authentication required)
 
     // Calculate cost (DALL-E 3 standard quality cost)
     const cost = 0.040 // $0.040 per image for DALL-E 3 1024x1024

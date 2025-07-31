@@ -49,12 +49,19 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
     setIsGenerating(true);
     try {
+      // Get current user ID from localStorage
+      const currentUserId = localStorage.getItem('currentUserId');
+      if (!currentUserId) {
+        throw new Error('Nessun utente attivo trovato');
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
           prompt: storyContent,
           style: style,
           storyId: storyId,
-          storyTitle: storyTitle
+          storyTitle: storyTitle,
+          userId: currentUserId
         }
       });
 
