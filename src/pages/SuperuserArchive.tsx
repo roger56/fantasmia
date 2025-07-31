@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { ArrowLeft, BookOpen, Volume2, Eye, Image, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getAllStoriesForSuperuser, deleteStory } from '@/utils/userStorage';
+import { getAllStoriesForSuperuser, deleteStory, getAllAuthors } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,10 +50,12 @@ const SuperuserArchive = () => {
   const [stories, setStories] = useState<StoryWithMedia[]>([]);
   const [filteredStories, setFilteredStories] = useState<StoryWithMedia[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedAuthor, setSelectedAuthor] = useState<string>('all');
   const [tableRows, setTableRows] = useState<TableRow[]>([]);
   const [storyToDelete, setStoryToDelete] = useState<string | null>(null);
   const [selectedStory, setSelectedStory] = useState<TableRow | null>(null);
   const [currentScreen, setCurrentScreen] = useState<1 | 2>(1);
+  const [authors, setAuthors] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchStoriesWithMedia = async () => {
@@ -72,6 +74,10 @@ const SuperuserArchive = () => {
         }));
         
         setStories(allStories);
+        
+        // Load authors for filter
+        const authorList = getAllAuthors();
+        setAuthors(authorList);
       } catch (error) {
         console.error('Error fetching stories:', error);
         setStories([]);
@@ -83,9 +89,17 @@ const SuperuserArchive = () => {
 
   useEffect(() => {
     let filtered = stories;
+    
+    // Filter by category
     if (selectedCategory !== 'all') {
-      filtered = stories.filter(story => story.mode === selectedCategory);
+      filtered = filtered.filter(story => story.mode === selectedCategory);
     }
+    
+    // Filter by author
+    if (selectedAuthor !== 'all') {
+      filtered = filtered.filter(story => story.authorName === selectedAuthor);
+    }
+    
     setFilteredStories(filtered);
 
     // Create table rows - one row per story, and separate rows for each image
@@ -121,7 +135,7 @@ const SuperuserArchive = () => {
     });
 
     setTableRows(rows);
-  }, [selectedCategory, stories]);
+  }, [selectedCategory, selectedAuthor, stories]);
 
   const [speechState, setSpeechState] = useState<{[key: string]: {playing: boolean, utterance?: SpeechSynthesisUtterance}}>({});
 
@@ -420,22 +434,44 @@ const SuperuserArchive = () => {
         <div className="mb-6">
           <Card>
             <CardContent className="p-4">
-              <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center gap-4'}`}>
-                <label className="text-sm font-medium text-slate-700">
-                  Filtra per categoria:
-                </label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className={isMobile ? 'w-full' : 'w-48'}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    {categories.map(cat => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className={`${isMobile ? 'space-y-4' : 'flex items-center gap-4 flex-wrap'}`}>
+                <div className={`${isMobile ? 'w-full' : 'flex items-center gap-2'}`}>
+                  <label className="text-sm font-medium text-slate-700">
+                    Filtra per categoria:
+                  </label>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className={isMobile ? 'w-full mt-2' : 'w-48'}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      {categories.map(cat => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className={`${isMobile ? 'w-full' : 'flex items-center gap-2'}`}>
+                  <label className="text-sm font-medium text-slate-700">
+                    Filtra per autore:
+                  </label>
+                  <Select value={selectedAuthor} onValueChange={setSelectedAuthor}>
+                    <SelectTrigger className={isMobile ? 'w-full mt-2' : 'w-48'}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      <SelectItem value="all">Tutti gli autori</SelectItem>
+                      {authors.map(author => (
+                        <SelectItem key={author} value={author}>
+                          {author}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <span className="text-sm text-slate-600">
                   {tableRows.length} righe trovate
                 </span>

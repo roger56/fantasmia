@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Palette, Loader2 } from 'lucide-react';
+import { Palette, Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -89,6 +89,35 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    if (!generatedImage) return;
+    
+    try {
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${storyTitle || 'immagine'}-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download completato",
+        description: "L'immagine è stata scaricata sul tuo dispositivo",
+        variant: "default"
+      });
+    } catch (error) {
+      toast({
+        title: "Errore nel download",
+        description: "Non è stato possibile scaricare l'immagine",
+        variant: "destructive"
+      });
     }
   };
 
@@ -231,8 +260,20 @@ const MediaButton: React.FC<MediaButtonProps> = ({
                 alt="Immagine generata per la storia"
                 className="max-w-full h-auto rounded-lg shadow-lg"
               />
-              <p className="text-sm text-muted-foreground">
-                L'immagine è stata salvata nell'archivio delle storie
+              <div className="flex items-center gap-4">
+                <Button 
+                  onClick={handleDownloadImage}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Scarica Immagine
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                L'immagine è temporanea e verrà persa alla chiusura della pagina.
+                <br />
+                Usa il pulsante "Scarica" per salvarla sul tuo dispositivo.
               </p>
             </div>
           )}

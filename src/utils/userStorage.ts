@@ -239,12 +239,18 @@ export const getStoriesForUser = (userId: string, includePublic: boolean = false
 
 export const getAllStoriesForSuperuser = (): Story[] => {
   const stories = getStories();
+  const users = getUsers();
+  
   // Sort by descending date and ensure proper author names
   return stories
-    .map(story => ({
-      ...story,
-      authorName: story.authorName || 'Utente Sconosciuto'
-    }))
+    .map(story => {
+      // Try to find the actual user name from users list
+      const user = users.find(u => u.id === story.authorId);
+      return {
+        ...story,
+        authorName: user?.name || story.authorName || 'Utente Sconosciuto'
+      };
+    })
     .sort((a, b) => 
       new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
     );
@@ -312,4 +318,11 @@ export const getFilesInDirectory = (userId: string, category: string): string[] 
     return Object.keys(structure['FANTASMIA'][userId][category]);
   }
   return [];
+};
+
+// Get all unique authors from stories
+export const getAllAuthors = (): string[] => {
+  const stories = getAllStoriesForSuperuser();
+  const uniqueAuthors = new Set(stories.map(story => story.authorName));
+  return Array.from(uniqueAuthors).sort();
 };

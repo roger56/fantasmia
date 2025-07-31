@@ -31,7 +31,7 @@ serve(async (req) => {
     // Create enhanced prompt based on style
     let enhancedPrompt = prompt
     if (style === 'fumetto') {
-      enhancedPrompt = `Comic book style illustration: ${prompt}. Bright colors, bold outlines, cartoon-like characters, speech bubbles style aesthetic.`
+      enhancedPrompt = `Comic book style illustration based on: ${prompt}. Bright colors, bold outlines, cartoon-like characters, no text or speech bubbles in the image, pure visual illustration only.`
     } else if (style === 'fotografico') {
       enhancedPrompt = `Photorealistic high-quality photograph: ${prompt}. Ultra-realistic, professional photography, detailed lighting, sharp focus.`
     } else if (style === 'astratto') {
@@ -51,7 +51,7 @@ serve(async (req) => {
         model: 'dall-e-3',
         prompt: enhancedPrompt,
         n: 1,
-        size: '1024x1024',
+        size: style === 'fumetto' ? '512x512' : '1024x1024', // Lower resolution for comic style
         quality: 'standard',
         response_format: 'url'
       }),
@@ -76,8 +76,8 @@ serve(async (req) => {
 
     // Use userId from request body (no JWT authentication required)
 
-    // Calculate cost (DALL-E 3 standard quality cost)
-    const cost = 0.040 // $0.040 per image for DALL-E 3 1024x1024
+    // Calculate cost based on size (DALL-E 3 standard quality cost)
+    const cost = style === 'fumetto' ? 0.020 : 0.040 // $0.020 for 512x512, $0.040 for 1024x1024
 
     // Save media generation record
     const { data: mediaGeneration, error: mediaError } = await supabase
