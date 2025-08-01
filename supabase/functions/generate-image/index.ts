@@ -28,14 +28,21 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured')
     }
 
+    // Clean and shorten prompt to avoid safety issues
+    const cleanPrompt = prompt
+      .replace(/\n/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 800) // Limit to 800 characters
+    
     // Create enhanced prompt based on style - all styles exclude text
-    let enhancedPrompt = prompt
+    let enhancedPrompt = cleanPrompt
     if (style === 'fumetto') {
-      enhancedPrompt = `Comic book style illustration based on: ${prompt}. Bright colors, bold outlines, cartoon-like characters, no text or speech bubbles in the image, pure visual illustration only.`
+      enhancedPrompt = `Comic book style illustration: ${cleanPrompt}. Bright colors, bold outlines, cartoon style, no text in image.`
     } else if (style === 'fotografico') {
-      enhancedPrompt = `Photorealistic high-quality photograph: ${prompt}. Ultra-realistic, professional photography, detailed lighting, sharp focus, no text or writing in the image.`
+      enhancedPrompt = `Professional photograph: ${cleanPrompt}. Realistic lighting, sharp focus, no text.`
     } else if (style === 'astratto') {
-      enhancedPrompt = `Abstract artistic interpretation: ${prompt}. Creative abstract style, artistic expression, non-literal representation, no text or writing in the image.`
+      enhancedPrompt = `Abstract art: ${cleanPrompt}. Creative artistic style, no text.`
     }
 
     console.log('Generating image with prompt:', enhancedPrompt)

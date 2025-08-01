@@ -84,7 +84,13 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.error('Image generation error:', error);
+        const errorMessage = error.message?.includes('safety system') 
+          ? "Il contenuto della storia non è adatto per la generazione di immagini. Prova a modificare il testo o rimuovi parole problematiche."
+          : error.message?.includes('non-2xx status') 
+            ? "Errore del server durante la generazione. Riprova tra qualche minuto."
+            : error.message;
+        throw new Error(errorMessage);
       }
 
       if (data?.imageUrl) {
