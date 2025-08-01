@@ -51,7 +51,7 @@ serve(async (req) => {
         model: 'dall-e-3',
         prompt: enhancedPrompt,
         n: 1,
-        size: '512x512', // Low resolution for all styles to reduce costs
+        size: '1024x1024', // Standard resolution supported by OpenAI
         quality: 'standard',
         response_format: 'url'
       }),
@@ -77,9 +77,9 @@ serve(async (req) => {
     // Use userId from request body (no JWT authentication required)
 
     // Calculate cost based on size (DALL-E 3 standard quality cost)
-    const cost = 0.020 // $0.020 for 512x512 for all styles
+    const cost = 0.040 // $0.040 for 1024x1024 for all styles
     
-    console.log(`Generated image with style: ${style}, size: 512x512, cost: ${cost}`)
+    console.log(`Generated image with style: ${style}, size: 1024x1024, cost: ${cost}`)
 
     // Save media generation record
     const { data: mediaGeneration, error: mediaError } = await supabase

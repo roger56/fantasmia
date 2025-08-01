@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, User, Mail, Key, BookOpen, Edit } from 'lucide-react';
-import { getUsers, getStories, updateUser } from '@/utils/userStorage';
+import { ArrowLeft, User, Mail, Key, BookOpen, Edit, Trash2 } from 'lucide-react';
+import { getUsers, getStories, updateUser, getAllStoriesForSuperuser } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 
@@ -19,14 +19,16 @@ const SuperuserUsers = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
 
   useEffect(() => {
     const allUsers = getUsers();
-    const allStories = getStories();
+    const allStories = getAllStoriesForSuperuser();
     
     setUsers(allUsers);
     
-    // Calculate story count for each user correctly
+    // Calculate story count for each user correctly using authorId
     const stats: {[key: string]: number} = {};
     allUsers.forEach(user => {
       const userStories = allStories.filter(story => story.authorId === user.id);
@@ -77,6 +79,40 @@ const SuperuserUsers = () => {
     setSelectedUser(null);
     setNewPassword('');
     setConfirmPassword('');
+  };
+
+  const handleDeleteUser = (user: any) => {
+    setUserToDelete(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteUser = () => {
+    if (userToDelete) {
+      // Get all users and remove the selected one
+      const allUsers = getUsers();
+      const updatedUsers = allUsers.filter(u => u.id !== userToDelete.id);
+      localStorage.setItem('fantasmia_users', JSON.stringify(updatedUsers));
+      
+      // Update local state
+      setUsers(updatedUsers);
+      
+      // Recalculate stats
+      const allStories = getAllStoriesForSuperuser();
+      const stats: {[key: string]: number} = {};
+      updatedUsers.forEach(user => {
+        const userStories = allStories.filter(story => story.authorId === user.id);
+        stats[user.id] = userStories.length;
+      });
+      setUserStats(stats);
+      
+      toast({
+        title: "Utente eliminato",
+        description: `${userToDelete.name} è stato eliminato con successo`,
+      });
+      
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
   };
 
   return (
@@ -139,18 +175,29 @@ const SuperuserUsers = () => {
                          <BookOpen className="w-3 h-3 text-slate-500" />
                          <span className="font-semibold text-slate-800">{userStats[user.id] || 0}</span>
                        </div>
-                       <Button
-                         variant="outline"
-                         size="sm"
-                         onClick={(e) => {
-                           e.stopPropagation();
-                           handlePasswordChange(user);
-                         }}
-                         className="ml-2"
-                       >
-                         <Edit className="w-3 h-3 mr-1" />
-                         Password
-                       </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePasswordChange(user);
+                          }}
+                          className="ml-2"
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Password
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(user);
+                          }}
+                          className="ml-1 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
                      </div>
                    </div>
                 ))}
@@ -201,6 +248,39 @@ const SuperuserUsers = () => {
                   className="flex-1"
                 >
                   Aggiorna Password
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="bg-white">
+            <DialogHeader>
+              <DialogTitle>Conferma Eliminazione</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-slate-700">
+                Sei sicuro di voler eliminare l'utente <strong>{userToDelete?.name}</strong>?
+              </p>
+              <p className="text-sm text-red-600">
+                Questa azione non può essere annullata.
+              </p>
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Annulla
+                </Button>
+                <Button 
+                  onClick={confirmDeleteUser}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  Elimina
                 </Button>
               </div>
             </div>

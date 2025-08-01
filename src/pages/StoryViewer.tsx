@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Volume2, Edit, Save, Globe } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ArrowLeft, Volume2, Edit, Save, Globe, Share2, Copy, Mail } from 'lucide-react';
 import { getStories, saveStory, Story } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
@@ -77,6 +78,29 @@ const StoryViewer = () => {
     }
   };
 
+  const handleCopyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(`${displayTitle}\n\n${editedContent}`);
+      toast({
+        title: "Copiato negli appunti",
+        description: "Il testo della storia è stato copiato negli appunti"
+      });
+    } catch (err) {
+      toast({
+        title: "Errore",
+        description: "Non è stato possibile copiare il testo",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleMailShare = () => {
+    toast({
+      title: "Funzione in sviluppo",
+      description: "La condivisione via email sarà presto disponibile"
+    });
+  };
+
   if (!story) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
@@ -119,12 +143,40 @@ const StoryViewer = () => {
               {getButtonText()}
             </Button>
             
-            <MediaButton 
-              storyContent={editedContent}
-              storyTitle={displayTitle}
-              userId={story.authorId}
-              className="w-full sm:w-auto"
-            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  MEDIA
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem>
+                  <Volume2 className="w-4 h-4 mr-2" />
+                  Voci
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <MediaButton 
+                    storyContent={editedContent}
+                    storyTitle={displayTitle}
+                    userId={story.authorId}
+                    className="w-full justify-start p-0 h-auto font-normal"
+                  />
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Globe className="w-4 h-4 mr-2" />
+                  Filmato
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopyToClipboard}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copia appunti
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleMailShare}>
+                  <Mail className="w-4 h-4 mr-2" />
+                  Mail
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             {!isEditing ? (
               <Button onClick={() => setIsEditing(true)} variant="outline" className="w-full sm:w-auto">

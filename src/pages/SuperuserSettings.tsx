@@ -24,37 +24,43 @@ const SuperuserSettings = () => {
       title: 'Scelta colori del sistema',
       description: 'Personalizza la palette colori dell\'applicazione',
       icon: Palette,
-      action: () => handleSettingClick('Scelta colori del sistema')
+      action: () => handleSettingClick('Scelta colori del sistema'),
+      showTooltip: true
     },
     {
       title: 'Indirizzo email predefinito',
       description: 'Configura l\'email per invii automatici',
       icon: Mail,
-      action: () => handleSettingClick('Indirizzo email predefinito')
+      action: () => handleSettingClick('Indirizzo email predefinito'),
+      showTooltip: true
     },
     {
       title: 'Lingua base del sistema',
       description: 'Imposta la lingua predefinita dell\'interfaccia',
       icon: Globe,
-      action: () => handleSettingClick('Lingua base del sistema')
+      action: () => handleSettingClick('Lingua base del sistema'),
+      showTooltip: true
     },
     {
       title: 'Modalità di pagamento',
       description: 'Configura i metodi di pagamento disponibili',
       icon: CreditCard,
-      action: () => navigate('/superuser-payment-settings')
+      action: () => navigate('/superuser-payment-settings'),
+      showTooltip: false
     },
     {
       title: 'Sicurezza',
       description: 'Modifica password e impostazioni di sicurezza',
       icon: Shield,
-      action: () => navigate('/superuser-password-change')
+      action: () => navigate('/superuser-password-change'),
+      showTooltip: false
     },
     {
       title: 'SPARE (funzione futura)',
       description: 'Placeholder per funzionalità future',
       icon: Settings,
-      action: () => handleSettingClick('SPARE')
+      action: () => handleSettingClick('SPARE'),
+      showTooltip: true
     }
   ];
 
@@ -81,31 +87,52 @@ const SuperuserSettings = () => {
         <div className="grid gap-4 md:grid-cols-2">
           {settingsOptions.map((option, index) => {
             const IconComponent = option.icon;
-            return (
-              <TooltipProvider key={index}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Card 
-                      className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-slate-300"
-                      onClick={option.action}
-                    >
-                      <CardContent className="p-6 flex items-center">
-                        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mr-4">
-                          <IconComponent className="w-6 h-6 text-slate-700" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-slate-800">{option.title}</h3>
-                          <p className="text-slate-600 text-sm">{option.description}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>IN VIA DI SVILUPPO</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
+            
+            if (option.showTooltip) {
+              return (
+                <TooltipProvider key={index}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card 
+                        className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-slate-300"
+                        onClick={option.action}
+                      >
+                        <CardContent className="p-6 flex items-center">
+                          <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mr-4">
+                            <IconComponent className="w-6 h-6 text-slate-700" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-slate-800">{option.title}</h3>
+                            <p className="text-slate-600 text-sm">{option.description}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>IN VIA DI SVILUPPO</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            } else {
+              return (
+                <Card 
+                  key={index}
+                  className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-slate-300"
+                  onClick={option.action}
+                >
+                  <CardContent className="p-6 flex items-center">
+                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mr-4">
+                      <IconComponent className="w-6 h-6 text-slate-700" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-slate-800">{option.title}</h3>
+                      <p className="text-slate-600 text-sm">{option.description}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
           })}
         </div>
       </div>
