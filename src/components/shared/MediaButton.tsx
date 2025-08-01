@@ -300,7 +300,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
               <p className="text-sm text-muted-foreground text-center">
                 L'immagine è temporanea e verrà persa alla chiusura della pagina.
                 <br />
-                Usa il pulsante "Scarica" per salvarla sul tuo dispositivo.
+                Usa il pulsante "Scarica" per salvarla sul tuo dispositivo (tasto destro per condividere).
               </p>
             </div>
           )}

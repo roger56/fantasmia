@@ -391,12 +391,6 @@ const SuperuserArchive = () => {
                   )}
                 </div>
 
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Costo</h4>
-                  <p className="text-sm">
-                    {selectedStory.cost > 0 ? `€${selectedStory.cost.toFixed(3)}` : 'Gratuito'}
-                  </p>
-                </div>
 
                 <div className="text-center pt-4">
                   <p className="text-sm text-muted-foreground">
@@ -530,7 +524,6 @@ const SuperuserArchive = () => {
                         <TableHead className="font-semibold">Autore</TableHead>
                         <TableHead className="font-semibold">Data</TableHead>
                         <TableHead className="font-semibold">Immagini</TableHead>
-                        <TableHead className="font-semibold text-right">Costo (€)</TableHead>
                         <TableHead className="font-semibold">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -564,9 +557,6 @@ const SuperuserArchive = () => {
                                 <span className="text-xs">Nessuna immagine</span>
                               </div>
                             )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {row.cost > 0 ? `€${row.cost.toFixed(3)}` : '-'}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">

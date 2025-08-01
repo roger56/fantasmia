@@ -42,7 +42,7 @@ const SuperuserSettings = () => {
       title: 'Modalità di pagamento',
       description: 'Configura i metodi di pagamento disponibili',
       icon: CreditCard,
-      action: () => handleSettingClick('Modalità di pagamento')
+      action: () => navigate('/superuser-payment-settings')
     },
     {
       title: 'Sicurezza',

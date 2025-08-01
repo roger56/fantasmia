@@ -28,14 +28,14 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured')
     }
 
-    // Create enhanced prompt based on style
+    // Create enhanced prompt based on style - all styles exclude text
     let enhancedPrompt = prompt
     if (style === 'fumetto') {
       enhancedPrompt = `Comic book style illustration based on: ${prompt}. Bright colors, bold outlines, cartoon-like characters, no text or speech bubbles in the image, pure visual illustration only.`
     } else if (style === 'fotografico') {
-      enhancedPrompt = `Photorealistic high-quality photograph: ${prompt}. Ultra-realistic, professional photography, detailed lighting, sharp focus.`
+      enhancedPrompt = `Photorealistic high-quality photograph: ${prompt}. Ultra-realistic, professional photography, detailed lighting, sharp focus, no text or writing in the image.`
     } else if (style === 'astratto') {
-      enhancedPrompt = `Abstract artistic interpretation: ${prompt}. Creative abstract style, artistic expression, non-literal representation.`
+      enhancedPrompt = `Abstract artistic interpretation: ${prompt}. Creative abstract style, artistic expression, non-literal representation, no text or writing in the image.`
     }
 
     console.log('Generating image with prompt:', enhancedPrompt)
@@ -51,7 +51,7 @@ serve(async (req) => {
         model: 'dall-e-3',
         prompt: enhancedPrompt,
         n: 1,
-        size: style === 'fumetto' ? '512x512' : '1024x1024', // Lower resolution for comic style
+        size: '512x512', // Low resolution for all styles to reduce costs
         quality: 'standard',
         response_format: 'url'
       }),
@@ -77,9 +77,9 @@ serve(async (req) => {
     // Use userId from request body (no JWT authentication required)
 
     // Calculate cost based on size (DALL-E 3 standard quality cost)
-    const cost = style === 'fumetto' ? 0.020 : 0.040 // $0.020 for 512x512, $0.040 for 1024x1024
+    const cost = 0.020 // $0.020 for 512x512 for all styles
     
-    console.log(`Generated image with style: ${style}, size: ${style === 'fumetto' ? '512x512' : '1024x1024'}, cost: ${cost}`)
+    console.log(`Generated image with style: ${style}, size: 512x512, cost: ${cost}`)
 
     // Save media generation record
     const { data: mediaGeneration, error: mediaError } = await supabase
