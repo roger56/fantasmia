@@ -143,37 +143,28 @@ const StoryViewer = () => {
               {getButtonText()}
             </Button>
             
+            <MediaButton 
+              storyContent={editedContent}
+              storyTitle={displayTitle}
+              userId={story.authorId}
+              className="w-full sm:w-auto"
+            />
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto">
                   <Share2 className="w-4 h-4 mr-2" />
-                  MEDIA
+                  CONDIVIDI
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem>
-                  <Volume2 className="w-4 h-4 mr-2" />
-                  Voci
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <MediaButton 
-                    storyContent={editedContent}
-                    storyTitle={displayTitle}
-                    userId={story.authorId}
-                    className="w-full justify-start p-0 h-auto font-normal"
-                  />
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Globe className="w-4 h-4 mr-2" />
-                  Filmato
+                <DropdownMenuItem onClick={handleMailShare}>
+                  <Mail className="w-4 h-4 mr-2" />
+                  Mail
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleCopyToClipboard}>
                   <Copy className="w-4 h-4 mr-2" />
                   Copia appunti
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleMailShare}>
-                  <Mail className="w-4 h-4 mr-2" />
-                  Mail
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

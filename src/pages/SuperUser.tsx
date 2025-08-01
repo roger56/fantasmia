@@ -157,7 +157,7 @@ const SuperUser = () => {
       title: 'Impostazioni',
       description: 'Configurazioni di sistema',
       icon: Settings,
-      action: () => navigate('/superuser/settings')
+      action: () => navigate('/superuser-settings')
     }
   ];
 

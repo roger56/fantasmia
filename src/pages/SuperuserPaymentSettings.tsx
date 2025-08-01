@@ -102,24 +102,6 @@ const SuperuserPaymentSettings = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="p-4 border border-slate-200 rounded-lg">
-                  <h3 className="font-semibold text-slate-800 mb-2">Metodo di Pagamento Attuale</h3>
-                  <p className="text-slate-600 text-sm">
-                    OpenAI API Key configurata tramite variabili d'ambiente
-                  </p>
-                  <div className="mt-3 text-xs text-slate-500">
-                    I costi vengono addebitati direttamente sull'account OpenAI associato
-                  </div>
-                </div>
-
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <h3 className="font-semibold text-amber-800 mb-2">Nota Importante</h3>
-                  <p className="text-amber-700 text-sm">
-                    Il sistema utilizza l'API OpenAI DALL-E 3 per la generazione di immagini. 
-                    Tutti i costi sono calcolati a €0,020 per immagine (512x512px).
-                  </p>
-                </div>
-
                 <div className="flex gap-3">
                   <Button 
                     variant="outline" 
