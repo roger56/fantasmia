@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Palette, Loader2, Download } from 'lucide-react';
+import { Palette, Loader2, Download, Bug } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface MediaButtonProps {
   storyContent: string;
@@ -31,6 +32,14 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const [userComment, setUserComment] = useState('');
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState('');
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [isDebugMode, setIsDebugMode] = useState(false);
+
+  // Check if user is in Superuser mode
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    setIsDebugMode(currentPath.includes('superuser'));
+  }, []);
 
   const handleMediaAction = async (type: string, subtype: string) => {
     if (type === 'Disegno') {
@@ -61,6 +70,15 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     }
 
     setIsGenerating(true);
+    setDebugInfo(null); // Reset debug info
+    
+    // Show informative message during generation
+    toast({
+      title: "Generazione in corso...",
+      description: "Sto creando l'immagine. Attendere circa 10-15 secondi.",
+      variant: "default"
+    });
+
     try {
       // Use userId prop or fallback to localStorage
       const currentUserId = userId || localStorage.getItem('currentUserId');
@@ -85,11 +103,23 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
       if (error) {
         console.error('Image generation error:', error);
+        
+        // Store debug information for Superuser mode
+        if (isDebugMode) {
+          setDebugInfo(JSON.stringify({
+            error: error.message,
+            details: error.details || 'Nessun dettaglio aggiuntivo',
+            timestamp: new Date().toISOString(),
+            prompt: enhancedPrompt.substring(0, 200) + '...',
+            style: style
+          }, null, 2));
+        }
+
         const errorMessage = error.message?.includes('safety system') 
-          ? "Il contenuto della storia contiene parole non adatte per la generazione di immagini. Prova a riformulare il testo evitando riferimenti a violenza, armi o morte."
+          ? "❌ Il contenuto della storia contiene parole non adatte per la generazione di immagini.\n\n🔧 Suggerimenti:\n• Evita riferimenti a violenza, armi o morte\n• Rimuovi parole come 'battaglia', 'guerra', 'sangue'\n• Riformula il testo con termini più neutri"
           : error.message?.includes('non-2xx status') 
-            ? "Errore del server durante la generazione. Riprova tra qualche minuto."
-            : "Si è verificato un errore durante la generazione dell'immagine. Controlla il contenuto della storia e riprova.";
+            ? "⚠️ Errore del server durante la generazione.\n\n🔄 Riprova tra qualche minuto."
+            : "❌ Si è verificato un errore durante la generazione dell'immagine.\n\n🔍 Controlla il contenuto della storia e riprova.";
         throw new Error(errorMessage);
       }
 
@@ -308,6 +338,25 @@ const MediaButton: React.FC<MediaButtonProps> = ({
                 <br />
                 Usa il pulsante "Scarica" per salvarla sul tuo dispositivo (tasto destro per condividere).
               </p>
+              
+              {/* Debug section for Superuser */}
+              {isDebugMode && debugInfo && (
+                <div className="w-full mt-4 p-4 border rounded-lg bg-gray-50">
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex items-center gap-2">
+                        <Bug className="w-4 h-4" />
+                        Debug Info (Superuser)
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">
+                        {debugInfo}
+                      </pre>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
