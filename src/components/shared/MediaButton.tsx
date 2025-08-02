@@ -113,6 +113,9 @@ const MediaButton: React.FC<MediaButtonProps> = ({
             prompt: enhancedPrompt.substring(0, 200) + '...',
             style: style
           }, null, 2));
+          
+          // In Superuser mode, open dialog to show debug info
+          setShowImageDialog(true);
         }
 
         const errorMessage = error.message?.includes('safety system') 
@@ -120,7 +123,11 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           : error.message?.includes('non-2xx status') 
             ? "⚠️ Errore del server durante la generazione.\n\n🔄 Riprova tra qualche minuto."
             : "❌ Si è verificato un errore durante la generazione dell'immagine.\n\n🔍 Controlla il contenuto della storia e riprova.";
-        throw new Error(errorMessage);
+        
+        // Only throw error if not in debug mode, otherwise show in dialog
+        if (!isDebugMode) {
+          throw new Error(errorMessage);
+        }
       }
 
       if (data?.imageUrl) {
@@ -316,7 +323,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           <DialogHeader>
             <DialogTitle>Immagine Generata - {storyTitle}</DialogTitle>
           </DialogHeader>
-          {generatedImage && (
+          {generatedImage ? (
             <div className="flex flex-col items-center space-y-4">
               <img
                 src={generatedImage}
@@ -338,25 +345,38 @@ const MediaButton: React.FC<MediaButtonProps> = ({
                 <br />
                 Usa il pulsante "Scarica" per salvarla sul tuo dispositivo (tasto destro per condividere).
               </p>
-              
-              {/* Debug section for Superuser */}
-              {isDebugMode && debugInfo && (
-                <div className="w-full mt-4 p-4 border rounded-lg bg-gray-50">
-                  <Collapsible>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="outline" size="sm" className="flex items-center gap-2">
-                        <Bug className="w-4 h-4" />
-                        Debug Info (Superuser)
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-2">
-                      <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">
-                        {debugInfo}
-                      </pre>
-                    </CollapsibleContent>
-                  </Collapsible>
+            </div>
+          ) : (
+            // Show error message when there's no image but debug info (Superuser mode)
+            isDebugMode && debugInfo && (
+              <div className="flex flex-col items-center space-y-4">
+                <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                  <h3 className="text-lg font-semibold text-red-800 mb-2">❌ Generazione Fallita</h3>
+                  <p className="text-sm text-red-700">
+                    La generazione dell'immagine non è riuscita. 
+                    Le informazioni di debug sono disponibili qui sotto per identificare il problema.
+                  </p>
                 </div>
-              )}
+              </div>
+            )
+          )}
+          
+          {/* Debug section for Superuser - shown for both success and error cases */}
+          {isDebugMode && debugInfo && (
+            <div className="w-full mt-4 p-4 border rounded-lg bg-gray-50">
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <Bug className="w-4 h-4" />
+                    Debug Info (Superuser)
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">
+                    {debugInfo}
+                  </pre>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           )}
         </DialogContent>
