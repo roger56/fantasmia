@@ -137,7 +137,7 @@ const SuperuserArchive = () => {
     setTableRows(rows);
   }, [selectedCategory, selectedAuthor, stories]);
 
-  const [speechState, setSpeechState] = useState<{[key: string]: {playing: boolean, utterance?: SpeechSynthesisUtterance}}>({});
+  const [speechState, setSpeechState] = useState<{[key: string]: {playing: boolean, paused: boolean, utterance?: SpeechSynthesisUtterance}}>({});
 
   const handleTextToSpeech = (content: string, storyId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -145,29 +145,47 @@ const SuperuserArchive = () => {
     if ('speechSynthesis' in window) {
       const currentState = speechState[storyId];
       
-      if (currentState?.playing) {
-        speechSynthesis.cancel();
+      if (currentState?.playing && !currentState.paused) {
+        // Pausa la lettura
+        speechSynthesis.pause();
         setSpeechState(prev => ({
           ...prev,
-          [storyId]: { ...prev[storyId], playing: false }
+          [storyId]: { ...prev[storyId], paused: true }
+        }));
+      } else if (currentState?.playing && currentState.paused) {
+        // Riprendi la lettura
+        speechSynthesis.resume();
+        setSpeechState(prev => ({
+          ...prev,
+          [storyId]: { ...prev[storyId], paused: false }
         }));
       } else {
+        // Inizia nuova lettura
         speechSynthesis.cancel();
         
         const utterance = new SpeechSynthesisUtterance(content);
         utterance.lang = 'it-IT';
         
-        utterance.onend = () => {
+        utterance.onstart = () => {
           setSpeechState(prev => ({
             ...prev,
-            [storyId]: { ...prev[storyId], playing: false }
+            [storyId]: { playing: true, paused: false, utterance }
           }));
         };
         
-        setSpeechState(prev => ({
-          ...prev,
-          [storyId]: { playing: true, utterance }
-        }));
+        utterance.onend = () => {
+          setSpeechState(prev => ({
+            ...prev,
+            [storyId]: { playing: false, paused: false }
+          }));
+        };
+        
+        utterance.onerror = () => {
+          setSpeechState(prev => ({
+            ...prev,
+            [storyId]: { playing: false, paused: false }
+          }));
+        };
         
         speechSynthesis.speak(utterance);
       }

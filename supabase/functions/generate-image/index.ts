@@ -28,12 +28,14 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured')
     }
 
-    // Clean and shorten prompt to avoid safety issues
+    // Clean and filter prompt to avoid safety issues
     const cleanPrompt = prompt
       .replace(/\n/g, ' ')
       .replace(/\s+/g, ' ')
+      // Remove potentially problematic words
+      .replace(/\b(morto|morte|uccide|ammazza|sangue|violenza|arma|coltello|pistola|guerra|battaglia|combattimento)\b/gi, '')
       .trim()
-      .substring(0, 800) // Limit to 800 characters
+      .substring(0, 600) // Limit to 600 characters for safety
     
     // Create enhanced prompt based on style - all styles exclude text
     let enhancedPrompt = cleanPrompt
