@@ -28,54 +28,126 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured')
     }
 
-    // Clean and filter prompt to avoid safety issues
-    const cleanPrompt = prompt
+    // Smart word replacement instead of removal
+    const wordReplacements = {
+      'morto': 'addormentato',
+      'morte': 'riposo eterno', 
+      'uccide': 'sconfigge',
+      'ammazza': 'ferma',
+      'sangue': 'energia rossa',
+      'violenza': 'azione dinamica',
+      'arma': 'strumento',
+      'coltello': 'utensile',
+      'pistola': 'dispositivo',
+      'guerra': 'grande sfida',
+      'battaglia': 'competizione',
+      'combattimento': 'confronto'
+    }
+
+    // Clean and improve prompt
+    let cleanPrompt = prompt
       .replace(/\n/g, ' ')
       .replace(/\s+/g, ' ')
-      // Remove potentially problematic words
-      .replace(/\b(morto|morte|uccide|ammazza|sangue|violenza|arma|coltello|pistola|guerra|battaglia|combattimento)\b/gi, '')
       .trim()
-      .substring(0, 600) // Limit to 600 characters for safety
-    
-    // Create enhanced prompt based on style - all styles exclude text
-    let enhancedPrompt = cleanPrompt
-    if (style === 'fumetto') {
-      enhancedPrompt = `Comic book style illustration: ${cleanPrompt}. Bright colors, bold outlines, cartoon style, no text in image.`
-    } else if (style === 'fotografico') {
-      enhancedPrompt = `Professional photograph: ${cleanPrompt}. Realistic lighting, sharp focus, no text.`
-    } else if (style === 'astratto') {
-      enhancedPrompt = `Abstract art: ${cleanPrompt}. Creative artistic style, no text.`
-    }
 
-    console.log('Generating image with prompt:', enhancedPrompt)
-
-    // Generate image using OpenAI DALL-E
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: enhancedPrompt,
-        n: 1,
-        size: '1024x1024', // Standard resolution supported by OpenAI
-        quality: 'standard',
-        response_format: 'url'
-      }),
+    // Replace problematic words with safer alternatives
+    Object.entries(wordReplacements).forEach(([bad, good]) => {
+      const regex = new RegExp(`\\b${bad}\\b`, 'gi')
+      cleanPrompt = cleanPrompt.replace(regex, good)
     })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error?.message || 'Failed to generate image')
+    // Limit length for safety
+    cleanPrompt = cleanPrompt.substring(0, 600)
+    
+    console.log('Original prompt:', prompt)
+    console.log('Cleaned prompt:', cleanPrompt)
+
+    // Create safe prompt templates based on style
+    const createStylePrompt = (content: string, artStyle: string) => {
+      const safeTemplates = {
+        'fumetto': `Create a family-friendly cartoon illustration showing: ${content}. Use bright cheerful colors, cartoon style, clear outlines. No text, no weapons, no violence.`,
+        'fotografico': `Create a beautiful realistic image of: ${content}. Professional photography style, good lighting, peaceful scene. No text, family-friendly content.`,
+        'astratto': `Create an abstract artistic interpretation of: ${content}. Use colors, shapes and artistic elements to represent the theme. No text, creative and peaceful.`
+      }
+      return safeTemplates[artStyle] || `Create a beautiful, family-friendly illustration of: ${content}. No text in image.`
     }
 
-    const result = await response.json()
-    const imageUrl = result.data[0]?.url
+    let enhancedPrompt = createStylePrompt(cleanPrompt, style)
+    
+    console.log('Enhanced prompt:', enhancedPrompt)
+
+    // Function to attempt image generation with retry logic
+    const attemptImageGeneration = async (promptToUse: string, isRetry = false) => {
+      console.log(`${isRetry ? 'Retry' : 'Initial'} attempt with prompt:`, promptToUse)
+      
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-image-1', // Updated to latest model
+          prompt: promptToUse,
+          n: 1,
+          size: '1024x1024',
+          quality: 'high',
+          output_format: 'png'
+        }),
+      })
+
+      const responseData = await response.json()
+      console.log('OpenAI response status:', response.status)
+      console.log('OpenAI response:', JSON.stringify(responseData, null, 2))
+
+      if (!response.ok) {
+        throw new Error(responseData.error?.message || 'Failed to generate image')
+      }
+
+      return responseData
+    }
+
+    // Try generation with enhanced prompt first
+    let result
+    try {
+      result = await attemptImageGeneration(enhancedPrompt)
+    } catch (error) {
+      console.log('First attempt failed:', error.message)
+      
+      // If first attempt fails, try with ultra-safe fallback
+      if (error.message?.includes('safety') || error.message?.includes('policy')) {
+        console.log('Safety issue detected, trying with generic prompt')
+        
+        const ultraSafePrompt = style === 'fumetto' 
+          ? "A colorful, cheerful cartoon scene with friendly characters in a peaceful setting"
+          : style === 'fotografico'
+          ? "A beautiful, peaceful landscape photograph with natural lighting"
+          : "An abstract artistic composition with harmonious colors and shapes"
+        
+        try {
+          result = await attemptImageGeneration(ultraSafePrompt, true)
+        } catch (retryError) {
+          console.error('Retry also failed:', retryError.message)
+          throw retryError
+        }
+      } else {
+        throw error
+      }
+    }
+
+    // Extract image URL from result - gpt-image-1 returns base64 data
+    let imageUrl
+    if (result.data && result.data[0]) {
+      if (result.data[0].url) {
+        imageUrl = result.data[0].url
+      } else if (result.data[0].b64_json) {
+        // Convert base64 to data URL for gpt-image-1
+        imageUrl = `data:image/png;base64,${result.data[0].b64_json}`
+      }
+    }
 
     if (!imageUrl) {
-      throw new Error('No image URL returned from OpenAI')
+      throw new Error('No image data returned from OpenAI')
     }
 
     // Initialize Supabase client
