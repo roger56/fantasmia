@@ -76,9 +76,28 @@ serve(async (req) => {
     
     console.log('Enhanced prompt:', enhancedPrompt)
 
-    // Function to attempt image generation with retry logic
-    const attemptImageGeneration = async (promptToUse: string, isRetry = false) => {
-      console.log(`${isRetry ? 'Retry' : 'Initial'} attempt with prompt:`, promptToUse)
+    // Function to attempt image generation with model fallback
+    const attemptImageGeneration = async (promptToUse: string, model: string, attempt: number) => {
+      console.log(`Attempt ${attempt} with model: ${model}, prompt:`, promptToUse)
+      
+      const requestBody = model === 'gpt-image-1' 
+        ? {
+            model: 'gpt-image-1',
+            prompt: promptToUse,
+            n: 1,
+            size: '1024x1024',
+            quality: 'high',
+            output_format: 'png'
+          }
+        : {
+            model: 'dall-e-3',
+            prompt: promptToUse,
+            n: 1,
+            size: '1024x1024',
+            quality: 'hd'
+          }
+
+      console.log('Request body:', JSON.stringify(requestBody, null, 2))
       
       const response = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
@@ -86,63 +105,97 @@ serve(async (req) => {
           'Authorization': `Bearer ${openaiApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'gpt-image-1', // Updated to latest model
-          prompt: promptToUse,
-          n: 1,
-          size: '1024x1024',
-          quality: 'high',
-          output_format: 'png'
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       const responseData = await response.json()
-      console.log('OpenAI response status:', response.status)
-      console.log('OpenAI response:', JSON.stringify(responseData, null, 2))
+      console.log(`OpenAI response status (${model}):`, response.status)
+      console.log(`OpenAI response (${model}):`, JSON.stringify(responseData, null, 2))
 
       if (!response.ok) {
-        throw new Error(responseData.error?.message || 'Failed to generate image')
+        const errorMessage = responseData.error?.message || 'Failed to generate image'
+        console.error(`${model} failed:`, errorMessage)
+        throw new Error(errorMessage)
       }
 
-      return responseData
+      return { data: responseData, model }
     }
 
-    // Try generation with enhanced prompt first
+    // 3-level intelligent retry system
     let result
+    let usedModel = 'gpt-image-1'
+    
     try {
-      result = await attemptImageGeneration(enhancedPrompt)
+      // Level 1: Try gpt-image-1 with enhanced prompt
+      console.log('Level 1: Trying gpt-image-1 with enhanced prompt')
+      result = await attemptImageGeneration(enhancedPrompt, 'gpt-image-1', 1)
+      usedModel = 'gpt-image-1'
     } catch (error) {
-      console.log('First attempt failed:', error.message)
+      console.log('Level 1 failed:', error.message)
       
-      // If first attempt fails, try with ultra-safe fallback
-      if (error.message?.includes('safety') || error.message?.includes('policy')) {
-        console.log('Safety issue detected, trying with generic prompt')
+      // Check if it's a verification error for gpt-image-1
+      if (error.message?.includes('organization must be verified') || error.message?.includes('gpt-image-1')) {
+        console.log('Level 2: gpt-image-1 not available, trying dall-e-3 with same prompt')
+        try {
+          result = await attemptImageGeneration(enhancedPrompt, 'dall-e-3', 2)
+          usedModel = 'dall-e-3'
+        } catch (dalleError) {
+          console.log('Level 2 failed:', dalleError.message)
+          
+          // Level 3: Ultra-safe prompt with dall-e-3
+          if (dalleError.message?.includes('safety') || dalleError.message?.includes('policy')) {
+            console.log('Level 3: Safety issue detected, trying ultra-safe prompt with dall-e-3')
+            
+            const ultraSafePrompt = style === 'fumetto' 
+              ? "A colorful, cheerful cartoon illustration with friendly characters in a peaceful setting, bright colors, family-friendly"
+              : style === 'fotografico'
+              ? "A beautiful, peaceful landscape photograph with natural lighting, professional photography"
+              : "An abstract artistic composition with harmonious colors and shapes, peaceful and creative"
+            
+            try {
+              result = await attemptImageGeneration(ultraSafePrompt, 'dall-e-3', 3)
+              usedModel = 'dall-e-3'
+            } catch (finalError) {
+              console.error('All levels failed:', finalError.message)
+              throw finalError
+            }
+          } else {
+            throw dalleError
+          }
+        }
+      } else if (error.message?.includes('safety') || error.message?.includes('policy')) {
+        // Level 2: Safety issue with gpt-image-1, try ultra-safe with dall-e-3
+        console.log('Level 2: Safety issue with gpt-image-1, trying ultra-safe prompt with dall-e-3')
         
         const ultraSafePrompt = style === 'fumetto' 
-          ? "A colorful, cheerful cartoon scene with friendly characters in a peaceful setting"
+          ? "A colorful, cheerful cartoon illustration with friendly characters in a peaceful setting, bright colors, family-friendly"
           : style === 'fotografico'
-          ? "A beautiful, peaceful landscape photograph with natural lighting"
-          : "An abstract artistic composition with harmonious colors and shapes"
+          ? "A beautiful, peaceful landscape photograph with natural lighting, professional photography"
+          : "An abstract artistic composition with harmonious colors and shapes, peaceful and creative"
         
         try {
-          result = await attemptImageGeneration(ultraSafePrompt, true)
-        } catch (retryError) {
-          console.error('Retry also failed:', retryError.message)
-          throw retryError
+          result = await attemptImageGeneration(ultraSafePrompt, 'dall-e-3', 2)
+          usedModel = 'dall-e-3'
+        } catch (finalError) {
+          console.error('All levels failed:', finalError.message)
+          throw finalError
         }
       } else {
         throw error
       }
     }
 
-    // Extract image URL from result - gpt-image-1 returns base64 data
+    // Extract image URL from result - handle both model response formats
     let imageUrl
-    if (result.data && result.data[0]) {
-      if (result.data[0].url) {
-        imageUrl = result.data[0].url
-      } else if (result.data[0].b64_json) {
-        // Convert base64 to data URL for gpt-image-1
-        imageUrl = `data:image/png;base64,${result.data[0].b64_json}`
+    if (result.data && result.data.data && result.data.data[0]) {
+      if (result.data.data[0].url) {
+        // dall-e-3 returns URL
+        imageUrl = result.data.data[0].url
+        console.log(`Using ${usedModel} URL response:`, imageUrl)
+      } else if (result.data.data[0].b64_json) {
+        // gpt-image-1 returns base64
+        imageUrl = `data:image/png;base64,${result.data.data[0].b64_json}`
+        console.log(`Using ${usedModel} base64 response (length: ${result.data.data[0].b64_json.length})`)
       }
     }
 
