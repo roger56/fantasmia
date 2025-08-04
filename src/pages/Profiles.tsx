@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, User, Lock, Shield, Globe } from 'lucide-react';
 import { getUsers, authenticateUser, markMessagesAsRead } from '@/utils/userStorage';
+import { AuthBridge } from '@/utils/authBridge';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 
@@ -74,6 +75,16 @@ const Profiles = () => {
         
         localStorage.setItem('superuser-session', sessionString);
         localStorage.setItem('superuser-session-expiry', expiryTime.toString());
+        
+        // Create a bridged session for superuser to access Supabase
+        const superuserProfile = {
+          id: 'superuser',
+          name: 'Superuser',
+          password: 'ssss',
+          age: 30
+        };
+        AuthBridge.createLocalSupabaseSession(superuserProfile);
+        
         navigate('/superuser');
       } else {
         toast({
@@ -89,6 +100,9 @@ const Profiles = () => {
     if (selectedUser) {
       const user = authenticateUser(selectedUser.name, password);
       if (user) {
+        // Bridge the user to Supabase authentication
+        AuthBridge.createLocalSupabaseSession(user);
+        
         // Check for unread messages and navigate to home first to show them
         if (user.unreadMessages && user.unreadMessages.length > 0) {
           const messages = user.unreadMessages.filter(m => !m.read);

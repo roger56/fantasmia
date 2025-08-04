@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveUser } from '@/utils/userStorage';
+import { AuthBridge } from '@/utils/authBridge';
 import { validateUserName, validateUserEmail } from '@/utils/validation';
 import HomeButton from '@/components/HomeButton';
 
@@ -69,6 +70,9 @@ const NewProfile = () => {
     };
 
     saveUser(newUser);
+
+    // Bridge new user to Supabase authentication
+    AuthBridge.createLocalSupabaseSession(newUser);
 
     toast({
       title: "Profilo creato!",

@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-interface User {
+export interface User {
   id: string;
   name: string;
   email?: string;
@@ -138,9 +138,24 @@ export const markMessagesAsRead = (userId: string) => {
 export const saveStory = async (story: Story) => {
   // Try to save to Supabase first, then fallback to localStorage
   try {
+    // Check for both real Supabase session and bridged session
     const { data: { session } } = await supabase.auth.getSession();
     
-    if (session) {
+    // Import AuthBridge dynamically to avoid circular dependency
+    const { AuthBridge } = await import('./authBridge');
+    const bridgedSession = AuthBridge.getCurrentBridgedSession();
+    
+    if (session || bridgedSession) {
+      // Determine user ID and name
+      let userId = session?.user.id;
+      let userName = story.authorName;
+      
+      if (bridgedSession && !session) {
+        // Use bridged session data
+        userId = bridgedSession.user.id;
+        userName = bridgedSession.user.user_metadata?.name || story.authorName;
+      }
+      
       // User è autenticato - salva in Supabase
       const storyData = {
         title: story.title,
@@ -148,10 +163,10 @@ export const saveStory = async (story: Story) => {
         category: story.mode,
         mode: story.mode,
         status: story.status,
-        user_id: session.user.id,
-        author_id: session.user.id,
-        author_name: story.authorName, // Il trigger automaticamente lo correggerà se necessario
-        user_name: story.authorName,
+        user_id: userId,
+        author_id: userId,
+        author_name: userName, // Il trigger automaticamente lo correggerà se necessario
+        user_name: userName,
         is_public: story.isPublic || false,
         language: story.language || 'italian'
       };
@@ -295,18 +310,24 @@ export const getStoriesForUser = (userId: string, includePublic: boolean = false
 
 export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
   try {
-    // Try to get stories from Supabase first
+    // Get stories from both Supabase and localStorage, then merge them
     const { data: { session } } = await supabase.auth.getSession();
     
-    if (session) {
-      const { data: supabaseStories, error } = await supabase
+    // Import AuthBridge to check for bridged sessions
+    const { AuthBridge } = await import('./authBridge');
+    const bridgedSession = AuthBridge.getCurrentBridgedSession();
+    
+    let supabaseStories: Story[] = [];
+    
+    if (session || bridgedSession) {
+      const { data: supabaseStoriesData, error } = await supabase
         .from('stories')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && supabaseStories) {
+      if (!error && supabaseStoriesData) {
         // Convert Supabase format to local Story format
-        const formattedStories: Story[] = supabaseStories.map(story => ({
+        supabaseStories = supabaseStoriesData.map(story => ({
           id: story.id,
           title: story.title,
           content: story.content || '',
@@ -318,31 +339,60 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
           isPublic: story.is_public || false,
           language: (story.language || 'italian') as 'italian' | 'english'
         }));
-        
-        return formattedStories;
       }
     }
-  } catch (error) {
-    console.error('Error fetching from Supabase:', error);
-  }
-  
-  // Fallback to localStorage
-  const stories = getStories();
-  const users = getUsers();
-  
-  // Sort by descending date and ensure proper author names
-  return stories
-    .map(story => {
-      // Try to find the actual user name from users list
+    
+    // Get localStorage stories
+    const localStories = getStories();
+    const users = getUsers();
+    
+    // Process localStorage stories and ensure proper author names
+    const processedLocalStories = localStories.map(story => {
       const user = users.find(u => u.id === story.authorId);
       return {
         ...story,
         authorName: user?.name || story.authorName || 'Utente Sconosciuto'
       };
-    })
-    .sort((a, b) => 
+    });
+    
+    // Merge stories from both sources, removing duplicates by title and author
+    const allStories = [...supabaseStories];
+    
+    processedLocalStories.forEach(localStory => {
+      // Check if this story already exists in Supabase stories
+      const existsInSupabase = supabaseStories.some(supabaseStory => 
+        supabaseStory.title === localStory.title && 
+        supabaseStory.authorName === localStory.authorName
+      );
+      
+      if (!existsInSupabase) {
+        allStories.push(localStory);
+      }
+    });
+    
+    // Sort by descending date
+    return allStories.sort((a, b) => 
       new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
     );
+  } catch (error) {
+    console.error('Error fetching stories:', error);
+    
+    // Complete fallback to localStorage only
+    const stories = getStories();
+    const users = getUsers();
+    
+    return stories
+      .map(story => {
+        const user = users.find(u => u.id === story.authorId);
+        return {
+          ...story,
+          authorName: user?.name || story.authorName || 'Utente Sconosciuto'
+        };
+      })
+      .sort((a, b) => 
+        new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+      );
+  }
 };
 
 export const getStoriesByCategory = (category: string): Story[] => {
