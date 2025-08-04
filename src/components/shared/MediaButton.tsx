@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Palette, Loader2, Download, Bug } from 'lucide-react';
+import { Palette, Loader2, Download, Bug, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface MediaButtonProps {
   storyContent: string;
@@ -34,14 +35,37 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const [selectedStyle, setSelectedStyle] = useState('');
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [isDebugMode, setIsDebugMode] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAuthWarning, setShowAuthWarning] = useState(false);
 
-  // Check if user is in Superuser mode
+  // Check if user is in Superuser mode and authentication status
   useEffect(() => {
     const currentPath = window.location.pathname;
     setIsDebugMode(currentPath.includes('superuser'));
+    
+    // Check authentication status
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    
+    checkAuth();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleMediaAction = async (type: string, subtype: string) => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      setShowAuthWarning(true);
+      return;
+    }
+    
     if (type === 'Disegno') {
       setSelectedStyle(subtype.toLowerCase());
       setShowCommentDialog(true);
@@ -407,6 +431,43 @@ const MediaButton: React.FC<MediaButtonProps> = ({
               </Button>
               <Button onClick={handleGenerateWithComment}>
                 Genera Immagine
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Authentication Warning Dialog */}
+      <Dialog open={showAuthWarning} onOpenChange={setShowAuthWarning}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              Accesso Richiesto
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                I servizi media (Disegno, Filmato, Voci) sono disponibili solo per utenti autenticati.
+              </AlertDescription>
+            </Alert>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Per utilizzare questi servizi è necessario:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1 ml-2">
+                <li>Effettuare il login con email e password</li>
+                <li>Accedere alle storie dal proprio profilo utente</li>
+              </ul>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAuthWarning(false)}
+              >
+                Ho capito
               </Button>
             </div>
           </div>
