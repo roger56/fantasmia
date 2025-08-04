@@ -287,7 +287,7 @@ const ParoleChiamanoEditor = () => {
     }
   };
 
-  const handleSaveStory = () => {
+  const handleSaveStory = async () => {
     if (!storyTitle.trim()) {
       toast({
         title: "Titolo richiesto",
@@ -318,7 +318,7 @@ const ParoleChiamanoEditor = () => {
       isPublic: false
     };
 
-    saveStory(story);
+    await saveStory(story);
     
     toast({
       title: "Storia salvata!",

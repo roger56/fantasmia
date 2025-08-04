@@ -23,18 +23,22 @@ const SuperuserUsers = () => {
   const [userToDelete, setUserToDelete] = useState<any>(null);
 
   useEffect(() => {
-    const allUsers = getUsers();
-    const allStories = getAllStoriesForSuperuser();
+    const fetchData = async () => {
+      const allUsers = getUsers();
+      const allStories = await getAllStoriesForSuperuser();
+      
+      setUsers(allUsers);
+      
+      // Calculate story count for each user correctly using authorId
+      const stats: {[key: string]: number} = {};
+      allUsers.forEach(user => {
+        const userStories = allStories.filter(story => story.authorId === user.id);
+        stats[user.id] = userStories.length;
+      });
+      setUserStats(stats);
+    };
     
-    setUsers(allUsers);
-    
-    // Calculate story count for each user correctly using authorId
-    const stats: {[key: string]: number} = {};
-    allUsers.forEach(user => {
-      const userStories = allStories.filter(story => story.authorId === user.id);
-      stats[user.id] = userStories.length;
-    });
-    setUserStats(stats);
+    fetchData();
   }, []);
 
   const handlePasswordChange = (user: any) => {
@@ -86,7 +90,7 @@ const SuperuserUsers = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDeleteUser = () => {
+  const confirmDeleteUser = async () => {
     if (userToDelete) {
       // Get all users and remove the selected one
       const allUsers = getUsers();
@@ -97,7 +101,7 @@ const SuperuserUsers = () => {
       setUsers(updatedUsers);
       
       // Recalculate stats
-      const allStories = getAllStoriesForSuperuser();
+      const allStories = await getAllStoriesForSuperuser();
       const stats: {[key: string]: number} = {};
       updatedUsers.forEach(user => {
         const userStories = allStories.filter(story => story.authorId === user.id);

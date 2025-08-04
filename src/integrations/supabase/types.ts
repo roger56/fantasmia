@@ -76,36 +76,54 @@ export type Database = {
       }
       stories: {
         Row: {
+          author_id: string | null
+          author_name: string | null
           category: string
           content: string
           created_at: string | null
           id: string
           is_deleted: boolean | null
           is_modified_by_super: boolean | null
+          is_public: boolean | null
+          language: string | null
+          mode: string | null
+          status: string | null
           title: string
           updated_at: string | null
           user_id: string
           user_name: string
         }
         Insert: {
+          author_id?: string | null
+          author_name?: string | null
           category: string
           content: string
           created_at?: string | null
           id?: string
           is_deleted?: boolean | null
           is_modified_by_super?: boolean | null
+          is_public?: boolean | null
+          language?: string | null
+          mode?: string | null
+          status?: string | null
           title: string
           updated_at?: string | null
           user_id: string
           user_name: string
         }
         Update: {
+          author_id?: string | null
+          author_name?: string | null
           category?: string
           content?: string
           created_at?: string | null
           id?: string
           is_deleted?: boolean | null
           is_modified_by_super?: boolean | null
+          is_public?: boolean | null
+          language?: string | null
+          mode?: string | null
+          status?: string | null
           title?: string
           updated_at?: string | null
           user_id?: string
@@ -217,6 +235,10 @@ export type Database = {
           p_password?: string
         }
         Returns: boolean
+      }
+      get_user_display_name: {
+        Args: { p_user_id: string }
+        Returns: string
       }
       is_superuser: {
         Args: { user_id: string }

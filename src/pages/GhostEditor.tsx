@@ -152,7 +152,7 @@ const GhostEditor = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!storyTitle.trim()) {
       toast({
         title: "Titolo richiesto",
@@ -176,7 +176,7 @@ const GhostEditor = () => {
       language: (isTranslated ? 'english' : 'italian') as 'italian' | 'english'
     };
 
-    saveStory(story);
+    await saveStory(story);
     toast({
       title: "Storia salvata!",
       description: `La storia è stata salvata nell'archivio${isTranslated ? ' in inglese' : ''}`,

@@ -61,22 +61,22 @@ const SuperuserArchive = () => {
     const fetchStoriesWithMedia = async () => {
       // Since the database relation doesn't exist yet, use only localStorage for now
       try {
-        const localStories = getAllStoriesForSuperuser();
-        const allStories: StoryWithMedia[] = localStories.map(story => ({
+        const allStories = await getAllStoriesForSuperuser();
+        // Convert to StoryWithMedia format
+        const allStoriesWithMedia: StoryWithMedia[] = allStories.map(story => ({
           id: story.id,
           title: story.title,
           content: story.content || '',
-          authorName: story.authorName || 'Utente Sconosciuto',
+          authorName: story.authorName,
           lastModified: story.lastModified,
           mode: story.mode,
           status: story.status,
           mediaGenerations: [] // For now, no media from database
         }));
-        
-        setStories(allStories);
+        setStories(allStoriesWithMedia);
         
         // Load authors for filter
-        const authorList = getAllAuthors();
+        const authorList = await getAllAuthors();
         setAuthors(authorList);
       } catch (error) {
         console.error('Error fetching stories:', error);

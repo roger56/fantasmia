@@ -74,7 +74,7 @@ const CampbellEditor = () => {
     setCurrentPhase('final');
   };
 
-  const handleSaveStory = (title: string) => {
+  const handleSaveStory = async (title: string) => {
     // Check if we have a profile or allow anonymous save
     const authorId = profileId || 'anonymous';
     const authorName = profileName || 'Anonimo';
@@ -105,7 +105,7 @@ const CampbellEditor = () => {
           description: `"${title}" è stata aggiornata con successo.`
         });
       } else {
-        saveStory(storyData);
+        await saveStory(storyData);
         toast({
           title: "Storia salvata!",
           description: `"${title}" è stata salvata con successo.`

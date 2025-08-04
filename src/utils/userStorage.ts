@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client';
+
 interface User {
   id: string;
   name: string;
@@ -133,7 +135,61 @@ export const markMessagesAsRead = (userId: string) => {
   }
 };
 
-export const saveStory = (story: Story) => {
+export const saveStory = async (story: Story) => {
+  // Try to save to Supabase first, then fallback to localStorage
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
+      // User è autenticato - salva in Supabase
+      const storyData = {
+        title: story.title,
+        content: story.content || '',
+        category: story.mode,
+        mode: story.mode,
+        status: story.status,
+        user_id: session.user.id,
+        author_id: session.user.id,
+        author_name: story.authorName, // Il trigger automaticamente lo correggerà se necessario
+        user_name: story.authorName,
+        is_public: story.isPublic || false,
+        language: story.language || 'italian'
+      };
+
+      const { data, error } = await supabase
+        .from('stories')
+        .insert([storyData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Errore salvataggio Supabase:', error);
+        // Fallback a localStorage
+        saveStoryToLocalStorage(story);
+      } else {
+        console.log('Storia salvata in Supabase:', data);
+        // Salva anche in localStorage per compatibilità
+        const storyWithSupabaseData = {
+          ...story,
+          id: data.id,
+          authorName: data.author_name || data.user_name || story.authorName
+        };
+        saveStoryToLocalStorage(storyWithSupabaseData);
+      }
+    } else {
+      // User non autenticato - salva solo in localStorage
+      console.log('Utente non autenticato, salvataggio in localStorage');
+      saveStoryToLocalStorage(story);
+    }
+  } catch (error) {
+    console.error('Errore during save:', error);
+    // Fallback a localStorage
+    saveStoryToLocalStorage(story);
+  }
+};
+
+// Funzione separata per il salvataggio localStorage (per compatibilità)
+const saveStoryToLocalStorage = (story: Story) => {
   const stories = getStories();
   const existingIndex = stories.findIndex(s => s.id === story.id);
   
@@ -237,7 +293,40 @@ export const getStoriesForUser = (userId: string, includePublic: boolean = false
   );
 };
 
-export const getAllStoriesForSuperuser = (): Story[] => {
+export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
+  try {
+    // Try to get stories from Supabase first
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
+      const { data: supabaseStories, error } = await supabase
+        .from('stories')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && supabaseStories) {
+        // Convert Supabase format to local Story format
+        const formattedStories: Story[] = supabaseStories.map(story => ({
+          id: story.id,
+          title: story.title,
+          content: story.content || '',
+          status: story.status as 'completed' | 'suspended' | 'in-progress',
+          lastModified: story.updated_at || story.created_at,
+          mode: (story.mode || story.category) as 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS',
+          authorId: story.author_id || story.user_id,
+          authorName: story.author_name || story.user_name || 'Utente Sconosciuto',
+          isPublic: story.is_public || false,
+          language: (story.language || 'italian') as 'italian' | 'english'
+        }));
+        
+        return formattedStories;
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching from Supabase:', error);
+  }
+  
+  // Fallback to localStorage
   const stories = getStories();
   const users = getUsers();
   
@@ -321,8 +410,8 @@ export const getFilesInDirectory = (userId: string, category: string): string[] 
 };
 
 // Get all unique authors from stories
-export const getAllAuthors = (): string[] => {
-  const stories = getAllStoriesForSuperuser();
+export const getAllAuthors = async (): Promise<string[]> => {
+  const stories = await getAllStoriesForSuperuser();
   const uniqueAuthors = new Set(stories.map(story => story.authorName));
   return Array.from(uniqueAuthors).sort();
 };

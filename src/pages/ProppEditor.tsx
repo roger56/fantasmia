@@ -94,7 +94,7 @@ const ProppEditor = () => {
     }
   };
 
-  const handleSuspend = () => {
+  const handleSuspend = async () => {
     const story = {
       id: editStory ? editStory.id : Date.now().toString(),
       title: storyTitle || `Storia sospesa - ${new Date().toLocaleDateString()}`,
@@ -114,7 +114,7 @@ const ProppEditor = () => {
       freeStoryText: mode === 'free' ? freeStoryText : undefined
     };
 
-    saveStory(story);
+    await saveStory(story);
     toast({
       title: "Storia sospesa!",
       description: "La storia è stata salvata e può essere ripresa dall'archivio",
@@ -166,7 +166,7 @@ const ProppEditor = () => {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!storyTitle.trim()) {
       toast({
         title: "Titolo richiesto",
@@ -190,7 +190,7 @@ const ProppEditor = () => {
       language: 'italian' as const
     };
 
-    saveStory(story);
+    await saveStory(story);
     toast({
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",

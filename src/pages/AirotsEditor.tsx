@@ -199,7 +199,7 @@ const AirotsEditor = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!storyTitle.trim()) {
       toast({
         title: "Titolo richiesto",
@@ -225,7 +225,7 @@ const AirotsEditor = () => {
       language: language
     };
 
-    saveStory(story);
+    await saveStory(story);
     toast({
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",

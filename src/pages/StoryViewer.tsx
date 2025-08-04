@@ -52,7 +52,7 @@ const StoryViewer = () => {
     speak(editedContent, getCurrentLanguage());
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (story) {
       const updatedStory = {
         ...story,
@@ -67,7 +67,7 @@ const StoryViewer = () => {
         updatedStory.title = translatedTitle;
       }
       
-      saveStory(updatedStory);
+      await saveStory(updatedStory);
       setStory(updatedStory);
       setIsEditing(false);
       

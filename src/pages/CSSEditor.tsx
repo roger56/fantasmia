@@ -77,7 +77,7 @@ const CSSEditor = () => {
     setCurrentPhase('final');
   };
 
-  const handleSaveStory = (title: string) => {
+  const handleSaveStory = async (title: string) => {
     const authorId = profileId || 'anonymous';
     const authorName = profileName || 'Anonimo';
 
@@ -104,7 +104,7 @@ const CSSEditor = () => {
           description: `"${title}" è stata aggiornata con successo.`
         });
       } else {
-        saveStory(storyData);
+        await saveStory(storyData);
         toast({
           title: "Storia salvata!",
           description: `"${title}" è stata salvata con successo.`
