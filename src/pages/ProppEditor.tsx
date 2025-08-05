@@ -8,6 +8,7 @@ import ProppCardSelectionScreen from '@/components/propp/ProppCardSelectionScree
 import ProppWritingScreen from '@/components/propp/ProppWritingScreen';
 import ProppFreeWritingScreen from '@/components/propp/ProppFreeWritingScreen';
 import ProppFinalScreen from '@/components/propp/ProppFinalScreen';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 const ProppEditor = () => {
   const navigate = useNavigate();
@@ -199,79 +200,88 @@ const ProppEditor = () => {
   };
 
   // Render appropriate screen based on game phase
-  switch (gamePhase) {
-    case 'warning':
-      return (
-        <ProppWarningScreen 
-          onExit={handleExit}
-          onStart={handleStartGame}
-        />
-      );
+  const renderCurrentPhase = () => {
+    switch (gamePhase) {
+      case 'warning':
+        return (
+          <ProppWarningScreen 
+            onExit={handleExit}
+            onStart={handleStartGame}
+          />
+        );
 
-    case 'card-selection':
-      return (
-        <ProppCardSelectionScreen
-          currentCluster={currentCluster}
-          onCardSelect={handleCardSelect}
-          onExit={handleExit}
-          onSuspend={handleSuspend}
-          onBack={handleBack}
-          onSkip={handleSkip}
-          canGoBack={storyPhases.length > 0}
-        />
-      );
+      case 'card-selection':
+        return (
+          <ProppCardSelectionScreen
+            currentCluster={currentCluster}
+            onCardSelect={handleCardSelect}
+            onExit={handleExit}
+            onSuspend={handleSuspend}
+            onBack={handleBack}
+            onSkip={handleSkip}
+            canGoBack={storyPhases.length > 0}
+          />
+        );
 
-    case 'writing':
-      return (
-        <ProppWritingScreen
-          currentCluster={currentCluster}
-          selectedCard={selectedCard}
-          storyPhases={storyPhases}
-          currentParagraph={currentParagraph}
-          onParagraphChange={setCurrentParagraph}
-          onContinue={handleContinueParagraph}
-          onBack={handleBack}
-          onExit={handleExit}
-          onSuspend={handleSuspend}
-          canGoBack={storyPhases.length > 0}
-          isLastCluster={currentCluster === 9}
-        />
-      );
+      case 'writing':
+        return (
+          <ProppWritingScreen
+            currentCluster={currentCluster}
+            selectedCard={selectedCard}
+            storyPhases={storyPhases}
+            currentParagraph={currentParagraph}
+            onParagraphChange={setCurrentParagraph}
+            onContinue={handleContinueParagraph}
+            onBack={handleBack}
+            onExit={handleExit}
+            onSuspend={handleSuspend}
+            canGoBack={storyPhases.length > 0}
+            isLastCluster={currentCluster === 9}
+          />
+        );
 
-    case 'free-writing':
-      return (
-        <ProppFreeWritingScreen
-          selectedCard={selectedCard}
-          usedCards={usedCards}
-          storyText={freeStoryText}
-          currentParagraph={currentParagraph}
-          onStoryTextChange={setFreeStoryText}
-          onCurrentParagraphChange={setCurrentParagraph}
-          onCardSelect={handleFreeCardSelect}
-          onCardChange={handleFreeCardChange}
-          onFinishStory={handleFinishStory}
-          onSuspend={handleSuspend}
-          onSave={handleFreeSave}
-          onExit={handleExit}
-        />
-      );
+      case 'free-writing':
+        return (
+          <ProppFreeWritingScreen
+            selectedCard={selectedCard}
+            usedCards={usedCards}
+            storyText={freeStoryText}
+            currentParagraph={currentParagraph}
+            onStoryTextChange={setFreeStoryText}
+            onCurrentParagraphChange={setCurrentParagraph}
+            onCardSelect={handleFreeCardSelect}
+            onCardChange={handleFreeCardChange}
+            onFinishStory={handleFinishStory}
+            onSuspend={handleSuspend}
+            onSave={handleFreeSave}
+            onExit={handleExit}
+          />
+        );
 
-    case 'final':
-      return (
-        <ProppFinalScreen
-          storyTitle={storyTitle}
-          finalStory={finalStory}
-          onTitleChange={setStoryTitle}
-          onStoryChange={setFinalStory}
-          onSave={handleSave}
-          profileId={profileId}
-          profileName={profileName}
-        />
-      );
+      case 'final':
+        return (
+          <ProppFinalScreen
+            storyTitle={storyTitle}
+            finalStory={finalStory}
+            onTitleChange={setStoryTitle}
+            onStoryChange={setFinalStory}
+            onSave={handleSave}
+            profileId={profileId}
+            profileName={profileName}
+          />
+        );
 
-    default:
-      return null;
-  }
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+      <ProfileIndicator />
+      {renderCurrentPhase()}
+    </div>
+  );
 };
 
 export default ProppEditor;

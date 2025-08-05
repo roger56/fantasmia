@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AuthBridge } from '@/utils/authBridge';
 
 interface MediaButtonProps {
   storyContent: string;
@@ -43,25 +44,26 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     const currentPath = window.location.pathname;
     setIsDebugMode(currentPath.includes('superuser'));
     
-    // Check authentication status
+    // Check authentication status using AuthBridge
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
+      const authStatus = await AuthBridge.isAuthenticated();
+      setIsAuthenticated(authStatus.authenticated);
     };
     
     checkAuth();
     
-    // Listen for auth changes
+    // Listen for auth changes (both Supabase and localStorage)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
+      checkAuth(); // Re-check using AuthBridge instead of just Supabase session
     });
     
     return () => subscription.unsubscribe();
   }, []);
 
   const handleMediaAction = async (type: string, subtype: string) => {
-    // Check if user is authenticated
-    if (!isAuthenticated) {
+    // Check if user is authenticated using AuthBridge
+    const authStatus = await AuthBridge.isAuthenticated();
+    if (!authStatus.authenticated) {
       setShowAuthWarning(true);
       return;
     }
