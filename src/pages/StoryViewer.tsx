@@ -12,6 +12,7 @@ import { useTTS } from '@/hooks/useTTS';
 import { useTranslation } from '@/hooks/useTranslation';
 import HomeButton from '@/components/HomeButton';
 import MediaButton from '@/components/shared/MediaButton';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 const StoryViewer = () => {
   const { storyId } = useParams();
@@ -115,7 +116,8 @@ const StoryViewer = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <HomeButton />
+      <ProfileIndicator />
+      
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6 pt-4">
           <Button 

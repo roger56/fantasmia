@@ -85,7 +85,7 @@ const Profiles = () => {
         };
         AuthBridge.createLocalSupabaseSession(superuserProfile);
         
-        navigate('/superuser');
+        navigate('/dashboard');
       } else {
         toast({
           title: "Errore",
@@ -112,8 +112,8 @@ const Profiles = () => {
             return;
           }
         }
-        // If no messages, go directly to create-story
-        navigate('/create-story', { state: { profileId: selectedProfile, profileName: selectedUser.name } });
+        // If no messages, go to dashboard
+        navigate('/dashboard', { state: { profileId: selectedProfile, profileName: selectedUser.name } });
       } else {
         toast({
           title: "Errore",

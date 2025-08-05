@@ -39,6 +39,18 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthWarning, setShowAuthWarning] = useState(false);
 
+  // Reset state when story changes
+  useEffect(() => {
+    console.log('MediaButton: Story changed, resetting state');
+    console.log('MediaButton: New storyId:', storyId);
+    console.log('MediaButton: New storyContent preview:', storyContent?.substring(0, 100) + '...');
+    
+    setUserComment('');
+    setDebugInfo(null);
+    setGeneratedImage(null);
+    setShowImageDialog(false);
+  }, [storyContent, storyId]);
+
   // Check if user is in Superuser mode and authentication status
   useEffect(() => {
     const currentPath = window.location.pathname;
@@ -86,7 +98,9 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   };
 
   const handleImageGeneration = async (style: string) => {
-    if (!storyContent) {
+    // Validation before sending
+    if (!storyContent || storyContent.trim().length === 0) {
+      console.error('MediaButton: No story content available for image generation');
       toast({
         title: "Errore",
         description: "Nessun contenuto della storia disponibile",
@@ -94,6 +108,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       });
       return;
     }
+
+    console.log('MediaButton: Starting image generation');
+    console.log('MediaButton: StoryId being sent:', storyId);
+    console.log('MediaButton: StoryTitle being sent:', storyTitle);
+    console.log('MediaButton: StoryContent being sent (first 200 chars):', storyContent.substring(0, 200));
+    console.log('MediaButton: Style selected:', style);
 
     setIsGenerating(true);
     setDebugInfo(null); // Reset debug info

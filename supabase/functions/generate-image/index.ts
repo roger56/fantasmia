@@ -59,6 +59,8 @@ serve(async (req) => {
     // Limit length for safety
     cleanPrompt = cleanPrompt.substring(0, 600)
     
+    console.log("Request received - StoryId:", storyId, "StoryTitle:", storyTitle);
+    console.log("Prompt content (first 200 chars):", prompt?.substring(0, 200));
     console.log('Original prompt:', prompt)
     console.log('Cleaned prompt:', cleanPrompt)
 

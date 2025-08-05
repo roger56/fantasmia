@@ -37,8 +37,8 @@ const Home = () => {
     if (currentUserId) {
       markMessagesAsRead(currentUserId);
       setUnreadMessages([]);
-      // Navigate to create-story after reading messages
-      navigate('/create-story', { 
+      // Navigate to dashboard after reading messages
+      navigate('/dashboard', { 
         state: { 
           profileId: currentUserId, 
           profileName: location.state?.profileName 
@@ -54,13 +54,6 @@ const Home = () => {
       icon: Users,
       description: 'Seleziona un profilo esistente o creane uno nuovo',
       path: '/profiles'
-    },
-    {
-      id: 'archive-complete',
-      title: 'Archivio Completo',
-      icon: BookOpen,
-      description: 'Visualizza tutte le storie create dagli utenti',
-      path: '/superuser-archive'
     }
   ];
 

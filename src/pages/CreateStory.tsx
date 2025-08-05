@@ -1,11 +1,41 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Ghost, Sparkles, Wand2, MessageCircle } from 'lucide-react';
 import HomeButton from '@/components/HomeButton';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import { AuthBridge } from '@/utils/authBridge';
 const CreateStory = () => {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const authStatus = await AuthBridge.isAuthenticated();
+      if (!authStatus.authenticated) {
+        navigate('/home');
+        return;
+      }
+      setIsAuthenticated(true);
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-lg">Caricamento...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
   const creationModes = [{
     id: 'GHOST',
     title: 'GHOST',
@@ -53,11 +83,12 @@ const CreateStory = () => {
     }
   };
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <HomeButton />
+      <ProfileIndicator />
+      
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6 pt-4">
-          <Button variant="ghost" onClick={() => navigate('/superuser-archive')} className="mr-4">
+          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mr-4">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-bold text-slate-800">Crea Nuova Storia</h1>
