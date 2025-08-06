@@ -84,6 +84,7 @@ const CreateStory = () => {
   };
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <ProfileIndicator />
+      <HomeButton />
       
       <div className="max-w-3xl mx-auto">
         {/* Header */}

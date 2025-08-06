@@ -230,6 +230,7 @@ const CampbellEditor = () => {
         onExit={handleExit}
         onSave={handleSaveStory}
         profileName={profileName}
+        profileId={profileId}
         language={language}
         onLanguageToggle={handleLanguageToggle}
       />

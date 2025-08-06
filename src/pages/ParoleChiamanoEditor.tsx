@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Home, Mic, MicOff, Volume2, Check, RotateCcw, Globe } from 'lucide-react';
+import { Home, Mic, MicOff, Volume2, Check, RotateCcw, Globe, ArrowLeft } from 'lucide-react';
+import HomeButton from '@/components/HomeButton';
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
@@ -334,12 +335,14 @@ const ParoleChiamanoEditor = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
         <ProfileIndicator />
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center mb-6">
-            <Button variant="ghost" onClick={() => navigate('/')}>
-              <Home className="w-5 h-5" />
+          <div className="flex items-center justify-between mb-6">
+            <Button variant="ghost" onClick={() => navigate('/create-story')}>
+              <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-slate-800 ml-4">Una Parola, Tante Storie</h1>
+            <h1 className="text-2xl font-bold text-slate-800">Una Parola, Tante Storie</h1>
+            <div></div>
           </div>
+          <HomeButton />
           
           <Card>
             <CardContent className="p-8 text-center">
@@ -363,12 +366,14 @@ const ParoleChiamanoEditor = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
         <ProfileIndicator />
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center mb-6">
+          <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => setStep('intro')}>
-              <Home className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-slate-800 ml-4">Inserisci una Parola</h1>
+            <h1 className="text-2xl font-bold text-slate-800">Inserisci una Parola</h1>
+            <div></div>
           </div>
+          <HomeButton />
           
           <Card>
             <CardContent className="p-8">

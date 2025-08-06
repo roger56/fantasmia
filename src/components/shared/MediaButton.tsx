@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AuthBridge } from '@/utils/authBridge';
+import CopyrightWarningDialog from './CopyrightWarningDialog';
 
 interface MediaButtonProps {
   storyContent: string;
@@ -38,6 +39,8 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const [isDebugMode, setIsDebugMode] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthWarning, setShowAuthWarning] = useState(false);
+  const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Reset state when story changes
   useEffect(() => {
@@ -60,6 +63,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     const checkAuth = async () => {
       const authStatus = await AuthBridge.isAuthenticated();
       setIsAuthenticated(authStatus.authenticated);
+      setCurrentUserId(authStatus.userId || null);
     };
     
     checkAuth();
@@ -82,7 +86,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     
     if (type === 'Disegno') {
       setSelectedStyle(subtype.toLowerCase());
-      setShowCommentDialog(true);
+      setShowCopyrightWarning(true);
     } else {
       toast({
         title: "Funzione in sviluppo",
@@ -95,6 +99,16 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const handleGenerateWithComment = async () => {
     setShowCommentDialog(false);
     await handleImageGeneration(selectedStyle);
+  };
+
+  const handleCopyrightModify = () => {
+    setShowCopyrightWarning(false);
+    // Navigate back or close - for now just close
+  };
+
+  const handleCopyrightProceed = () => {
+    setShowCopyrightWarning(false);
+    setShowCommentDialog(true);
   };
 
   const handleImageGeneration = async (style: string) => {
@@ -126,9 +140,9 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     });
 
     try {
-      // Use userId prop or fallback to localStorage
-      const currentUserId = userId || localStorage.getItem('currentUserId');
-      if (!currentUserId) {
+      // Use userId prop or get from state (set by AuthBridge)
+      const userIdToUse = userId || currentUserId;
+      if (!userIdToUse) {
         throw new Error('User ID is required');
       }
 
@@ -143,7 +157,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           style: style,
           storyId: storyId,
           storyTitle: storyTitle,
-          userId: currentUserId
+          userId: userIdToUse
         }
       });
 
@@ -495,6 +509,14 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Copyright Warning Dialog */}
+      <CopyrightWarningDialog
+        open={showCopyrightWarning}
+        onOpenChange={setShowCopyrightWarning}
+        onModify={handleCopyrightModify}
+        onProceed={handleCopyrightProceed}
+      />
     </>
   );
 };

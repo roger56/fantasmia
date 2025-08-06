@@ -107,6 +107,7 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
               <MediaButton 
                 storyContent={finalStory}
                 storyTitle={storyTitle || "Storia Propp"}
+                userId={profileId}
                 className="px-6"
               />
               <Button 

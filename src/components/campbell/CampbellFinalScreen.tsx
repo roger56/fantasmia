@@ -13,6 +13,7 @@ interface CampbellFinalScreenProps {
   onExit: () => void;
   onSave: (title: string) => void;
   profileName?: string;
+  profileId?: string;
   language: 'italian' | 'english';
   onLanguageToggle: () => void;
 }
@@ -22,6 +23,7 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
   onExit,
   onSave,
   profileName,
+  profileId,
   language,
   onLanguageToggle
 }) => {
@@ -164,6 +166,7 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
           <MediaButton 
             storyContent={cleanedContent}
             storyTitle="Il Viaggio dell'Eroe"
+            userId={profileId}
           />
           
           <Button variant="outline" onClick={handleEditClick}>

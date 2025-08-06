@@ -67,11 +67,11 @@ serve(async (req) => {
     // Create safe prompt templates based on style
     const createStylePrompt = (content: string, artStyle: string) => {
       const safeTemplates = {
-        'fumetto': `Create a family-friendly cartoon illustration showing: ${content}. Use bright cheerful colors, cartoon style, clear outlines. No text, no weapons, no violence.`,
-        'fotografico': `Create a beautiful realistic image of: ${content}. Professional photography style, good lighting, peaceful scene. No text, family-friendly content.`,
-        'astratto': `Create an abstract artistic interpretation of: ${content}. Use colors, shapes and artistic elements to represent the theme. No text, creative and peaceful.`
+        'fumetto': `Create a family-friendly cartoon illustration showing: ${content}. Use bright cheerful colors, cartoon style, clear outlines. CRITICAL: NO TEXT, NO WRITING, NO LETTERS, NO WORDS visible anywhere in the image. Pure visual storytelling only.`,
+        'fotografico': `Create a beautiful realistic image of: ${content}. Professional photography style, good lighting, peaceful scene. CRITICAL: NO TEXT, NO WRITING, NO LETTERS, NO WORDS visible anywhere in the image. Family-friendly visual content only.`,
+        'astratto': `Create an abstract artistic interpretation of: ${content}. Use colors, shapes and artistic elements to represent the theme. CRITICAL: NO TEXT, NO WRITING, NO LETTERS, NO WORDS visible anywhere in the image. Creative and peaceful visual art only.`
       }
-      return safeTemplates[artStyle] || `Create a beautiful, family-friendly illustration of: ${content}. No text in image.`
+      return safeTemplates[artStyle] || `Create a beautiful, family-friendly illustration of: ${content}. CRITICAL: NO TEXT, NO WRITING, NO LETTERS, NO WORDS visible anywhere in the image.`
     }
 
     let enhancedPrompt = createStylePrompt(cleanPrompt, style)
