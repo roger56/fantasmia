@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import HomeButton from '@/components/HomeButton';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface StoryWithMedia {
@@ -426,6 +427,7 @@ const SuperuserArchive = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <HomeButton />
+      <ProfileIndicator />
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6 pt-4">
           <div className="flex items-center">

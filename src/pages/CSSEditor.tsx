@@ -9,6 +9,7 @@ import CSSWarningScreen from '@/components/css/CSSWarningScreen';
 import CSSQuestionSelectionScreen from '@/components/css/CSSQuestionSelectionScreen';
 import CSSGuidedQuestionsScreen from '@/components/css/CSSGuidedQuestionsScreen';
 import CSSFinalScreen from '@/components/css/CSSFinalScreen';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 const CSSEditor = () => {
   const navigate = useNavigate();
@@ -194,54 +195,66 @@ const CSSEditor = () => {
 
   if (currentPhase === 'warning') {
     return (
-      <CSSWarningScreen 
-        onContinue={() => setCurrentPhase('question-selection')}
-        onExit={handleExit}
-      />
+      <div>
+        <ProfileIndicator />
+        <CSSWarningScreen 
+          onContinue={() => setCurrentPhase('question-selection')}
+          onExit={handleExit}
+        />
+      </div>
     );
   }
 
   if (currentPhase === 'question-selection') {
     return (
-      <CSSQuestionSelectionScreen
-        onQuestionSelect={handleQuestionSelect}
-        onExit={handleExit}
-      />
+      <div>
+        <ProfileIndicator />
+        <CSSQuestionSelectionScreen
+          onQuestionSelect={handleQuestionSelect}
+          onExit={handleExit}
+        />
+      </div>
     );
   }
 
   if (currentPhase === 'guided-questions') {
     return (
-      <CSSGuidedQuestionsScreen
-        initialQuestion={initialQuestion}
-        phases={storyPhases}
-        currentQuestionIndex={currentQuestionIndex}
-        onPhaseUpdate={handlePhaseUpdate}
-        onNext={handleNext}
-        onBack={handleBack}
-        onFinish={handleFinish}
-        language={language}
-        onLanguageToggle={handleLanguageToggle}
-        isTranslating={isTranslating}
-      />
+      <div>
+        <ProfileIndicator />
+        <CSSGuidedQuestionsScreen
+          initialQuestion={initialQuestion}
+          phases={storyPhases}
+          currentQuestionIndex={currentQuestionIndex}
+          onPhaseUpdate={handlePhaseUpdate}
+          onNext={handleNext}
+          onBack={handleBack}
+          onFinish={handleFinish}
+          language={language}
+          onLanguageToggle={handleLanguageToggle}
+          isTranslating={isTranslating}
+        />
+      </div>
     );
   }
 
   if (currentPhase === 'final') {
     return (
-      <CSSFinalScreen
-        initialQuestion={initialQuestion}
-        storyContent={getStoryContent()}
-        storyPhases={storyPhases}
-        onExit={handleExit}
-        onSave={handleSaveStory}
-        onPhaseUpdate={handlePhaseUpdate}
-        profileName={profileName}
-        profileId={profileId}
-        language={language}
-        onLanguageToggle={handleLanguageToggle}
-        isTranslating={isTranslating}
-      />
+      <div>
+        <ProfileIndicator />
+        <CSSFinalScreen
+          initialQuestion={initialQuestion}
+          storyContent={getStoryContent()}
+          storyPhases={storyPhases}
+          onExit={handleExit}
+          onSave={handleSaveStory}
+          onPhaseUpdate={handlePhaseUpdate}
+          profileName={profileName}
+          profileId={profileId}
+          language={language}
+          onLanguageToggle={handleLanguageToggle}
+          isTranslating={isTranslating}
+        />
+      </div>
     );
   }
 

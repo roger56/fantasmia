@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
 import SpeechToText from '@/components/SpeechToText';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 // TypeScript declarations for Speech Recognition API
 declare global {
@@ -230,6 +231,7 @@ const GhostEditor = () => {
   if (showFinalScreen) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <ProfileIndicator />
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
@@ -315,6 +317,7 @@ const GhostEditor = () => {
   if (showFinalDraft) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <ProfileIndicator />
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
@@ -364,6 +367,7 @@ const GhostEditor = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <ProfileIndicator />
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" onClick={handleExit}>

@@ -9,6 +9,7 @@ import { Home, Mic, MicOff, Volume2, Check, RotateCcw, Globe } from 'lucide-reac
 import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 interface WordSeries {
   A: string[];
@@ -331,6 +332,7 @@ const ParoleChiamanoEditor = () => {
   if (step === 'intro') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <ProfileIndicator />
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center mb-6">
             <Button variant="ghost" onClick={() => navigate('/')}>
@@ -359,6 +361,7 @@ const ParoleChiamanoEditor = () => {
   if (step === 'input') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <ProfileIndicator />
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center mb-6">
             <Button variant="ghost" onClick={() => setStep('intro')}>
@@ -400,6 +403,7 @@ const ParoleChiamanoEditor = () => {
   if (step === 'series') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <ProfileIndicator />
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => setStep('input')}>
@@ -451,6 +455,7 @@ const ParoleChiamanoEditor = () => {
   if (step === 'story') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <ProfileIndicator />
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => setStep('series')}>
@@ -556,6 +561,7 @@ const ParoleChiamanoEditor = () => {
   if (step === 'final') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <ProfileIndicator />
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center mb-6">
             <Button variant="ghost" onClick={() => navigate('/')}>

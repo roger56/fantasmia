@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveStory } from '@/utils/userStorage';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
 import SpeechToText from '@/components/SpeechToText';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 const AirotsEditor = () => {
   const navigate = useNavigate();
@@ -246,6 +247,7 @@ const AirotsEditor = () => {
   if (showIntro) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <ProfileIndicator />
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
@@ -273,6 +275,7 @@ const AirotsEditor = () => {
   if (showFairyTaleSelection) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <ProfileIndicator />
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
@@ -313,6 +316,7 @@ const AirotsEditor = () => {
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <ProfileIndicator />
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
@@ -413,6 +417,7 @@ const AirotsEditor = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <ProfileIndicator />
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" onClick={handleExit}>
