@@ -7,6 +7,7 @@ import { useTTS } from '@/hooks/useTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
 import MediaButton from '@/components/shared/MediaButton';
+import TextImprover from '@/components/shared/TextImprover';
 
 interface CampbellFinalScreenProps {
   storyContent: string;
@@ -16,6 +17,7 @@ interface CampbellFinalScreenProps {
   profileId?: string;
   language: 'italian' | 'english';
   onLanguageToggle: () => void;
+  onStoryChange?: (newContent: string) => void;
 }
 
 const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
@@ -25,7 +27,8 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
   profileName,
   profileId,
   language,
-  onLanguageToggle
+  onLanguageToggle,
+  onStoryChange
 }) => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -150,6 +153,18 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
             </div>
           </CardContent>
         </Card>
+
+        {/* Text Improvement */}
+        {onStoryChange && (
+          <TextImprover
+            storyContent={currentContent}
+            onContentChange={(newContent) => {
+              setCurrentContent(newContent);
+              onStoryChange(newContent);
+            }}
+            className="mb-6"
+          />
+        )}
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-3 justify-center">

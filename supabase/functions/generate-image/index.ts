@@ -67,11 +67,11 @@ serve(async (req) => {
     // Create safe prompt templates based on style
     const createStylePrompt = (content: string, artStyle: string) => {
       const safeTemplates = {
-        'fumetto': `Create a family-friendly cartoon illustration showing: ${content}. Use bright cheerful colors, cartoon style, clear outlines. CRITICAL: NO TEXT, NO WRITING, NO LETTERS, NO WORDS visible anywhere in the image. Pure visual storytelling only.`,
-        'fotografico': `Create a beautiful realistic image of: ${content}. Professional photography style, good lighting, peaceful scene. CRITICAL: NO TEXT, NO WRITING, NO LETTERS, NO WORDS visible anywhere in the image. Family-friendly visual content only.`,
-        'astratto': `Create an abstract artistic interpretation of: ${content}. Use colors, shapes and artistic elements to represent the theme. CRITICAL: NO TEXT, NO WRITING, NO LETTERS, NO WORDS visible anywhere in the image. Creative and peaceful visual art only.`
+        'fumetto': `Create a family-friendly cartoon illustration showing: ${content}. Use bright cheerful colors, cartoon style, clear outlines. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free illustration only. Pure visual storytelling without any readable content.`,
+        'fotografico': `Create a beautiful realistic image of: ${content}. Professional photography style, good lighting, peaceful scene. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free photography only. Family-friendly visual content without any readable content.`,
+        'astratto': `Create an abstract artistic interpretation of: ${content}. Use colors, shapes and artistic elements to represent the theme. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free abstract art only. Creative and peaceful visual art without any readable content.`
       }
-      return safeTemplates[artStyle] || `Create a beautiful, family-friendly illustration of: ${content}. CRITICAL: NO TEXT, NO WRITING, NO LETTERS, NO WORDS visible anywhere in the image.`
+      return safeTemplates[artStyle] || `Create a beautiful, family-friendly illustration of: ${content}. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free image only.`
     }
 
     let enhancedPrompt = createStylePrompt(cleanPrompt, style)

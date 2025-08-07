@@ -22,6 +22,7 @@ const CampbellEditor = () => {
   const [currentCard, setCurrentCard] = useState<CampbellCard | null>(null);
   const [language, setLanguage] = useState<'italian' | 'english'>('italian');
   const [isTranslating, setIsTranslating] = useState(false);
+  const [finalStoryContent, setFinalStoryContent] = useState('');
 
   useEffect(() => {
     if (editStory) {
@@ -224,15 +225,17 @@ const CampbellEditor = () => {
   }
 
   if (currentPhase === 'final') {
+    const currentStoryContent = finalStoryContent || getStoryContent();
     return (
       <CampbellFinalScreen
-        storyContent={getStoryContent()}
+        storyContent={currentStoryContent}
         onExit={handleExit}
         onSave={handleSaveStory}
         profileName={profileName}
         profileId={profileId}
         language={language}
         onLanguageToggle={handleLanguageToggle}
+        onStoryChange={setFinalStoryContent}
       />
     );
   }

@@ -2,18 +2,21 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ImageIcon, Video, Music, Palette, Camera, Film } from 'lucide-react';
+import { ImageIcon, Video, Music, Palette, Camera, Film, PenTool } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import TextImprover from '@/components/shared/TextImprover';
 
 interface CreativeMediaMenuProps {
   storyContent: string;
   storyTitle?: string;
+  onContentChange?: (content: string) => void;
   className?: string;
 }
 
 const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
   storyContent,
   storyTitle,
+  onContentChange,
   className = ""
 }) => {
   const { toast } = useToast();
@@ -44,33 +47,99 @@ const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
 
   return (
     <TooltipProvider>
-      <Card className={`mb-6 ${className}`}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Palette className="w-5 h-5" />
-            Media Creativi
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Sezione Immagini */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Immagini</h4>
-              <div className="flex flex-col gap-2">
+      <div className={className}>
+        {/* Text Improvement Section */}
+        {onContentChange && (
+          <TextImprover
+            storyContent={storyContent}
+            onContentChange={onContentChange}
+            className="mb-6"
+          />
+        )}
+        
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Palette className="w-5 h-5" />
+              Media Creativi
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Sezione Immagini */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Immagini</h4>
+                <div className="flex flex-col gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleImageGeneration('realistic')}
+                        className="w-full justify-start"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        Realistica
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Genera immagini realistiche dal testo della storia</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleImageGeneration('cartoon')}
+                        className="w-full justify-start"
+                      >
+                        <Palette className="w-4 h-4 mr-2" />
+                        Cartoon
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Genera immagini in stile cartoon dal testo della storia</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleImageGeneration('photo')}
+                        className="w-full justify-start"
+                      >
+                        <ImageIcon className="w-4 h-4 mr-2" />
+                        Fotografica
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Genera immagini fotografiche dal testo della storia</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+
+              {/* Sezione Video */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Video</h4>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleImageGeneration('realistic')}
+                      onClick={handleVideoGeneration}
                       className="w-full justify-start"
                     >
-                      <Camera className="w-4 h-4 mr-2" />
-                      Realistica
+                      <Video className="w-4 h-4 mr-2" />
+                      Genera Video
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Genera immagini realistiche dal testo della storia</p>
+                    <p>Crea un filmato animato dal testo della storia</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -79,98 +148,43 @@ const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleImageGeneration('cartoon')}
+                      onClick={handleVideoGeneration}
                       className="w-full justify-start"
                     >
-                      <Palette className="w-4 h-4 mr-2" />
-                      Cartoon
+                      <Film className="w-4 h-4 mr-2" />
+                      Video Avanzato
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Genera immagini in stile cartoon dal testo della storia</p>
+                    <p>Genera video con transizioni e effetti dalla storia</p>
                   </TooltipContent>
                 </Tooltip>
+              </div>
 
+              {/* Sezione Audio */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Audio</h4>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleImageGeneration('photo')}
+                      onClick={handleMusicGeneration}
                       className="w-full justify-start"
                     >
-                      <ImageIcon className="w-4 h-4 mr-2" />
-                      Fotografica
+                      <Music className="w-4 h-4 mr-2" />
+                      Musica di Sottofondo
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Genera immagini fotografiche dal testo della storia</p>
+                    <p>Genera musica ambientale adatta al tono della storia</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
             </div>
-
-            {/* Sezione Video */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Video</h4>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleVideoGeneration}
-                    className="w-full justify-start"
-                  >
-                    <Video className="w-4 h-4 mr-2" />
-                    Genera Video
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Crea un filmato animato dal testo della storia</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleVideoGeneration}
-                    className="w-full justify-start"
-                  >
-                    <Film className="w-4 h-4 mr-2" />
-                    Video Avanzato
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Genera video con transizioni e effetti dalla storia</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-
-            {/* Sezione Audio */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Audio</h4>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleMusicGeneration}
-                    className="w-full justify-start"
-                  >
-                    <Music className="w-4 h-4 mr-2" />
-                    Musica di Sottofondo
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Genera musica ambientale adatta al tono della storia</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </TooltipProvider>
   );
 };

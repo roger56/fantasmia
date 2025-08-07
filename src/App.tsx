@@ -27,6 +27,7 @@ import ParoleChiamanoEditor from "./pages/ParoleChiamanoEditor";
 import AirotsEditor from "./pages/AirotsEditor";
 import CampbellEditor from "./pages/CampbellEditor";
 import CSSEditor from "./pages/CSSEditor";
+import ReadingStories from "./pages/ReadingStories";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,8 +60,9 @@ const App = () => (
           <Route path="/superuser-payment-settings" element={<SuperuserPaymentSettings />} />
           <Route path="/parole-chiamano" element={<ParoleChiamanoEditor />} />
           <Route path="/airots-editor" element={<AirotsEditor />} />
-        <Route path="/campbell-editor" element={<CampbellEditor />} />
-        <Route path="/css-editor" element={<CSSEditor />} />
+          <Route path="/campbell-editor" element={<CampbellEditor />} />
+          <Route path="/css-editor" element={<CSSEditor />} />
+          <Route path="/reading-stories" element={<ReadingStories />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

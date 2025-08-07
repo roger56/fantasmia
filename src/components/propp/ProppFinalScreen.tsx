@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { FileText, Globe, Home, Save } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import MediaButton from '@/components/shared/MediaButton';
+import TextImprover from '@/components/shared/TextImprover';
 
 interface ProppFinalScreenProps {
   storyTitle: string;
@@ -89,6 +90,13 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
                 }}
               />
             </div>
+
+            {/* Text Improvement */}
+            <TextImprover
+              storyContent={finalStory}
+              onContentChange={onStoryChange}
+              className="mb-6"
+            />
 
             <div className="flex flex-wrap gap-3 justify-center">
               <Button onClick={onSave} className="px-6" disabled={!storyTitle.trim()}>
