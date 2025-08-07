@@ -25,8 +25,8 @@ export const useTTS = () => {
       // Pause current speech
       speechSynthesis.pause();
       setState(prev => ({ ...prev, isPaused: true }));
-    } else if (state.isPaused) {
-      // Resume current speech
+    } else if (state.isPaused && state.utterance) {
+      // Resume current speech only if we have the same utterance
       speechSynthesis.resume();
       setState(prev => ({ ...prev, isPaused: false }));
     } else {
@@ -53,9 +53,17 @@ export const useTTS = () => {
         });
       };
       
+      utterance.onpause = () => {
+        setState(prev => ({ ...prev, isPaused: true }));
+      };
+      
+      utterance.onresume = () => {
+        setState(prev => ({ ...prev, isPaused: false }));
+      };
+      
       speechSynthesis.speak(utterance);
     }
-  }, [state.isPlaying, state.isPaused, toast]);
+  }, [state.isPlaying, state.isPaused, state.utterance, toast]);
 
   const stop = useCallback(() => {
     speechSynthesis.cancel();

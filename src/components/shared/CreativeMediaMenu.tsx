@@ -61,14 +61,45 @@ const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Palette className="w-5 h-5" />
-              Media Creativi
+              📺 MEDIA
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Sezione Testo */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Testo</h4>
+                {onContentChange ? (
+                  <div className="text-center text-xs text-muted-foreground p-2 border rounded bg-muted/20">
+                    ✍️ Migliora testo disponibile sopra
+                  </div>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toast({
+                          title: "Funzione non disponibile",
+                          description: "La funzione Migliora Testo è disponibile solo in modalità editing",
+                          variant: "default"
+                        })}
+                        className="w-full justify-start"
+                      >
+                        <PenTool className="w-4 h-4 mr-2" />
+                        ✍️ Migliora testo
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Riscrive la storia con diversi stili usando OpenAI</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+
               {/* Sezione Immagini */}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Immagini</h4>
+                <h4 className="text-sm font-medium text-muted-foreground">Disegno</h4>
                 <div className="flex flex-col gap-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -125,45 +156,47 @@ const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
 
               {/* Sezione Video */}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Video</h4>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleVideoGeneration}
-                      className="w-full justify-start"
-                    >
-                      <Video className="w-4 h-4 mr-2" />
-                      Genera Video
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Crea un filmato animato dal testo della storia</p>
-                  </TooltipContent>
-                </Tooltip>
+                <h4 className="text-sm font-medium text-muted-foreground">Filmato</h4>
+                <div className="flex flex-col gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleVideoGeneration}
+                        className="w-full justify-start"
+                      >
+                        <Video className="w-4 h-4 mr-2" />
+                        Genera Video
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Crea un filmato animato dal testo della storia</p>
+                    </TooltipContent>
+                  </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleVideoGeneration}
-                      className="w-full justify-start"
-                    >
-                      <Film className="w-4 h-4 mr-2" />
-                      Video Avanzato
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Genera video con transizioni e effetti dalla storia</p>
-                  </TooltipContent>
-                </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleVideoGeneration}
+                        className="w-full justify-start"
+                      >
+                        <Film className="w-4 h-4 mr-2" />
+                        Video Avanzato
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Genera video con transizioni e effetti dalla storia</p>
+                    </TooltipContent>
+                    </Tooltip>
+                </div>
               </div>
 
               {/* Sezione Audio */}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Audio</h4>
+                <h4 className="text-sm font-medium text-muted-foreground">Voci</h4>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

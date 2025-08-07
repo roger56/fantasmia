@@ -40,6 +40,11 @@ const SuperuserPaymentSettings = () => {
     };
 
     fetchTotalCost();
+    
+    // Set up auto-refresh every 30 seconds to update costs
+    const interval = setInterval(fetchTotalCost, 30000);
+    
+    return () => clearInterval(interval);
   }, [toast]);
 
   return (

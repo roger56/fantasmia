@@ -29,6 +29,7 @@ import CampbellEditor from "./pages/CampbellEditor";
 import CSSEditor from "./pages/CSSEditor";
 import ReadingStories from "./pages/ReadingStories";
 import SuperuserReadingStoriesManagement from "./pages/SuperuserReadingStoriesManagement";
+import SuperuserReadingStoriesView from "./pages/SuperuserReadingStoriesView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ const App = () => (
           <Route path="/css-editor" element={<CSSEditor />} />
           <Route path="/reading-stories" element={<ReadingStories />} />
           <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
+          <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
