@@ -148,6 +148,12 @@ const SuperUser = () => {
       action: () => navigate('/superuser-archive')
     },
     {
+      title: '📖 Gestione Storie da Leggere',
+      description: 'Crea e gestisci storie per la lettura',
+      icon: BookOpen,
+      action: () => navigate('/superuser-reading-stories-management')
+    },
+    {
       title: 'Invia Messaggi',
       description: 'Invia messaggi agli utenti',
       icon: MessageSquare,

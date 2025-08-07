@@ -465,3 +465,56 @@ export const getAllAuthors = async (): Promise<string[]> => {
   const uniqueAuthors = new Set(stories.map(story => story.authorName));
   return Array.from(uniqueAuthors).sort();
 };
+
+// Reading Stories Management (SuperUser only)
+export interface ReadingStory {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const saveReadingStory = (story: ReadingStory) => {
+  const stories = getReadingStories();
+  const existingIndex = stories.findIndex(s => s.id === story.id);
+  
+  if (existingIndex >= 0) {
+    stories[existingIndex] = { ...story, updated_at: new Date().toISOString() };
+  } else {
+    stories.push(story);
+  }
+  
+  localStorage.setItem('fantasmia_reading_stories', JSON.stringify(stories));
+};
+
+export const getReadingStories = (): ReadingStory[] => {
+  const stored = localStorage.getItem('fantasmia_reading_stories');
+  return stored ? JSON.parse(stored) : [];
+};
+
+export const updateReadingStory = (id: string, updates: Partial<ReadingStory>) => {
+  const stories = getReadingStories();
+  const storyIndex = stories.findIndex(s => s.id === id);
+  
+  if (storyIndex >= 0) {
+    stories[storyIndex] = { 
+      ...stories[storyIndex], 
+      ...updates, 
+      updated_at: new Date().toISOString() 
+    };
+    localStorage.setItem('fantasmia_reading_stories', JSON.stringify(stories));
+  }
+};
+
+export const deleteReadingStory = (id: string): boolean => {
+  const stories = getReadingStories();
+  const storyIndex = stories.findIndex(s => s.id === id);
+  
+  if (storyIndex >= 0) {
+    stories.splice(storyIndex, 1);
+    localStorage.setItem('fantasmia_reading_stories', JSON.stringify(stories));
+    return true;
+  }
+  return false;
+};

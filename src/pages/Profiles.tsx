@@ -85,7 +85,7 @@ const Profiles = () => {
         };
         AuthBridge.createLocalSupabaseSession(superuserProfile);
         
-        navigate('/dashboard');
+        navigate('/superuser');
       } else {
         toast({
           title: "Errore",

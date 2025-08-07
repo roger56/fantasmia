@@ -5,22 +5,16 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen, Volume2, VolumeX } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
+import { getReadingStories, ReadingStory } from '@/utils/userStorage';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { useTTS } from '@/hooks/useTTS';
 import { useToast } from '@/hooks/use-toast';
-
-interface SuperUserStory {
-  id: string;
-  title: string;
-  content: string;
-  created_at: string;
-}
 
 const ReadingStories = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [stories, setStories] = useState<SuperUserStory[]>([]);
+  const [stories, setStories] = useState<ReadingStory[]>([]);
   const [loadingStories, setLoadingStories] = useState(false);
   const { isPlaying, speak, stop, getButtonText } = useTTS();
   const { toast } = useToast();
@@ -35,45 +29,20 @@ const ReadingStories = () => {
       
       setIsAuthenticated(true);
       setLoading(false);
-      loadSuperUserStories();
+      loadReadingStories();
     };
 
     checkAuth();
   }, [navigate]);
 
-  const loadSuperUserStories = async () => {
+  const loadReadingStories = async () => {
     setLoadingStories(true);
     try {
-      // Placeholder for now - will show sample stories
-      const sampleStories: SuperUserStory[] = [
-        {
-          id: '1',
-          title: 'La Principessa e il Drago',
-          content: 'C\'era una volta una principessa coraggiosa che viveva in un castello sul mare. Un giorno, un drago minaccioso arrivò nel regno, spaventando tutti gli abitanti. Ma la principessa, invece di fuggire, decise di parlare con il drago e scoprì che era solo molto solo e triste. Insieme diventarono grandi amici e protessero il regno per sempre.',
-          created_at: '2024-01-15'
-        },
-        {
-          id: '2',
-          title: 'Il Piccolo Esploratore',
-          content: 'Marco era un bambino molto curioso che amava esplorare. Un giorno, mentre giocava in giardino, trovò una porta misteriosa nascosta tra i cespugli. Aprendo la porta, scoprì un mondo magico pieno di creature fantastiche e colori meravigliosi. Visse mille avventure e quando tornò a casa, portò con sé la magia nel cuore.',
-          created_at: '2024-01-10'
-        },
-        {
-          id: '3',
-          title: 'La Stella Cadente',
-          content: 'Nina guardava spesso il cielo notturno dal suo balcone. Una sera vide una stella cadente più luminosa delle altre. La stella scese dal cielo e si trasformò in una piccola fatina che le disse di essere la guardiana dei sogni. La fatina regalò a Nina un cristallo magico che l\'avrebbe aiutata a realizzare i suoi sogni più belli.',
-          created_at: '2024-01-08'
-        }
-      ];
-
-      setStories(sampleStories);
-      
-      // In future, this would be a real API call:
-      // const response = await supabase
-      //   .from('superuser_stories')
-      //   .select('*')
-      //   .order('created_at', { ascending: false });
-      
+      // Get stories from localStorage (created by SuperUser)
+      const readingStories = getReadingStories();
+      setStories(readingStories.sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      ));
     } catch (error) {
       toast({
         title: "Errore",
@@ -152,7 +121,7 @@ const ReadingStories = () => {
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Pubblicata il {new Date(story.created_at).toLocaleDateString('it-IT')}
+                    Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
                   </p>
                 </CardHeader>
                 <CardContent>
