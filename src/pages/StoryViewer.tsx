@@ -13,6 +13,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import HomeButton from '@/components/HomeButton';
 import MediaButton from '@/components/shared/MediaButton';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import TextImprover from '@/components/shared/TextImprover';
 
 const StoryViewer = () => {
   const { storyId } = useParams();
@@ -24,6 +25,7 @@ const StoryViewer = () => {
   const [editedContent, setEditedContent] = useState('');
   const [editedTitle, setEditedTitle] = useState('');
   const [translatedTitle, setTranslatedTitle] = useState('');
+  const [showTextImprover, setShowTextImprover] = useState(false);
   
   const { speak, getButtonText } = useTTS();
   const { isTranslated, isTranslating, translateContent, getCurrentLanguage } = useTranslation();
@@ -171,17 +173,38 @@ const StoryViewer = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            {!isEditing ? (
-              <Button onClick={() => setIsEditing(true)} variant="outline" className="w-full sm:w-auto">
-                <Edit className="w-4 h-4 mr-2" />
-                MODIFICA
+            {!isEditing && !showTextImprover ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <Edit className="w-4 h-4 mr-2" />
+                    MODIFICA
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                    📝 Modifica testo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowTextImprover(true)}>
+                    🤖 Migliora testo (AI)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : isEditing ? (
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsEditing(false)} className="w-full sm:w-auto">
+                  Annulla
+                </Button>
+                <Button onClick={handleSaveEdit} className="w-full sm:w-auto">
+                  <Save className="w-4 h-4 mr-2" />
+                  Salva
+                </Button>
+              </div>
+            ) : showTextImprover ? (
+              <Button variant="outline" onClick={() => setShowTextImprover(false)} className="w-full sm:w-auto">
+                Annulla
               </Button>
-            ) : (
-              <Button onClick={handleSaveEdit} className="w-full sm:w-auto">
-                <Save className="w-4 h-4 mr-2" />
-                Salva
-              </Button>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -236,6 +259,16 @@ const StoryViewer = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* TextImprover */}
+        {showTextImprover && (
+          <div className="mt-6">
+            <TextImprover 
+              storyContent={editedContent}
+              onContentChange={setEditedContent}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
