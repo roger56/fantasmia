@@ -14,7 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      media_generations: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          id?: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          password: string | null
+          style_preference: string | null
+          updated_at: string
+          user_id: string
+          user_type: string | null
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          password?: string | null
+          style_preference?: string | null
+          updated_at?: string
+          user_id: string
+          user_type?: string | null
+        }
+        Update: {
+          age?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          password?: string | null
+          style_preference?: string | null
+          updated_at?: string
+          user_id?: string
+          user_type?: string | null
+        }
+        Relationships: []
+      }
+      stories: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          category: string
+          content: string
+          created_at: string
+          id: string
+          is_public: boolean | null
+          language: string | null
+          mode: string
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          category: string
+          content: string
+          created_at?: string
+          id?: string
+          is_public?: boolean | null
+          language?: string | null
+          mode: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_public?: boolean | null
+          language?: string | null
+          mode?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
