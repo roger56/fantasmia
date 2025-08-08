@@ -10,249 +10,20 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
-      admin_messages: {
-        Row: {
-          created_at: string
-          id: string
-          is_read: boolean | null
-          message: string
-          user_id: string
-          user_name: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_read?: boolean | null
-          message: string
-          user_id: string
-          user_name: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_read?: boolean | null
-          message?: string
-          user_id?: string
-          user_name?: string
-        }
-        Relationships: []
-      }
-      media_generations: {
-        Row: {
-          cost: number
-          created_at: string
-          id: string
-          media_style: string | null
-          media_type: string
-          media_url: string
-          story_id: string | null
-          user_id: string
-        }
-        Insert: {
-          cost?: number
-          created_at?: string
-          id?: string
-          media_style?: string | null
-          media_type: string
-          media_url: string
-          story_id?: string | null
-          user_id: string
-        }
-        Update: {
-          cost?: number
-          created_at?: string
-          id?: string
-          media_style?: string | null
-          media_type?: string
-          media_url?: string
-          story_id?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      stories: {
-        Row: {
-          author_id: string | null
-          author_name: string | null
-          category: string
-          content: string
-          created_at: string | null
-          id: string
-          is_deleted: boolean | null
-          is_modified_by_super: boolean | null
-          is_public: boolean | null
-          language: string | null
-          mode: string | null
-          status: string | null
-          title: string
-          updated_at: string | null
-          user_id: string
-          user_name: string
-        }
-        Insert: {
-          author_id?: string | null
-          author_name?: string | null
-          category: string
-          content: string
-          created_at?: string | null
-          id?: string
-          is_deleted?: boolean | null
-          is_modified_by_super?: boolean | null
-          is_public?: boolean | null
-          language?: string | null
-          mode?: string | null
-          status?: string | null
-          title: string
-          updated_at?: string | null
-          user_id: string
-          user_name: string
-        }
-        Update: {
-          author_id?: string | null
-          author_name?: string | null
-          category?: string
-          content?: string
-          created_at?: string | null
-          id?: string
-          is_deleted?: boolean | null
-          is_modified_by_super?: boolean | null
-          is_public?: boolean | null
-          language?: string | null
-          mode?: string | null
-          status?: string | null
-          title?: string
-          updated_at?: string | null
-          user_id?: string
-          user_name?: string
-        }
-        Relationships: []
-      }
-      suspended_stories: {
-        Row: {
-          created_at: string
-          id: string
-          story_data: Json
-          title: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          story_data: Json
-          title?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          story_data?: Json
-          title?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      system_settings: {
-        Row: {
-          created_at: string | null
-          id: string
-          setting_key: string
-          setting_value: number
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          setting_key: string
-          setting_value: number
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          setting_key?: string
-          setting_value?: number
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      user_profiles: {
-        Row: {
-          age: number
-          avatar: string | null
-          created_at: string | null
-          email: string | null
-          name: string
-          password: string | null
-          style_preference: string
-          updated_at: string | null
-          user_id: string
-          user_type: Database["public"]["Enums"]["user_role"]
-        }
-        Insert: {
-          age: number
-          avatar?: string | null
-          created_at?: string | null
-          email?: string | null
-          name: string
-          password?: string | null
-          style_preference: string
-          updated_at?: string | null
-          user_id: string
-          user_type: Database["public"]["Enums"]["user_role"]
-        }
-        Update: {
-          age?: number
-          avatar?: string | null
-          created_at?: string | null
-          email?: string | null
-          name?: string
-          password?: string | null
-          style_preference?: string
-          updated_at?: string | null
-          user_id?: string
-          user_type?: Database["public"]["Enums"]["user_role"]
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      create_user_profile: {
-        Args: {
-          p_user_id: string
-          p_name: string
-          p_age: number
-          p_user_type: Database["public"]["Enums"]["user_role"]
-          p_style_preference: string
-          p_email?: string
-          p_avatar?: string
-          p_password?: string
-        }
-        Returns: boolean
-      }
-      get_user_display_name: {
-        Args: { p_user_id: string }
-        Returns: string
-      }
-      is_superuser: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      user_role:
-        | "Bambino"
-        | "Con i genitori"
-        | "Adulto"
-        | "Gruppo di clown"
-        | "SUPERUSER"
-        | "PUBLIC"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -379,15 +150,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      user_role: [
-        "Bambino",
-        "Con i genitori",
-        "Adulto",
-        "Gruppo di clown",
-        "SUPERUSER",
-        "PUBLIC",
-      ],
-    },
+    Enums: {},
   },
 } as const
