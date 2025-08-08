@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { PenTool, Laugh, Wand2, Heart, Sparkles, Trash2, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import CopyrightWarningDialog from '@/components/shared/CopyrightWarningDialog';
 
 interface TextImproverProps {
@@ -38,43 +39,20 @@ const TextImprover: React.FC<TextImproverProps> = ({
     setIsImproving(true);
 
     try {
-      const stylePrompts = {
-        'ironico': 'Riscrivi questa storia in stile ironico e divertente, con battute intelligenti e un tono spiritoso. Mantieni massimo 35 righe e formattazione leggibile.',
-        'fantasy': 'Trasforma questa storia in un racconto fantasy epico con elementi magici, creature fantastiche e atmosfere incantate. Mantieni massimo 35 righe e formattazione leggibile.',
-        'semplice': 'Riscrivi questa storia in modo semplice e leggero, adatto ai bambini, con linguaggio facile e tono dolce. Mantieni massimo 35 righe e formattazione leggibile.',
-        'fantasioso': 'Arricchisci questa storia con elementi fantasiosi, creativi e coloriti, rendendola più vivace e immaginativa. Mantieni massimo 35 righe e formattazione leggibile.'
-      };
-
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content: stylePrompts[selectedStyle as keyof typeof stylePrompts]
-            },
-            {
-              role: 'user',
-              content: storyContent
-            }
-          ],
-          max_tokens: 1000,
-          temperature: 0.7
-        })
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke('improve-text', {
+        body: {
+          storyContent: storyContent,
+          style: selectedStyle
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Errore durante il miglioramento del testo');
+      if (response.error) {
+        throw new Error(response.error.message);
       }
 
-      const data = await response.json();
-      const improvedContent = data.choices[0].message.content;
-
+      const improvedContent = response.data.improvedText;
       setImprovedText(improvedContent);
       setShowImprovedText(true);
 
@@ -84,9 +62,10 @@ const TextImprover: React.FC<TextImproverProps> = ({
       });
 
     } catch (error) {
+      console.error('Error improving text:', error);
       toast({
         title: "Errore",
-        description: "Non è stato possibile migliorare il testo. Funzionalità in sviluppo.",
+        description: "Non è stato possibile migliorare il testo. Riprova più tardi.",
         variant: "destructive"
       });
     } finally {

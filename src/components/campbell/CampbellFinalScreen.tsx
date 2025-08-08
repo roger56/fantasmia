@@ -7,7 +7,8 @@ import { useTTS } from '@/hooks/useTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
 import MediaButton from '@/components/shared/MediaButton';
-import TextImprover from '@/components/shared/TextImprover';
+import ModifyMenu from "@/components/shared/ModifyMenu";
+import CreativeMediaMenu from "@/components/shared/CreativeMediaMenu";
 
 interface CampbellFinalScreenProps {
   storyContent: string;
@@ -154,17 +155,23 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
           </CardContent>
         </Card>
 
-        {/* Text Improvement */}
-        {onStoryChange && (
-          <TextImprover
-            storyContent={currentContent}
-            onContentChange={(newContent) => {
-              setCurrentContent(newContent);
-              onStoryChange(newContent);
-            }}
-            className="mb-6"
-          />
-        )}
+        {/* Modify Menu with Text Improvement */}
+        <ModifyMenu
+          storyContent={currentContent}
+          isEditing={showEditDialog}
+          onEditToggle={handleEditClick}
+          onContentChange={onStoryChange ? (newContent) => {
+            setCurrentContent(newContent);
+            onStoryChange(newContent);
+          } : undefined}
+          className="mb-6"
+        />
+
+        {/* Creative Media Menu */}
+        <CreativeMediaMenu
+          storyContent={currentContent}
+          className="mb-6"
+        />
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-3 justify-center">

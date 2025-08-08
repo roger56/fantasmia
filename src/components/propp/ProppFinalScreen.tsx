@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { FileText, Globe, Home, Save } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import MediaButton from '@/components/shared/MediaButton';
-import TextImprover from '@/components/shared/TextImprover';
+import ModifyMenu from "@/components/shared/ModifyMenu";
+import CreativeMediaMenu from "@/components/shared/CreativeMediaMenu";
 
 interface ProppFinalScreenProps {
   storyTitle: string;
@@ -28,6 +29,7 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
   profileName
 }) => {
   const navigate = useNavigate();
+  const [editMode, setEditMode] = React.useState(false);
   const { isTranslated, isTranslating, translateContent, getButtonText } = useTranslation();
 
   const handleTranslateClick = () => {
@@ -91,10 +93,18 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
               />
             </div>
 
-            {/* Text Improvement */}
-            <TextImprover
+            {/* Modify Menu with Text Improvement */}
+            <ModifyMenu
               storyContent={finalStory}
+              isEditing={editMode}
+              onEditToggle={() => setEditMode(!editMode)}
               onContentChange={onStoryChange}
+              className="mb-6"
+            />
+
+            {/* Creative Media Menu */}
+            <CreativeMediaMenu
+              storyContent={finalStory}
               className="mb-6"
             />
 

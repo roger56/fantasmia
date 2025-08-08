@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, BookOpen, Plus, Eye } from 'lucide-react';
-import { getReadingStories, ReadingStory } from '@/utils/userStorage';
+import { ArrowLeft, BookOpen, Plus, Eye, Trash2 } from 'lucide-react';
+import { getReadingStories, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import HomeButton from '@/components/HomeButton';
 
 const SuperuserReadingStoriesView = () => {
@@ -12,6 +14,9 @@ const SuperuserReadingStoriesView = () => {
   const [stories, setStories] = useState<ReadingStory[]>([]);
   const [selectedStory, setSelectedStory] = useState<ReadingStory | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [storyToDelete, setStoryToDelete] = useState<string>('');
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check if user is authenticated as superuser
@@ -34,6 +39,32 @@ const SuperuserReadingStoriesView = () => {
     if (readingStories.length > 0) {
       setSelectedStory(readingStories[0]);
     }
+  };
+
+  const handleDeleteClick = (storyId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setStoryToDelete(storyId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteReadingStory(storyToDelete)) {
+      toast({
+        title: "Successo",
+        description: "Storia eliminata con successo"
+      });
+      loadStories();
+      if (selectedStory?.id === storyToDelete) {
+        setSelectedStory(null);
+      }
+    }
+    setShowDeleteDialog(false);
+    setStoryToDelete('');
+  };
+
+  const handleViewStory = (storyId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/superuser-reading-story-viewer/${storyId}`);
   };
 
   if (!isAuthenticated) {
@@ -85,10 +116,34 @@ const SuperuserReadingStoriesView = () => {
                         }`}
                         onClick={() => setSelectedStory(story)}
                       >
-                        <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
-                        </p>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
+                            <p className="text-xs text-slate-500 mt-1">
+                              Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
+                            </p>
+                          </div>
+                          <div className="flex gap-1 ml-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => handleViewStory(story.id, e)}
+                              className="h-8 w-8 p-0"
+                              title="Visualizza"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => handleDeleteClick(story.id, e)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="Elimina"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -143,18 +198,47 @@ const SuperuserReadingStoriesView = () => {
                     <span> • Aggiornata il {new Date(selectedStory.updated_at).toLocaleDateString('it-IT')}</span>
                   )}
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate('/superuser-reading-stories-management')}
-                >
-                  Modifica Storie
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate(`/superuser-reading-story-viewer/${selectedStory.id}`)}
+                    className="flex items-center gap-2"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Visualizza
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/superuser-reading-stories-management')}
+                  >
+                    Gestisci Tutte
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare questa storia? Questa azione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
