@@ -155,16 +155,16 @@ const SuperuserReadingStoriesManagement = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Form Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {isEditing ? <Edit className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                {isEditing ? 'Modifica Storia' : 'Nuova Storia'}
+          <Card className="h-fit">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                {isEditing ? <Edit className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                {isEditing ? 'Modifica Storia' : 'Inserisci nuova storia'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 pt-0">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Titolo
                 </label>
                 <Input
@@ -172,20 +172,21 @@ const SuperuserReadingStoriesManagement = () => {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Inserisci il titolo della storia..."
                   maxLength={100}
+                  className="h-9"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Contenuto ({content.length}/2000 caratteri)
                 </label>
                 <Textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Scrivi qui il contenuto della storia..."
-                  rows={12}
+                  rows={8}
                   maxLength={2000}
-                  className="resize-none"
+                  className="resize-none text-sm"
                 />
               </div>
 

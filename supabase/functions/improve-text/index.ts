@@ -15,11 +15,28 @@ serve(async (req) => {
   }
 
   try {
-    const { storyContent, style } = await req.json();
+    const requestBody = await req.json();
+    console.log('Request body:', requestBody);
+    
+    // Support both old and new parameter names
+    const { 
+      storyContent, 
+      input_text, 
+      style, 
+      language = 'it', 
+      min_lines = 5, 
+      max_lines = 35, 
+      title = '', 
+      temperature = 0.7, 
+      seed = null, 
+      user_id 
+    } = requestBody;
 
-    if (!storyContent || !style) {
+    const content = input_text || storyContent;
+
+    if (!content || !style) {
       return new Response(
-        JSON.stringify({ error: 'Missing storyContent or style' }),
+        JSON.stringify({ error: 'Missing content or style' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -63,19 +80,20 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: systemPrompt
+            content: `Sei un esperto scrittore di storie per bambini. ${systemPrompt} La storia deve avere tra ${min_lines} e ${max_lines} righe.`
           },
           {
             role: 'user',
-            content: storyContent
+            content: title ? `Titolo: ${title}\n\nStoria: ${content}` : content
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.7
+        max_tokens: 2000,
+        temperature: temperature,
+        ...(seed && { seed: seed })
       })
     });
 

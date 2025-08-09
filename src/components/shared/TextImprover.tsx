@@ -1,66 +1,80 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { PenTool, Laugh, Wand2, Heart, Sparkles, Trash2, Check } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Sparkles, Loader2, RefreshCw, X, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import CopyrightWarningDialog from '@/components/shared/CopyrightWarningDialog';
+import CopyrightWarningDialog from './CopyrightWarningDialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface TextImproverProps {
   storyContent: string;
   onContentChange: (newContent: string) => void;
+  storyTitle?: string;
   className?: string;
 }
 
 const TextImprover: React.FC<TextImproverProps> = ({
   storyContent,
   onContentChange,
-  className = ""
+  storyTitle = '',
+  className = ''
 }) => {
   const [isImproving, setIsImproving] = useState(false);
   const [improvedText, setImprovedText] = useState('');
-  const [showImprovedText, setShowImprovedText] = useState(false);
-  const [showReplaceDialog, setShowReplaceDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState<'ironico' | 'fantasy' | 'semplice' | 'fantasioso' | null>(null);
   const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
-  const [selectedStyle, setSelectedStyle] = useState('');
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { toast } = useToast();
 
-  const improveText = async (style: 'ironico' | 'fantasy' | 'semplice' | 'fantasioso') => {
+  const styleOptions = [
+    { value: 'ironico' as const, label: 'Ironico', description: 'Tono ironico e divertente' },
+    { value: 'fantasy' as const, label: 'Fantasy', description: 'Stile fantasy e magico' },
+    { value: 'semplice' as const, label: 'Semplice e leggero', description: 'Linguaggio semplice e scorrevole' },
+    { value: 'fantasioso' as const, label: 'Fantasioso', description: 'Ricco di fantasia e creatività' }
+  ];
+
+  const improveText = (style: typeof selectedStyle) => {
     setSelectedStyle(style);
     setShowCopyrightWarning(true);
   };
 
   const handleProceedWithImprovement = async () => {
+    if (!selectedStyle) return;
+    
     setShowCopyrightWarning(false);
     setIsImproving(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await supabase.functions.invoke('improve-text', {
+      const { data, error } = await supabase.functions.invoke('improve-text', {
         body: {
-          storyContent: storyContent,
-          style: selectedStyle
+          input_text: storyContent,
+          style: selectedStyle,
+          language: 'it',
+          min_lines: 5,
+          max_lines: 35,
+          title: storyTitle,
+          temperature: 0.7,
+          seed: null,
+          user_id: (await supabase.auth.getUser()).data.user?.id || 'anonymous'
         }
       });
 
-      if (response.error) {
-        throw new Error(response.error.message);
+      if (error) {
+        throw new Error(error.message);
       }
 
-      const improvedContent = response.data.improvedText;
-      setImprovedText(improvedContent);
-      setShowImprovedText(true);
-
-      toast({
-        title: "Testo migliorato",
-        description: `Il testo è stato rielaborato in stile ${selectedStyle}`,
-      });
-
+      if (data?.improvedText) {
+        setImprovedText(data.improvedText);
+        toast({
+          title: "Successo",
+          description: "Testo migliorato con successo!",
+        });
+      } else {
+        throw new Error('Nessun testo migliorato ricevuto');
+      }
     } catch (error) {
       console.error('Error improving text:', error);
       toast({
@@ -73,157 +87,107 @@ const TextImprover: React.FC<TextImproverProps> = ({
     }
   };
 
-  const handleReplace = () => {
-    setShowReplaceDialog(true);
-  };
-
   const confirmReplace = () => {
     onContentChange(improvedText);
-    setShowImprovedText(false);
     setImprovedText('');
-    setShowReplaceDialog(false);
-    
+    setSelectedStyle(null);
+    setShowReplaceConfirm(false);
     toast({
-      title: "Testo sostituito",
-      description: "La storia originale è stata sostituita con quella migliorata",
+      title: "Successo",
+      description: "Storia sostituita con il testo migliorato",
     });
-  };
-
-  const handleDelete = () => {
-    setShowDeleteDialog(true);
   };
 
   const confirmDelete = () => {
     setImprovedText('');
-    setShowImprovedText(false);
-    setShowDeleteDialog(false);
-    
+    setSelectedStyle(null);
+    setShowDeleteConfirm(false);
     toast({
       title: "Testo eliminato",
       description: "Il testo migliorato è stato eliminato",
     });
   };
 
+  const handleChangeStyle = () => {
+    setImprovedText('');
+    setSelectedStyle(null);
+  };
+
   return (
-    <TooltipProvider>
-      <Card className={`mb-6 ${className}`}>
+    <>
+      <Card className={className}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <PenTool className="w-5 h-5" />
-            Migliora Testo
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5" />
+            Migliora testo (AI)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => improveText('ironico')}
-                  disabled={isImproving}
-                  className="w-full justify-start"
-                >
-                  <Laugh className="w-4 h-4 mr-2" />
-                  Ironico
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Rende la storia divertente e spiritosa</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => improveText('fantasy')}
-                  disabled={isImproving}
-                  className="w-full justify-start"
-                >
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Fantasy
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Trasforma in un racconto fantasy epico</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => improveText('semplice')}
-                  disabled={isImproving}
-                  className="w-full justify-start"
-                >
-                  <Heart className="w-4 h-4 mr-2" />
-                  Semplice
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Rende il linguaggio semplice e adatto ai bambini</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => improveText('fantasioso')}
-                  disabled={isImproving}
-                  className="w-full justify-start"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Fantasioso
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Arricchisce con elementi creativi e coloriti</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
-          {isImproving && (
-            <div className="text-center text-muted-foreground">
-              Miglioramento del testo in corso...
-            </div>
-          )}
-
-          {showImprovedText && (
-            <div className="mt-4 space-y-4">
-              <h4 className="font-medium">Testo Migliorato:</h4>
-              <Card>
-                <CardContent className="p-4">
-                  <ScrollArea className="h-48">
-                    <div className="whitespace-pre-wrap text-sm">
-                      {improvedText}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+          {!improvedText ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Seleziona uno stile per migliorare il tuo testo:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {styleOptions.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant="outline"
+                    onClick={() => improveText(option.value)}
+                    disabled={isImproving}
+                    className="flex flex-col items-start p-4 h-auto text-left"
+                  >
+                    <span className="font-semibold">{option.label}</span>
+                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                  </Button>
+                ))}
+              </div>
               
-              <div className="flex gap-2 justify-end">
+              {isImproving && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                  <span>Migliorando il testo...</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-lg">Testo migliorato - Stile: {selectedStyle}</h4>
+              </div>
+              
+              <ScrollArea className="h-64 w-full border rounded-md p-4">
+                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {improvedText}
+                </div>
+              </ScrollArea>
+              
+              <div className="flex flex-wrap gap-2">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDelete}
-                  className="flex items-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Elimina
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleReplace}
+                  variant="default"
+                  onClick={() => setShowReplaceConfirm(true)}
                   className="flex items-center gap-2"
                 >
                   <Check className="w-4 h-4" />
-                  Sostituisci
+                  Sostituisci storia originale
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={handleChangeStyle}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Cambia tipologia
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                >
+                  <X className="w-4 h-4" />
+                  Elimina storia estesa
                 </Button>
               </div>
             </div>
@@ -238,12 +202,13 @@ const TextImprover: React.FC<TextImproverProps> = ({
         onProceed={handleProceedWithImprovement}
       />
 
-      <AlertDialog open={showReplaceDialog} onOpenChange={setShowReplaceDialog}>
+      <AlertDialog open={showReplaceConfirm} onOpenChange={setShowReplaceConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Conferma Sostituzione</AlertDialogTitle>
+            <AlertDialogTitle>Sostituisci storia originale</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler sostituire la storia originale con quella migliorata? 
+              Sei sicuro di voler sostituire la storia originale con il testo migliorato? 
+              La storia originale verrà eliminata e la nuova storia verrà salvata nell'archivio globale al posto della precedente.
               Questa azione non può essere annullata.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -256,12 +221,12 @@ const TextImprover: React.FC<TextImproverProps> = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+            <AlertDialogTitle>Elimina testo migliorato</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler eliminare il testo migliorato?
+              Sei sicuro di voler eliminare il testo migliorato? La storia originale rimarrà invariata.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -272,7 +237,7 @@ const TextImprover: React.FC<TextImproverProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </TooltipProvider>
+    </>
   );
 };
 

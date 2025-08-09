@@ -9,6 +9,7 @@ interface TTSState {
 
 export const useTTS = () => {
   const [state, setState] = useState<TTSState>({ isPlaying: false, isPaused: false });
+  const [currentText, setCurrentText] = useState<string>('');
   const { toast } = useToast();
 
   const speak = useCallback((text: string, language: 'italian' | 'english' = 'italian') => {
@@ -21,16 +22,15 @@ export const useTTS = () => {
       return;
     }
 
-    if (state.isPlaying && !state.isPaused) {
-      // Pause current speech
+    // If playing the same text, pause/resume
+    if (state.isPlaying && !state.isPaused && currentText === text) {
       speechSynthesis.pause();
       setState(prev => ({ ...prev, isPaused: true }));
-    } else if (state.isPaused && state.utterance) {
-      // Resume current speech only if we have the same utterance
+    } else if (state.isPaused && state.utterance && currentText === text) {
       speechSynthesis.resume();
       setState(prev => ({ ...prev, isPaused: false }));
     } else {
-      // Stop any existing speech and start new
+      // Different text or not playing, start new speech
       speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
@@ -42,10 +42,12 @@ export const useTTS = () => {
       
       utterance.onend = () => {
         setState({ isPlaying: false, isPaused: false });
+        setCurrentText('');
       };
       
       utterance.onerror = () => {
         setState({ isPlaying: false, isPaused: false });
+        setCurrentText('');
         toast({
           title: "Errore TTS",
           description: "Si è verificato un errore durante la lettura",
@@ -61,19 +63,21 @@ export const useTTS = () => {
         setState(prev => ({ ...prev, isPaused: false }));
       };
       
+      setCurrentText(text);
       speechSynthesis.speak(utterance);
     }
-  }, [state.isPlaying, state.isPaused, state.utterance, toast]);
+  }, [state.isPlaying, state.isPaused, state.utterance, currentText, toast]);
 
   const stop = useCallback(() => {
     speechSynthesis.cancel();
     setState({ isPlaying: false, isPaused: false });
+    setCurrentText('');
   }, []);
 
   const getButtonText = useCallback(() => {
-    if (state.isPlaying && state.isPaused) return 'RIPRENDI';
-    if (state.isPlaying) return 'PAUSA';
-    return 'ASCOLTA';
+    if (state.isPlaying && state.isPaused) return 'Riprendi';
+    if (state.isPlaying) return 'Pausa';
+    return 'Leggi';
   }, [state.isPlaying, state.isPaused]);
 
   return {

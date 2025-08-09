@@ -19,9 +19,9 @@ export class AuthBridge {
    */
   static async bridgeUserToSupabase(localUser: User): Promise<SupabaseAuthResult> {
     try {
-      // Check if user already exists in Supabase by checking user_profiles
+      // Check if user already exists in Supabase by checking profiles
       const { data: existingProfile } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
         .eq('name', localUser.name)
         .single();
@@ -73,13 +73,13 @@ export class AuthBridge {
       if (authData.user) {
         // Create the user profile
         const { error: profileError } = await supabase
-          .from('user_profiles')
+          .from('profiles')
           .insert({
             user_id: authData.user.id,
             name: localUser.name,
             age: localUser.age,
             email: localUser.email,
-            user_type: localUser.name.toLowerCase() === 'superuser' ? 'SUPERUSER' : 'Adulto',
+            user_type: localUser.name.toLowerCase() === 'superuser' ? 'superuser' : 'user',
             style_preference: 'default',
             password: localUser.password // Keep original password for compatibility
           });
@@ -232,7 +232,7 @@ export class AuthBridge {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       const { data: profile } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('name')
         .eq('user_id', session.user.id)
         .single();

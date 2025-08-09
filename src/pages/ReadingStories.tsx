@@ -55,11 +55,7 @@ const ReadingStories = () => {
   };
 
   const handleTTS = (content: string) => {
-    if (isPlaying) {
-      stop();
-    } else {
-      speak(content, 'italian');
-    }
+    speak(content, 'italian');
   };
 
   if (loading) {
@@ -106,19 +102,21 @@ const ReadingStories = () => {
                       <BookOpen className="w-5 h-5" />
                       {story.title}
                     </CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleTTS(story.content)}
-                      className="flex items-center gap-2"
-                    >
-                      {isPlaying ? (
-                        <VolumeX className="w-4 h-4" />
-                      ) : (
-                        <Volume2 className="w-4 h-4" />
-                      )}
-                      {getButtonText()}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTTS(story.content)}
+                        className="flex items-center gap-2"
+                      >
+                        {isPlaying ? (
+                          <VolumeX className="w-4 h-4" />
+                        ) : (
+                          <Volume2 className="w-4 h-4" />
+                        )}
+                        {getButtonText()}
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
