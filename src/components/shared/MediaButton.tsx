@@ -300,6 +300,27 @@ const MediaButton: React.FC<MediaButtonProps> = ({
                   >
                     Astratto
                   </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction('Disegno', 'Manga')}
+                    disabled={isGenerating}
+                  >
+                    Manga
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction('Disegno', 'Acquarello')}
+                    disabled={isGenerating}
+                  >
+                    Acquarello
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction('Disegno', 'Carboncino')}
+                    disabled={isGenerating}
+                  >
+                    Carboncino
+                  </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 

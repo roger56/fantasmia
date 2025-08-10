@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, ChevronDown, PenTool, Wand2 } from 'lucide-react';
+import { Edit, ChevronDown, PenTool, Wand2, Feather } from 'lucide-react';
 import TextImprover from '@/components/shared/TextImprover';
+import PoetryGenerator from '@/components/shared/PoetryGenerator';
 
 interface ModifyMenuProps {
   storyContent: string;
   isEditing: boolean;
   onEditToggle: () => void;
   onContentChange?: (content: string) => void;
+  storyTitle?: string;
   className?: string;
 }
 
@@ -18,17 +20,26 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   isEditing,
   onEditToggle,
   onContentChange,
+  storyTitle = '',
   className = ""
 }) => {
   const [showTextImprover, setShowTextImprover] = useState(false);
+  const [showPoetryGenerator, setShowPoetryGenerator] = useState(false);
 
   const handleEditClick = () => {
     setShowTextImprover(false);
+    setShowPoetryGenerator(false);
     onEditToggle();
   };
 
   const handleImproveTextClick = () => {
     setShowTextImprover(true);
+    setShowPoetryGenerator(false);
+  };
+
+  const handlePoetryClick = () => {
+    setShowPoetryGenerator(true);
+    setShowTextImprover(false);
   };
 
   return (
@@ -57,10 +68,16 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
                 📝 Modifica testo
               </DropdownMenuItem>
               {onContentChange && (
-                <DropdownMenuItem onClick={handleImproveTextClick} className="cursor-pointer">
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  🤖 Migliora testo (AI)
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onClick={handleImproveTextClick} className="cursor-pointer">
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    🤖 Migliora testo (AI)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handlePoetryClick} className="cursor-pointer">
+                    <Feather className="w-4 h-4 mr-2" />
+                    📝 Poesia
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -73,6 +90,17 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
           <TextImprover
             storyContent={storyContent}
             onContentChange={onContentChange}
+            storyTitle={storyTitle}
+          />
+        </div>
+      )}
+
+      {/* Poetry Generator Component */}
+      {showPoetryGenerator && onContentChange && (
+        <div className="mt-4">
+          <PoetryGenerator
+            storyContent={storyContent}
+            storyTitle={storyTitle}
           />
         </div>
       )}

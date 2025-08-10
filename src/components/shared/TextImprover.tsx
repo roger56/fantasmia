@@ -12,6 +12,7 @@ interface TextImproverProps {
   storyContent: string;
   onContentChange: (newContent: string) => void;
   storyTitle?: string;
+  onSave?: (content: string, title: string) => void;
   className?: string;
 }
 
@@ -19,6 +20,7 @@ const TextImprover: React.FC<TextImproverProps> = ({
   storyContent,
   onContentChange,
   storyTitle = '',
+  onSave,
   className = ''
 }) => {
   const [isImproving, setIsImproving] = useState(false);
@@ -98,6 +100,16 @@ const TextImprover: React.FC<TextImproverProps> = ({
     });
   };
 
+  const handleSave = () => {
+    if (onSave) {
+      onSave(improvedText, storyTitle);
+      toast({
+        title: "Successo",
+        description: "Storia estesa salvata con successo",
+      });
+    }
+  };
+
   const confirmDelete = () => {
     setImprovedText('');
     setSelectedStyle(null);
@@ -163,6 +175,17 @@ const TextImprover: React.FC<TextImproverProps> = ({
               </ScrollArea>
               
               <div className="flex flex-wrap gap-2">
+                {onSave && (
+                  <Button
+                    variant="default"
+                    onClick={handleSave}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                  >
+                    <Check className="w-4 h-4" />
+                    Salva
+                  </Button>
+                )}
+                
                 <Button
                   variant="default"
                   onClick={() => setShowReplaceConfirm(true)}

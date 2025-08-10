@@ -7,6 +7,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Welcome from "./pages/Welcome";
 import IntroductoryScreens from "./components/IntroductoryScreens";
 import Home from "./pages/Home";
+import NewHome from "./pages/NewHome";
+import About from "./pages/About";
+import Company from "./pages/Company";
+import Spare from "./pages/Spare";
+import Privacy from "./pages/Privacy";
+import Contacts from "./pages/Contacts";
+import TermsAcceptance from "./pages/TermsAcceptance";
 import Dashboard from "./pages/Dashboard";
 import Profiles from "./pages/Profiles";
 import NewProfile from "./pages/NewProfile";
@@ -42,9 +49,16 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Welcome />} />
+          <Route path="/" element={<NewHome />} />
+          <Route path="/welcome" element={<Welcome />} />
           <Route path="/introductory-screens" element={<IntroductoryScreens />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/company" element={<Company />} />
+          <Route path="/spare" element={<Spare />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/contacts" element={<Contacts />} />
+          <Route path="/terms-acceptance" element={<TermsAcceptance />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profiles" element={<Profiles />} />
           <Route path="/new-profile" element={<NewProfile />} />

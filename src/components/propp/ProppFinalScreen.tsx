@@ -99,6 +99,7 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
               isEditing={editMode}
               onEditToggle={() => setEditMode(!editMode)}
               onContentChange={onStoryChange}
+              storyTitle={storyTitle}
               className="mb-6"
             />
 

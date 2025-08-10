@@ -19,6 +19,7 @@ interface CampbellFinalScreenProps {
   language: 'italian' | 'english';
   onLanguageToggle: () => void;
   onStoryChange?: (newContent: string) => void;
+  storyTitle?: string;
 }
 
 const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
@@ -29,7 +30,8 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
   profileId,
   language,
   onLanguageToggle,
-  onStoryChange
+  onStoryChange,
+  storyTitle = "Il Viaggio dell'Eroe"
 }) => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -164,6 +166,7 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
             setCurrentContent(newContent);
             onStoryChange(newContent);
           } : undefined}
+          storyTitle={storyTitle}
           className="mb-6"
         />
 
