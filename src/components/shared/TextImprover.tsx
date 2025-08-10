@@ -96,7 +96,7 @@ const TextImprover: React.FC<TextImproverProps> = ({
     setShowReplaceConfirm(false);
     toast({
       title: "Successo",
-      description: "Storia sostituita con il testo migliorato",
+      description: "Storia originale sostituita con successo nell'archivio globale",
     });
   };
 

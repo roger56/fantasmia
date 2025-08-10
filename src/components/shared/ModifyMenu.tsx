@@ -96,7 +96,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
       )}
 
       {/* Poetry Generator Component */}
-      {showPoetryGenerator && onContentChange && (
+      {showPoetryGenerator && (
         <div className="mt-4">
           <PoetryGenerator
             storyContent={storyContent}

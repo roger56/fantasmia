@@ -75,7 +75,7 @@ const NewHome = () => {
           {/* Left side - Logo and illustration */}
           <div className="flex justify-center">
             <img 
-              src="/lovable-uploads/6bc2720f-445b-440f-9afd-0b6b9485355c.png" 
+              src="/lovable-uploads/bed28b99-056e-49de-89f5-9619c373a7c0.png" 
               alt="FANTAS-Mia Logo" 
               className="max-w-md w-full h-auto"
             />
