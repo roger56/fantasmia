@@ -37,20 +37,15 @@ const CreateStory = () => {
     return null;
   }
   const creationModes = [{
+    id: 'CSS',
+    title: 'COSA SUCCEDE SE...?',
+    subtitle: 'Parti da una domanda fantastica e costruisci la storia.',
+    icon: Sparkles
+  }, {
     id: 'GHOST',
     title: 'GHOST',
     subtitle: 'Per creare storie FANTASMAgoriche!',
     icon: Ghost
-  }, {
-    id: 'PROPP',
-    title: 'PROPP',
-    subtitle: 'L\'eroe affronta difficoltà e vince.',
-    icon: Sparkles
-  }, {
-    id: 'AIROTS',
-    title: 'AIROTS',
-    subtitle: 'La storia… al contrario!',
-    icon: Wand2
   }, {
     id: 'PAROLE_CHIAMANO',
     title: 'Una Parola, Tante Storie',
@@ -62,9 +57,9 @@ const CreateStory = () => {
     subtitle: 'Il Viaggio dell\'Eroe in 12 tappe narrative.',
     icon: Sparkles
   }, {
-    id: 'CSS',
-    title: 'COSA SUCCEDE SE...?',
-    subtitle: 'Parti da una domanda fantastica e costruisci la storia.',
+    id: 'PROPP',
+    title: 'PROPP',
+    subtitle: 'L\'eroe affronta difficoltà e vince.',
     icon: Sparkles
   }];
   const handleModeSelect = (mode: string) => {

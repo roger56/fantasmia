@@ -13,6 +13,7 @@ interface TextImproverProps {
   onContentChange: (newContent: string) => void;
   storyTitle?: string;
   onSave?: (content: string, title: string) => void;
+  storyId?: string;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ const TextImprover: React.FC<TextImproverProps> = ({
   onContentChange,
   storyTitle = '',
   onSave,
+  storyId,
   className = ''
 }) => {
   const [isImproving, setIsImproving] = useState(false);
@@ -89,15 +91,39 @@ const TextImprover: React.FC<TextImproverProps> = ({
     }
   };
 
-  const confirmReplace = () => {
+  const confirmReplace = async () => {
     onContentChange(improvedText);
+    
+    // If we have a storyId, update the story in the database
+    if (storyId) {
+      try {
+        const { updateStory } = await import('@/utils/userStorage');
+        await updateStory(storyId, { 
+          content: improvedText,
+          lastModified: new Date().toISOString()
+        });
+        toast({
+          title: "Successo",
+          description: "Storia originale sostituita con successo nell'archivio globale",
+        });
+      } catch (error) {
+        console.error('Errore nel salvataggio:', error);
+        toast({
+          title: "Errore",
+          description: "Errore nel salvare la storia nell'archivio. Le modifiche sono visibili ma potrebbero non essere permanenti.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      toast({
+        title: "Successo",
+        description: "Storia sostituita con il testo migliorato",
+      });
+    }
+    
     setImprovedText('');
     setSelectedStyle(null);
     setShowReplaceConfirm(false);
-    toast({
-      title: "Successo",
-      description: "Storia originale sostituita con successo nell'archivio globale",
-    });
   };
 
   const handleSave = () => {

@@ -266,6 +266,7 @@ const StoryViewer = () => {
             <TextImprover 
               storyContent={editedContent}
               onContentChange={setEditedContent}
+              storyId={story.id}
             />
           </div>
         )}
