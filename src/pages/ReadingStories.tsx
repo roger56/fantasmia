@@ -15,6 +15,7 @@ const ReadingStories = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stories, setStories] = useState<ReadingStory[]>([]);
+  const [selectedStory, setSelectedStory] = useState<ReadingStory | null>(null);
   const [loadingStories, setLoadingStories] = useState(false);
   const { isPlaying, speak, stop, getButtonText } = useTTS();
   const { toast } = useToast();
@@ -40,9 +41,13 @@ const ReadingStories = () => {
     try {
       // Get stories from localStorage (created by SuperUser)
       const readingStories = getReadingStories();
-      setStories(readingStories.sort((a, b) => 
+      const sortedStories = readingStories.sort((a, b) => 
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      ));
+      );
+      setStories(sortedStories);
+      if (sortedStories.length > 0) {
+        setSelectedStory(sortedStories[0]);
+      }
     } catch (error) {
       toast({
         title: "Errore",
@@ -93,44 +98,71 @@ const ReadingStories = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
-            {stories.map((story) => (
-              <Card key={story.id} className="shadow-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Story List */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5" />
+                  Lista Storie ({stories.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-96">
+                  <div className="space-y-2">
+                    {stories.map((story) => (
+                      <div 
+                        key={story.id} 
+                        className="p-3 rounded-lg border cursor-pointer transition-colors bg-white border-slate-200 hover:bg-slate-50"
+                        onClick={() => setSelectedStory(story)}
+                      >
+                        <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Story Reader */}
+            {selectedStory && (
+              <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <BookOpen className="w-5 h-5" />
-                      {story.title}
+                      {selectedStory.title}
                     </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleTTS(story.content)}
-                        className="flex items-center gap-2"
-                      >
-                        {isPlaying ? (
-                          <VolumeX className="w-4 h-4" />
-                        ) : (
-                          <Volume2 className="w-4 h-4" />
-                        )}
-                        {getButtonText()}
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTTS(selectedStory.content)}
+                      className="flex items-center gap-2"
+                    >
+                      {isPlaying ? (
+                        <VolumeX className="w-4 h-4" />
+                      ) : (
+                        <Volume2 className="w-4 h-4" />
+                      )}
+                      {getButtonText()}
+                    </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
+                    Aggiornata il {new Date(selectedStory.updated_at).toLocaleDateString('it-IT')}
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-48">
+                  <ScrollArea className="h-96">
                     <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                      {story.content}
+                      {selectedStory.content}
                     </div>
                   </ScrollArea>
                 </CardContent>
               </Card>
-            ))}
+            )}
           </div>
         )}
       </div>

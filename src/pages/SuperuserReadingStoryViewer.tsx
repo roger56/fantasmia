@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Save, Volume2 } from 'lucide-react';
 import { getReadingStories, updateReadingStory, ReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import HomeButton from '@/components/HomeButton';
 import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
+import ModifyMenu from '@/components/shared/ModifyMenu';
 
 const SuperuserReadingStoryViewer = () => {
   const { id } = useParams<{ id: string }>();
@@ -175,9 +177,17 @@ const SuperuserReadingStoryViewer = () => {
                 className="min-h-96 resize-none"
               />
             ) : (
-              <div className="whitespace-pre-wrap text-slate-700 leading-relaxed min-h-96">
-                {story.content}
-              </div>
+              <ScrollArea 
+                className="border rounded-md p-4"
+                style={{ 
+                  minHeight: '3em', 
+                  maxHeight: '10em' 
+                }}
+              >
+                <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">
+                  {story.content}
+                </div>
+              </ScrollArea>
             )}
             
             <div className="flex justify-between items-center mt-4 pt-4 border-t text-sm text-slate-500">
@@ -189,11 +199,20 @@ const SuperuserReadingStoryViewer = () => {
           </CardContent>
         </Card>
 
-        {/* Creative Media Menu */}
-        <CreativeMediaMenu 
-          storyContent={content}
-          onContentChange={isEditing ? setContent : undefined}
-        />
+        {/* Media and Modify Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CreativeMediaMenu 
+            storyContent={content}
+            onContentChange={isEditing ? setContent : undefined}
+          />
+          <ModifyMenu
+            storyContent={content}
+            isEditing={isEditing}
+            onEditToggle={() => setIsEditing(!isEditing)}
+            onContentChange={isEditing ? setContent : undefined}
+            storyTitle={title}
+          />
+        </div>
       </div>
     </div>
   );

@@ -67,25 +67,21 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
                 <PenTool className="w-4 h-4 mr-2" />
                 📝 Modifica testo
               </DropdownMenuItem>
-              {onContentChange && (
-                <>
-                  <DropdownMenuItem onClick={handleImproveTextClick} className="cursor-pointer">
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    🤖 Migliora testo (AI)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handlePoetryClick} className="cursor-pointer">
-                    <Feather className="w-4 h-4 mr-2" />
-                    📝 Poesia
-                  </DropdownMenuItem>
-                </>
-              )}
+              <DropdownMenuItem onClick={handleImproveTextClick} className="cursor-pointer">
+                <Wand2 className="w-4 h-4 mr-2" />
+                🤖 Migliora testo (AI)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePoetryClick} className="cursor-pointer">
+                <Feather className="w-4 h-4 mr-2" />
+                📝 Poesia
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </CardContent>
       </Card>
 
       {/* Text Improver Component */}
-      {showTextImprover && onContentChange && (
+      {showTextImprover && (
         <div className="mt-4">
           <TextImprover
             storyContent={storyContent}

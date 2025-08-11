@@ -52,6 +52,11 @@ const CreateStory = () => {
     subtitle: 'Una parola ne suggerisce altre per costruire il racconto.',
     icon: MessageCircle
   }, {
+    id: 'AIROTS',
+    title: 'AIROTS',
+    subtitle: 'La storia… al contrario!',
+    icon: Wand2
+  }, {
     id: 'CAMPBELL',
     title: 'CARTE DI CAMPBELL',
     subtitle: 'Il Viaggio dell\'Eroe in 12 tappe narrative.',

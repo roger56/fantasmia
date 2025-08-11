@@ -152,28 +152,17 @@ const SuperuserReadingStoriesView = () => {
             </CardContent>
           </Card>
 
-          {/* Sezione B: Inserisci nuova storia */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="w-5 h-5" />
-                Inserisci Nuova Storia
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-center py-8">
-              <Plus className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-              <p className="text-slate-600 mb-4">
-                Crea una nuova storia da leggere per gli utenti
-              </p>
-              <Button 
-                onClick={() => navigate('/superuser-reading-stories-management')}
-                className="flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Aggiungi Storia
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Sezione B: Aggiungi Storia */}
+          <div className="flex justify-center">
+            <Button 
+              onClick={() => navigate('/superuser-reading-stories-management')}
+              className="flex items-center gap-2 px-6 py-3 text-lg"
+              size="lg"
+            >
+              <Plus className="w-5 h-5" />
+              Aggiungi Storia
+            </Button>
+          </div>
         </div>
 
         {/* Anteprima storia selezionata */}
