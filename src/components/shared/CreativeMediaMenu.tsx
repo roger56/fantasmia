@@ -151,6 +151,57 @@ const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
                       <p>Genera immagini fotografiche dal testo della storia</p>
                     </TooltipContent>
                   </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleImageGeneration('cartoon')}
+                        className="w-full justify-start"
+                      >
+                        <Palette className="w-4 h-4 mr-2" />
+                        Manga
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Genera immagini in stile manga dal testo della storia</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleImageGeneration('cartoon')}
+                        className="w-full justify-start"
+                      >
+                        <Palette className="w-4 h-4 mr-2" />
+                        Acquarello
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Genera immagini in stile acquarello dal testo della storia</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleImageGeneration('cartoon')}
+                        className="w-full justify-start"
+                      >
+                        <Palette className="w-4 h-4 mr-2" />
+                        Carboncino
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Genera immagini in stile carboncino dal testo della storia</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
 

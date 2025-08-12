@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Save, Volume2 } from 'lucide-react';
+import { ArrowLeft, Save, Volume2, Palette, Camera, ImageIcon, Video, Film, Music, ChevronDown, Edit, PenTool, Wand2, Feather } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { getReadingStories, updateReadingStory, ReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
@@ -200,18 +201,84 @@ const SuperuserReadingStoryViewer = () => {
         </Card>
 
         {/* Media and Modify Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <CreativeMediaMenu 
-            storyContent={content}
-            onContentChange={isEditing ? setContent : undefined}
-          />
-          <ModifyMenu
-            storyContent={content}
-            isEditing={isEditing}
-            onEditToggle={() => setIsEditing(!isEditing)}
-            onContentChange={isEditing ? setContent : undefined}
-            storyTitle={title}
-          />
+        <div className="flex gap-4">
+          {/* MEDIA Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex-1 justify-between">
+                <span className="flex items-center gap-2">
+                  <Palette className="w-4 h-4" />
+                  📺 MEDIA
+                </span>
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini realistica sarà presto disponibile" })} className="cursor-pointer">
+                <Camera className="w-4 h-4 mr-2" />
+                Realistica
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini cartoon sarà presto disponibile" })} className="cursor-pointer">
+                <Palette className="w-4 h-4 mr-2" />
+                Cartoon
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini fotografiche sarà presto disponibile" })} className="cursor-pointer">
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Fotografica
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini manga sarà presto disponibile" })} className="cursor-pointer">
+                <Palette className="w-4 h-4 mr-2" />
+                Manga
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini acquarello sarà presto disponibile" })} className="cursor-pointer">
+                <Palette className="w-4 h-4 mr-2" />
+                Acquarello
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini carboncino sarà presto disponibile" })} className="cursor-pointer">
+                <Palette className="w-4 h-4 mr-2" />
+                Carboncino
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione video sarà presto disponibile" })} className="cursor-pointer">
+                <Video className="w-4 h-4 mr-2" />
+                Genera Video
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione video avanzato sarà presto disponibile" })} className="cursor-pointer">
+                <Film className="w-4 h-4 mr-2" />
+                Video Avanzato
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione musica di sottofondo sarà presto disponibile" })} className="cursor-pointer">
+                <Music className="w-4 h-4 mr-2" />
+                Musica di Sottofondo
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* MODIFICA Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex-1 justify-between">
+                <span className="flex items-center gap-2">
+                  <Edit className="w-4 h-4" />
+                  📝 MODIFICA
+                </span>
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+              <DropdownMenuItem onClick={() => setIsEditing(!isEditing)} className="cursor-pointer">
+                <PenTool className="w-4 h-4 mr-2" />
+                📝 Modifica testo
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Migliora testo AI sarà presto disponibile" })} className="cursor-pointer">
+                <Wand2 className="w-4 h-4 mr-2" />
+                🤖 Migliora testo (AI)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione poesia sarà presto disponibile" })} className="cursor-pointer">
+                <Feather className="w-4 h-4 mr-2" />
+                📝 Poesia
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

@@ -188,6 +188,9 @@ const StoryViewer = () => {
                   <DropdownMenuItem onClick={() => setShowTextImprover(true)}>
                     🤖 Migliora testo (AI)
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione poesia sarà presto disponibile" })}>
+                    📝 Poesia
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : isEditing ? (
