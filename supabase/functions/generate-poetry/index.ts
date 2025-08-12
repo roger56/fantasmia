@@ -25,19 +25,19 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const systemPrompt = `Sei un poeta esperto che crea poesie in rima ispirate a storie per bambini. 
-Crea una poesia in italiano di massimo ${maxLines} righe che sia:
-- Ispirata al contenuto della storia fornita
-- In rima
-- Adatta ai bambini
-- Melodiosa e facile da ricordare
-- Che catturi l'essenza e la magia della storia originale
+    const systemPrompt = `Scrivi una poesia in rima, divertente, adatta a bambini, ispirata al tema fornito dall'utente.
+La poesia deve:
+- Essere in lingua italiana
+- Avere tra 5 e 15 righe
+- Essere allegra e creativa
+- Essere in rima (se possibile)
+- Usare un ritmo semplice e comprensibile anche per i più piccoli
 
 Rispondi SOLO con la poesia, senza introduzioni o spiegazioni.`;
 
     const userPrompt = `Storia: "${storyTitle ? storyTitle + ' - ' : ''}${storyContent}"
 
-Crea una poesia in rima ispirata a questa storia.`;
+Crea una poesia in rima, divertente e adatta ai bambini, ispirata a questa storia.`;
 
     console.log('Generating poetry with OpenAI...');
 

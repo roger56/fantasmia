@@ -11,8 +11,7 @@ import { getReadingStories, updateReadingStory, ReadingStory } from '@/utils/use
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import HomeButton from '@/components/HomeButton';
-import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
-import ModifyMenu from '@/components/shared/ModifyMenu';
+import PoetryGenerator from '@/components/shared/PoetryGenerator';
 
 const SuperuserReadingStoryViewer = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +21,7 @@ const SuperuserReadingStoryViewer = () => {
   const [content, setContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showPoetryGenerator, setShowPoetryGenerator] = useState(false);
   const { toast } = useToast();
   const { isPlaying, isPaused, speak, stop, getButtonText } = useTTS();
 
@@ -134,12 +134,86 @@ const SuperuserReadingStoryViewer = () => {
               <Volume2 className="w-4 h-4" />
               {getButtonText()}
             </Button>
+
+            {/* MEDIA Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="justify-between">
+                  <span className="flex items-center gap-2">
+                    <Palette className="w-4 h-4" />
+                    📺 MEDIA
+                  </span>
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini realistica sarà presto disponibile" })} className="cursor-pointer">
+                  <Camera className="w-4 h-4 mr-2" />
+                  Realistica
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini cartoon sarà presto disponibile" })} className="cursor-pointer">
+                  <Palette className="w-4 h-4 mr-2" />
+                  Cartoon
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini fotografiche sarà presto disponibile" })} className="cursor-pointer">
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                  Fotografica
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini manga sarà presto disponibile" })} className="cursor-pointer">
+                  <Palette className="w-4 h-4 mr-2" />
+                  Manga
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini acquarello sarà presto disponibile" })} className="cursor-pointer">
+                  <Palette className="w-4 h-4 mr-2" />
+                  Acquarello
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini carboncino sarà presto disponibile" })} className="cursor-pointer">
+                  <Palette className="w-4 h-4 mr-2" />
+                  Carboncino
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione video sarà presto disponibile" })} className="cursor-pointer">
+                  <Video className="w-4 h-4 mr-2" />
+                  Genera Video
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione video avanzato sarà presto disponibile" })} className="cursor-pointer">
+                  <Film className="w-4 h-4 mr-2" />
+                  Video Avanzato
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione musica di sottofondo sarà presto disponibile" })} className="cursor-pointer">
+                  <Music className="w-4 h-4 mr-2" />
+                  Musica di Sottofondo
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* MODIFICA Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="justify-between">
+                  <span className="flex items-center gap-2">
+                    <Edit className="w-4 h-4" />
+                    📝 MODIFICA
+                  </span>
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+                <DropdownMenuItem onClick={() => setIsEditing(!isEditing)} className="cursor-pointer">
+                  <PenTool className="w-4 h-4 mr-2" />
+                  📝 Modifica testo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Migliora testo AI sarà presto disponibile" })} className="cursor-pointer">
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  🤖 Migliora testo (AI)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowPoetryGenerator(true)} className="cursor-pointer">
+                  <Feather className="w-4 h-4 mr-2" />
+                  📝 Poesia
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
-            {!isEditing ? (
-              <Button onClick={() => setIsEditing(true)}>
-                Modifica
-              </Button>
-            ) : (
+            {isEditing && (
               <div className="flex gap-2">
                 <Button variant="outline" onClick={handleCancel}>
                   Annulla
@@ -200,86 +274,23 @@ const SuperuserReadingStoryViewer = () => {
           </CardContent>
         </Card>
 
-        {/* Media and Modify Buttons */}
-        <div className="flex gap-4">
-          {/* MEDIA Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex-1 justify-between">
-                <span className="flex items-center gap-2">
-                  <Palette className="w-4 h-4" />
-                  📺 MEDIA
-                </span>
-                <ChevronDown className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-full min-w-[200px]" align="start">
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini realistica sarà presto disponibile" })} className="cursor-pointer">
-                <Camera className="w-4 h-4 mr-2" />
-                Realistica
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini cartoon sarà presto disponibile" })} className="cursor-pointer">
-                <Palette className="w-4 h-4 mr-2" />
-                Cartoon
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini fotografiche sarà presto disponibile" })} className="cursor-pointer">
-                <ImageIcon className="w-4 h-4 mr-2" />
-                Fotografica
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini manga sarà presto disponibile" })} className="cursor-pointer">
-                <Palette className="w-4 h-4 mr-2" />
-                Manga
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini acquarello sarà presto disponibile" })} className="cursor-pointer">
-                <Palette className="w-4 h-4 mr-2" />
-                Acquarello
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini carboncino sarà presto disponibile" })} className="cursor-pointer">
-                <Palette className="w-4 h-4 mr-2" />
-                Carboncino
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione video sarà presto disponibile" })} className="cursor-pointer">
-                <Video className="w-4 h-4 mr-2" />
-                Genera Video
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione video avanzato sarà presto disponibile" })} className="cursor-pointer">
-                <Film className="w-4 h-4 mr-2" />
-                Video Avanzato
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione musica di sottofondo sarà presto disponibile" })} className="cursor-pointer">
-                <Music className="w-4 h-4 mr-2" />
-                Musica di Sottofondo
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* MODIFICA Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex-1 justify-between">
-                <span className="flex items-center gap-2">
-                  <Edit className="w-4 h-4" />
-                  📝 MODIFICA
-                </span>
-                <ChevronDown className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-full min-w-[200px]" align="start">
-              <DropdownMenuItem onClick={() => setIsEditing(!isEditing)} className="cursor-pointer">
-                <PenTool className="w-4 h-4 mr-2" />
-                📝 Modifica testo
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Migliora testo AI sarà presto disponibile" })} className="cursor-pointer">
-                <Wand2 className="w-4 h-4 mr-2" />
-                🤖 Migliora testo (AI)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione poesia sarà presto disponibile" })} className="cursor-pointer">
-                <Feather className="w-4 h-4 mr-2" />
-                📝 Poesia
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {/* Poetry Generator */}
+        {showPoetryGenerator && (
+          <div className="mb-6">
+            <PoetryGenerator 
+              storyContent={story.content}
+              storyTitle={story.title}
+              className="w-full"
+            />
+            <Button 
+              variant="outline" 
+              onClick={() => setShowPoetryGenerator(false)}
+              className="mt-4"
+            >
+              Chiudi Poesia
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
