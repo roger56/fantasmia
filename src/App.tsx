@@ -15,8 +15,6 @@ import Privacy from "./pages/Privacy";
 import Contacts from "./pages/Contacts";
 import TermsAcceptance from "./pages/TermsAcceptance";
 import Dashboard from "./pages/Dashboard";
-import Profiles from "./pages/Profiles";
-import NewProfile from "./pages/NewProfile";
 import SuperUser from "./pages/SuperUser";
 import PublicUser from "./pages/PublicUser";
 import CreateStory from "./pages/CreateStory";
@@ -39,6 +37,8 @@ import SuperuserReadingStoriesManagement from "./pages/SuperuserReadingStoriesMa
 import SuperuserReadingStoriesView from "./pages/SuperuserReadingStoriesView";
 import SuperuserReadingStoryViewer from "./pages/SuperuserReadingStoryViewer";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -49,40 +49,45 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<NewHome />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/introductory-screens" element={<IntroductoryScreens />} />
-          <Route path="/home" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/company" element={<Company />} />
           <Route path="/spare" element={<Spare />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/terms-acceptance" element={<TermsAcceptance />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profiles" element={<Profiles />} />
-          <Route path="/new-profile" element={<NewProfile />} />
-          <Route path="/superuser" element={<SuperUser />} />
           <Route path="/public" element={<PublicUser />} />
-          <Route path="/create-story" element={<CreateStory />} />
           <Route path="/privacy-acceptance" element={<PrivacyAcceptanceScreen />} />
-          <Route path="/propp-mode-selector" element={<ProppModeSelector />} />
-          <Route path="/propp-editor" element={<ProppEditor />} />
-          <Route path="/ghost-editor" element={<GhostEditor />} />
-          <Route path="/story/:storyId" element={<StoryViewer />} />
-          <Route path="/superuser-archive" element={<SuperuserArchive />} />
-          <Route path="/superuser-users" element={<SuperuserUsers />} />
-          <Route path="/superuser-settings" element={<SuperuserSettings />} />
-          <Route path="/superuser-password-change" element={<SuperuserPasswordChange />} />
-          <Route path="/superuser-payment-settings" element={<SuperuserPaymentSettings />} />
-          <Route path="/parole-chiamano" element={<ParoleChiamanoEditor />} />
-          <Route path="/airots-editor" element={<AirotsEditor />} />
-          <Route path="/campbell-editor" element={<CampbellEditor />} />
-          <Route path="/css-editor" element={<CSSEditor />} />
-          <Route path="/reading-stories" element={<ReadingStories />} />
-          <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
-          <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
-          <Route path="/superuser-reading-story-viewer/:id" element={<SuperuserReadingStoryViewer />} />
+          
+          {/* Protected routes */}
+          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/create-story" element={<ProtectedRoute><CreateStory /></ProtectedRoute>} />
+          <Route path="/propp-mode-selector" element={<ProtectedRoute><ProppModeSelector /></ProtectedRoute>} />
+          <Route path="/propp-editor" element={<ProtectedRoute><ProppEditor /></ProtectedRoute>} />
+          <Route path="/ghost-editor" element={<ProtectedRoute><GhostEditor /></ProtectedRoute>} />
+          <Route path="/story/:storyId" element={<ProtectedRoute><StoryViewer /></ProtectedRoute>} />
+          <Route path="/parole-chiamano" element={<ProtectedRoute><ParoleChiamanoEditor /></ProtectedRoute>} />
+          <Route path="/airots-editor" element={<ProtectedRoute><AirotsEditor /></ProtectedRoute>} />
+          <Route path="/campbell-editor" element={<ProtectedRoute><CampbellEditor /></ProtectedRoute>} />
+          <Route path="/css-editor" element={<ProtectedRoute><CSSEditor /></ProtectedRoute>} />
+          <Route path="/reading-stories" element={<ProtectedRoute><ReadingStories /></ProtectedRoute>} />
+          
+          {/* Admin only routes */}
+          <Route path="/superuser" element={<ProtectedRoute requireAdmin><SuperUser /></ProtectedRoute>} />
+          <Route path="/superuser-archive" element={<ProtectedRoute requireAdmin><SuperuserArchive /></ProtectedRoute>} />
+          <Route path="/superuser-users" element={<ProtectedRoute requireAdmin><SuperuserUsers /></ProtectedRoute>} />
+          <Route path="/superuser-settings" element={<ProtectedRoute requireAdmin><SuperuserSettings /></ProtectedRoute>} />
+          <Route path="/superuser-password-change" element={<ProtectedRoute requireAdmin><SuperuserPasswordChange /></ProtectedRoute>} />
+          <Route path="/superuser-payment-settings" element={<ProtectedRoute requireAdmin><SuperuserPaymentSettings /></ProtectedRoute>} />
+          <Route path="/superuser-reading-stories-management" element={<ProtectedRoute requireAdmin><SuperuserReadingStoriesManagement /></ProtectedRoute>} />
+          <Route path="/superuser-reading-stories-view" element={<ProtectedRoute requireAdmin><SuperuserReadingStoriesView /></ProtectedRoute>} />
+          <Route path="/superuser-reading-story-viewer/:id" element={<ProtectedRoute requireAdmin><SuperuserReadingStoryViewer /></ProtectedRoute>} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

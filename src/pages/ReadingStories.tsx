@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen, Volume2, VolumeX } from 'lucide-react';
-import { AuthBridge } from '@/utils/authBridge';
+import { useAuth } from '@/hooks/useAuth';
 import { getReadingStories, ReadingStory } from '@/utils/userStorage';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { useTTS } from '@/hooks/useTTS';
@@ -12,8 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const ReadingStories = () => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoading } = useAuth();
   const [stories, setStories] = useState<ReadingStory[]>([]);
   const [selectedStory, setSelectedStory] = useState<ReadingStory | null>(null);
   const [loadingStories, setLoadingStories] = useState(false);
@@ -21,20 +20,10 @@ const ReadingStories = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const authStatus = await AuthBridge.isAuthenticated();
-      if (!authStatus.authenticated) {
-        navigate('/home');
-        return;
-      }
-      
-      setIsAuthenticated(true);
-      setLoading(false);
+    if (user) {
       loadReadingStories();
-    };
-
-    checkAuth();
-  }, [navigate]);
+    }
+  }, [user]);
 
   const loadReadingStories = async () => {
     setLoadingStories(true);
@@ -63,16 +52,12 @@ const ReadingStories = () => {
     speak(content, 'italian');
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-lg">Caricamento...</div>
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return null;
   }
 
   return (

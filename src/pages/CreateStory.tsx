@@ -5,36 +5,17 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Ghost, Sparkles, Wand2, MessageCircle } from 'lucide-react';
 import HomeButton from '@/components/HomeButton';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
-import { AuthBridge } from '@/utils/authBridge';
+import { useAuth } from '@/hooks/useAuth';
 const CreateStory = () => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoading } = useAuth();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const authStatus = await AuthBridge.isAuthenticated();
-      if (!authStatus.authenticated) {
-        navigate('/home');
-        return;
-      }
-      setIsAuthenticated(true);
-      setLoading(false);
-    };
-
-    checkAuth();
-  }, [navigate]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-lg">Caricamento...</div>
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return null;
   }
   const creationModes = [{
     id: 'CSS',

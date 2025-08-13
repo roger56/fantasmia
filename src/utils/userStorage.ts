@@ -141,20 +141,11 @@ export const saveStory = async (story: Story) => {
     // Check for both real Supabase session and bridged session
     const { data: { session } } = await supabase.auth.getSession();
     
-    // Import AuthBridge dynamically to avoid circular dependency
-    const { AuthBridge } = await import('./authBridge');
-    const bridgedSession = AuthBridge.getCurrentBridgedSession();
-    
-    if (session || bridgedSession) {
+    if (session) {
       // Determine user ID and name
       let userId = session?.user.id;
       let userName = story.authorName;
       
-      if (bridgedSession && !session) {
-        // Use bridged session data
-        userId = bridgedSession.user.id;
-        userName = bridgedSession.user.user_metadata?.name || story.authorName;
-      }
       
       // User è autenticato - salva in Supabase
       const storyData = {
@@ -313,13 +304,11 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
     // Get stories from both Supabase and localStorage, then merge them
     const { data: { session } } = await supabase.auth.getSession();
     
-    // Import AuthBridge to check for bridged sessions
-    const { AuthBridge } = await import('./authBridge');
-    const bridgedSession = AuthBridge.getCurrentBridgedSession();
+    // Only use Supabase session now
     
     let supabaseStories: Story[] = [];
     
-    if (session || bridgedSession) {
+    if (session) {
       const { data: supabaseStoriesData, error } = await supabase
         .from('stories')
         .select('*')
