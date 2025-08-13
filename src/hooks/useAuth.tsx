@@ -3,12 +3,12 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
-  user: User | null;
+  user: any | null; // Changed to any for prototype
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
-  signUp: (email: string, password: string, name: string, age?: number) => Promise<{ error?: string }>;
-  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (username: string, name: string, age?: number, email?: string) => Promise<{ error?: string }>;
+  signIn: (username: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   checkUserRole: () => Promise<'admin' | 'user' | null>;
 }
@@ -16,72 +16,82 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Check user role after login
-          setTimeout(async () => {
-            const role = await checkUserRole();
-            setIsAdmin(role === 'admin');
-          }, 0);
-        } else {
-          setIsAdmin(false);
-        }
-        
-        setIsLoading(false);
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    // For prototype, check localStorage for simple session
+    const storedUser = localStorage.getItem('prototypeUser');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      setIsAdmin(userData.user_type === 'admin');
+    }
+    setIsLoading(false);
   }, []);
 
-  const signUp = async (email: string, password: string, name: string, age?: number) => {
+  const signUp = async (username: string, name: string, age?: number, email?: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      // For prototype: create user in profiles table directly
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([{
+          name,
+          email: email || `${username}@prototype.local`,
+          age,
+          username: username.toLowerCase(),
+          user_type: 'user'
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      // Store in localStorage for prototype
+      localStorage.setItem('prototypeUser', JSON.stringify(data));
+      setUser(data);
+      setIsAdmin(false);
       
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            name,
-            age
-          }
-        }
-      });
-      
-      return { error: error?.message };
+      return {};
     } catch (error) {
       return { error: 'Errore durante la registrazione' };
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (username: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      // For prototype: validate password = username (case insensitive) or superuser = ssss
+      if (username.toLowerCase() === 'superuser') {
+        if (password !== 'ssss') {
+          return { error: 'Password non corretta per superuser' };
+        }
+      } else {
+        if (username.toLowerCase() !== password.toLowerCase()) {
+          return { error: 'Password deve essere uguale allo username' };
+        }
+      }
+
+      // Find user in profiles
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', username.toLowerCase())
+        .single();
+
+      if (error || !data) {
+        return { error: 'Username non trovato' };
+      }
+
+      // Store in localStorage for prototype
+      localStorage.setItem('prototypeUser', JSON.stringify(data));
+      setUser(data);
+      setIsAdmin(data.user_type === 'admin');
       
-      return { error: error?.message };
+      return {};
     } catch (error) {
       return { error: 'Errore durante il login' };
     }
