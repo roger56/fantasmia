@@ -73,7 +73,7 @@ const SuperuserPaymentSettings = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-blue-800">
                 <TrendingUp className="w-5 h-5" />
-                Costo Totale OpenAI
+                COSTO SERVIZI MULTIMEDIALI
               </CardTitle>
             </CardHeader>
             <CardContent>
