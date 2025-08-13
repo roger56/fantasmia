@@ -18,28 +18,28 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   
   // Signup form state
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
+  const [signupUsername, setSignupUsername] = useState('');
   const [signupName, setSignupName] = useState('');
   const [signupAge, setSignupAge] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail || !loginPassword) {
+    if (!loginUsername || !loginPassword) {
       toast({
         title: "Errore",
-        description: "Inserisci email e password",
+        description: "Inserisci username e password",
         variant: "destructive",
       });
       return;
     }
 
     setIsLoading(true);
-    const { error } = await signIn(loginEmail, loginPassword);
+    const { error } = await signIn(loginUsername, loginPassword);
     
     if (error) {
       toast({
@@ -59,7 +59,7 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signupEmail || !signupPassword || !signupName) {
+    if (!signupUsername || !signupName) {
       toast({
         title: "Errore",
         description: "Compila tutti i campi obbligatori",
@@ -70,10 +70,10 @@ const Auth = () => {
 
     setIsLoading(true);
     const { error } = await signUp(
-      signupEmail, 
-      signupPassword, 
+      signupUsername, 
       signupName, 
-      signupAge ? parseInt(signupAge) : undefined
+      signupAge ? parseInt(signupAge) : undefined,
+      signupEmail || undefined
     );
     
     if (error) {
@@ -88,10 +88,10 @@ const Auth = () => {
         description: "Controlla la tua email per confermare l'account",
       });
       // Clear form
-      setSignupEmail('');
-      setSignupPassword('');
+      setSignupUsername('');
       setSignupName('');
       setSignupAge('');
+      setSignupEmail('');
     }
     setIsLoading(false);
   };
@@ -129,22 +129,22 @@ const Auth = () => {
               <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <Label htmlFor="loginEmail">Email</Label>
+                    <Label htmlFor="loginUsername">Username *</Label>
                     <Input
-                      id="loginEmail"
-                      type="email"
-                      placeholder="la-tua-email@esempio.com"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
+                      id="loginUsername"
+                      type="text"
+                      placeholder="Il tuo username"
+                      value={loginUsername}
+                      onChange={(e) => setLoginUsername(e.target.value)}
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="loginPassword">Password</Label>
+                    <Label htmlFor="loginPassword">Password *</Label>
                     <Input
                       id="loginPassword"
                       type="password"
-                      placeholder="Password"
+                      placeholder="Password (uguale all'username)"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
@@ -174,6 +174,17 @@ const Auth = () => {
               <CardContent>
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div>
+                    <Label htmlFor="signupUsername">Username *</Label>
+                    <Input
+                      id="signupUsername"
+                      type="text"
+                      placeholder="Scegli un username"
+                      value={signupUsername}
+                      onChange={(e) => setSignupUsername(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
                     <Label htmlFor="signupName">Nome *</Label>
                     <Input
                       id="signupName"
@@ -195,25 +206,13 @@ const Auth = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="signupEmail">Email *</Label>
+                    <Label htmlFor="signupEmail">Email</Label>
                     <Input
                       id="signupEmail"
                       type="email"
-                      placeholder="la-tua-email@esempio.com"
+                      placeholder="la-tua-email@esempio.com (opzionale)"
                       value={signupEmail}
                       onChange={(e) => setSignupEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="signupPassword">Password *</Label>
-                    <Input
-                      id="signupPassword"
-                      type="password"
-                      placeholder="Scegli una password sicura"
-                      value={signupPassword}
-                      onChange={(e) => setSignupPassword(e.target.value)}
-                      required
                     />
                   </div>
                   <Button 
