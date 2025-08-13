@@ -1,38 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { User, Move } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { AuthBridge } from '@/utils/authBridge';
 
 const ProfileIndicator: React.FC = () => {
-  const { user } = useAuth();
+  const [userName, setUserName] = useState<string | null>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, elementX: 0, elementY: 0 });
 
-  // Get user name from profile
-  const [userName, setUserName] = useState<string | null>(null);
-
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (data && !error) {
-          setUserName(data.name);
-        }
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
+    const checkUser = async () => {
+      const authStatus = await AuthBridge.isAuthenticated();
+      if (authStatus.authenticated && authStatus.userName) {
+        setUserName(authStatus.userName);
       }
     };
 
-    fetchUserProfile();
-  }, [user]);
+    checkUser();
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);

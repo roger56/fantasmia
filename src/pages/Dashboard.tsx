@@ -3,19 +3,41 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Plus, Settings, BookText } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { AuthBridge } from '@/utils/authBridge';
 import StoryLayout from '@/components/shared/StoryLayout';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, isLoading, isAdmin } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isSuperuser, setIsSuperuser] = useState(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    const checkAuth = async () => {
+      const authStatus = await AuthBridge.isAuthenticated();
+      if (!authStatus.authenticated) {
+        navigate('/home');
+        return;
+      }
+      
+      setIsAuthenticated(true);
+      setIsSuperuser(authStatus.userName === 'superuser');
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-lg">Caricamento...</div>
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   const dashboardOptions = [
@@ -42,8 +64,8 @@ const Dashboard = () => {
     }
   ];
 
-  // Add superuser management option for admin
-  if (isAdmin) {
+  // Add superuser management option for superuser
+  if (isSuperuser) {
     dashboardOptions.push({
       id: 'superuser-management',
       title: 'Gestione Sistema',

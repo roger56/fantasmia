@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/hooks/useAuth';
+import { AuthBridge } from '@/utils/authBridge';
 import CopyrightWarningDialog from './CopyrightWarningDialog';
 
 interface MediaButtonProps {
@@ -29,7 +29,6 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   userId
 }) => {
   const { toast } = useToast();
-  const { user, session } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
@@ -60,16 +59,27 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     const currentPath = window.location.pathname;
     setIsDebugMode(currentPath.includes('superuser'));
     
-    // Check authentication status using useAuth
-    setIsAuthenticated(!!user);
-    setCurrentUserId(user?.id || null);
+    // Check authentication status using AuthBridge
+    const checkAuth = async () => {
+      const authStatus = await AuthBridge.isAuthenticated();
+      setIsAuthenticated(authStatus.authenticated);
+      setCurrentUserId(authStatus.userId || null);
+    };
     
-    // Auth status is managed by useAuth hook, no need for manual subscription
+    checkAuth();
+    
+    // Listen for auth changes (both Supabase and localStorage)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      checkAuth(); // Re-check using AuthBridge instead of just Supabase session
+    });
+    
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleMediaAction = async (type: string, subtype: string) => {
-    // Check if user is authenticated using useAuth
-    if (!user) {
+    // Check if user is authenticated using AuthBridge
+    const authStatus = await AuthBridge.isAuthenticated();
+    if (!authStatus.authenticated) {
       setShowAuthWarning(true);
       return;
     }

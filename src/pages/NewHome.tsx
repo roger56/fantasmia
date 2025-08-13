@@ -103,29 +103,21 @@ const NewHome = () => {
               </div>
             </div>
 
-            {/* Authentication */}
+            {/* Profile Selection */}
             <Card className="mt-8">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Accedi a FANTAS-Mia</h3>
-                <div className="space-y-4">
-                  <p className="text-sm text-slate-600">
-                    Inizia il tuo viaggio nelle storie fantastiche
-                  </p>
-                  <div className="flex gap-3">
-                    <Button 
-                      onClick={() => navigate('/auth')}
-                      className="flex-1"
-                    >
-                      Accedi / Registrati
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => navigate('/public')}
-                      className="flex-1"
-                    >
-                      Modalità Ospite
-                    </Button>
-                  </div>
+                <h3 className="text-lg font-semibold mb-4">Seleziona Profilo</h3>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-600">Profilo</label>
+                  <Select onValueChange={handleProfileSelect}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Scegli un profilo..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new-profile">Nuovo Profilo</SelectItem>
+                      <SelectItem value="existing">Profilo Esistente</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
