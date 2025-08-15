@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FileText, Globe, Home, Save } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useToast } from '@/hooks/use-toast';
 import MediaButton from '@/components/shared/MediaButton';
 import ModifyMenu from "@/components/shared/ModifyMenu";
 import CreativeMediaMenu from "@/components/shared/CreativeMediaMenu";
@@ -29,6 +30,7 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
   profileName
 }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [editMode, setEditMode] = React.useState(false);
   const { isTranslated, isTranslating, translateContent, getButtonText } = useTranslation();
 
@@ -145,12 +147,16 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
               >
                 Nuova Storia
               </Button>
+              {/* POST-SAVE: Isolato per implementazione futura */}
               <Button 
-                onClick={() => navigate('/superuser-archive', { state: { profileId, profileName } })} 
+                onClick={() => toast({
+                  title: "📁 Archivio",
+                  description: "Funzione archivio sarà disponibile presto",
+                })}
                 variant="outline" 
                 className="px-6"
               >
-                Archivio
+                Archivio (WIP)
               </Button>
             </div>
           </CardContent>

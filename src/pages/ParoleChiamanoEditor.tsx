@@ -327,7 +327,14 @@ const ParoleChiamanoEditor = () => {
       description: "La tua storia è stata salvata nell'archivio",
     });
 
-    navigate('/superuser-archive', { state: { profileId, profileName } });
+    // POST-SAVE: Isolato per implementazione futura
+    setTimeout(() => {
+      toast({
+        title: "✅ Storia creata!",
+        description: "Archivio e condivisione saranno disponibili presto",
+      });
+      navigate('/create-story', { state: { profileId, profileName } });
+    }, 1500);
   };
 
   if (step === 'intro') {

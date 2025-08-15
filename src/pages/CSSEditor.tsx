@@ -112,8 +112,13 @@ const CSSEditor = () => {
         });
       }
       
+      // POST-SAVE: Isolato per implementazione futura
       setTimeout(() => {
-        navigate('/superuser-archive', { state: { profileId, profileName } });
+        toast({
+          title: "✅ Storia creata!",
+          description: "Archivio e condivisione saranno disponibili presto",
+        });
+        navigate('/create-story', { state: { profileId, profileName } });
       }, 1500);
     } catch (error) {
       toast({

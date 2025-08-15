@@ -196,7 +196,14 @@ const ProppEditor = () => {
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",
     });
-    setTimeout(() => navigate('/propp-mode-selector', { state: { profileId, profileName } }), 1500);
+    // POST-SAVE: Isolato per implementazione futura
+    setTimeout(() => {
+      toast({
+        title: "✅ Storia creata!",
+        description: "Archivio e condivisione saranno disponibili presto",
+      });
+      navigate('/propp-mode-selector', { state: { profileId, profileName } });
+    }, 1500);
   };
 
   // Render appropriate screen based on game phase

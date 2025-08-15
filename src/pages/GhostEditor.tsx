@@ -182,7 +182,14 @@ const GhostEditor = () => {
       title: "Storia salvata!",
       description: `La storia è stata salvata nell'archivio${isTranslated ? ' in inglese' : ''}`,
     });
-    setTimeout(() => navigate('/create-story', { state: { profileId, profileName } }), 1500);
+    // POST-SAVE: Isolato per implementazione futura
+    setTimeout(() => {
+      toast({
+        title: "✅ Storia creata!",
+        description: "Archivio e condivisione saranno disponibili presto",
+      });
+      navigate('/create-story', { state: { profileId, profileName } });
+    }, 1500);
   };
 
   const [isSpeaking, setIsSpeaking] = useState(false);
