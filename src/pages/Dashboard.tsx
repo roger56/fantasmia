@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, Plus, Settings, BookText } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
 import StoryLayout from '@/components/shared/StoryLayout';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -76,7 +77,9 @@ const Dashboard = () => {
   }
 
   return (
-    <StoryLayout
+    <>
+      <ProfileIndicator />
+      <StoryLayout
       title="FANTAS(m)IA"
       subtitle="Dashboard Principale"
       onBack={() => navigate('/profiles')}
@@ -110,6 +113,7 @@ const Dashboard = () => {
         })}
       </div>
     </StoryLayout>
+    </>
   );
 };
 

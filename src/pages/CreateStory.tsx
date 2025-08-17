@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Ghost, Sparkles, Wand2, MessageCircle } from 'lucide-react';
-import HomeButton from '@/components/HomeButton';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import HomeButton from '@/components/HomeButton';
 import { AuthBridge } from '@/utils/authBridge';
 const CreateStory = () => {
   const navigate = useNavigate();
@@ -82,9 +82,11 @@ const CreateStory = () => {
       navigate('/css-editor');
     }
   };
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+  return (
+    <>
       <ProfileIndicator />
-      <HomeButton />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <HomeButton />
       
       <div className="max-w-3xl mx-auto">
         {/* Header */}
@@ -123,8 +125,11 @@ const CreateStory = () => {
                  </Card>;
            })}
           </div>
-        </div>
+         </div>
+       </div>
       </div>
-    </div>;
+      </>
+    );
 };
+
 export default CreateStory;

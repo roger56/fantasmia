@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Shield, Users, BookOpen, Settings, MessageSquare } from 'lucide-react';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import { getUsers, sendMessage } from '@/utils/userStorage';
 import { sanitizeInput, rateLimiter } from '@/utils/authSecurity';
 import { useToast } from '@/hooks/use-toast';
@@ -168,7 +169,9 @@ const SuperUser = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+    <>
+      <ProfileIndicator />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <HomeButton />
       <div className="max-w-2xl mx-auto">
         {/* Header */}
@@ -318,6 +321,7 @@ const SuperUser = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

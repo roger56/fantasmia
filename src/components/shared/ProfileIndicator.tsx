@@ -4,7 +4,10 @@ import { AuthBridge } from '@/utils/authBridge';
 
 const ProfileIndicator: React.FC = () => {
   const [userName, setUserName] = useState<string | null>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState(() => {
+    const saved = localStorage.getItem('profile-indicator-position');
+    return saved ? JSON.parse(saved) : { x: 0, y: 0 };
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, elementX: 0, elementY: 0 });
 
@@ -42,6 +45,7 @@ const ProfileIndicator: React.FC = () => {
 
   const handleMouseUp = () => {
     setIsDragging(false);
+    localStorage.setItem('profile-indicator-position', JSON.stringify(position));
   };
 
   useEffect(() => {

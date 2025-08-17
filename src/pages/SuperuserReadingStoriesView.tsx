@@ -8,6 +8,7 @@ import { getReadingStories, deleteReadingStory, ReadingStory } from '@/utils/use
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import HomeButton from '@/components/HomeButton';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 const SuperuserReadingStoriesView = () => {
   const navigate = useNavigate();
@@ -72,8 +73,10 @@ const SuperuserReadingStoriesView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <HomeButton />
+    <>
+      <ProfileIndicator />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <HomeButton />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6 pt-4">
@@ -229,6 +232,7 @@ const SuperuserReadingStoriesView = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </>
   );
 };
 
