@@ -242,10 +242,12 @@ const GhostEditor = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
-              <Home className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" />
             </Button>
             <h1 className="text-xl font-bold text-slate-800">Storia Completata - GHOST - {profileName}</h1>
-            <div></div>
+            <Button variant="ghost" onClick={() => navigate('/profiles')}>
+              <Home className="w-5 h-5" />
+            </Button>
           </div>
 
           <Card>
@@ -328,10 +330,12 @@ const GhostEditor = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
-              <Home className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" />
             </Button>
             <h1 className="text-xl font-bold text-slate-800">Bozza Finale - GHOST</h1>
-            <div></div>
+            <Button variant="ghost" onClick={() => navigate('/profiles')}>
+              <Home className="w-5 h-5" />
+            </Button>
           </div>
 
           <Card>
@@ -377,14 +381,16 @@ const GhostEditor = () => {
       <ProfileIndicator />
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={handleExit}>
-            <Home className="w-5 h-5" />
+          <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
+            <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold text-slate-800">Modalità GHOST</h1>
             <span className="text-lg font-semibold text-slate-600">{currentQuestion + 1}/6</span>
           </div>
-          <div></div>
+          <Button variant="ghost" onClick={() => navigate('/profiles')}>
+            <Home className="w-5 h-5" />
+          </Button>
         </div>
 
         {/* Current Question and Previous Answers */}
@@ -445,9 +451,6 @@ const GhostEditor = () => {
 
         {/* Navigation Buttons */}
         <div className="flex gap-3 justify-center">
-          <Button onClick={handleExit} variant="outline">
-            Exit
-          </Button>
           {currentQuestion > 0 && (
             <Button onClick={handleBack} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />

@@ -10,7 +10,7 @@ import StoryLayout from '@/components/shared/StoryLayout';
 import { useTTS } from '@/hooks/useTTS';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
-import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
+import CreativeMediaMenuEnhanced from '@/components/shared/CreativeMediaMenuEnhanced';
 import { translateToEnglish } from '@/utils/translation';
 
 const ReadingStoryViewer = () => {
@@ -124,34 +124,10 @@ const ReadingStoryViewer = () => {
               {isTranslating ? 'Traducendo...' : 'Inglese'}
             </Button>
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleTTS(translatedText || story.content)}
-              className="flex items-center gap-2"
-            >
-              {isPlaying ? (
-                <VolumeX className="w-4 h-4" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
-              )}
-              Leggi
-            </Button>
-
-            <CreativeMediaMenu 
+            <CreativeMediaMenuEnhanced 
               storyContent={story.content}
               storyTitle={story.title}
             />
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-              className="flex items-center gap-2"
-            >
-              <Share2 className="w-4 h-4" />
-              Condividi
-            </Button>
           </div>
         }
       >

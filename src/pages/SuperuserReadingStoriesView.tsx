@@ -168,50 +168,6 @@ const SuperuserReadingStoriesView = () => {
           </div>
         </div>
 
-        {/* Anteprima storia selezionata */}
-        {selectedStory && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="w-5 h-5" />
-                Anteprima: {selectedStory.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-48">
-                <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">
-                  {selectedStory.content}
-                </div>
-              </ScrollArea>
-              <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                <div className="text-sm text-slate-500">
-                  Creata il {new Date(selectedStory.created_at).toLocaleDateString('it-IT')}
-                  {selectedStory.updated_at !== selectedStory.created_at && (
-                    <span> • Aggiornata il {new Date(selectedStory.updated_at).toLocaleDateString('it-IT')}</span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => navigate(`/superuser-reading-story-viewer/${selectedStory.id}`)}
-                    className="flex items-center gap-2"
-                  >
-                    <Eye className="w-4 h-4" />
-                    Visualizza
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => navigate('/superuser-reading-stories-management')}
-                  >
-                    Gestisci Tutte
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {/* Delete Confirmation Dialog */}

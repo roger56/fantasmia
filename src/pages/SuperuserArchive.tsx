@@ -433,7 +433,7 @@ const SuperuserArchive = () => {
           <div className="flex items-center">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/superuser')}
+              onClick={() => navigate('/dashboard')}
               className="mr-4"
             >
               <ArrowLeft className="w-5 h-5" />

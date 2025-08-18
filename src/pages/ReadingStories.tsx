@@ -100,7 +100,7 @@ const ReadingStories = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-80">
+              <ScrollArea className="h-60">
                 <div className="space-y-2">
                   {stories.map((story) => (
                     <div 

@@ -258,9 +258,11 @@ const AirotsEditor = () => {
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/profiles')}>
               <Home className="w-5 h-5" />
             </Button>
-            <div></div>
           </div>
 
           <Card>
@@ -286,9 +288,11 @@ const AirotsEditor = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/profiles')}>
               <Home className="w-5 h-5" />
             </Button>
-            <div></div>
           </div>
 
           <Card>
@@ -327,10 +331,12 @@ const AirotsEditor = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
-              <Home className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" />
             </Button>
             <h1 className="text-xl font-bold text-slate-800">Conclusione - AIROTS</h1>
-            <div></div>
+            <Button variant="ghost" onClick={() => navigate('/profiles')}>
+              <Home className="w-5 h-5" />
+            </Button>
           </div>
 
           <Card>
@@ -427,14 +433,16 @@ const AirotsEditor = () => {
       <ProfileIndicator />
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={handleExit}>
-            <Home className="w-5 h-5" />
+          <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
+            <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold text-slate-800">Modalità AIROTS - {selectedFairyTale}</h1>
             <span className="text-lg font-semibold text-slate-600">{currentPhase + 1}/6</span>
           </div>
-          <div></div>
+          <Button variant="ghost" onClick={() => navigate('/profiles')}>
+            <Home className="w-5 h-5" />
+          </Button>
         </div>
 
         {/* Mostra storia scritta finora */}

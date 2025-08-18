@@ -11,7 +11,7 @@ const PrivacyAcceptanceScreen = () => {
   const { profileId, profileName } = location.state || {};
 
   const handleAccept = () => {
-    navigate('/superuser-archive', { state: { profileId, profileName } });
+    navigate('/dashboard', { state: { profileId, profileName } });
   };
 
   return (

@@ -48,12 +48,12 @@ export class AuthBridge {
   private static async createSupabaseUser(localUser: User): Promise<SupabaseAuthResult> {
     try {
       // For localStorage users, we'll use a placeholder email and create anonymous auth
-      const placeholderEmail = localUser.email || `${localUser.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@fantasmia.local`;
-      
-      // Sign up the user with a secure password
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: placeholderEmail,
-        password: `${localUser.password}_secure_${Date.now()}`, // Make password more secure
+        const placeholderEmail = localUser.email || `${localUser.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@fantasmia.local`;
+        
+        // Sign up the user with a secure password (case-insensitive)
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: placeholderEmail,
+          password: `${localUser.password.toLowerCase()}_secure_${Date.now()}`, // Make password more secure and case-insensitive
         options: {
           data: {
             name: localUser.name,
