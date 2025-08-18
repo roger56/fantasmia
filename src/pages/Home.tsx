@@ -61,9 +61,9 @@ const Home = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 px-[12px] py-[12px]">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8 pt-8 py-[12px]">
-          <h1 className="text-4xl font-bold mb-2 text-red-500">FANTAS(m)IA</h1>
-          <p className="text-lg text-sky-600">usa la tua FANTASIA FANTASMAGORICA</p>
+        <div className="text-center mb-4 pt-4">
+          <h1 className="text-2xl font-bold mb-1 text-red-500">FANTAS(m)IA</h1>
+          <p className="text-sm text-sky-600">usa la tua FANTASIA FANTASMAGORICA</p>
         </div>
 
         {/* Main Options Grid */}

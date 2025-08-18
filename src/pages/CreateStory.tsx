@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Ghost, Sparkles, Wand2, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Ghost, Sparkles, Wand2, MessageCircle, Briefcase, Star } from 'lucide-react';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import HomeButton from '@/components/HomeButton';
 import { AuthBridge } from '@/utils/authBridge';
@@ -37,35 +37,47 @@ const CreateStory = () => {
     return null;
   }
   const creationModes = [{
+    id: 'PROFESSION',
+    title: 'Cosa farei se fossi un...',
+    subtitle: 'Ogni mestiere nasconde una sorpresa, scoprila con la fantasia',
+    icon: Briefcase,
+    difficulty: 1
+  }, {
     id: 'CSS',
     title: 'COSA SUCCEDE SE...?',
     subtitle: 'Parti da una domanda fantastica e costruisci la storia.',
-    icon: Sparkles
+    icon: Sparkles,
+    difficulty: 2
   }, {
     id: 'GHOST',
     title: 'GHOST',
     subtitle: 'Per creare storie FANTASMAgoriche!',
-    icon: Ghost
+    icon: Ghost,
+    difficulty: 3
   }, {
     id: 'PAROLE_CHIAMANO',
     title: 'Una Parola, Tante Storie',
     subtitle: 'Una parola ne suggerisce altre per costruire il racconto.',
-    icon: MessageCircle
+    icon: MessageCircle,
+    difficulty: 4
   }, {
     id: 'AIROTS',
     title: 'AIROTS',
     subtitle: 'La storia… al contrario!',
-    icon: Wand2
+    icon: Wand2,
+    difficulty: 4
   }, {
     id: 'CAMPBELL',
     title: 'CARTE DI CAMPBELL',
     subtitle: 'Il Viaggio dell\'Eroe in 12 tappe narrative.',
-    icon: Sparkles
+    icon: Sparkles,
+    difficulty: 5
   }, {
     id: 'PROPP',
     title: 'PROPP',
     subtitle: 'L\'eroe affronta difficoltà e vince.',
-    icon: Sparkles
+    icon: Sparkles,
+    difficulty: 5
   }];
   const handleModeSelect = (mode: string) => {
     if (mode === 'PROPP') {
@@ -80,6 +92,8 @@ const CreateStory = () => {
       navigate('/campbell-editor');
     } else if (mode === 'CSS') {
       navigate('/css-editor');
+    } else if (mode === 'PROFESSION') {
+      navigate('/profession-story');
     }
   };
   return (
@@ -110,7 +124,7 @@ const CreateStory = () => {
            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
              {creationModes.map(mode => {
              const IconComponent = mode.icon;
-             return <Card key={mode.id} className="cursor-pointer transition-all duration-200 border-2 hover:border-slate-300 hover:shadow-md h-32" onClick={() => handleModeSelect(mode.id)}>
+             return <Card key={mode.id} className="cursor-pointer transition-all duration-200 border-2 hover:border-slate-300 hover:shadow-md h-32 relative" onClick={() => handleModeSelect(mode.id)}>
                    <CardHeader className="p-3">
                      <div className="flex items-center justify-center mb-1">
                        <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
@@ -122,6 +136,18 @@ const CreateStory = () => {
                          {mode.subtitle}
                        </p>}
                    </CardHeader>
+                   {/* Difficulty Stars */}
+                   <div className="absolute right-2 top-2 flex flex-col gap-1">
+                     {[1, 2, 3, 4, 5].map(star => (
+                       <Star 
+                         key={star} 
+                         className={`w-3 h-3 ${star <= mode.difficulty 
+                           ? 'fill-red-500 text-red-500' 
+                           : 'text-gray-300'
+                         }`} 
+                       />
+                     ))}
+                   </div>
                  </Card>;
            })}
           </div>

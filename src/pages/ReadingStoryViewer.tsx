@@ -21,6 +21,7 @@ const ReadingStoryViewer = () => {
   const [story, setStory] = useState<ReadingStory | null>(null);
   const [translatedText, setTranslatedText] = useState<string>('');
   const [isTranslating, setIsTranslating] = useState(false);
+  const [showTranslated, setShowTranslated] = useState(false);
   const { isPlaying, speak, stop, getButtonText } = useTTS();
   const { toast } = useToast();
 
@@ -65,22 +66,33 @@ const ReadingStoryViewer = () => {
   const handleTranslate = async () => {
     if (!story) return;
     
-    setIsTranslating(true);
-    try {
-      const translated = await translateToEnglish(story.content);
-      setTranslatedText(translated);
-      toast({
-        title: "Traduzione completata",
-        description: "Testo tradotto in inglese"
-      });
-    } catch (error) {
-      toast({
-        title: "Errore",
-        description: "Errore durante la traduzione",
-        variant: "destructive"
-      });
-    } finally {
-      setIsTranslating(false);
+    if (showTranslated && translatedText) {
+      // Switch back to Italian
+      setShowTranslated(false);
+      return;
+    }
+    
+    if (!translatedText) {
+      setIsTranslating(true);
+      try {
+        const translated = await translateToEnglish(story.content);
+        setTranslatedText(translated);
+        setShowTranslated(true);
+        toast({
+          title: "Traduzione completata",
+          description: "Testo tradotto in inglese"
+        });
+      } catch (error) {
+        toast({
+          title: "Errore",
+          description: "Errore durante la traduzione",
+          variant: "destructive"
+        });
+      } finally {
+        setIsTranslating(false);
+      }
+    } else {
+      setShowTranslated(true);
     }
   };
 
@@ -121,7 +133,7 @@ const ReadingStoryViewer = () => {
               className="flex items-center gap-2"
             >
               <Languages className="w-4 h-4" />
-              {isTranslating ? 'Traducendo...' : 'Inglese'}
+              {isTranslating ? 'Traducendo...' : (showTranslated ? 'Italiano' : 'Inglese')}
             </Button>
             
             <CreativeMediaMenuEnhanced 
@@ -145,19 +157,9 @@ const ReadingStoryViewer = () => {
             <CardContent>
               <ScrollArea className="h-96">
                 <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {translatedText || story.content}
+                  {showTranslated ? translatedText : story.content}
                 </div>
               </ScrollArea>
-              {translatedText && (
-                <div className="mt-4 pt-4 border-t">
-                  <h4 className="font-medium mb-2">Testo originale:</h4>
-                  <ScrollArea className="h-32">
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                      {story.content}
-                    </div>
-                  </ScrollArea>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

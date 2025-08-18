@@ -53,7 +53,7 @@ const Dashboard = () => {
       id: 'reading-stories',
       title: 'Lettura Storie',
       icon: BookText,
-      description: 'Leggi le storie caricate dal SuperUser',
+      description: 'Leggi le storie che si raccontano nel mondo',
       path: '/reading-stories'
     },
     {
@@ -86,7 +86,7 @@ const Dashboard = () => {
       showHomeButton={true}
     >
       {/* Dashboard Options Grid */}
-      <div className="grid grid-cols-1 gap-6 max-w-lg mx-auto">
+      <div className="grid grid-cols-1 gap-4 max-w-lg mx-auto">
         {dashboardOptions.map(option => {
           const IconComponent = option.icon;
           return (
@@ -95,16 +95,16 @@ const Dashboard = () => {
               className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-slate-300" 
               onClick={() => navigate(option.path)}
             >
-              <CardContent className="p-8 text-center py-[18px] px-[18px]">
-                <div className="mb-4 flex justify-center">
-                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
-                    <IconComponent className="w-8 h-8 text-slate-700" />
+              <CardContent className="p-4 text-center">
+                <div className="mb-2 flex justify-center">
+                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                    <IconComponent className="w-6 h-6 text-slate-700" />
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold text-slate-800 mb-2">
+                <h3 className="text-lg font-semibold text-slate-800 mb-1">
                   {option.title}
                 </h3>
-                <p className="text-slate-600 text-sm">
+                <p className="text-slate-600 text-xs">
                   {option.description}
                 </p>
               </CardContent>

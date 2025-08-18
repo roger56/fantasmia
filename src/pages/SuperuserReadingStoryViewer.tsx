@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Save, Volume2, Palette, Camera, ImageIcon, Video, Film, Music, ChevronDown, Edit, PenTool, Wand2, Feather } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import { getReadingStories, updateReadingStory, ReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
@@ -109,8 +110,10 @@ const SuperuserReadingStoryViewer = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <HomeButton />
+    <>
+      <ProfileIndicator />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <HomeButton />
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 pt-4">
@@ -126,14 +129,28 @@ const SuperuserReadingStoryViewer = () => {
           </div>
           
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleListen}
-              className="flex items-center gap-2"
-            >
-              <Volume2 className="w-4 h-4" />
-              {getButtonText()}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Volume2 className="w-4 h-4" />
+                  Leggi
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => speak(content, 'italian')}>
+                  👨 Voce Uomo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => speak(content, 'italian')}>
+                  👩 Voce Donna
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => speak(content, 'italian')}>
+                  👦 Voce Bambino
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => speak(content, 'italian')}>
+                  👧 Voce Bambina
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* MEDIA Dropdown */}
             <DropdownMenu>
@@ -293,6 +310,7 @@ const SuperuserReadingStoryViewer = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

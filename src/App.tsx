@@ -29,6 +29,7 @@ import SuperuserSettings from "./pages/SuperuserSettings";
 import SuperuserPasswordChange from "./pages/SuperuserPasswordChange";
 import SuperuserPaymentSettings from "./pages/SuperuserPaymentSettings";
 import ParoleChiamanoEditor from "./pages/ParoleChiamanoEditor";
+import ProfessionStoryEditor from "./pages/ProfessionStoryEditor";
 import AirotsEditor from "./pages/AirotsEditor";
 import CampbellEditor from "./pages/CampbellEditor";
 import CSSEditor from "./pages/CSSEditor";
@@ -73,6 +74,7 @@ const App = () => (
           <Route path="/superuser-password-change" element={<SuperuserPasswordChange />} />
           <Route path="/superuser-payment-settings" element={<SuperuserPaymentSettings />} />
           <Route path="/parole-chiamano" element={<ParoleChiamanoEditor />} />
+          <Route path="/profession-story" element={<ProfessionStoryEditor />} />
           <Route path="/airots-editor" element={<AirotsEditor />} />
           <Route path="/campbell-editor" element={<CampbellEditor />} />
           <Route path="/css-editor" element={<CSSEditor />} />

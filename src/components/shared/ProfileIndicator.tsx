@@ -71,7 +71,7 @@ const ProfileIndicator: React.FC = () => {
 
   return (
     <div 
-      className={`fixed bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg px-3 py-2 shadow-sm z-50 cursor-move select-none ${position.x === 0 && position.y === 0 ? 'top-4 right-4' : ''}`}
+      className={`fixed bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg px-3 py-2 shadow-sm z-50 cursor-move select-none ${position.x === 0 && position.y === 0 ? 'top-4 right-20' : ''}`}
       style={style}
       onMouseDown={handleMouseDown}
     >
