@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '../utils/userStorage';
+import { type User } from '../utils/userStorage';
 
 interface SupabaseAuthResult {
   success: boolean;
