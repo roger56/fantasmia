@@ -86,7 +86,7 @@ const CampbellEditor = () => {
       .join('\n');
 
     const storyData = {
-      id: editStory?.id || Date.now().toString(),
+      id: editStory?.id || crypto.randomUUID(),
       title,
       content: storyContent,
       status: 'completed' as const,

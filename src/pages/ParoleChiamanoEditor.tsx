@@ -309,7 +309,7 @@ const ParoleChiamanoEditor = () => {
     }
 
     const story = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       title: storyTitle,
       content: finalStory,
       status: 'completed' as const,

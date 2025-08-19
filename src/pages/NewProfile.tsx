@@ -61,7 +61,7 @@ const NewProfile = () => {
 
     // Create user with password same as name (temporary solution)
     const newUser = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name: formData.name.trim(),
       email: formData.email.trim() || undefined,
       age: parseInt(formData.age),

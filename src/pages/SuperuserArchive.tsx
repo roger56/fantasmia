@@ -233,7 +233,8 @@ const SuperuserArchive = () => {
     { value: 'AIROTS', label: 'AIROTS' },
     { value: 'PAROLE_CHIAMANO', label: 'Una Parola, Tante Storie' },
     { value: 'CAMPBELL', label: 'Carte di Campbell' },
-    { value: 'CSS', label: 'Cosa Succede se...' }
+    { value: 'CSS', label: 'Cosa Succede se...' },
+    { value: 'PROFESSION', label: 'Cosa farei se...' }
   ];
 
   // Mobile Card Component for first screen
@@ -404,8 +405,8 @@ const SuperuserArchive = () => {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <Image className="w-4 h-4" />
-                      <span className="text-sm">Nessuna immagine</span>
+                      <span className="text-2xl">✓</span>
+                      <span className="text-sm">Immagini create</span>
                     </div>
                   )}
                 </div>
@@ -557,27 +558,27 @@ const SuperuserArchive = () => {
                           </TableCell>
                           <TableCell>{row.author}</TableCell>
                           <TableCell>{row.date}</TableCell>
-                          <TableCell>
-                            {row.imageUrl ? (
-                              <div className="flex items-center gap-2">
-                                <img 
-                                  src={row.imageUrl} 
-                                  alt="Anteprima" 
-                                  className="w-16 h-16 object-cover rounded border"
-                                />
-                                <div className="text-xs text-slate-600">
-                                  <Badge variant="outline" className="text-xs">
-                                    {row.imageStyle}
-                                  </Badge>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1 text-slate-400">
-                                <Image className="w-4 h-4" />
-                                <span className="text-xs">Nessuna immagine</span>
-                              </div>
-                            )}
-                          </TableCell>
+                           <TableCell>
+                             {row.imageUrl ? (
+                               <div className="flex items-center gap-2">
+                                 <img 
+                                   src={row.imageUrl} 
+                                   alt="Anteprima" 
+                                   className="w-16 h-16 object-cover rounded border"
+                                 />
+                                 <div className="text-xs text-slate-600">
+                                   <Badge variant="outline" className="text-xs">
+                                     {row.imageStyle}
+                                   </Badge>
+                                 </div>
+                               </div>
+                             ) : (
+                               <div className="flex items-center gap-1 text-green-600">
+                                 <span className="text-lg">✓</span>
+                                 <span className="text-xs">Immagini create</span>
+                               </div>
+                             )}
+                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Button

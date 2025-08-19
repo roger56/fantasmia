@@ -164,7 +164,7 @@ const GhostEditor = () => {
     }
 
     const story = {
-      id: editStory ? editStory.id : Date.now().toString(),
+      id: editStory ? editStory.id : crypto.randomUUID(),
       title: storyTitle,
       content: finalStory,
       status: 'completed' as const,

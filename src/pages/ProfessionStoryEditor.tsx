@@ -194,7 +194,7 @@ const ProfessionStoryEditor = () => {
       const bridgedSession = AuthBridge.getCurrentBridgedSession();
       
       const story = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         title: title,
         content: storyText,
         status: 'completed' as const,

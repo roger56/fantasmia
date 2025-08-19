@@ -85,7 +85,7 @@ const CSSEditor = () => {
     const storyContent = getFullStoryWithQuestions();
 
     const storyData = {
-      id: editStory?.id || Date.now().toString(),
+      id: editStory?.id || crypto.randomUUID(),
       title,
       content: storyContent,
       status: 'completed' as const,

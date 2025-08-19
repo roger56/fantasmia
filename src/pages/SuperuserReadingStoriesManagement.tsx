@@ -89,7 +89,7 @@ const SuperuserReadingStoriesManagement = () => {
     } else {
       // Create new story
       const newStory: ReadingStory = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         title,
         content,
         created_at: new Date().toISOString(),
