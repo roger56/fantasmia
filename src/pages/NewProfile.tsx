@@ -17,7 +17,8 @@ const NewProfile = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    age: ''
+    age: '',
+    gender: '' as 'male' | 'female' | ''
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -64,6 +65,7 @@ const NewProfile = () => {
       name: formData.name.trim(),
       email: formData.email.trim() || undefined,
       age: parseInt(formData.age),
+      gender: formData.gender as 'male' | 'female' | undefined,
       password: formData.name.trim(), // Password same as name
       lastAccess: new Date().toISOString(),
       unreadMessages: []
@@ -148,6 +150,30 @@ const NewProfile = () => {
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 className="text-lg"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Sesso (facoltativo)
+              </label>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant={formData.gender === 'male' ? 'default' : 'outline'}
+                  onClick={() => handleInputChange('gender', 'male')}
+                  className="flex-1"
+                >
+                  Maschio
+                </Button>
+                <Button
+                  type="button"
+                  variant={formData.gender === 'female' ? 'default' : 'outline'}
+                  onClick={() => handleInputChange('gender', 'female')}
+                  className="flex-1"
+                >
+                  Femmina
+                </Button>
+              </div>
             </div>
 
             <div className="bg-blue-50 p-3 rounded-md">

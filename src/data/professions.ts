@@ -1,7 +1,8 @@
-export const professions = [
-  "Maestra",
+// Lista professioni maschili
+export const maleProfessions = [
+  "Maestro",
   "Dottore",
-  "Infermiera",
+  "Infermiere",
   "Cuoco",
   "Pasticcere",
   "Poliziotto",
@@ -29,8 +30,8 @@ export const professions = [
   "Cassiere",
   "Commesso",
   "Barbiere",
-  "Parrucchiera",
-  "Sarta",
+  "Parrucchiere",
+  "Sarto",
   "Stilista",
   "Calzolaio",
   "Fotografo",
@@ -62,7 +63,6 @@ export const professions = [
   "Ciclista",
   "Pugile",
   "Atleta",
-  "Abino",
   "Operaio",
   "Minatore",
   "Autotrasportatore",
@@ -88,12 +88,135 @@ export const professions = [
   "Maestro d'arte",
   "Restauratore",
   "Gelataio",
-  "Giocattolaro",
+  "Giocattolaio",
   "Preside",
   "Direttore di scuola",
   "Guida turistica",
   "Albergatore",
   "Cameriere",
   "Cuoco di prosa",
-  "Prestidigitatore di squadra"
+  "Prestidigitatore"
 ];
+
+// Lista professioni femminili (dall'allegato)
+export const femaleProfessions = [
+  "Maestra",
+  "Dottoressa",
+  "Infermiera",
+  "Cuoca",
+  "Pasticcera",
+  "Poliziotta",
+  "Pompiera",
+  "Muratrice",
+  "Falegname",
+  "Idraulica",
+  "Elettricista",
+  "Autista",
+  "Macchinista",
+  "Pilota di aerei",
+  "Astronauta",
+  "Contadina",
+  "Giardiniera",
+  "Fioraia",
+  "Panettiera",
+  "Macellaia",
+  "Fruttivendola",
+  "Pescatrice",
+  "Allevatrice",
+  "Veterinaria",
+  "Farmacista",
+  "Bibliotecaria",
+  "Postina",
+  "Cassiera",
+  "Commessa",
+  "Barbiera",
+  "Parrucchiera",
+  "Sarta",
+  "Stilista",
+  "Calzolaia",
+  "Fotografa",
+  "Attrice",
+  "Cantante",
+  "Musicista",
+  "Pianista",
+  "Violinista",
+  "Sassofonista",
+  "Ballerina",
+  "Artista",
+  "Pittrice",
+  "Scultrice",
+  "Architetta",
+  "Ingegnera",
+  "Geometra",
+  "Programmatrice",
+  "Designer",
+  "Giornalista",
+  "Scrittrice",
+  "Traduttrice",
+  "Maestra di sport",
+  "Allenatrice",
+  "Calciatrice",
+  "Tennista",
+  "Nuotatrice",
+  "Ciclista",
+  "Atleta",
+  "Miniatrice",
+  "Autotrasportatrice",
+  "Marinaia",
+  "Capitana di navi",
+  "Pilota di navi",
+  "Guardia forestale",
+  "Carabiniera",
+  "Soldatessa",
+  "Maestra di danza",
+  "Maestra di musica",
+  "Psicologa",
+  "Ricercatrice",
+  "Chimica",
+  "Fisica",
+  "Astronoma",
+  "Biologa",
+  "Zoologa",
+  "Paleontologa",
+  "Archeologa",
+  "Storica",
+  "Maestra d'arte",
+  "Restauratrice",
+  "Gelataia",
+  "Giocattolaia",
+  "Preside",
+  "Direttrice di scuola",
+  "Guida turistica",
+  "Albergatrice",
+  "Cameriera",
+  "Cuoca di prosa",
+  "Presidigatrice di squadra"
+];
+
+// Funzione per aggiungere una nuova professione
+export const addProfession = (profession: string, gender: 'male' | 'female' | null = null) => {
+  const targetList = gender === 'female' ? femaleProfessions : maleProfessions;
+  
+  if (!targetList.includes(profession)) {
+    targetList.push(profession);
+    
+    // Salva la nuova lista nel localStorage
+    const key = gender === 'female' ? 'fantasmia_female_professions' : 'fantasmia_male_professions';
+    localStorage.setItem(key, JSON.stringify(targetList));
+  }
+};
+
+// Funzione per recuperare le professioni salvate
+export const getSavedProfessions = (gender: 'male' | 'female'): string[] => {
+  const key = gender === 'female' ? 'fantasmia_female_professions' : 'fantasmia_male_professions';
+  const saved = localStorage.getItem(key);
+  
+  if (saved) {
+    return JSON.parse(saved);
+  }
+  
+  return gender === 'female' ? femaleProfessions : maleProfessions;
+};
+
+// Per compatibilità con il codice esistente
+export const professions = maleProfessions;

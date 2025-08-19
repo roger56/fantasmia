@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email?: string;
   age?: number;
+  gender?: 'male' | 'female';
   password: string;
   lastAccess?: string;
   unreadMessages?: Message[];
@@ -24,7 +25,7 @@ export interface Story {
   content?: string;
   status: 'completed' | 'suspended' | 'in-progress';
   lastModified: string;
-  mode: 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS';
+  mode: 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS' | 'PROFESSION';
   authorId: string;
   authorName: string;
   isPublic: boolean;
@@ -58,7 +59,7 @@ export const updateUser = (user: User) => {
 
 // Create the base directory structure for a new user
 const createUserDirectoryStructure = (userId: string) => {
-  const categories = ['GHOST', 'PROPP', 'AIROTS', 'UNA_PAROLA_TANTE_STORIE', 'CAMPBELL', 'CSS'];
+  const categories = ['GHOST', 'PROPP', 'AIROTS', 'UNA_PAROLA_TANTE_STORIE', 'CAMPBELL', 'CSS', 'PROFESSION'];
   const baseStructureKey = 'fantasmia_directory_structure';
   
   // Get existing structure or create new one
@@ -239,7 +240,7 @@ const saveStoryToLocalStorage = (story: Story) => {
 
 // Ensure user directory structure exists
 const ensureUserDirectoryStructure = (userId: string) => {
-  const categories = ['GHOST', 'PROPP', 'AIROTS', 'UNA_PAROLA_TANTE_STORIE', 'CAMPBELL', 'CSS'];
+  const categories = ['GHOST', 'PROPP', 'AIROTS', 'UNA_PAROLA_TANTE_STORIE', 'CAMPBELL', 'CSS', 'PROFESSION'];
   const baseStructureKey = 'fantasmia_directory_structure';
   
   const existingStructure = JSON.parse(localStorage.getItem(baseStructureKey) || '{}');
@@ -333,7 +334,7 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
           content: story.content || '',
           status: story.status as 'completed' | 'suspended' | 'in-progress',
           lastModified: story.updated_at || story.created_at,
-          mode: (story.mode || story.category) as 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS',
+          mode: (story.mode || story.category) as 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS' | 'PROFESSION',
           authorId: story.author_id || story.user_id,
           authorName: story.author_name || story.user_name || 'Utente Sconosciuto',
           isPublic: story.is_public || false,

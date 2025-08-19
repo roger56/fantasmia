@@ -80,9 +80,9 @@ const Dashboard = () => {
     <>
       <ProfileIndicator />
       <StoryLayout
-      title="FANTAS(m)IA"
+      title="FANTAS-Mia"
       subtitle="Dashboard Principale"
-      onBack={() => navigate('/profiles')}
+      onBack={() => navigate('/')}
       showHomeButton={true}
     >
       {/* Dashboard Options Grid */}

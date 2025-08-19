@@ -57,7 +57,8 @@ export class AuthBridge {
         options: {
           data: {
             name: localUser.name,
-            age: localUser.age
+            age: localUser.age,
+            gender: localUser.gender
           }
         }
       });
@@ -175,7 +176,8 @@ export class AuthBridge {
           email: localUser.email || `${localUser.name}@fantasmia.local`,
           user_metadata: {
             name: localUser.name,
-            age: localUser.age
+            age: localUser.age,
+            gender: localUser.gender
           }
         },
         expires_at: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
