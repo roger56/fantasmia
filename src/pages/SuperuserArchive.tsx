@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { ArrowLeft, BookOpen, Volume2, Eye, Image, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getAllStoriesForSuperuser, deleteStory, getAllAuthors } from '@/utils/userStorage';
+import { getAllStoriesForSuperuser, deleteStory, getAllAuthors, hasStoryImages, publishStoryFromArchive, unpublishStory, isStoryPublished } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -405,8 +405,17 @@ const SuperuserArchive = () => {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <span className="text-2xl">✓</span>
-                      <span className="text-sm">Immagini create</span>
+                      {hasStoryImages(selectedStory.storyId) ? (
+                        <>
+                          <span className="text-2xl">✓</span>
+                          <span className="text-sm">Immagini create</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-2xl">✗</span>
+                          <span className="text-sm">Nessuna immagine</span>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -558,82 +567,94 @@ const SuperuserArchive = () => {
                           </TableCell>
                           <TableCell>{row.author}</TableCell>
                           <TableCell>{row.date}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex justify-center">
+                        {hasStoryImages(row.storyId) ? (
+                          <span className="text-2xl text-green-600">✓</span>
+                        ) : (
+                          <span className="text-2xl text-gray-400">✗</span>
+                        )}
+                      </div>
+                    </TableCell>
                            <TableCell>
-                             {row.imageUrl ? (
-                               <div className="flex items-center gap-2">
-                                 <img 
-                                   src={row.imageUrl} 
-                                   alt="Anteprima" 
-                                   className="w-16 h-16 object-cover rounded border"
-                                 />
-                                 <div className="text-xs text-slate-600">
-                                   <Badge variant="outline" className="text-xs">
-                                     {row.imageStyle}
-                                   </Badge>
-                                 </div>
-                               </div>
-                             ) : (
-                               <div className="flex items-center gap-1 text-green-600">
-                                 <span className="text-lg">✓</span>
-                                 <span className="text-xs">Immagini create</span>
-                               </div>
-                             )}
+                             <div className="flex items-center gap-2">
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => navigate(`/story/${row.storyId}`)}
+                                 title="Visualizza storia"
+                               >
+                                 <Eye className="w-4 h-4" />
+                               </Button>
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={(e) => {
+                                   const story = stories.find(s => s.id === row.storyId);
+                                   if (story) {
+                                     handleTextToSpeech(story.content, row.storyId, e);
+                                   }
+                                 }}
+                                 title="Leggi ad alta voce"
+                               >
+                                 <Volume2 className="w-4 h-4" />
+                               </Button>
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   if (isStoryPublished(row.storyId)) {
+                                     unpublishStory(row.storyId);
+                                     toast({
+                                       title: "Storia rimossa",
+                                       description: "La storia è stata rimossa dall'archivio pubblico"
+                                     });
+                                   } else {
+                                     publishStoryFromArchive(row.storyId, row.author);
+                                     toast({
+                                       title: "Storia pubblicata",
+                                       description: "La storia è ora disponibile nell'archivio pubblico"
+                                     });
+                                   }
+                                 }}
+                                 className={isStoryPublished(row.storyId) ? 'text-green-600' : 'text-blue-600'}
+                                 title={isStoryPublished(row.storyId) ? 'Rimuovi dall\'archivio pubblico' : 'Pubblica nell\'archivio pubblico'}
+                               >
+                                 <BookOpen className="w-4 h-4" />
+                               </Button>
+                               <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     title="Elimina storia"
+                                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                   >
+                                     <Trash2 className="w-4 h-4" />
+                                   </Button>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent>
+                                   <AlertDialogHeader>
+                                     <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+                                     <AlertDialogDescription>
+                                       Sei sicuro di voler eliminare la storia "{row.storyTitle}"? 
+                                       Questa azione non può essere annullata.
+                                     </AlertDialogDescription>
+                                   </AlertDialogHeader>
+                                   <AlertDialogFooter>
+                                     <AlertDialogCancel>Annulla</AlertDialogCancel>
+                                     <AlertDialogAction 
+                                       onClick={() => handleDeleteStory(row.storyId)}
+                                       className="bg-red-600 hover:bg-red-700"
+                                     >
+                                       Elimina
+                                     </AlertDialogAction>
+                                   </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
+                             </div>
                            </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => navigate(`/story/${row.storyId}`)}
-                                title="Visualizza storia"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  const story = stories.find(s => s.id === row.storyId);
-                                  if (story) {
-                                    handleTextToSpeech(story.content, row.storyId, e);
-                                  }
-                                }}
-                                title="Leggi ad alta voce"
-                              >
-                                <Volume2 className="w-4 h-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    title="Elimina storia"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Sei sicuro di voler eliminare la storia "{row.storyTitle}"? 
-                                      Questa azione non può essere annullata.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Annulla</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                      onClick={() => handleDeleteStory(row.storyId)}
-                                      className="bg-red-600 hover:bg-red-700"
-                                    >
-                                      Elimina
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

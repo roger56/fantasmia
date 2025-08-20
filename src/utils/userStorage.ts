@@ -146,71 +146,9 @@ export const markMessagesAsRead = (userId: string) => {
 };
 
 export const saveStory = async (story: Story) => {
-  // Try to save to Supabase first, then fallback to localStorage
-  try {
-    // Check for both real Supabase session and bridged session
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // Import AuthBridge dynamically to avoid circular dependency
-    const { AuthBridge } = await import('./authBridge');
-    const bridgedSession = AuthBridge.getCurrentBridgedSession();
-    
-    if (session || bridgedSession) {
-      // Determine user ID and name
-      let userId = session?.user.id;
-      let userName = story.authorName;
-      
-      if (bridgedSession && !session) {
-        // Use bridged session data
-        userId = bridgedSession.user.id;
-        userName = bridgedSession.user.user_metadata?.name || story.authorName;
-      }
-      
-      // User è autenticato - salva in Supabase
-      const storyData = {
-        title: story.title,
-        content: story.content || '',
-        category: story.mode,
-        mode: story.mode,
-        status: story.status,
-        user_id: userId,
-        author_id: userId,
-        author_name: userName, // Il trigger automaticamente lo correggerà se necessario
-        user_name: userName,
-        is_public: story.isPublic || false,
-        language: story.language || 'italian'
-      };
-
-      const { data, error } = await supabase
-        .from('stories')
-        .insert([storyData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Errore salvataggio Supabase:', error);
-        // Fallback a localStorage
-        saveStoryToLocalStorage(story);
-      } else {
-        console.log('Storia salvata in Supabase:', data);
-        // Salva anche in localStorage per compatibilità
-        const storyWithSupabaseData = {
-          ...story,
-          id: data.id,
-          authorName: data.author_name || data.user_name || story.authorName
-        };
-        saveStoryToLocalStorage(storyWithSupabaseData);
-      }
-    } else {
-      // User non autenticato - salva solo in localStorage
-      console.log('Utente non autenticato, salvataggio in localStorage');
-      saveStoryToLocalStorage(story);
-    }
-  } catch (error) {
-    console.error('Errore during save:', error);
-    // Fallback a localStorage
-    saveStoryToLocalStorage(story);
-  }
+  // Always save to localStorage for now (to fix mobile issues)
+  console.log('Saving story to localStorage:', story.title);
+  saveStoryToLocalStorage(story);
 };
 
 // Funzione separata per il salvataggio localStorage (per compatibilità)
@@ -476,6 +414,15 @@ export const getAllAuthors = async (): Promise<string[]> => {
   return Array.from(uniqueAuthors).sort();
 };
 
+// Published Stories (for public reading)
+export interface PublishedStory {
+  id: string;
+  title: string;
+  content: string;
+  published_at: string;
+  original_author?: string;
+}
+
 // Reading Stories Management (SuperUser only)
 export interface ReadingStory {
   id: string;
@@ -484,6 +431,45 @@ export interface ReadingStory {
   created_at: string;
   updated_at: string;
 }
+
+// Story Images Tracking
+export interface StoryImage {
+  storyId: string;
+  imageCount: number;
+  lastImageCreated: string;
+}
+
+export const saveStoryImage = (storyId: string) => {
+  const images = getStoryImages();
+  const existingIndex = images.findIndex(img => img.storyId === storyId);
+  
+  if (existingIndex >= 0) {
+    images[existingIndex] = {
+      ...images[existingIndex],
+      imageCount: images[existingIndex].imageCount + 1,
+      lastImageCreated: new Date().toISOString()
+    };
+  } else {
+    images.push({
+      storyId,
+      imageCount: 1,
+      lastImageCreated: new Date().toISOString()
+    });
+  }
+  
+  localStorage.setItem('fantasmia_story_images', JSON.stringify(images));
+};
+
+export const getStoryImages = (): StoryImage[] => {
+  const stored = localStorage.getItem('fantasmia_story_images');
+  return stored ? JSON.parse(stored) : [];
+};
+
+export const hasStoryImages = (storyId: string): boolean => {
+  const images = getStoryImages();
+  const storyImage = images.find(img => img.storyId === storyId);
+  return storyImage ? storyImage.imageCount > 0 : false;
+};
 
 export const saveReadingStory = (story: ReadingStory) => {
   const stories = getReadingStories();
@@ -527,4 +513,54 @@ export const deleteReadingStory = (id: string): boolean => {
     return true;
   }
   return false;
+};
+
+// Published Stories Management (for public archive)
+export const publishStoryFromArchive = (storyId: string, authorName?: string) => {
+  const story = getStoryById(storyId);
+  if (!story) return false;
+
+  const publishedStories = getPublishedStories();
+  const existingIndex = publishedStories.findIndex(s => s.id === storyId);
+  
+  const publishedStory: PublishedStory = {
+    id: storyId,
+    title: story.title,
+    content: story.content || '',
+    published_at: new Date().toISOString(),
+    original_author: authorName || story.authorName
+  };
+
+  if (existingIndex >= 0) {
+    publishedStories[existingIndex] = publishedStory;
+  } else {
+    publishedStories.push(publishedStory);
+  }
+  
+  localStorage.setItem('fantasmia_published_stories', JSON.stringify(publishedStories));
+  return true;
+};
+
+export const unpublishStory = (storyId: string): boolean => {
+  const publishedStories = getPublishedStories();
+  const storyIndex = publishedStories.findIndex(s => s.id === storyId);
+  
+  if (storyIndex >= 0) {
+    publishedStories.splice(storyIndex, 1);
+    localStorage.setItem('fantasmia_published_stories', JSON.stringify(publishedStories));
+    return true;
+  }
+  return false;
+};
+
+export const getPublishedStories = (): PublishedStory[] => {
+  const stored = localStorage.getItem('fantasmia_published_stories');
+  const stories = stored ? JSON.parse(stored) : [];
+  // Sort alphabetically by title
+  return stories.sort((a: PublishedStory, b: PublishedStory) => a.title.localeCompare(b.title));
+};
+
+export const isStoryPublished = (storyId: string): boolean => {
+  const publishedStories = getPublishedStories();
+  return publishedStories.some(story => story.id === storyId);
 };

@@ -80,7 +80,7 @@ const App = () => (
           <Route path="/campbell-editor" element={<CampbellEditor />} />
           <Route path="/css-editor" element={<CSSEditor />} />
           <Route path="/reading-stories" element={<ReadingStories />} />
-          <Route path="/reading-story-viewer/:storyId" element={<ReadingStoryViewer />} />
+          <Route path="/reading-story-viewer/:id" element={<ReadingStoryViewer />} />
           <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
           <Route path="/superuser-reading-story-viewer/:id" element={<SuperuserReadingStoryViewer />} />

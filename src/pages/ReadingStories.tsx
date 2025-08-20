@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
-import { getReadingStories, ReadingStory } from '@/utils/userStorage';
+import { getPublishedStories, PublishedStory } from '@/utils/userStorage';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
@@ -14,7 +14,7 @@ const ReadingStories = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [stories, setStories] = useState<ReadingStory[]>([]);
+  const [stories, setStories] = useState<PublishedStory[]>([]);
   const [loadingStories, setLoadingStories] = useState(false);
   const { toast } = useToast();
 
@@ -37,12 +37,9 @@ const ReadingStories = () => {
   const loadReadingStories = async () => {
     setLoadingStories(true);
     try {
-      // Get stories from localStorage (created by SuperUser)
-      const readingStories = getReadingStories();
-      const sortedStories = readingStories.sort((a, b) => 
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      );
-      setStories(sortedStories);
+      // Get published stories from localStorage (published by SuperUser)
+      const publishedStories = getPublishedStories();
+      setStories(publishedStories);
     } catch (error) {
       toast({
         title: "Errore",
@@ -87,7 +84,7 @@ const ReadingStories = () => {
               <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-medium mb-2">Nessuna storia disponibile</h3>
               <p className="text-muted-foreground">
-                Il SuperUser non ha ancora caricato storie per la lettura.
+                Il SuperUser non ha ancora pubblicato storie per la lettura.
               </p>
             </CardContent>
           </Card>
@@ -110,7 +107,8 @@ const ReadingStories = () => {
                     >
                       <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
                       <p className="text-xs text-slate-500 mt-1">
-                        Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
+                        {story.original_author && `di ${story.original_author} • `}
+                        Pubblicata il {new Date(story.published_at).toLocaleDateString('it-IT')}
                       </p>
                     </div>
                   ))}

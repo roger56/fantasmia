@@ -1,32 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, Volume2, VolumeX, Languages, Globe, Share2, Image } from 'lucide-react';
+import { ArrowLeft, BookOpen, Volume2, VolumeX, User, Calendar } from 'lucide-react';
+import { getPublishedStories, PublishedStory } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
-import { getReadingStories, ReadingStory } from '@/utils/userStorage';
 import StoryLayout from '@/components/shared/StoryLayout';
-import { useTTS } from '@/hooks/useTTS';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
-import CreativeMediaMenuEnhanced from '@/components/shared/CreativeMediaMenuEnhanced';
-import { translateToEnglish } from '@/utils/translation';
 
 const ReadingStoryViewer = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { storyId } = useParams<{ storyId: string }>();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [story, setStory] = useState<ReadingStory | null>(null);
-  const [translatedText, setTranslatedText] = useState<string>('');
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [showTranslated, setShowTranslated] = useState(false);
-  const { isPlaying, speak, stop, getButtonText } = useTTS();
   const { toast } = useToast();
+  const [story, setStory] = useState<PublishedStory | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isReading, setIsReading] = useState(false);
+  const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuthAndLoadStory = async () => {
       const authStatus = await AuthBridge.isAuthenticated();
       if (!authStatus.authenticated) {
         navigate('/home');
@@ -34,85 +27,90 @@ const ReadingStoryViewer = () => {
       }
       
       setIsAuthenticated(true);
-      setLoading(false);
-      loadStory();
+      
+      if (id) {
+        // Find the story in published stories
+        const publishedStories = getPublishedStories();
+        const foundStory = publishedStories.find(s => s.id === id);
+        
+        if (foundStory) {
+          setStory(foundStory);
+        } else {
+          toast({
+            title: "Storia non trovata",
+            description: "La storia richiesta non è più disponibile",
+            variant: "destructive"
+          });
+          navigate('/reading-stories');
+        }
+      }
     };
 
-    checkAuth();
-  }, [navigate, storyId]);
+    checkAuthAndLoadStory();
+  }, [id, navigate, toast]);
 
-  const loadStory = () => {
-    if (!storyId) return;
-    
-    const readingStories = getReadingStories();
-    const foundStory = readingStories.find(s => s.id === storyId);
-    
-    if (foundStory) {
-      setStory(foundStory);
-    } else {
-      toast({
-        title: "Errore",
-        description: "Storia non trovata",
-        variant: "destructive"
-      });
-      navigate('/reading-stories');
-    }
-  };
-
-  const handleTTS = (content: string) => {
-    speak(content, 'italian');
-  };
-
-  const handleTranslate = async () => {
+  const handleTextToSpeech = () => {
     if (!story) return;
-    
-    if (showTranslated && translatedText) {
-      // Switch back to Italian
-      setShowTranslated(false);
-      return;
-    }
-    
-    if (!translatedText) {
-      setIsTranslating(true);
-      try {
-        const translated = await translateToEnglish(story.content);
-        setTranslatedText(translated);
-        setShowTranslated(true);
-        toast({
-          title: "Traduzione completata",
-          description: "Testo tradotto in inglese"
-        });
-      } catch (error) {
-        toast({
-          title: "Errore",
-          description: "Errore durante la traduzione",
-          variant: "destructive"
-        });
-      } finally {
-        setIsTranslating(false);
+
+    if ('speechSynthesis' in window) {
+      if (isReading) {
+        // Stop reading
+        speechSynthesis.cancel();
+        setIsReading(false);
+        setSpeechUtterance(null);
+      } else {
+        // Start reading
+        const utterance = new SpeechSynthesisUtterance(story.content);
+        utterance.lang = 'it-IT';
+        
+        utterance.onstart = () => {
+          setIsReading(true);
+        };
+        
+        utterance.onend = () => {
+          setIsReading(false);
+          setSpeechUtterance(null);
+        };
+        
+        utterance.onerror = () => {
+          setIsReading(false);
+          setSpeechUtterance(null);
+          toast({
+            title: "Errore",
+            description: "Errore nella sintesi vocale",
+            variant: "destructive"
+          });
+        };
+        
+        setSpeechUtterance(utterance);
+        speechSynthesis.speak(utterance);
       }
     } else {
-      setShowTranslated(true);
+      toast({
+        title: "Non supportato",
+        description: "La sintesi vocale non è supportata da questo browser",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleShare = () => {
-    toast({
-      title: "Condivisione",
-      description: "Funzione di condivisione in sviluppo"
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-lg">Caricamento...</div>
-      </div>
-    );
-  }
+  // Cleanup speech synthesis on component unmount
+  useEffect(() => {
+    return () => {
+      if (speechUtterance) {
+        speechSynthesis.cancel();
+      }
+    };
+  }, [speechUtterance]);
 
   if (!isAuthenticated || !story) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-lg">
+          {!isAuthenticated ? 'Verifica autenticazione...' : 'Caricamento storia...'}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -120,46 +118,57 @@ const ReadingStoryViewer = () => {
       <ProfileIndicator />
       <StoryLayout
         title={story.title}
-        subtitle="Storia da leggere"
+        subtitle="Storia pubblicata per la lettura"
         onBack={() => navigate('/reading-stories')}
         showHomeButton={true}
-        headerContent={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleTranslate}
-              disabled={isTranslating}
-              className="flex items-center gap-2"
-            >
-              <Languages className="w-4 h-4" />
-              {isTranslating ? 'Traducendo...' : (showTranslated ? 'Italiano' : 'Inglese')}
-            </Button>
-            
-            <CreativeMediaMenuEnhanced 
-              storyContent={story.content}
-              storyTitle={story.title}
-            />
-          </div>
-        }
       >
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
-                {story.title}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
-              </p>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-2xl text-slate-800 mb-2">
+                    {story.title}
+                  </CardTitle>
+                  <div className="flex items-center gap-4 text-sm text-slate-600">
+                    {story.original_author && (
+                      <div className="flex items-center gap-1">
+                        <User className="w-4 h-4" />
+                        <span>{story.original_author}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>
+                        Pubblicata il {new Date(story.published_at).toLocaleDateString('it-IT')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleTextToSpeech}
+                  className={`ml-4 ${isReading ? 'bg-red-600 hover:bg-red-700' : ''}`}
+                >
+                  {isReading ? (
+                    <>
+                      <VolumeX className="w-4 h-4 mr-2" />
+                      Stop
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="w-4 h-4 mr-2" />
+                      Ascolta
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-96">
-                <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {showTranslated ? translatedText : story.content}
+              <div className="prose max-w-none">
+                <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">
+                  {story.content}
                 </div>
-              </ScrollArea>
+              </div>
             </CardContent>
           </Card>
         </div>
