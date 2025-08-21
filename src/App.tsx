@@ -39,6 +39,12 @@ import SuperuserReadingStoriesView from "./pages/SuperuserReadingStoriesView";
 import SuperuserReadingStoryViewer from "./pages/SuperuserReadingStoryViewer";
 import ReadingStoryViewer from "./pages/ReadingStoryViewer";
 import Archive from "./pages/Archive";
+import StoryTypeSelection from "./pages/StoryTypeSelection";
+import ScienceStories from "./pages/ScienceStories";
+import ScienceStoryViewer from "./pages/ScienceStoryViewer";
+import SuperuserScienceStoriesView from "./pages/SuperuserScienceStoriesView";
+import SuperuserScienceStoriesManagement from "./pages/SuperuserScienceStoriesManagement";
+import SuperuserScienceStoryViewer from "./pages/SuperuserScienceStoryViewer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,7 +90,15 @@ const App = () => (
           <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
           <Route path="/superuser-reading-story-viewer/:id" element={<SuperuserReadingStoryViewer />} />
-          <Route path="/archive" element={<Archive />} />
+        {/* Add new routes for science stories */}
+        <Route path="/story-type-selection" element={<StoryTypeSelection />} />
+        <Route path="/science-stories" element={<ScienceStories />} />
+        <Route path="/science-story-viewer/:id" element={<ScienceStoryViewer />} />
+        
+        {/* Superuser science stories management */}
+        <Route path="/superuser-science-stories-view" element={<SuperuserScienceStoriesView />} />
+        <Route path="/superuser-science-stories-management" element={<SuperuserScienceStoriesManagement />} />
+        <Route path="/superuser-science-story-viewer/:id" element={<SuperuserScienceStoryViewer />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -54,7 +54,7 @@ const Dashboard = () => {
       title: 'Lettura Storie',
       icon: BookText,
       description: 'Leggi le storie che si raccontano nel mondo',
-      path: '/reading-stories'
+      path: '/story-type-selection'
     },
     {
       id: 'archive-complete',
@@ -73,6 +73,14 @@ const Dashboard = () => {
       icon: Settings,
       description: 'Accedi alle funzionalità di amministrazione',
       path: '/superuser'
+    });
+    
+    dashboardOptions.push({
+      id: 'superuser-science-stories',
+      title: 'Gestione Storie Scientifiche',
+      icon: BookOpen,
+      description: 'Gestisci le storie di Magia della Scienza',
+      path: '/superuser-science-stories-view'
     });
   }
 

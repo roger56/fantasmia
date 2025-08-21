@@ -272,8 +272,8 @@ const SuperuserReadingStoryViewer = () => {
               <ScrollArea 
                 className="border rounded-md p-4"
                 style={{ 
-                  minHeight: '3em', 
-                  maxHeight: '10em' 
+                  minHeight: '20em', 
+                  maxHeight: '40em' 
                 }}
               >
                 <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">
