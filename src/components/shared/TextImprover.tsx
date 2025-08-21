@@ -99,8 +99,7 @@ const TextImprover: React.FC<TextImproverProps> = ({
       try {
         const { updateStory } = await import('@/utils/userStorage');
         await updateStory(storyId, { 
-          content: improvedText,
-          lastModified: new Date().toISOString()
+          content: improvedText
         });
         toast({
           title: "Successo",

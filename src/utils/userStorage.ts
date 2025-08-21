@@ -308,12 +308,12 @@ export const getAllAuthors = async (): Promise<string[]> => {
   return authors.sort();
 };
 
-export const updateStory = (story: Story) => {
+export const updateStory = (storyId: string, updates: Partial<Story>) => {
   const stories = getStories();
-  const existingIndex = stories.findIndex(s => s.id === story.id);
+  const existingIndex = stories.findIndex(s => s.id === storyId);
   
   if (existingIndex >= 0) {
-    stories[existingIndex] = { ...story, lastModified: new Date().toISOString() };
+    stories[existingIndex] = { ...stories[existingIndex], ...updates, lastModified: new Date().toISOString() };
     localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
     
     // Also update in user's personal archive
@@ -571,9 +571,9 @@ export const authenticateUser = (email: string, password: string) => {
   return getUserByEmailAndPassword(email, password);
 };
 
-export const sendMessage = (fromUserId: string, toUserId: string, content: string) => {
+export const sendMessage = (fromUserId: string, targetUsers: string[] | string, content: string, isBroadcast?: boolean) => {
   // Placeholder implementation
-  console.log('Message sent:', { fromUserId, toUserId, content });
+  console.log('Message sent:', { fromUserId, targetUsers, content, isBroadcast });
 };
 
 export const markMessagesAsRead = (userId: string) => {
