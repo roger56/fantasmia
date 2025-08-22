@@ -112,6 +112,19 @@ export const getUserByEmailAndPassword = (email: string, password: string): User
   }) || null;
 };
 
+export const getUserByNameAndPassword = (name: string, password: string): User | null => {
+  const users = getUsers();
+  // Trim spaces and make comparison more robust
+  const cleanName = name.trim();
+  const cleanPassword = password.trim();
+  
+  return users.find(u => {
+    const userName = (u.name || '').trim();
+    const userPassword = (u.password || '').trim();
+    return userName === cleanName && userPassword === cleanPassword;
+  }) || null;
+};
+
 export const getUserById = (id: string): User | null => {
   const users = getUsers();
   return users.find(u => u.id === id) || null;
@@ -575,8 +588,15 @@ export const isStoryPublished = (storyId: string): boolean => {
 };
 
 // Missing exports for compatibility
-export const authenticateUser = (email: string, password: string) => {
-  return getUserByEmailAndPassword(email, password);
+export const authenticateUser = (nameOrEmail: string, password: string) => {
+  // First try to authenticate by name (for normal users)
+  const userByName = getUserByNameAndPassword(nameOrEmail, password);
+  if (userByName) {
+    return userByName;
+  }
+  
+  // If that fails, try by email (for backward compatibility)
+  return getUserByEmailAndPassword(nameOrEmail, password);
 };
 
 export const sendMessage = (fromUserId: string, targetUsers: string[] | string, content: string, isBroadcast?: boolean) => {
