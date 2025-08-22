@@ -152,7 +152,7 @@ const SuperUser = () => {
       title: '📖 Gestione Storie da Leggere',
       description: 'Visualizza e crea storie per la lettura',
       icon: BookOpen,
-      action: () => navigate('/superuser-reading-stories-view')
+      action: () => navigate('/superuser-story-management-selection')
     },
     {
       title: 'Invia Messaggi',

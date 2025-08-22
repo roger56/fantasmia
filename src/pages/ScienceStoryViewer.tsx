@@ -28,7 +28,7 @@ const ScienceStoryViewer = () => {
     const checkAuthAndLoadStory = async () => {
       const authStatus = await AuthBridge.isAuthenticated();
       if (!authStatus.authenticated) {
-        navigate('/home');
+        navigate('/');
         return;
       }
       

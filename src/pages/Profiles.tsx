@@ -108,7 +108,7 @@ const Profiles = () => {
           const messages = user.unreadMessages.filter(m => !m.read);
           if (messages.length > 0) {
             // Navigate to home with userId to show messages
-            navigate('/home', { state: { userId: user.id, profileName: selectedUser.name } });
+            navigate('/', { state: { userId: user.id, profileName: selectedUser.name } });
             return;
           }
         }
@@ -132,7 +132,7 @@ const Profiles = () => {
         <div className="flex items-center mb-6 pt-4">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/home')}
+            onClick={() => navigate('/')}
             className="mr-4"
           >
             <ArrowLeft className="w-5 h-5" />

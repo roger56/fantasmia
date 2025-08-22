@@ -101,7 +101,15 @@ export const getUsers = (): User[] => {
 
 export const getUserByEmailAndPassword = (email: string, password: string): User | null => {
   const users = getUsers();
-  return users.find(u => u.email === email && u.password === password) || null;
+  // Trim spaces and make comparison more robust
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanPassword = password.trim();
+  
+  return users.find(u => {
+    const userEmail = (u.email || '').trim().toLowerCase();
+    const userPassword = (u.password || '').trim();
+    return userEmail === cleanEmail && userPassword === cleanPassword;
+  }) || null;
 };
 
 export const getUserById = (id: string): User | null => {

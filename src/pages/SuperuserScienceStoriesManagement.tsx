@@ -140,14 +140,17 @@ const SuperuserScienceStoriesManagement = () => {
               {/* Content Textarea */}
               <div>
                 <label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Contenuto della Storia *
+                  Questa è una magia della natura *
                 </label>
-                <Textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Scrivi qui la storia che spiega il fenomeno fisico con esempi concreti e vicini al vissuto dei bambini..."
-                  className="min-h-80 resize-none"
-                />
+                <div className="border border-slate-300 rounded-md">
+                  <Textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Scrivi qui la storia che spiega il fenomeno fisico con esempi concreti e vicini al vissuto dei bambini..."
+                    className="min-h-80 max-h-80 resize-none border-0 focus:ring-0"
+                    style={{ height: 'auto', maxHeight: '320px', overflowY: 'auto' }}
+                  />
+                </div>
               </div>
 
               {/* Image Upload */}

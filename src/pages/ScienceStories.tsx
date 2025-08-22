@@ -19,7 +19,7 @@ const ScienceStories = () => {
     const checkAuthAndLoadStories = async () => {
       const authStatus = await AuthBridge.isAuthenticated();
       if (!authStatus.authenticated) {
-        navigate('/home');
+        navigate('/');
         return;
       }
       

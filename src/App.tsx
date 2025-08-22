@@ -45,6 +45,7 @@ import ScienceStoryViewer from "./pages/ScienceStoryViewer";
 import SuperuserScienceStoriesView from "./pages/SuperuserScienceStoriesView";
 import SuperuserScienceStoriesManagement from "./pages/SuperuserScienceStoriesManagement";
 import SuperuserScienceStoryViewer from "./pages/SuperuserScienceStoryViewer";
+import SuperuserStoryManagementSelection from "./pages/SuperuserStoryManagementSelection";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,7 +58,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<NewHome />} />
-          <Route path="/home" element={<Home />} />
+          <Route path="/superuser-story-management-selection" element={<SuperuserStoryManagementSelection />} />
           <Route path="/about" element={<About />} />
           <Route path="/company" element={<Company />} />
           <Route path="/spare" element={<Spare />} />

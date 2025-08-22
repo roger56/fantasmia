@@ -155,17 +155,6 @@ const SuperuserReadingStoriesView = () => {
             </CardContent>
           </Card>
 
-          {/* Sezione B: Aggiungi Storia */}
-          <div className="flex justify-center">
-            <Button 
-              onClick={() => navigate('/superuser-reading-stories-management')}
-              className="flex items-center gap-2 px-6 py-3 text-lg"
-              size="lg"
-            >
-              <Plus className="w-5 h-5" />
-              Aggiungi Storia
-            </Button>
-          </div>
         </div>
 
       </div>
