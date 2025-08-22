@@ -46,6 +46,8 @@ import SuperuserScienceStoriesView from "./pages/SuperuserScienceStoriesView";
 import SuperuserScienceStoriesManagement from "./pages/SuperuserScienceStoriesManagement";
 import SuperuserScienceStoryViewer from "./pages/SuperuserScienceStoryViewer";
 import SuperuserStoryManagementSelection from "./pages/SuperuserStoryManagementSelection";
+
+// Import NotFound component
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
