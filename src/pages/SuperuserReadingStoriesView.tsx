@@ -157,6 +157,36 @@ const SuperuserReadingStoriesView = () => {
 
         </div>
 
+        {/* Sezione B: Aggiungi nuova storia */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Aggiungi Nuova Storia
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center border-2 border-blue-200">
+                <Plus className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                Crea una nuova storia magica
+              </h3>
+              <p className="text-slate-600 text-sm mb-4">
+                Aggiungi una nuova storia al catalogo centrale per tutti gli utenti
+              </p>
+              <Button 
+                onClick={() => navigate('/superuser-reading-stories-management')}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Aggiungi Storia
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
 
       {/* Delete Confirmation Dialog */}
