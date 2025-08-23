@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Save, Upload, Volume2, Palette, Camera, ImageIcon, Video, Film, Music, ChevronDown, Edit, PenTool, Wand2, Feather } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Volume2, ChevronDown, Edit, PenTool, Wand2, Feather } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import { getScienceStories, updateScienceStory, ScienceStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import HomeButton from '@/components/HomeButton';
+import MediaButton from '@/components/shared/MediaButton';
 
 const SuperuserScienceStoryViewer = () => {
   const { id } = useParams<{ id: string }>();
@@ -110,11 +111,7 @@ const SuperuserScienceStoryViewer = () => {
   };
 
   const handleListen = () => {
-    if (isPlaying) {
-      stop();
-    } else {
-      speak(content, 'italian');
-    }
+    speak(content, 'italian');
   };
 
   if (!isAuthenticated || !story) {
@@ -164,31 +161,13 @@ const SuperuserScienceStoryViewer = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* MEDIA Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="justify-between">
-                    <span className="flex items-center gap-2">
-                      <Palette className="w-4 h-4" />
-                      📺 MEDIA
-                    </span>
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-full min-w-[200px]" align="start">
-                  {imageUrl ? (
-                    <DropdownMenuItem onClick={() => window.open(imageUrl, '_blank')} className="cursor-pointer">
-                      <ImageIcon className="w-4 h-4 mr-2" />
-                      Visualizza immagine
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
-                      <ImageIcon className="w-4 h-4 mr-2" />
-                      Nessuna immagine
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* MEDIA Button with full functionality */}
+              <MediaButton
+                storyContent={content}
+                storyTitle={title}
+                storyId={id}
+                className="mr-2"
+              />
 
               {/* MODIFICA Dropdown */}
               <DropdownMenu>

@@ -60,7 +60,18 @@ const Archive = () => {
       <StoryLayout
         title="Archivio Globale"
         subtitle="Tutte le storie create dagli utenti"
-        onBack={() => navigate('/dashboard')}
+        onBack={() => {
+          // Check if user is Superuser
+          const authToken = localStorage.getItem('superuser-session');
+          const authExpiry = localStorage.getItem('superuser-session-expiry');
+          const isSuperuser = authToken && authExpiry && Date.now() < parseInt(authExpiry);
+          
+          if (isSuperuser) {
+            navigate('/superuser');
+          } else {
+            navigate('/dashboard');
+          }
+        }}
         showHomeButton={true}
       >
         <div className="max-w-4xl mx-auto">

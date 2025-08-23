@@ -85,6 +85,15 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     }
     
     if (type === 'Disegno') {
+      // Check if user is in Superuser mode for drawing functionality
+      if (!isDebugMode) {
+        toast({
+          title: "Accesso limitato",
+          description: "La creazione di disegni è riservata ai Superuser",
+          variant: "destructive"
+        });
+        return;
+      }
       setSelectedStyle(subtype.toLowerCase());
       setShowCopyrightWarning(true);
     } else {
