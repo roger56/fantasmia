@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, BookOpen, Plus, Eye, Trash2 } from 'lucide-react';
-import { getScienceStories, deleteScienceStory, ScienceStory } from '@/utils/userStorage';
+import { ArrowLeft, BookOpen, Plus, Eye, Trash2, Image } from 'lucide-react';
+import { getScienceStories, deleteScienceStory, ScienceStory, hasStoryImages } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import HomeButton from '@/components/HomeButton';
@@ -79,15 +79,24 @@ const SuperuserScienceStoriesView = () => {
         <HomeButton />
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="flex items-center mb-6 pt-4">
+          <div className="flex items-center justify-between mb-6 pt-4">
+            <div className="flex items-center">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/superuser')}
+                className="mr-4"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-2xl font-bold text-slate-800">🔬 Gestione Storie Scientifiche</h1>
+            </div>
             <Button 
-              variant="ghost" 
-              onClick={() => navigate('/superuser')}
-              className="mr-4"
+              onClick={() => navigate('/superuser-science-stories-management')}
+              className="bg-blue-600 hover:bg-blue-700"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <Plus className="w-4 h-4 mr-2" />
+              Aggiungi nuova storia scientifica
             </Button>
-            <h1 className="text-2xl font-bold text-slate-800">🔬 Gestione Storie Scientifiche</h1>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -121,7 +130,14 @@ const SuperuserScienceStoriesView = () => {
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
                               <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
+                               {hasStoryImages && hasStoryImages(story.id) && (
+                                 <div title="Immagine associata">
+                                   <Image className="w-4 h-4 text-green-600" />
+                                 </div>
+                               )}
+                            </div>
                               <p className="text-xs text-slate-500 mt-1">
                                 Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
                               </p>
@@ -155,17 +171,6 @@ const SuperuserScienceStoriesView = () => {
               </CardContent>
             </Card>
 
-            {/* Sezione B: Aggiungi Storia */}
-            <div className="flex justify-center">
-              <Button 
-                onClick={() => navigate('/superuser-science-stories-management')}
-                className="flex items-center gap-2 px-6 py-3 text-lg"
-                size="lg"
-              >
-                <Plus className="w-5 h-5" />
-                Aggiungi Storia Scientifica
-              </Button>
-            </div>
           </div>
         </div>
 

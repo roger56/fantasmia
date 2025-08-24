@@ -41,6 +41,9 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const [showAuthWarning, setShowAuthWarning] = useState(false);
   const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showStyleSelector, setShowStyleSelector] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [generatedImageForConfirm, setGeneratedImageForConfirm] = useState<string | null>(null);
 
   // Reset state when story changes
   useEffect(() => {
@@ -117,6 +120,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
   const handleCopyrightProceed = () => {
     setShowCopyrightWarning(false);
+    setShowStyleSelector(true);
+  };
+
+  const handleStyleSelected = (style: string) => {
+    setSelectedStyle(style);
+    setShowStyleSelector(false);
     setShowCommentDialog(true);
   };
 
@@ -155,10 +164,14 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         throw new Error('User ID is required');
       }
 
-      // Create enhanced prompt with user comment
-      const enhancedPrompt = userComment 
-        ? `${storyContent}\n\nNote aggiuntive: ${userComment}`
-        : storyContent;
+      // Create enhanced prompt with style and user comment
+      let enhancedPrompt = storyContent;
+      if (selectedStyle) {
+        enhancedPrompt = `Crea un disegno in stile ${selectedStyle.toLowerCase()} che rappresenti: ${storyContent}`;
+      }
+      if (userComment) {
+        enhancedPrompt += `\n\nNote aggiuntive: ${userComment}`;
+      }
 
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
@@ -200,8 +213,9 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       }
 
       if (data?.imageUrl) {
-        setGeneratedImage(data.imageUrl);
-        setShowImageDialog(true);
+        // Show confirmation dialog for association
+        setGeneratedImageForConfirm(data.imageUrl);
+        setShowConfirmDialog(true);
         setUserComment(''); // Reset comment after generation
         toast({
           title: "Immagine generata!",
@@ -258,6 +272,30 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         variant: "destructive"
       });
     }
+  };
+
+  const handleConfirmAssociation = () => {
+    setGeneratedImage(generatedImageForConfirm);
+    setGeneratedImageForConfirm(null);
+    setShowConfirmDialog(false);
+    setShowImageDialog(true);
+    
+    toast({
+      title: "Immagine associata",
+      description: "L'immagine è stata associata alla storia con successo",
+      variant: "default"
+    });
+  };
+
+  const handleCancelAssociation = () => {
+    setGeneratedImageForConfirm(null);
+    setShowConfirmDialog(false);
+    
+    toast({
+      title: "Associazione annullata",
+      description: "L'immagine non è stata associata alla storia",
+      variant: "default"
+    });
   };
 
   return (
@@ -469,6 +507,66 @@ const MediaButton: React.FC<MediaButtonProps> = ({
               </Collapsible>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Style Selector Dialog */}
+      <Dialog open={showStyleSelector} onOpenChange={setShowStyleSelector}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Seleziona lo stile grafico</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Scegli lo stile che preferisci per il tuo disegno:
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {['Fumetto', 'Fotografico', 'Astratto', 'Manga', 'Acquarello', 'Carboncino'].map((style) => (
+                <Button
+                  key={style}
+                  variant="outline"
+                  onClick={() => handleStyleSelected(style)}
+                  className="justify-start"
+                >
+                  {style}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conferma associazione</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Vuoi associare questa immagine alla storia "{storyTitle}"?
+            </p>
+            {generatedImageForConfirm && (
+              <div className="flex justify-center">
+                <img
+                  src={generatedImageForConfirm}
+                  alt="Anteprima immagine generata"
+                  className="max-w-full h-32 object-cover rounded border"
+                />
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={handleCancelAssociation}
+              >
+                Annulla
+              </Button>
+              <Button onClick={handleConfirmAssociation}>
+                Associa alla storia
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

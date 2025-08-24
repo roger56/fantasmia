@@ -60,11 +60,15 @@ const SuperuserArchive = () => {
 
   useEffect(() => {
     const fetchStoriesWithMedia = async () => {
-      // Since the database relation doesn't exist yet, use only localStorage for now
-      try {
-        const allStories = await getAllStoriesForSuperuser();
-        // Convert to StoryWithMedia format
-        const allStoriesWithMedia: StoryWithMedia[] = allStories.map(story => ({
+        // Filter out superuser-created stories (reading and science stories)
+        try {
+          const allStories = await getAllStoriesForSuperuser();
+          // Filter out stories created by superuser for central catalog
+          const filteredStories = allStories.filter(story => 
+            !story.authorName || story.authorName !== 'superuser'
+          );
+          // Convert to StoryWithMedia format
+          const allStoriesWithMedia: StoryWithMedia[] = filteredStories.map(story => ({
           id: story.id,
           title: story.title,
           content: story.content || '',

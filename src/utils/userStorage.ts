@@ -245,6 +245,19 @@ export const getStoriesForUser = (userId: string, includePublic: boolean = false
   );
 };
 
+export const getStoriesForUserByName = (userName: string): Promise<Story[]> => {
+  return new Promise((resolve) => {
+    try {
+      const stories = getStories();
+      const userStories = stories.filter(story => story.authorName === userName);
+      resolve(userStories);
+    } catch (error) {
+      console.error('Error fetching user stories:', error);
+      resolve([]);
+    }
+  });
+};
+
 export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
   try {
     // Get stories from both Supabase and localStorage, then merge them

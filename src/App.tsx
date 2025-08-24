@@ -46,6 +46,7 @@ import SuperuserScienceStoriesView from "./pages/SuperuserScienceStoriesView";
 import SuperuserScienceStoriesManagement from "./pages/SuperuserScienceStoriesManagement";
 import SuperuserScienceStoryViewer from "./pages/SuperuserScienceStoryViewer";
 import SuperuserStoryManagementSelection from "./pages/SuperuserStoryManagementSelection";
+import UserArchive from "./pages/UserArchive";
 
 // Import NotFound component
 import NotFound from "./pages/NotFound";
@@ -79,6 +80,7 @@ const App = () => (
           <Route path="/ghost-editor" element={<GhostEditor />} />
           <Route path="/story/:storyId" element={<StoryViewer />} />
           <Route path="/superuser-archive" element={<SuperuserArchive />} />
+          <Route path="/user-archive" element={<UserArchive />} />
           <Route path="/superuser-users" element={<SuperuserUsers />} />
           <Route path="/superuser-settings" element={<SuperuserSettings />} />
           <Route path="/superuser-password-change" element={<SuperuserPasswordChange />} />

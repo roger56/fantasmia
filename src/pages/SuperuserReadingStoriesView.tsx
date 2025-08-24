@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, BookOpen, Plus, Eye, Trash2 } from 'lucide-react';
-import { getReadingStories, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
+import { ArrowLeft, BookOpen, Plus, Eye, Trash2, Image } from 'lucide-react';
+import { getReadingStories, deleteReadingStory, ReadingStory, hasStoryImages } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import HomeButton from '@/components/HomeButton';
@@ -79,15 +79,24 @@ const SuperuserReadingStoriesView = () => {
         <HomeButton />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center mb-6 pt-4">
+        <div className="flex items-center justify-between mb-6 pt-4">
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/superuser')}
+              className="mr-4"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-2xl font-bold text-slate-800">📖 Gestione Storie da Leggere</h1>
+          </div>
           <Button 
-            variant="ghost" 
-            onClick={() => navigate('/superuser')}
-            className="mr-4"
+            onClick={() => navigate('/superuser-reading-stories-management')}
+            className="bg-blue-600 hover:bg-blue-700"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <Plus className="w-4 h-4 mr-2" />
+            Aggiungi nuova storia
           </Button>
-          <h1 className="text-2xl font-bold text-slate-800">📖 Gestione Storie da Leggere</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -121,7 +130,14 @@ const SuperuserReadingStoriesView = () => {
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
+                               {hasStoryImages && hasStoryImages(story.id) && (
+                                 <div title="Immagine associata">
+                                   <Image className="w-4 h-4 text-green-600" />
+                                 </div>
+                               )}
+                            </div>
                             <p className="text-xs text-slate-500 mt-1">
                               Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
                             </p>
@@ -157,35 +173,6 @@ const SuperuserReadingStoriesView = () => {
 
         </div>
 
-        {/* Sezione B: Aggiungi nuova storia */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              Aggiungi Nuova Storia
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <div className="w-16 h-16 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center border-2 border-blue-200">
-                <Plus className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                Crea una nuova storia magica
-              </h3>
-              <p className="text-slate-600 text-sm mb-4">
-                Aggiungi una nuova storia al catalogo centrale per tutti gli utenti
-              </p>
-              <Button 
-                onClick={() => navigate('/superuser-reading-stories-management')}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Storia
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
       </div>
 

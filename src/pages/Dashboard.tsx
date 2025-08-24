@@ -60,8 +60,8 @@ const Dashboard = () => {
       id: 'archive-complete',
       title: 'Archivio Globale',
       icon: BookOpen,
-      description: 'Visualizza tutte le storie create dagli utenti',
-      path: '/superuser-archive'
+      description: 'Visualizza le tue storie personali',
+      path: isSuperuser ? '/superuser-archive' : '/user-archive'
     }
   ];
 
