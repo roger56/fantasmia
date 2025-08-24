@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Volume2, VolumeX, User, Calendar } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ArrowLeft, BookOpen, Volume2, VolumeX, User, Calendar, Share2, Copy, Mail, ChevronDown, Palette, ImageIcon } from 'lucide-react';
 import { getPublishedStories, PublishedStory } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import { translateToEnglish } from '@/utils/translation';
 
 const ReadingStoryViewer = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,7 +18,11 @@ const ReadingStoryViewer = () => {
   const [story, setStory] = useState<PublishedStory | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isReading, setIsReading] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
+  const [language, setLanguage] = useState<'italian' | 'english'>('italian');
+  const [translatedContent, setTranslatedContent] = useState<string>('');
+  const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     const checkAuthAndLoadStory = async () => {
@@ -52,28 +58,36 @@ const ReadingStoryViewer = () => {
   const handleTextToSpeech = () => {
     if (!story) return;
 
+    const contentToRead = language === 'english' && translatedContent ? translatedContent : story.content;
+
     if ('speechSynthesis' in window) {
-      if (isReading) {
-        // Stop reading
-        speechSynthesis.cancel();
-        setIsReading(false);
-        setSpeechUtterance(null);
+      if (isReading && !isPaused) {
+        // Pause reading
+        speechSynthesis.pause();
+        setIsPaused(true);
+      } else if (isPaused) {
+        // Resume reading
+        speechSynthesis.resume();
+        setIsPaused(false);
       } else {
         // Start reading
-        const utterance = new SpeechSynthesisUtterance(story.content);
-        utterance.lang = 'it-IT';
+        const utterance = new SpeechSynthesisUtterance(contentToRead);
+        utterance.lang = language === 'english' ? 'en-US' : 'it-IT';
         
         utterance.onstart = () => {
           setIsReading(true);
+          setIsPaused(false);
         };
         
         utterance.onend = () => {
           setIsReading(false);
+          setIsPaused(false);
           setSpeechUtterance(null);
         };
         
         utterance.onerror = () => {
           setIsReading(false);
+          setIsPaused(false);
           setSpeechUtterance(null);
           toast({
             title: "Errore",
@@ -91,6 +105,51 @@ const ReadingStoryViewer = () => {
         description: "La sintesi vocale non è supportata da questo browser",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleTranslate = async () => {
+    if (!story) return;
+
+    setIsTranslating(true);
+    try {
+      if (language === 'italian') {
+        const translated = await translateToEnglish(story.content);
+        setTranslatedContent(translated);
+        setLanguage('english');
+      } else {
+        setLanguage('italian');
+        setTranslatedContent('');
+      }
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Errore durante la traduzione",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const handleShare = (method: 'copy' | 'email') => {
+    if (!story) return;
+
+    const contentToShare = language === 'english' && translatedContent ? translatedContent : story.content;
+    const shareText = `${story.title}\n\n${contentToShare}`;
+
+    if (method === 'copy') {
+      navigator.clipboard.writeText(shareText).then(() => {
+        toast({
+          title: "Copiato!",
+          description: "Storia copiata negli appunti"
+        });
+      });
+    } else if (method === 'email') {
+      const subject = encodeURIComponent(story.title);
+      const body = encodeURIComponent(shareText);
+      const mailtoLink = `mailto:?subject=${subject}&body=${body}`;
+      window.open(mailtoLink);
     }
   };
 
@@ -112,6 +171,8 @@ const ReadingStoryViewer = () => {
       </div>
     );
   }
+
+  const displayContent = language === 'english' && translatedContent ? translatedContent : story.content;
 
   return (
     <>
@@ -145,28 +206,91 @@ const ReadingStoryViewer = () => {
                     </div>
                   </div>
                 </div>
-                <Button
-                  onClick={handleTextToSpeech}
-                  className={`ml-4 ${isReading ? 'bg-red-600 hover:bg-red-700' : ''}`}
-                >
-                  {isReading ? (
-                    <>
-                      <VolumeX className="w-4 h-4 mr-2" />
-                      Stop
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 className="w-4 h-4 mr-2" />
-                      Ascolta
-                    </>
-                  )}
-                </Button>
+
+                <div className="flex gap-2">
+                  {/* TTS Button */}
+                  <Button
+                    onClick={handleTextToSpeech}
+                    className={`${isReading ? 'bg-red-600 hover:bg-red-700' : ''}`}
+                  >
+                    {isReading && isPaused ? (
+                      <>
+                        <Volume2 className="w-4 h-4 mr-2" />
+                        Riprendi
+                      </>
+                    ) : isReading ? (
+                      <>
+                        <VolumeX className="w-4 h-4 mr-2" />
+                        Pausa
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-4 h-4 mr-2" />
+                        LEGGI
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Translation Button */}
+                  <Button
+                    onClick={handleTranslate}
+                    disabled={isTranslating}
+                    variant="outline"
+                  >
+                    {isTranslating ? 'Traduzione...' : (language === 'italian' ? 'Inglese' : 'Italiano')}
+                  </Button>
+
+                  {/* Share Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <Share2 className="w-4 h-4" />
+                        Condividi
+                        <ChevronDown className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleShare('copy')}>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copia negli appunti
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleShare('email')}>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Invia via email
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* MEDIA Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <Palette className="w-4 h-4" />
+                        📺 MEDIA
+                        <ChevronDown className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+                      {story.image_url ? (
+                        <DropdownMenuItem onClick={() => window.open(story.image_url, '_blank')} className="cursor-pointer">
+                          <ImageIcon className="w-4 h-4 mr-2" />
+                          Visualizza immagine
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
+                          <ImageIcon className="w-4 h-4 mr-2" />
+                          Nessuna immagine disponibile
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="prose max-w-none">
                 <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">
-                  {story.content}
+                  {displayContent}
                 </div>
               </div>
             </CardContent>

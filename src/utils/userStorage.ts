@@ -101,26 +101,26 @@ export const getUsers = (): User[] => {
 
 export const getUserByEmailAndPassword = (email: string, password: string): User | null => {
   const users = getUsers();
-  // Trim spaces and make comparison more robust
+  // Trim spaces and make comparison case-insensitive for both email and password
   const cleanEmail = email.trim().toLowerCase();
-  const cleanPassword = password.trim();
+  const cleanPassword = password.trim().toLowerCase();
   
   return users.find(u => {
     const userEmail = (u.email || '').trim().toLowerCase();
-    const userPassword = (u.password || '').trim();
+    const userPassword = (u.password || '').trim().toLowerCase();
     return userEmail === cleanEmail && userPassword === cleanPassword;
   }) || null;
 };
 
 export const getUserByNameAndPassword = (name: string, password: string): User | null => {
   const users = getUsers();
-  // Trim spaces and make comparison more robust
-  const cleanName = name.trim();
-  const cleanPassword = password.trim();
+  // Trim spaces and make comparison case-insensitive for both name and password
+  const cleanName = name.trim().toLowerCase();
+  const cleanPassword = password.trim().toLowerCase();
   
   return users.find(u => {
-    const userName = (u.name || '').trim();
-    const userPassword = (u.password || '').trim();
+    const userName = (u.name || '').trim().toLowerCase();
+    const userPassword = (u.password || '').trim().toLowerCase();
     return userName === cleanName && userPassword === cleanPassword;
   }) || null;
 };
@@ -549,6 +549,7 @@ export interface PublishedStory {
   content: string;
   published_at: string;
   original_author: string;
+  image_url?: string;
 }
 
 export const publishStoryFromArchive = (storyId: string, authorName?: string) => {

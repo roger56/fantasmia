@@ -19,6 +19,7 @@ const ScienceStoryViewer = () => {
   const [story, setStory] = useState<ScienceStory | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isReading, setIsReading] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
   const [language, setLanguage] = useState<'italian' | 'english'>('italian');
   const [translatedContent, setTranslatedContent] = useState<string>('');
@@ -60,11 +61,14 @@ const ScienceStoryViewer = () => {
     const contentToRead = language === 'english' && translatedContent ? translatedContent : story.content;
 
     if ('speechSynthesis' in window) {
-      if (isReading) {
-        // Stop reading
-        speechSynthesis.cancel();
-        setIsReading(false);
-        setSpeechUtterance(null);
+      if (isReading && !isPaused) {
+        // Pause reading
+        speechSynthesis.pause();
+        setIsPaused(true);
+      } else if (isPaused) {
+        // Resume reading
+        speechSynthesis.resume();
+        setIsPaused(false);
       } else {
         // Start reading
         const utterance = new SpeechSynthesisUtterance(contentToRead);
@@ -72,15 +76,18 @@ const ScienceStoryViewer = () => {
         
         utterance.onstart = () => {
           setIsReading(true);
+          setIsPaused(false);
         };
         
         utterance.onend = () => {
           setIsReading(false);
+          setIsPaused(false);
           setSpeechUtterance(null);
         };
         
         utterance.onerror = () => {
           setIsReading(false);
+          setIsPaused(false);
           setSpeechUtterance(null);
           toast({
             title: "Errore",
@@ -198,15 +205,20 @@ const ScienceStoryViewer = () => {
                     onClick={handleTextToSpeech}
                     className={`${isReading ? 'bg-red-600 hover:bg-red-700' : ''}`}
                   >
-                    {isReading ? (
+                    {isReading && isPaused ? (
+                      <>
+                        <Volume2 className="w-4 h-4 mr-2" />
+                        Riprendi
+                      </>
+                    ) : isReading ? (
                       <>
                         <VolumeX className="w-4 h-4 mr-2" />
-                        Stop
+                        Pausa
                       </>
                     ) : (
                       <>
                         <Volume2 className="w-4 h-4 mr-2" />
-                        Ascolta
+                        LEGGI
                       </>
                     )}
                   </Button>

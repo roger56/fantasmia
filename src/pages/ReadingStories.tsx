@@ -68,8 +68,8 @@ const ReadingStories = () => {
     <>
       <ProfileIndicator />
       <StoryLayout
-        title="Lettura Storie"
-        subtitle="Storie caricate dal SuperUser"
+        title="Storie Magiche"
+        subtitle="Le storie che si raccontano nel mondo"
         onBack={() => navigate('/dashboard')}
         showHomeButton={true}
       >
