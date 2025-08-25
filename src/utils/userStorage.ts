@@ -131,6 +131,15 @@ export const getUserById = (id: string): User | null => {
   return users.find(u => u.id === id) || null;
 };
 
+export const getUserByName = (name: string): User | null => {
+  const users = getUsers();
+  const cleanName = name.trim().toLowerCase();
+  return users.find(u => {
+    const userName = (u.name || '').trim().toLowerCase();
+    return userName === cleanName;
+  }) || null;
+};
+
 export const deleteUser = (id: string): boolean => {
   const users = getUsers();
   const index = users.findIndex(u => u.id === id);
@@ -297,6 +306,15 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
     const localStories = getStories();
     const users = getUsers();
     
+    // Get all user archives to include user personal stories
+    const allUserStories: Story[] = [];
+    users.forEach(user => {
+      if (user.name !== 'superuser') {  // Exclude Superuser's own stories
+        const userArchive = getStoriesForUser(user.id);
+        allUserStories.push(...userArchive);
+      }
+    });
+    
     // Process localStorage stories and ensure proper author names
     const processedLocalStories = localStories.map(story => {
       const user = users.find(u => u.id === story.authorId);
@@ -306,9 +324,17 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
       };
     });
     
-    // Merge stories, avoiding duplicates based on ID
+    // Merge all stories, avoiding duplicates based on ID
     const allStories = [...supabaseStories];
     
+    // Add user archive stories first
+    allUserStories.forEach(userStory => {
+      if (!allStories.find(story => story.id === userStory.id)) {
+        allStories.push(userStory);
+      }
+    });
+    
+    // Then add processed localStorage stories
     processedLocalStories.forEach(localStory => {
       if (!allStories.find(story => story.id === localStory.id)) {
         allStories.push(localStory);
@@ -321,17 +347,35 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
     );
   } catch (error) {
     console.error('Error fetching stories:', error);
-    // Fallback to localStorage only
+    // Fallback to localStorage and user archives
     const localStories = getStories();
     const users = getUsers();
     
-    return localStories.map(story => {
+    // Get all user archives as fallback
+    const allUserStories: Story[] = [];
+    users.forEach(user => {
+      if (user.name !== 'superuser') {  // Exclude Superuser's own stories
+        const userArchive = getStoriesForUser(user.id);
+        allUserStories.push(...userArchive);
+      }
+    });
+    
+    const processedLocalStories = localStories.map(story => {
       const user = users.find(u => u.id === story.authorId);
       return {
         ...story,
         authorName: user ? user.name : story.authorName || 'Utente Sconosciuto'
       };
-    }).sort((a, b) => 
+    });
+    
+    const allStories = [...allUserStories];
+    processedLocalStories.forEach(localStory => {
+      if (!allStories.find(story => story.id === localStory.id)) {
+        allStories.push(localStory);
+      }
+    });
+    
+    return allStories.sort((a, b) => 
       new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
     );
   }

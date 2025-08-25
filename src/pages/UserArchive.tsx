@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { ArrowLeft, BookOpen, Volume2, Eye, Image, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getStoriesForUserByName, deleteStory, hasStoryImages } from '@/utils/userStorage';
+import { getStoriesForUser, getUserByName, deleteStory, hasStoryImages } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import HomeButton from '@/components/HomeButton';
@@ -79,7 +79,16 @@ const UserArchive = () => {
 
   const loadUserStories = async (userName: string) => {
     try {
-      const userStories = await getStoriesForUserByName(userName);
+      // Get user by name to find userId
+      const user = getUserByName(userName);
+      if (!user) {
+        console.error('User not found:', userName);
+        setStories([]);
+        return;
+      }
+      
+      // Get stories from user's personal archive
+      const userStories = getStoriesForUser(user.id);
       const storiesWithMedia: StoryWithMedia[] = userStories.map(story => ({
         id: story.id,
         title: story.title,
