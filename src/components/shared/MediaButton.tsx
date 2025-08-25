@@ -141,10 +141,14 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       return;
     }
 
+    // Extract a meaningful description instead of sending entire story
+    const { extractStoryDescription } = await import('@/utils/extractStoryDescription');
+    const storyDescription = extractStoryDescription(storyContent, storyTitle);
+
     console.log('MediaButton: Starting image generation');
     console.log('MediaButton: StoryId being sent:', storyId);
     console.log('MediaButton: StoryTitle being sent:', storyTitle);
-    console.log('MediaButton: StoryContent being sent (first 200 chars):', storyContent.substring(0, 200));
+    console.log('MediaButton: Extracted description:', storyDescription);
     console.log('MediaButton: Style selected:', style);
 
     setIsGenerating(true);
@@ -165,9 +169,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       }
 
       // Create enhanced prompt with style and user comment
-      let enhancedPrompt = storyContent;
+      const { extractStoryDescription } = await import('@/utils/extractStoryDescription');
+      const storyDescription = extractStoryDescription(storyContent, storyTitle);
+      
+      let enhancedPrompt = storyDescription;
       if (selectedStyle) {
-        enhancedPrompt = `Crea un disegno in stile ${selectedStyle.toLowerCase()} che rappresenti: ${storyContent}`;
+        enhancedPrompt = `Crea un disegno in stile ${selectedStyle.toLowerCase()} che rappresenti: ${storyDescription}`;
       }
       if (userComment) {
         enhancedPrompt += `\n\nNote aggiuntive: ${userComment}`;

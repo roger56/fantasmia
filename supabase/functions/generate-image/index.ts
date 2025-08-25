@@ -64,14 +64,17 @@ serve(async (req) => {
     console.log('Original prompt:', prompt)
     console.log('Cleaned prompt:', cleanPrompt)
 
-    // Create safe prompt templates based on style
+    // Create simplified prompts based on style
     const createStylePrompt = (content: string, artStyle: string) => {
-      const safeTemplates = {
-        'fumetto': `Create a family-friendly cartoon illustration showing: ${content}. Use bright cheerful colors, cartoon style, clear outlines. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free illustration only. Pure visual storytelling without any readable content.`,
-        'fotografico': `Create a beautiful realistic image of: ${content}. Professional photography style, good lighting, peaceful scene. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free photography only. Family-friendly visual content without any readable content.`,
-        'astratto': `Create an abstract artistic interpretation of: ${content}. Use colors, shapes and artistic elements to represent the theme. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free abstract art only. Creative and peaceful visual art without any readable content.`
+      const styleMap = {
+        'fumetto': `${content}. Stile fumetto colorato e allegro, per bambini.`,
+        'fotografico': `${content}. Stile fotografico realistico, bellissima illuminazione.`,
+        'astratto': `${content}. Interpretazione artistica astratta con colori armoniosi.`,
+        'manga': `${content}. Stile manga giapponese, pulito e espressivo.`,
+        'acquarello': `${content}. Stile acquerello delicato, colori soft.`,
+        'carboncino': `${content}. Disegno a carboncino artistico, bianco e nero.`
       }
-      return safeTemplates[artStyle] || `Create a beautiful, family-friendly illustration of: ${content}. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free image only.`
+      return styleMap[artStyle] || `${content}. Illustrazione bella e familiare per bambini.`
     }
 
     let enhancedPrompt = createStylePrompt(cleanPrompt, style)

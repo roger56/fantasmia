@@ -63,10 +63,12 @@ const SuperuserArchive = () => {
         // Filter out superuser-created stories (reading and science stories)
         try {
           const allStories = await getAllStoriesForSuperuser();
-          // Filter out stories created by superuser for central catalog
-          const filteredStories = allStories.filter(story => 
-            !story.authorName || story.authorName !== 'superuser'
-          );
+          // Filter out stories created by superuser for central catalog AND stories without proper user info
+          const filteredStories = allStories.filter(story => {
+            const hasProperAuthor = story.authorName && story.authorName.trim() !== '' && story.authorName !== 'superuser';
+            const isNotSystemStory = !story.category || (story.category !== 'reading_story' && story.category !== 'science_story');
+            return hasProperAuthor && isNotSystemStory;
+          });
           // Convert to StoryWithMedia format
           const allStoriesWithMedia: StoryWithMedia[] = filteredStories.map(story => ({
           id: story.id,

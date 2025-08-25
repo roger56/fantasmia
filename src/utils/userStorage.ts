@@ -39,6 +39,7 @@ export interface Story {
   authorName: string;
   isPublic: boolean;
   language?: 'italian' | 'english';
+  category?: string;
 }
 
 export const saveUser = (user: User) => {
@@ -441,16 +442,25 @@ export interface ReadingStory {
   updated_at: string;
   author?: string;
   image_url?: string;
+  category?: string;
 }
 
 export const saveReadingStory = (story: ReadingStory) => {
+  // Mark as superuser story for public access
+  const storyWithMeta = {
+    ...story,
+    author: 'superuser',
+    category: 'reading_story',
+    updated_at: new Date().toISOString()
+  };
+  
   const stories = getReadingStories();
   const existingIndex = stories.findIndex(s => s.id === story.id);
   
   if (existingIndex >= 0) {
-    stories[existingIndex] = { ...story, updated_at: new Date().toISOString() };
+    stories[existingIndex] = storyWithMeta;
   } else {
-    stories.push(story);
+    stories.push(storyWithMeta);
   }
   
   localStorage.setItem('fantasmia_reading_stories', JSON.stringify(stories));
@@ -496,16 +506,25 @@ export interface ScienceStory {
   updated_at: string;
   author?: string;
   image_url?: string;
+  category?: string;
 }
 
 export const saveScienceStory = (story: ScienceStory) => {
+  // Mark as superuser story for public access
+  const storyWithMeta = {
+    ...story,
+    author: 'superuser',
+    category: 'science_story',
+    updated_at: new Date().toISOString()
+  };
+  
   const stories = getScienceStories();
   const existingIndex = stories.findIndex(s => s.id === story.id);
   
   if (existingIndex >= 0) {
-    stories[existingIndex] = { ...story, updated_at: new Date().toISOString() };
+    stories[existingIndex] = storyWithMeta;
   } else {
-    stories.push(story);
+    stories.push(storyWithMeta);
   }
   
   localStorage.setItem('fantasmia_science_stories', JSON.stringify(stories));
