@@ -93,12 +93,21 @@ const Privacy = () => {
                       <li>Il rispetto della normativa sulla privacy secondo GDPR (UE 2016/679).</li>
                     </ul>
                     <p className="mt-4 font-medium">
-                      👉 Cliccando sul link qui sotto, conferma l'iscrizione e accetta le condizioni indicate:
+                      👉 Cliccando sul pulsante di conferma qui sotto, accetti tutte le condizioni indicate:
                     </p>
                   </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+
+            <div className="flex justify-center pt-6">
+              <Button 
+                onClick={() => navigate('/new-profile')}
+                className="bg-green-600 hover:bg-green-700 px-8"
+              >
+                Confermo la presa visione e accetto le condizioni
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

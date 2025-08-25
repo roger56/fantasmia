@@ -132,11 +132,11 @@ const SuperuserScienceStoriesView = () => {
                             <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
-                               {hasStoryImages && hasStoryImages(story.id) && (
-                                 <div title="Immagine associata">
-                                   <Image className="w-4 h-4 text-green-600" />
-                                 </div>
-                               )}
+                              {story.image_url && (
+                                <div title="Immagine associata">
+                                  <Image className="w-4 h-4 text-green-600" />
+                                </div>
+                              )}
                             </div>
                               <p className="text-xs text-slate-500 mt-1">
                                 Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}

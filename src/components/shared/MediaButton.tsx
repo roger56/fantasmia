@@ -281,11 +281,38 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     }
   };
 
-  const handleConfirmAssociation = () => {
+  const handleConfirmAssociation = async () => {
     setGeneratedImage(generatedImageForConfirm);
     setGeneratedImageForConfirm(null);
     setShowConfirmDialog(false);
     setShowImageDialog(true);
+    
+    // Save image URL to the story if we have storyId
+    if (storyId && generatedImageForConfirm) {
+      try {
+        const { updateScienceStory, updateReadingStory, getScienceStories, getReadingStories } = await import('@/utils/userStorage');
+        
+        // Check if it's a science story
+        const scienceStories = getScienceStories();
+        const isScienceStory = scienceStories.some(s => s.id === storyId);
+        
+        if (isScienceStory) {
+          updateScienceStory(storyId, { image_url: generatedImageForConfirm });
+          console.log('Image URL saved to science story:', storyId);
+        } else {
+          // Check if it's a reading story
+          const readingStories = getReadingStories();
+          const isReadingStory = readingStories.some(s => s.id === storyId);
+          
+          if (isReadingStory) {
+            updateReadingStory(storyId, { image_url: generatedImageForConfirm });
+            console.log('Image URL saved to reading story:', storyId);
+          }
+        }
+      } catch (error) {
+        console.error('Error saving image URL to story:', error);
+      }
+    }
     
     toast({
       title: "Immagine associata",
