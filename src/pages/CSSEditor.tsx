@@ -99,7 +99,7 @@ const CSSEditor = () => {
 
     try {
       if (editStory) {
-        updateStory(editStory.id, storyData);
+        await updateStory(editStory.id, storyData);
         toast({
           title: "Storia aggiornata!",
           description: `"${title}" è stata aggiornata con successo.`

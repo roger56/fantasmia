@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { AuthBridge } from './authBridge';
 
 // Generate a proper UUID v4
 const generateUUID = () => {
@@ -152,60 +153,72 @@ export const deleteUser = (id: string): boolean => {
   return false;
 };
 
-export const saveStory = (story: Story) => {
-  const currentUser = JSON.parse(localStorage.getItem('fantasmia_current_user') || '{}');
-  
-  if (!currentUser || !currentUser.id) {
-    console.error('No authenticated user found');
-    return;
-  }
+export const saveStory = async (story: Story) => {
+  try {
+    // Get authenticated user using AuthBridge
+    const authStatus = await AuthBridge.isAuthenticated();
+    
+    if (!authStatus.authenticated || !authStatus.userName) {
+      console.error('No authenticated user found');
+      return;
+    }
+    
+    // Get user details by name
+    const currentUser = getUserByName(authStatus.userName);
+    if (!currentUser) {
+      console.error('User not found:', authStatus.userName);
+      return;
+    }
 
-  // For CSS stories, clean the content to remove questions
-  let processedContent = story.content;
-  if (story.mode === 'CSS' && story.content) {
-    // Extract only the user's answers, not the questions
-    const lines = story.content.split('\n\n').filter(line => line.trim());
-    processedContent = lines.join('\n\n');
-  }
+    // For CSS stories, clean the content to remove questions
+    let processedContent = story.content;
+    if (story.mode === 'CSS' && story.content) {
+      // Extract only the user's answers, not the questions
+      const lines = story.content.split('\n\n').filter(line => line.trim());
+      processedContent = lines.join('\n\n');
+    }
 
-  const storyWithAuthor = {
-    ...story,
-    content: processedContent,
-    authorId: currentUser.id,
-    authorName: currentUser.name,
-    id: story.id || generateUUID(),
-    lastModified: new Date().toISOString()
-  };
-  
-  // Save to user's personal archive
-  updateUserStoryArchive(currentUser.id, storyWithAuthor);
-  
-  // Also save to global stories for compatibility
-  const stories = getStories();
-  const existingIndex = stories.findIndex(s => s.id === storyWithAuthor.id);
-  
-  if (existingIndex >= 0) {
-    stories[existingIndex] = storyWithAuthor;
-  } else {
-    stories.push(storyWithAuthor);
+    const storyWithAuthor = {
+      ...story,
+      content: processedContent,
+      authorId: currentUser.id,
+      authorName: currentUser.name,
+      id: story.id || generateUUID(),
+      lastModified: new Date().toISOString()
+    };
+    
+    // Save to user's personal archive
+    updateUserStoryArchive(currentUser.id, storyWithAuthor);
+    
+    // Also save to global stories for compatibility
+    const stories = getStories();
+    const existingIndex = stories.findIndex(s => s.id === storyWithAuthor.id);
+    
+    if (existingIndex >= 0) {
+      stories[existingIndex] = storyWithAuthor;
+    } else {
+      stories.push(storyWithAuthor);
+    }
+    
+    localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
+    
+    // Update directory structure
+    const categoryMapping = {
+      'GHOST': 'GHOST',
+      'PROPP': 'PROPP',
+      'PROPP_FREE': 'PROPP',
+      'AIROTS': 'AIROTS',
+      'PAROLE_CHIAMANO': 'UNA_PAROLA_TANTE_STORIE',
+      'CAMPBELL': 'CAMPBELL',
+      'CSS': 'CSS',
+      'PROFESSION': 'PROFESSION'
+    };
+    
+    const category = categoryMapping[story.mode] || 'GHOST';
+    updateDirectoryStructure(currentUser.id, category, story.title);
+  } catch (error) {
+    console.error('Error saving story:', error);
   }
-  
-  localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
-  
-  // Update directory structure
-  const categoryMapping = {
-    'GHOST': 'GHOST',
-    'PROPP': 'PROPP',
-    'PROPP_FREE': 'PROPP',
-    'AIROTS': 'AIROTS',
-    'PAROLE_CHIAMANO': 'UNA_PAROLA_TANTE_STORIE',
-    'CAMPBELL': 'CAMPBELL',
-    'CSS': 'CSS',
-    'PROFESSION': 'PROFESSION'
-  };
-  
-  const category = categoryMapping[story.mode] || 'GHOST';
-  updateDirectoryStructure(currentUser.id, category, story.title);
 };
 
 // Update directory structure with new file
@@ -387,19 +400,26 @@ export const getAllAuthors = async (): Promise<string[]> => {
   return authors.sort();
 };
 
-export const updateStory = (storyId: string, updates: Partial<Story>) => {
-  const stories = getStories();
-  const existingIndex = stories.findIndex(s => s.id === storyId);
-  
-  if (existingIndex >= 0) {
-    stories[existingIndex] = { ...stories[existingIndex], ...updates, lastModified: new Date().toISOString() };
-    localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
+export const updateStory = async (storyId: string, updates: Partial<Story>) => {
+  try {
+    const stories = getStories();
+    const existingIndex = stories.findIndex(s => s.id === storyId);
     
-    // Also update in user's personal archive
-    const currentUser = JSON.parse(localStorage.getItem('fantasmia_current_user') || '{}');
-    if (currentUser.id) {
-      updateUserStoryArchive(currentUser.id, stories[existingIndex]);
+    if (existingIndex >= 0) {
+      stories[existingIndex] = { ...stories[existingIndex], ...updates, lastModified: new Date().toISOString() };
+      localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
+      
+      // Also update in user's personal archive
+      const authStatus = await AuthBridge.isAuthenticated();
+      if (authStatus.authenticated && authStatus.userName) {
+        const currentUser = getUserByName(authStatus.userName);
+        if (currentUser) {
+          updateUserStoryArchive(currentUser.id, stories[existingIndex]);
+        }
+      }
     }
+  } catch (error) {
+    console.error('Error updating story:', error);
   }
 };
 
