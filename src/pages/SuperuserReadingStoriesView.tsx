@@ -139,18 +139,18 @@ const SuperuserReadingStoriesView = () => {
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
-                              {story.image_url && (
-                                <div 
-                                  title="Visualizza immagine associata"
-                                  className="cursor-pointer"
-                                  onClick={(e) => handleImageClick(story.image_url, e)}
-                                >
-                                  <Image className="w-4 h-4 text-green-600 hover:text-green-700" />
-                                </div>
-                              )}
-                            </div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
+              {story.image_url && (
+                <div 
+                  title="Visualizza immagine associata"
+                  className="cursor-pointer"
+                  onClick={(e) => handleImageClick(story.image_url, e)}
+                >
+                  <Image className="w-4 h-4 text-green-600 hover:text-green-700" />
+                </div>
+              )}
+            </div>
                             <p className="text-xs text-slate-500 mt-1">
                               Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
                             </p>
@@ -214,11 +214,22 @@ const SuperuserReadingStoriesView = () => {
             <DialogTitle>Immagine Associata</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center">
-            <img 
-              src={selectedImageUrl} 
-              alt="Immagine storia" 
-              className="max-w-full max-h-[70vh] object-contain rounded-lg"
-            />
+            {selectedImageUrl ? (
+              <img 
+                src={selectedImageUrl} 
+                alt="Immagine storia" 
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                onError={(e) => {
+                  console.error('Errore nel caricamento dell\'immagine:', selectedImageUrl);
+                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y1ZjVmNSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5OSI+SW1tYWdpbmUgbm9uIGRpc3BvbmliaWxlPC90ZXh0Pgo8L3N2Zz4=';
+                }}
+                onLoad={() => console.log('Immagine caricata con successo:', selectedImageUrl)}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-40 text-slate-500">
+                Nessuna immagine selezionata
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

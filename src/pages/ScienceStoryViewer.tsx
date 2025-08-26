@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Volume2, VolumeX, Calendar, Camera, Palette, ImageIcon, Video, Film, Music, ChevronDown, Share2, Copy, Mail } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { getScienceStories, ScienceStory } from '@/utils/userStorage';
@@ -24,6 +25,7 @@ const ScienceStoryViewer = () => {
   const [language, setLanguage] = useState<'italian' | 'english'>('italian');
   const [translatedContent, setTranslatedContent] = useState<string>('');
   const [isTranslating, setIsTranslating] = useState(false);
+  const [showImageDialog, setShowImageDialog] = useState(false);
 
   useEffect(() => {
     const checkAuthAndLoadStory = async () => {
@@ -264,7 +266,7 @@ const ScienceStoryViewer = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-full min-w-[200px]" align="start">
                       {story.image_url ? (
-                        <DropdownMenuItem onClick={() => window.open(story.image_url, '_blank')} className="cursor-pointer">
+                        <DropdownMenuItem onClick={() => setShowImageDialog(true)} className="cursor-pointer">
                           <ImageIcon className="w-4 h-4 mr-2" />
                           Visualizza immagine
                         </DropdownMenuItem>
@@ -294,6 +296,38 @@ const ScienceStoryViewer = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Image Display Dialog */}
+        <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Immagine Storia Scientifica</DialogTitle>
+            </DialogHeader>
+            <div className="flex justify-center">
+              {story?.image_url ? (
+                <img 
+                  src={story.image_url} 
+                  alt="Immagine storia scientifica" 
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                  onError={(e) => {
+                    console.error('Errore nel caricamento dell\'immagine:', story.image_url);
+                    toast({
+                      title: "Errore di caricamento",
+                      description: "Impossibile caricare l'immagine. L'immagine potrebbe non essere più disponibile.",
+                      variant: "destructive"
+                    });
+                    setShowImageDialog(false);
+                  }}
+                  onLoad={() => console.log('Immagine caricata con successo:', story.image_url)}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-40 text-slate-500">
+                  Nessuna immagine disponibile
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </StoryLayout>
     </>
   );
