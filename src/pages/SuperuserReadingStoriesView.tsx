@@ -7,6 +7,7 @@ import { ArrowLeft, BookOpen, Plus, Eye, Trash2, Image } from 'lucide-react';
 import { getReadingStories, deleteReadingStory, ReadingStory, hasStoryImages } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import HomeButton from '@/components/HomeButton';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
@@ -17,6 +18,8 @@ const SuperuserReadingStoriesView = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [storyToDelete, setStoryToDelete] = useState<string>('');
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -66,6 +69,12 @@ const SuperuserReadingStoriesView = () => {
   const handleViewStory = (storyId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/superuser-reading-story-viewer/${storyId}`);
+  };
+
+  const handleImageClick = (imageUrl: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedImageUrl(imageUrl);
+    setShowImageDialog(true);
   };
 
   if (!isAuthenticated) {
@@ -133,8 +142,12 @@ const SuperuserReadingStoriesView = () => {
                             <div className="flex items-center gap-2">
                               <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
                               {story.image_url && (
-                                <div title="Immagine associata">
-                                  <Image className="w-4 h-4 text-green-600" />
+                                <div 
+                                  title="Visualizza immagine associata"
+                                  className="cursor-pointer"
+                                  onClick={(e) => handleImageClick(story.image_url, e)}
+                                >
+                                  <Image className="w-4 h-4 text-green-600 hover:text-green-700" />
                                 </div>
                               )}
                             </div>
@@ -193,6 +206,22 @@ const SuperuserReadingStoriesView = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Image Display Dialog */}
+      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Immagine Associata</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center">
+            <img 
+              src={selectedImageUrl} 
+              alt="Immagine storia" 
+              className="max-w-full max-h-[70vh] object-contain rounded-lg"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
     </>
   );

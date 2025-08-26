@@ -30,6 +30,38 @@ const StoryViewer = () => {
   const { speak, getButtonText } = useTTS();
   const { isTranslated, isTranslating, translateContent, getCurrentLanguage } = useTranslation();
 
+  // Format CSS content by removing guided questions
+  const formatCSSContent = (content: string) => {
+    if (!content) return content;
+    
+    const cssQuestions = [
+      'Domanda iniziale:',
+      'Chi lo vede per primo?',
+      'Che cosa succede nel villaggio / a scuola / in casa?',
+      'Chi è contento e chi no?',
+      'C\'è qualcuno che dice NO?',
+      'Qual è il momento più buffo o spaventoso?',
+      'Cosa decide il personaggio?',
+      'E adesso com\'è il mondo?'
+    ];
+    
+    let formattedContent = content;
+    
+    // Remove question headers and keep only user answers
+    cssQuestions.forEach(question => {
+      const regex = new RegExp(`${question.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`, 'gi');
+      formattedContent = formattedContent.replace(regex, '');
+    });
+    
+    // Clean up extra whitespace and line breaks
+    formattedContent = formattedContent
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/^\s+|\s+$/g, '')
+      .trim();
+    
+    return formattedContent;
+  };
+
   useEffect(() => {
     const stories = getStories();
     const foundStory = stories.find(s => s.id === storyId);
@@ -257,7 +289,7 @@ const StoryViewer = () => {
                   overflowY: 'auto'
                 }}
               >
-                {editedContent}
+                {story?.mode === 'CSS' ? formatCSSContent(editedContent) : editedContent}
               </div>
             )}
           </CardContent>
