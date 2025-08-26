@@ -37,11 +37,11 @@ const SuperuserReadingStoriesView = () => {
 
   const loadStories = () => {
     const readingStories = getReadingStories();
-    setStories(readingStories.sort((a, b) => 
-      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-    ));
-    if (readingStories.length > 0) {
-      setSelectedStory(readingStories[0]);
+    // Sort alphabetically by title
+    const sortedStories = readingStories.sort((a, b) => a.title.localeCompare(b.title));
+    setStories(sortedStories);
+    if (sortedStories.length > 0) {
+      setSelectedStory(sortedStories[0]);
     }
   };
 

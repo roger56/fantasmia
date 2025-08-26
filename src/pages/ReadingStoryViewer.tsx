@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ArrowLeft, BookOpen, Volume2, VolumeX, User, Calendar, Share2, Copy, Mail, ChevronDown, Palette, ImageIcon } from 'lucide-react';
-import { getPublishedStories, PublishedStory } from '@/utils/userStorage';
+import { getReadingStories, ReadingStory } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +15,7 @@ const ReadingStoryViewer = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [story, setStory] = useState<PublishedStory | null>(null);
+  const [story, setStory] = useState<ReadingStory | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isReading, setIsReading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -35,9 +35,9 @@ const ReadingStoryViewer = () => {
       setIsAuthenticated(true);
       
       if (id) {
-        // Find the story in published stories
-        const publishedStories = getPublishedStories();
-        const foundStory = publishedStories.find(s => s.id === id);
+        // Find the story in reading stories
+        const readingStories = getReadingStories();
+        const foundStory = readingStories.find(s => s.id === id);
         
         if (foundStory) {
           setStory(foundStory);
@@ -192,16 +192,16 @@ const ReadingStoryViewer = () => {
                     {story.title}
                   </CardTitle>
                   <div className="flex items-center gap-4 text-sm text-slate-600">
-                    {story.original_author && (
+                    {story.author && (
                       <div className="flex items-center gap-1">
                         <User className="w-4 h-4" />
-                        <span>{story.original_author}</span>
+                        <span>{story.author}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>
-                        Pubblicata il {new Date(story.published_at).toLocaleDateString('it-IT')}
+                        Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
                       </span>
                     </div>
                   </div>
