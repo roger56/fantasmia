@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
-import { getPublishedStories, PublishedStory } from '@/utils/userStorage';
+import { getReadingStories, ReadingStory } from '@/utils/userStorage';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
@@ -14,7 +14,7 @@ const ReadingStories = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [stories, setStories] = useState<PublishedStory[]>([]);
+  const [stories, setStories] = useState<ReadingStory[]>([]);
   const [loadingStories, setLoadingStories] = useState(false);
   const { toast } = useToast();
 
@@ -37,9 +37,9 @@ const ReadingStories = () => {
   const loadReadingStories = async () => {
     setLoadingStories(true);
     try {
-      // Get published stories from localStorage (published by SuperUser)
-      const publishedStories = getPublishedStories();
-      setStories(publishedStories);
+      // Get reading stories from localStorage (created by SuperUser)
+      const readingStories = getReadingStories();
+      setStories(readingStories);
     } catch (error) {
       toast({
         title: "Errore",
@@ -107,8 +107,8 @@ const ReadingStories = () => {
                     >
                       <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
                       <p className="text-xs text-slate-500 mt-1">
-                        {story.original_author && `di ${story.original_author} • `}
-                        Pubblicata il {new Date(story.published_at).toLocaleDateString('it-IT')}
+                        {story.author && `di ${story.author} • `}
+                        Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
                       </p>
                     </div>
                   ))}
