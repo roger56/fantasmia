@@ -3,10 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
 const NewHome = () => {
   const navigate = useNavigate();
-
   const handleProfileSelect = (value: string) => {
     if (value === 'new-profile') {
       navigate('/terms-acceptance');
@@ -15,54 +13,28 @@ const NewHome = () => {
       navigate('/profiles');
     }
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
+  return <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
       {/* Navigation Header */}
       <nav className="w-full bg-white/80 backdrop-blur-sm shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex justify-center">
             <div className="flex space-x-8">
-              <Button 
-                variant="ghost" 
-                className="font-medium"
-                onClick={() => navigate('/')}
-              >
+              <Button variant="ghost" className="font-medium" onClick={() => navigate('/')}>
                 HOME
               </Button>
-              <Button 
-                variant="ghost" 
-                className="font-medium"
-                onClick={() => navigate('/about')}
-              >
+              <Button variant="ghost" className="font-medium" onClick={() => navigate('/about')}>
                 COS'È FANTAS-Mia
               </Button>
-              <Button 
-                variant="ghost" 
-                className="font-medium"
-                onClick={() => navigate('/company')}
-              >
+              <Button variant="ghost" className="font-medium" onClick={() => navigate('/company')}>
                 SOCIETÀ
               </Button>
-              <Button 
-                variant="ghost" 
-                className="font-medium"
-                onClick={() => navigate('/spare')}
-              >
+              <Button variant="ghost" className="font-medium" onClick={() => navigate('/spare')}>
                 SPARE
               </Button>
-              <Button 
-                variant="ghost" 
-                className="font-medium"
-                onClick={() => navigate('/privacy')}
-              >
+              <Button variant="ghost" className="font-medium" onClick={() => navigate('/privacy')}>
                 PRIVACY
               </Button>
-              <Button 
-                variant="ghost" 
-                className="font-medium"
-                onClick={() => navigate('/contacts')}
-              >
+              <Button variant="ghost" className="font-medium" onClick={() => navigate('/contacts')}>
                 CONTATTI
               </Button>
             </div>
@@ -74,27 +46,23 @@ const NewHome = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Left side - Logo and illustration */}
           <div className="flex justify-center">
-            <img 
-              src="/lovable-uploads/bed28b99-056e-49de-89f5-9619c373a7c0.png" 
-              alt="FANTAS-Mia Logo" 
-              className="max-w-md w-full h-auto"
-            />
+            <img src="/lovable-uploads/bed28b99-056e-49de-89f5-9619c373a7c0.png" alt="FANTAS-Mia Logo" className="max-w-md w-full h-auto" />
           </div>
 
           {/* Right side - Content */}
           <div className="space-y-6">
             <div className="text-center lg:text-left">
-              <h1 className="text-2xl font-bold text-slate-800 mb-4">
+              <h1 className="text-2xl font-bold mb-4 text-red-600">
                 Benvenuto su FANTAS-Mia – Dove le tue storie prendono vita!
               </h1>
               <div className="space-y-4 text-slate-700">
-                <p>
+                <p className="text-sky-600 text-base">
                   Vuoi inventare una favola tutta tua? Con FANTAS-Mia è facile e divertente!
                 </p>
                 <p>
                   Puoi creare la tua storia passo passo con domande magiche, parole speciali e immagini da sogno.
                 </p>
-                <p>
+                <p className="text-sky-600">
                   Parla, scrivi o ascolta la tua favola, guarda il disegno che la racconta o trasformala in una poesia in rima.
                 </p>
                 <p>
@@ -124,8 +92,6 @@ const NewHome = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default NewHome;
