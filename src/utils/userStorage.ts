@@ -35,7 +35,7 @@ export interface Story {
   content?: string;
   status: 'completed' | 'suspended' | 'in-progress';
   lastModified: string;
-  mode: 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS' | 'PROFESSION';
+  mode: 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'ALOVAF' | 'CAMPBELL' | 'CSS' | 'PROFESSION';
   authorId: string;
   authorName: string;
   isPublic: boolean;
@@ -209,6 +209,7 @@ export const saveStory = async (story: Story) => {
       'PROPP_FREE': 'PROPP',
       'AIROTS': 'AIROTS',
       'PAROLE_CHIAMANO': 'UNA_PAROLA_TANTE_STORIE',
+      'ALOVAF': 'UNA_PAROLA_TANTE_STORIE',
       'CAMPBELL': 'CAMPBELL',
       'CSS': 'CSS',
       'PROFESSION': 'PROFESSION'
@@ -306,7 +307,7 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
           content: story.content || '',
           status: story.status as 'completed' | 'suspended' | 'in-progress',
           lastModified: story.updated_at || story.created_at,
-          mode: (story.mode || story.category) as 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS' | 'PROFESSION',
+          mode: (story.mode || story.category) as 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'ALOVAF' | 'CAMPBELL' | 'CSS' | 'PROFESSION',
           authorId: story.author_id || story.user_id,
           authorName: story.author_name || story.user_name || 'Utente Sconosciuto',
           isPublic: story.is_public || false,
