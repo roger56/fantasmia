@@ -41,6 +41,20 @@ const ReadingStoryViewer = () => {
         
         if (foundStory) {
           setStory(foundStory);
+          
+          // Se la storia ha un'immagine, caricala dalla cache
+          if (foundStory.image_url) {
+            const { getStoryImage } = await import('@/utils/imageStorage');
+            try {
+              const cachedImageUrl = await getStoryImage(foundStory.id, foundStory.image_url);
+              if (cachedImageUrl && cachedImageUrl !== foundStory.image_url) {
+                // Aggiorna la storia con l'URL della cache locale
+                setStory(prev => prev ? { ...prev, image_url: cachedImageUrl } : null);
+              }
+            } catch (error) {
+              console.log('Could not load cached image, using original URL');
+            }
+          }
         } else {
           toast({
             title: "Storia non trovata",

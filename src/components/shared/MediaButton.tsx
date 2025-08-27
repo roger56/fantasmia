@@ -239,13 +239,50 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     if (!generatedImage) return;
     
     try {
+      let imageUrl = generatedImage;
+      
+      // Se è un object URL dalla cache, prova a ottenere l'URL originale
+      if (generatedImage.startsWith('blob:') && storyId) {
+        const { getStoryImage } = await import('@/utils/imageStorage');
+        const cachedImage = await getStoryImage(storyId);
+        if (cachedImage) {
+          imageUrl = cachedImage;
+        }
+      }
+      
       // Use a proxy or different approach for CORS-protected images
-      const response = await fetch(generatedImage, {
+      const response = await fetch(imageUrl, {
         mode: 'cors',
         method: 'GET'
       });
       
       if (!response.ok) {
+        // Se il download fallisce per URL scaduto, prova dalla cache
+        if (storyId) {
+          const { getStoryImage } = await import('@/utils/imageStorage');
+          const cachedImageUrl = await getStoryImage(storyId);
+          if (cachedImageUrl && cachedImageUrl !== imageUrl) {
+            const cachedResponse = await fetch(cachedImageUrl);
+            if (cachedResponse.ok) {
+              const blob = await cachedResponse.blob();
+              const url = window.URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `${storyTitle || 'immagine'}-${Date.now()}.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(url);
+              
+              toast({
+                title: "Download completato",
+                description: "L'immagine è stata scaricata dalla cache locale",
+                variant: "default"
+              });
+              return;
+            }
+          }
+        }
         throw new Error('Network response was not ok');
       }
       
@@ -268,7 +305,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       console.error('Download error:', error);
       toast({
         title: "Errore nel download",
-        description: "Non è stato possibile scaricare l'immagine. Prova a cliccare destro sull'immagine e seleziona 'Salva immagine'.",
+        description: "Non è stato possibile scaricare l'immagine. L'URL potrebbe essere scaduto. Prova a rigenerare l'immagine.",
         variant: "destructive"
       });
     }
@@ -280,9 +317,13 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     setShowConfirmDialog(false);
     setShowImageDialog(true);
     
-    // Save image URL to the story if we have storyId
+    // Save image URL to the story and cache locally
     if (storyId && generatedImageForConfirm) {
       try {
+        // Cache l'immagine localmente per accesso rapido
+        const { downloadAndCacheImage } = await import('@/utils/imageStorage');
+        await downloadAndCacheImage(generatedImageForConfirm, storyId);
+        
         const { updateScienceStory, updateReadingStory, getScienceStories, getReadingStories } = await import('@/utils/userStorage');
         
         // Check if it's a science story

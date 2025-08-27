@@ -220,7 +220,61 @@ serve(async (req) => {
     
     console.log(`Generated image with style: ${style}, size: 1024x1024, cost: ${cost}`)
 
-    // Save media generation record
+    // Upload to Supabase Storage for permanent access
+    let permanentUrl = imageUrl;
+    
+    try {
+      // Se l'URL è da OpenAI, scaricalo e caricalo su Storage
+      if (imageUrl.includes('oaidalleapiprodscus.blob.core.windows.net') || imageUrl.includes('openai.com') || imageUrl.startsWith('data:')) {
+        console.log('Uploading temporary image to permanent storage...');
+        
+        let imageBlob: Blob;
+        
+        if (imageUrl.startsWith('data:')) {
+          // Base64 data URL - converti in blob
+          const response = await fetch(imageUrl);
+          imageBlob = await response.blob();
+        } else {
+          // URL remoto - scarica il blob
+          const response = await fetch(imageUrl);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          imageBlob = await response.blob();
+        }
+        
+        // Crea nome file sicuro
+        const timestamp = Date.now();
+        const safeTitle = storyTitle?.replace(/[^a-zA-Z0-9\-_]/g, '_').substring(0, 50) || 'story';
+        const fileName = `${safeTitle}_${storyId}_${timestamp}.png`;
+        
+        // Carica su Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('story-images')
+          .upload(fileName, imageBlob, {
+            contentType: 'image/png',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Error uploading to Supabase Storage:', uploadError);
+          // Non bloccare, usa l'URL originale
+        } else {
+          // Ottieni URL pubblico permanente
+          const { data: { publicUrl } } = supabase.storage
+            .from('story-images')
+            .getPublicUrl(fileName);
+          
+          permanentUrl = publicUrl;
+          console.log('Image uploaded to permanent storage:', permanentUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to upload to permanent storage:', error);
+      // Continua con l'URL originale
+    }
+
+    // Save media generation record with permanent URL
     const { data: mediaGeneration, error: mediaError } = await supabase
       .from('media_generations')
       .insert({
@@ -228,7 +282,7 @@ serve(async (req) => {
         user_id: userId,
         media_type: 'image',
         media_style: style,
-        media_url: imageUrl,
+        media_url: permanentUrl, // Usa l'URL permanente
         cost: cost
       })
       .select()
@@ -242,7 +296,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        imageUrl,
+        imageUrl: permanentUrl, // Ritorna l'URL permanente
         cost,
         style,
         mediaId: mediaGeneration?.id || null
