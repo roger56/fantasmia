@@ -26,7 +26,7 @@ const Privacy = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl text-center">Informativa Privacy</CardTitle>
+            <CardTitle className="text-xl text-center font-bold">PRIVACY E CONDIZIONI D'USO</CardTitle>
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
@@ -89,7 +89,7 @@ const Privacy = () => {
                     </p>
                     <ul className="list-disc list-inside ml-4 space-y-1">
                       <li>La responsabilità dei contenuti creati dai bambini;</li>
-                      <li>La possibilità che le favole create da utenti non registrati o con profilo gratuito siano visibili pubblicamente;</li>
+                      <li>La possibilità che le storie create da utenti con profilo gratuito siano visibili pubblicamente;</li>
                       <li>Il rispetto della normativa sulla privacy secondo GDPR (UE 2016/679).</li>
                     </ul>
                     <p className="mt-4 font-medium">
@@ -102,7 +102,7 @@ const Privacy = () => {
 
             <div className="flex justify-center pt-6">
               <Button 
-                onClick={() => navigate('/new-profile')}
+                onClick={() => navigate('/dashboard')}
                 className="bg-green-600 hover:bg-green-700 px-8"
               >
                 Confermo la presa visione e accetto le condizioni

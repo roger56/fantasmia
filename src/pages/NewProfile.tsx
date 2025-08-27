@@ -81,9 +81,9 @@ const NewProfile = () => {
       description: `Il profilo ${formData.name} è stato creato con successo`,
     });
 
-    // Navigate to privacy acceptance screen with new profile
+    // Navigate to privacy page for acceptance
     setTimeout(() => {
-      navigate('/privacy-acceptance', { state: { profileId: newUser.id, profileName: newUser.name } });
+      navigate('/privacy');
     }, 1500);
   };
 

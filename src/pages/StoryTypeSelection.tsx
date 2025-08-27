@@ -42,7 +42,7 @@ const StoryTypeSelection = () => {
     {
       id: 'magic-stories',
       title: 'Storie Magiche',
-      subtitle: 'racconti fantastici',
+      subtitle: 'racconti fantastici che si raccontano nei cinque continenti',
       icon: Wand2,
       iconColor: 'text-purple-600',
       bgColor: 'bg-purple-50',

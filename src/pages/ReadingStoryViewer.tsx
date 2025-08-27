@@ -153,14 +153,35 @@ const ReadingStoryViewer = () => {
     }
   };
 
-  // Cleanup speech synthesis on component unmount
+  // Cleanup speech synthesis on component unmount and navigation
   useEffect(() => {
     return () => {
-      if (speechUtterance) {
+      // Stop any ongoing speech when component unmounts or user navigates away
+      if (speechUtterance || speechSynthesis.speaking) {
         speechSynthesis.cancel();
+        setIsReading(false);
+        setIsPaused(false);
+        setSpeechUtterance(null);
       }
     };
   }, [speechUtterance]);
+
+  // Stop speech when navigating back
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   if (!isAuthenticated || !story) {
     return (

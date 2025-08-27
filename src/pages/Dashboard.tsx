@@ -58,9 +58,9 @@ const Dashboard = () => {
     },
     {
       id: 'archive-complete',
-      title: 'Archivio Magico',
+      title: 'IL TUO ARCHIVIO MAGICO',
       icon: BookOpen,
-      description: 'Visualizza le tue storie personali',
+      description: 'vedi e modifica le tue storie fantastiche',
       path: isSuperuser ? '/superuser-archive' : '/user-archive'
     }
   ];
