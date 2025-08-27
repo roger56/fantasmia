@@ -43,7 +43,7 @@ export class AuthBridge {
   }
 
   /**
-   * Create a new user in Supabase Auth and user_profiles
+   * Create a new user in Supabase Auth and profiles
    */
   private static async createSupabaseUser(localUser: User): Promise<SupabaseAuthResult> {
     try {
