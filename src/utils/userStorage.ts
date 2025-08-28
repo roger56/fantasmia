@@ -257,9 +257,28 @@ const updateUserStoryArchive = (userId: string, story: Story) => {
   localStorage.setItem(userArchiveKey, JSON.stringify(userArchive));
 };
 
-export const getStories = (): Story[] => {
-  const stored = localStorage.getItem('fantasmia_stories');
-  return stored ? JSON.parse(stored) : [];
+export const getStories = async (): Promise<Story[]> => {
+  try {
+    let stored = localStorage.getItem('fantasmia_stories');
+    let stories = stored ? JSON.parse(stored) : [];
+    
+    // Se localStorage è vuoto, prova a recuperare da IndexedDB
+    if (stories.length === 0) {
+      const { getAllStoriesFromCache } = await import('./imageStorage');
+      const cachedStories = await getAllStoriesFromCache();
+      
+      if (cachedStories.length > 0) {
+        // Ripristina in localStorage
+        localStorage.setItem('fantasmia_stories', JSON.stringify(cachedStories));
+        stories = cachedStories;
+      }
+    }
+    
+    return stories;
+  } catch (error) {
+    console.error('Error getting stories:', error);
+    return [];
+  }
 };
 
 export const getStoriesForUser = async (userId: string, includePublic: boolean = false): Promise<Story[]> => {
@@ -341,8 +360,8 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
       }
     }
     
-    // Get localStorage stories
-    const localStories = getStories();
+    // Get localStorage stories - now async
+    const localStories = await getStories();
     const users = getUsers();
     
     // Get all user archives to include user personal stories
@@ -387,7 +406,7 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
   } catch (error) {
     console.error('Error fetching stories:', error);
     // Fallback to localStorage and user archives
-    const localStories = getStories();
+    const localStories = await getStories();
     const users = getUsers();
     
     // Get all user archives as fallback
@@ -564,9 +583,31 @@ export const saveReadingStory = async (story: ReadingStory) => {
   }
 };
 
-export const getReadingStories = (): ReadingStory[] => {
-  const stored = localStorage.getItem('fantasmia_reading_stories');
-  return stored ? JSON.parse(stored) : [];
+export const getReadingStories = async (): Promise<ReadingStory[]> => {
+  try {
+    let stored = localStorage.getItem('fantasmia_reading_stories');
+    let stories = stored ? JSON.parse(stored) : [];
+    
+    // Se localStorage è vuoto, prova a recuperare da IndexedDB
+    if (stories.length === 0) {
+      const { getAllStoriesFromCache } = await import('./imageStorage');
+      const cachedStories = await getAllStoriesFromCache();
+      
+      // Filtra per reading stories
+      const readingStories = cachedStories.filter((story: any) => story.category === 'reading_story');
+      
+      if (readingStories.length > 0) {
+        // Ripristina in localStorage
+        localStorage.setItem('fantasmia_reading_stories', JSON.stringify(readingStories));
+        stories = readingStories;
+      }
+    }
+    
+    return stories;
+  } catch (error) {
+    console.error('Error getting reading stories:', error);
+    return [];
+  }
 };
 
 export const updateReadingStory = (id: string, updates: Partial<ReadingStory>) => {
@@ -636,9 +677,31 @@ export const saveScienceStory = async (story: ScienceStory) => {
   }
 };
 
-export const getScienceStories = (): ScienceStory[] => {
-  const stored = localStorage.getItem('fantasmia_science_stories');
-  return stored ? JSON.parse(stored) : [];
+export const getScienceStories = async (): Promise<ScienceStory[]> => {
+  try {
+    let stored = localStorage.getItem('fantasmia_science_stories');
+    let stories = stored ? JSON.parse(stored) : [];
+    
+    // Se localStorage è vuoto, prova a recuperare da IndexedDB
+    if (stories.length === 0) {
+      const { getAllStoriesFromCache } = await import('./imageStorage');
+      const cachedStories = await getAllStoriesFromCache();
+      
+      // Filtra per science stories
+      const scienceStories = cachedStories.filter((story: any) => story.category === 'science_story');
+      
+      if (scienceStories.length > 0) {
+        // Ripristina in localStorage
+        localStorage.setItem('fantasmia_science_stories', JSON.stringify(scienceStories));
+        stories = scienceStories;
+      }
+    }
+    
+    return stories;
+  } catch (error) {
+    console.error('Error getting science stories:', error);
+    return [];
+  }
 };
 
 export const updateScienceStory = (id: string, updates: Partial<ScienceStory>) => {
