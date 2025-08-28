@@ -202,6 +202,10 @@ export const saveStory = async (story: Story) => {
     
     localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
     
+    // Save to IndexedDB for persistence
+    const { saveStoryToCache } = await import('./imageStorage');
+    await saveStoryToCache(storyWithAuthor);
+    
     // Update directory structure
     const categoryMapping = {
       'GHOST': 'GHOST',
@@ -531,7 +535,7 @@ export interface ReadingStory {
   category?: string;
 }
 
-export const saveReadingStory = (story: ReadingStory) => {
+export const saveReadingStory = async (story: ReadingStory) => {
   // Mark as superuser story for public access
   const storyWithMeta = {
     ...story,
@@ -550,6 +554,14 @@ export const saveReadingStory = (story: ReadingStory) => {
   }
   
   localStorage.setItem('fantasmia_reading_stories', JSON.stringify(stories));
+  
+  // Save to IndexedDB for persistence
+  try {
+    const { saveStoryToCache } = await import('./imageStorage');
+    await saveStoryToCache(storyWithMeta);
+  } catch (error) {
+    console.warn('Failed to save reading story to IndexedDB:', error);
+  }
 };
 
 export const getReadingStories = (): ReadingStory[] => {
@@ -595,7 +607,7 @@ export interface ScienceStory {
   category?: string;
 }
 
-export const saveScienceStory = (story: ScienceStory) => {
+export const saveScienceStory = async (story: ScienceStory) => {
   // Mark as superuser story for public access
   const storyWithMeta = {
     ...story,
@@ -614,6 +626,14 @@ export const saveScienceStory = (story: ScienceStory) => {
   }
   
   localStorage.setItem('fantasmia_science_stories', JSON.stringify(stories));
+  
+  // Save to IndexedDB for persistence
+  try {
+    const { saveStoryToCache } = await import('./imageStorage');
+    await saveStoryToCache(storyWithMeta);
+  } catch (error) {
+    console.warn('Failed to save science story to IndexedDB:', error);
+  }
 };
 
 export const getScienceStories = (): ScienceStory[] => {
