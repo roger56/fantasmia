@@ -1,9 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// IndexedDB per cache locale delle immagini
-class ImageCacheDB {
-  private dbName = 'fantasmia-image-cache';
-  private version = 1;
+// IndexedDB per cache locale di immagini e storie
+class FantasmiaDB {
+  private dbName = 'fantasmia-cache';
+  private version = 2;
   private db: IDBDatabase | null = null;
 
   async init(): Promise<void> {
@@ -18,8 +18,15 @@ class ImageCacheDB {
       
       request.onupgradeneeded = () => {
         const db = request.result;
+        
+        // Store per le immagini
         if (!db.objectStoreNames.contains('images')) {
           db.createObjectStore('images', { keyPath: 'storyId' });
+        }
+        
+        // Store per le storie
+        if (!db.objectStoreNames.contains('stories')) {
+          db.createObjectStore('stories', { keyPath: 'id' });
         }
       };
     });
@@ -40,6 +47,56 @@ class ImageCacheDB {
       
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async saveStory(story: any): Promise<void> {
+    if (!this.db) await this.init();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['stories'], 'readwrite');
+      const store = transaction.objectStore('stories');
+      
+      store.put({
+        ...story,
+        timestamp: Date.now()
+      });
+      
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async getStory(storyId: string): Promise<any | null> {
+    if (!this.db) await this.init();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['stories'], 'readonly');
+      const store = transaction.objectStore('stories');
+      const request = store.get(storyId);
+      
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result || null);
+      };
+      
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAllStories(): Promise<any[]> {
+    if (!this.db) await this.init();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['stories'], 'readonly');
+      const store = transaction.objectStore('stories');
+      const request = store.getAll();
+      
+      request.onsuccess = () => {
+        resolve(request.result || []);
+      };
+      
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -89,9 +146,34 @@ class ImageCacheDB {
       request.onerror = () => reject(request.error);
     });
   }
+
+  async clearOldStories(): Promise<void> {
+    if (!this.db) await this.init();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['stories'], 'readwrite');
+      const store = transaction.objectStore('stories');
+      const request = store.getAll();
+      
+      request.onsuccess = () => {
+        const stories = request.result;
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        
+        stories.forEach(story => {
+          if (story.timestamp < thirtyDaysAgo) {
+            store.delete(story.id);
+          }
+        });
+        
+        resolve();
+      };
+      
+      request.onerror = () => reject(request.error);
+    });
+  }
 }
 
-export const imageCacheDB = new ImageCacheDB();
+export const fantasmiaDB = new FantasmiaDB();
 
 // Funzione per caricare immagine su Supabase Storage
 export const uploadImageToStorage = async (imageBlob: Blob, storyId: string, storyTitle: string): Promise<string> => {
@@ -130,7 +212,7 @@ export const uploadImageToStorage = async (imageBlob: Blob, storyId: string, sto
 export const downloadAndCacheImage = async (imageUrl: string, storyId: string): Promise<string> => {
   try {
     // Controlla prima se è già in cache
-    const cachedImage = await imageCacheDB.getImage(storyId);
+    const cachedImage = await fantasmiaDB.getImage(storyId);
     if (cachedImage) {
       return URL.createObjectURL(cachedImage);
     }
@@ -144,7 +226,7 @@ export const downloadAndCacheImage = async (imageUrl: string, storyId: string): 
     const imageBlob = await response.blob();
     
     // Salva in cache
-    await imageCacheDB.saveImage(storyId, imageBlob);
+    await fantasmiaDB.saveImage(storyId, imageBlob);
     
     // Ritorna object URL per visualizzazione
     return URL.createObjectURL(imageBlob);
@@ -159,7 +241,7 @@ export const downloadAndCacheImage = async (imageUrl: string, storyId: string): 
 export const getStoryImage = async (storyId: string, fallbackUrl?: string): Promise<string | null> => {
   try {
     // Prima prova dalla cache locale
-    const cachedImage = await imageCacheDB.getImage(storyId);
+    const cachedImage = await fantasmiaDB.getImage(storyId);
     if (cachedImage) {
       return URL.createObjectURL(cachedImage);
     }
@@ -176,13 +258,42 @@ export const getStoryImage = async (storyId: string, fallbackUrl?: string): Prom
   }
 };
 
-// Pulizia periodica della cache
-export const cleanupImageCache = async (): Promise<void> => {
+// Funzioni per gestire le storie in IndexedDB
+export const saveStoryToCache = async (story: any): Promise<void> => {
   try {
-    await imageCacheDB.clearOldImages();
-    console.log('Image cache cleanup completed');
+    await fantasmiaDB.saveStory(story);
+    console.log('Story saved to IndexedDB cache:', story.id);
   } catch (error) {
-    console.error('Failed to cleanup image cache:', error);
+    console.error('Failed to save story to cache:', error);
+  }
+};
+
+export const getStoryFromCache = async (storyId: string): Promise<any | null> => {
+  try {
+    return await fantasmiaDB.getStory(storyId);
+  } catch (error) {
+    console.error('Failed to get story from cache:', error);
+    return null;
+  }
+};
+
+export const getAllStoriesFromCache = async (): Promise<any[]> => {
+  try {
+    return await fantasmiaDB.getAllStories();
+  } catch (error) {
+    console.error('Failed to get stories from cache:', error);
+    return [];
+  }
+};
+
+// Pulizia periodica della cache
+export const cleanupCache = async (): Promise<void> => {
+  try {
+    await fantasmiaDB.clearOldImages();
+    await fantasmiaDB.clearOldStories();
+    console.log('Cache cleanup completed');
+  } catch (error) {
+    console.error('Failed to cleanup cache:', error);
   }
 };
 
@@ -190,6 +301,6 @@ export const cleanupImageCache = async (): Promise<void> => {
 if (typeof window !== 'undefined') {
   // Pulizia al caricamento della pagina
   window.addEventListener('load', () => {
-    setTimeout(cleanupImageCache, 5000); // Dopo 5 secondi dal caricamento
+    setTimeout(cleanupCache, 5000); // Dopo 5 secondi dal caricamento
   });
 }

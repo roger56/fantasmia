@@ -258,15 +258,36 @@ export const getStories = (): Story[] => {
   return stored ? JSON.parse(stored) : [];
 };
 
-export const getStoriesForUser = (userId: string, includePublic: boolean = false): Story[] => {
-  // Get user's personal archive
-  const userArchiveKey = `fantasmia_user_archive_${userId}`;
-  const userArchive = JSON.parse(localStorage.getItem(userArchiveKey) || '[]');
-  
-  // Sort by descending date
-  return userArchive.sort((a: Story, b: Story) => 
-    new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
-  );
+export const getStoriesForUser = async (userId: string, includePublic: boolean = false): Promise<Story[]> => {
+  try {
+    // Get user's personal archive da localStorage
+    const userArchiveKey = `fantasmia_user_archive_${userId}`;
+    let userArchive = JSON.parse(localStorage.getItem(userArchiveKey) || '[]');
+    
+    // Se non ci sono storie in localStorage, prova a recuperarle da IndexedDB
+    if (userArchive.length === 0) {
+      try {
+        const { getAllStoriesFromCache } = await import('./imageStorage');
+        const cachedStories = await getAllStoriesFromCache();
+        userArchive = cachedStories.filter((story: Story) => story.authorId === userId);
+        
+        // Ripristina in localStorage se trovate in IndexedDB
+        if (userArchive.length > 0) {
+          localStorage.setItem(userArchiveKey, JSON.stringify(userArchive));
+        }
+      } catch (error) {
+        console.warn('Failed to load stories from IndexedDB cache:', error);
+      }
+    }
+    
+    // Sort by descending date
+    return userArchive.sort((a: Story, b: Story) => 
+      new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+    );
+  } catch (error) {
+    console.error('Error getting stories for user:', error);
+    return [];
+  }
 };
 
 export const getStoriesForUserByName = (userName: string): Promise<Story[]> => {
@@ -322,12 +343,12 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
     
     // Get all user archives to include user personal stories
     const allUserStories: Story[] = [];
-    users.forEach(user => {
+    for (const user of users) {
       if (user.name !== 'superuser') {  // Exclude Superuser's own stories
-        const userArchive = getStoriesForUser(user.id);
+        const userArchive = await getStoriesForUser(user.id);
         allUserStories.push(...userArchive);
       }
-    });
+    }
     
     // Process localStorage stories and ensure proper author names
     const processedLocalStories = localStories.map(story => {
@@ -367,12 +388,12 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
     
     // Get all user archives as fallback
     const allUserStories: Story[] = [];
-    users.forEach(user => {
+    for (const user of users) {
       if (user.name !== 'superuser') {  // Exclude Superuser's own stories
-        const userArchive = getStoriesForUser(user.id);
+        const userArchive = await getStoriesForUser(user.id);
         allUserStories.push(...userArchive);
       }
-    });
+    }
     
     const processedLocalStories = localStories.map(story => {
       const user = users.find(u => u.id === story.authorId);

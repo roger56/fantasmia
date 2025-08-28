@@ -88,7 +88,7 @@ const UserArchive = () => {
       }
       
       // Get stories from user's personal archive
-      const userStories = getStoriesForUser(user.id);
+      const userStories = await getStoriesForUser(user.id);
       const storiesWithMedia: StoryWithMedia[] = userStories.map(story => ({
         id: story.id,
         title: story.title,
