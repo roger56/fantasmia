@@ -38,7 +38,7 @@ const ReadingStories = () => {
     setLoadingStories(true);
     try {
       // Get reading stories from localStorage (created by SuperUser)
-      const readingStories = getReadingStories();
+      const readingStories = await getReadingStories();
       // Sort alphabetically by title
       setStories(readingStories.sort((a, b) => a.title.localeCompare(b.title)));
     } catch (error) {

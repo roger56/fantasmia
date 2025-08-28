@@ -327,19 +327,19 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         const { updateScienceStory, updateReadingStory, getScienceStories, getReadingStories } = await import('@/utils/userStorage');
         
         // Check if it's a science story
-        const scienceStories = getScienceStories();
+        const scienceStories = await getScienceStories();
         const isScienceStory = scienceStories.some(s => s.id === storyId);
         
         if (isScienceStory) {
-          updateScienceStory(storyId, { image_url: generatedImageForConfirm });
+          await updateScienceStory(storyId, { image_url: generatedImageForConfirm });
           console.log('Image URL saved to science story:', storyId);
         } else {
           // Check if it's a reading story
-          const readingStories = getReadingStories();
+          const readingStories = await getReadingStories();
           const isReadingStory = readingStories.some(s => s.id === storyId);
           
           if (isReadingStory) {
-            updateReadingStory(storyId, { image_url: generatedImageForConfirm });
+            await updateReadingStory(storyId, { image_url: generatedImageForConfirm });
             console.log('Image URL saved to reading story:', storyId);
           }
         }

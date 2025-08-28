@@ -33,14 +33,14 @@ const SuperuserReadingStoriesManagement = () => {
     }
   }, [navigate]);
 
-  const loadStories = () => {
-    const readingStories = getReadingStories();
+  const loadStories = async () => {
+    const readingStories = await getReadingStories();
     setStories(readingStories.sort((a, b) => 
       new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     ));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim()) {
       toast({
         title: "Errore",
@@ -81,7 +81,7 @@ const SuperuserReadingStoriesManagement = () => {
 
     if (editingStory) {
       // Update existing story
-      updateReadingStory(editingStory.id, { title, content });
+      await updateReadingStory(editingStory.id, { title, content });
       toast({
         title: "Successo",
         description: "Storia aggiornata con successo",
@@ -95,7 +95,7 @@ const SuperuserReadingStoriesManagement = () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      saveReadingStory(newStory);
+      await saveReadingStory(newStory);
       toast({
         title: "Successo",
         description: "Storia creata con successo",
@@ -116,8 +116,8 @@ const SuperuserReadingStoriesManagement = () => {
     setIsEditing(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (deleteReadingStory(id)) {
+  const handleDelete = async (id: string) => {
+    if (await deleteReadingStory(id)) {
       toast({
         title: "Successo",
         description: "Storia eliminata con successo",

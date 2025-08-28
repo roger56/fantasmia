@@ -38,7 +38,7 @@ const ScienceStoryViewer = () => {
       setIsAuthenticated(true);
       
       if (id) {
-        const scienceStories = getScienceStories();
+        const scienceStories = await getScienceStories();
         const foundStory = scienceStories.find(s => s.id === id);
         
         if (foundStory) {

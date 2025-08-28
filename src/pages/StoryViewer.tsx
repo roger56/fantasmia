@@ -63,13 +63,16 @@ const StoryViewer = () => {
   };
 
   useEffect(() => {
-    const stories = getStories();
-    const foundStory = stories.find(s => s.id === storyId);
-    if (foundStory) {
-      setStory(foundStory);
-      setEditedContent(foundStory.content || '');
-      setEditedTitle(foundStory.title || '');
-    }
+    const loadStory = async () => {
+      const stories = await getStories();
+      const foundStory = stories.find(s => s.id === storyId);
+      if (foundStory) {
+        setStory(foundStory);
+        setEditedContent(foundStory.content || '');
+        setEditedTitle(foundStory.title || '');
+      }
+    };
+    loadStory();
   }, [storyId]);
 
   const handleTranslate = async () => {

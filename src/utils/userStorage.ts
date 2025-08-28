@@ -191,7 +191,7 @@ export const saveStory = async (story: Story) => {
     updateUserStoryArchive(currentUser.id, storyWithAuthor);
     
     // Also save to global stories for compatibility
-    const stories = getStories();
+    const stories = await getStories();
     const existingIndex = stories.findIndex(s => s.id === storyWithAuthor.id);
     
     if (existingIndex >= 0) {
@@ -313,17 +313,15 @@ export const getStoriesForUser = async (userId: string, includePublic: boolean =
   }
 };
 
-export const getStoriesForUserByName = (userName: string): Promise<Story[]> => {
-  return new Promise((resolve) => {
-    try {
-      const stories = getStories();
-      const userStories = stories.filter(story => story.authorName === userName);
-      resolve(userStories);
-    } catch (error) {
-      console.error('Error fetching user stories:', error);
-      resolve([]);
-    }
-  });
+export const getStoriesForUserByName = async (userName: string): Promise<Story[]> => {
+  try {
+    const stories = await getStories();
+    const userStories = stories.filter(story => story.authorName === userName);
+    return userStories;
+  } catch (error) {
+    console.error('Error fetching user stories:', error);
+    return [];
+  }
 };
 
 export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
@@ -447,7 +445,7 @@ export const getAllAuthors = async (): Promise<string[]> => {
 
 export const updateStory = async (storyId: string, updates: Partial<Story>) => {
   try {
-    const stories = getStories();
+    const stories = await getStories();
     const existingIndex = stories.findIndex(s => s.id === storyId);
     
     if (existingIndex >= 0) {
@@ -468,10 +466,10 @@ export const updateStory = async (storyId: string, updates: Partial<Story>) => {
   }
 };
 
-export const deleteStory = (storyId: string): boolean => {
+export const deleteStory = async (storyId: string): Promise<boolean> => {
   try {
     // Delete from main stories
-    const stories = getStories();
+    const stories = await getStories();
     const storyIndex = stories.findIndex(s => s.id === storyId);
     
     if (storyIndex >= 0) {
@@ -498,8 +496,8 @@ export const deleteStory = (storyId: string): boolean => {
   }
 };
 
-export const getStoryById = (id: string): Story | null => {
-  const stories = getStories();
+export const getStoryById = async (id: string): Promise<Story | null> => {
+  const stories = await getStories();
   return stories.find(s => s.id === id) || null;
 };
 
@@ -563,7 +561,7 @@ export const saveReadingStory = async (story: ReadingStory) => {
     updated_at: new Date().toISOString()
   };
   
-  const stories = getReadingStories();
+  const stories = await getReadingStories();
   const existingIndex = stories.findIndex(s => s.id === story.id);
   
   if (existingIndex >= 0) {
@@ -610,8 +608,8 @@ export const getReadingStories = async (): Promise<ReadingStory[]> => {
   }
 };
 
-export const updateReadingStory = (id: string, updates: Partial<ReadingStory>) => {
-  const stories = getReadingStories();
+export const updateReadingStory = async (id: string, updates: Partial<ReadingStory>) => {
+  const stories = await getReadingStories();
   const storyIndex = stories.findIndex(s => s.id === id);
   
   if (storyIndex >= 0) {
@@ -624,8 +622,8 @@ export const updateReadingStory = (id: string, updates: Partial<ReadingStory>) =
   }
 };
 
-export const deleteReadingStory = (id: string): boolean => {
-  const stories = getReadingStories();
+export const deleteReadingStory = async (id: string): Promise<boolean> => {
+  const stories = await getReadingStories();
   const storyIndex = stories.findIndex(s => s.id === id);
   
   if (storyIndex >= 0) {
@@ -657,7 +655,7 @@ export const saveScienceStory = async (story: ScienceStory) => {
     updated_at: new Date().toISOString()
   };
   
-  const stories = getScienceStories();
+  const stories = await getScienceStories();
   const existingIndex = stories.findIndex(s => s.id === story.id);
   
   if (existingIndex >= 0) {
@@ -704,8 +702,8 @@ export const getScienceStories = async (): Promise<ScienceStory[]> => {
   }
 };
 
-export const updateScienceStory = (id: string, updates: Partial<ScienceStory>) => {
-  const stories = getScienceStories();
+export const updateScienceStory = async (id: string, updates: Partial<ScienceStory>) => {
+  const stories = await getScienceStories();
   const storyIndex = stories.findIndex(s => s.id === id);
   
   if (storyIndex >= 0) {
@@ -718,8 +716,8 @@ export const updateScienceStory = (id: string, updates: Partial<ScienceStory>) =
   }
 };
 
-export const deleteScienceStory = (id: string): boolean => {
-  const stories = getScienceStories();
+export const deleteScienceStory = async (id: string): Promise<boolean> => {
+  const stories = await getScienceStories();
   const storyIndex = stories.findIndex(s => s.id === id);
   
   if (storyIndex >= 0) {
@@ -740,8 +738,8 @@ export interface PublishedStory {
   image_url?: string;
 }
 
-export const publishStoryFromArchive = (storyId: string, authorName?: string) => {
-  const story = getStoryById(storyId);
+export const publishStoryFromArchive = async (storyId: string, authorName?: string) => {
+  const story = await getStoryById(storyId);
   if (!story) return false;
 
   const publishedStories = getPublishedStories();

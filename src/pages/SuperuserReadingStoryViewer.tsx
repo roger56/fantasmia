@@ -40,10 +40,10 @@ const SuperuserReadingStoryViewer = () => {
     }
   }, [navigate, id]);
 
-  const loadStory = () => {
+  const loadStory = async () => {
     if (!id) return;
     
-    const stories = getReadingStories();
+    const stories = await getReadingStories();
     const foundStory = stories.find(s => s.id === id);
     
     if (foundStory) {
@@ -60,7 +60,7 @@ const SuperuserReadingStoryViewer = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!story || !title.trim() || !content.trim()) {
       toast({
         title: "Errore",
@@ -70,7 +70,7 @@ const SuperuserReadingStoryViewer = () => {
       return;
     }
 
-    updateReadingStory(story.id, {
+    await updateReadingStory(story.id, {
       title: title.trim(),
       content: content.trim()
     });

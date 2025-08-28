@@ -39,10 +39,10 @@ const SuperuserScienceStoryViewer = () => {
     }
   }, [navigate, id]);
 
-  const loadStory = () => {
+  const loadStory = async () => {
     if (!id) return;
     
-    const stories = getScienceStories();
+    const stories = await getScienceStories();
     const foundStory = stories.find(s => s.id === id);
     
     if (foundStory) {
@@ -69,7 +69,7 @@ const SuperuserScienceStoryViewer = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!story || !title.trim() || !content.trim()) {
       toast({
         title: "Errore",
@@ -79,7 +79,7 @@ const SuperuserScienceStoryViewer = () => {
       return;
     }
 
-    updateScienceStory(story.id, {
+    await updateScienceStory(story.id, {
       title: title.trim(),
       content: content.trim(),
       image_url: imageUrl || undefined

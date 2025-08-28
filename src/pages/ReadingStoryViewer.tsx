@@ -36,7 +36,7 @@ const ReadingStoryViewer = () => {
       
       if (id) {
         // Find the story in reading stories
-        const readingStories = getReadingStories();
+        const readingStories = await getReadingStories();
         const foundStory = readingStories.find(s => s.id === id);
         
         if (foundStory) {

@@ -31,8 +31,8 @@ const ScienceStories = () => {
     checkAuthAndLoadStories();
   }, [navigate]);
 
-  const loadStories = () => {
-    const scienceStories = getScienceStories();
+  const loadStories = async () => {
+    const scienceStories = await getScienceStories();
     // Sort alphabetically by title
     setStories(scienceStories.sort((a, b) => a.title.localeCompare(b.title)));
   };
