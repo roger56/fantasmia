@@ -5,14 +5,22 @@ class FantasmiaDB {
   private dbName = 'fantasmia-cache';
   private version = 2;
   private db: IDBDatabase | null = null;
+  private initPromise: Promise<void> | null = null;
 
   async init(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    // Se già inizializzato, ritorna
+    if (this.db) return;
+    
+    // Se già in corso di inizializzazione, aspetta
+    if (this.initPromise) return this.initPromise;
+    
+    this.initPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.version);
       
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         this.db = request.result;
+        console.log('IndexedDB inizializzato con successo');
         resolve();
       };
       
@@ -30,10 +38,16 @@ class FantasmiaDB {
         }
       };
     });
+    
+    return this.initPromise;
+  }
+
+  async ensureInit(): Promise<void> {
+    await this.init();
   }
 
   async saveImage(storyId: string, imageBlob: Blob): Promise<void> {
-    if (!this.db) await this.init();
+    await this.ensureInit();
     
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['images'], 'readwrite');
@@ -51,24 +65,34 @@ class FantasmiaDB {
   }
 
   async saveStory(story: any): Promise<void> {
-    if (!this.db) await this.init();
+    await this.ensureInit();
     
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['stories'], 'readwrite');
       const store = transaction.objectStore('stories');
       
-      store.put({
+      const storyToSave = {
         ...story,
         timestamp: Date.now()
-      });
+      };
       
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
+      console.log('Salvando storia in IndexedDB:', storyToSave.id, storyToSave.title);
+      
+      store.put(storyToSave);
+      
+      transaction.oncomplete = () => {
+        console.log('Storia salvata in IndexedDB con successo:', storyToSave.id);
+        resolve();
+      };
+      transaction.onerror = () => {
+        console.error('Errore nel salvare storia in IndexedDB:', transaction.error);
+        reject(transaction.error);
+      };
     });
   }
 
   async getStory(storyId: string): Promise<any | null> {
-    if (!this.db) await this.init();
+    await this.ensureInit();
     
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['stories'], 'readonly');
@@ -85,7 +109,7 @@ class FantasmiaDB {
   }
 
   async getAllStories(): Promise<any[]> {
-    if (!this.db) await this.init();
+    await this.ensureInit();
     
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['stories'], 'readonly');
@@ -93,7 +117,9 @@ class FantasmiaDB {
       const request = store.getAll();
       
       request.onsuccess = () => {
-        resolve(request.result || []);
+        const stories = request.result || [];
+        console.log('Recuperate storie da IndexedDB:', stories.length);
+        resolve(stories);
       };
       
       request.onerror = () => reject(request.error);
@@ -101,7 +127,7 @@ class FantasmiaDB {
   }
 
   async getImage(storyId: string): Promise<Blob | null> {
-    if (!this.db) await this.init();
+    await this.ensureInit();
     
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['images'], 'readonly');
@@ -123,7 +149,7 @@ class FantasmiaDB {
   }
 
   async clearOldImages(): Promise<void> {
-    if (!this.db) await this.init();
+    await this.ensureInit();
     
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['images'], 'readwrite');
@@ -148,7 +174,7 @@ class FantasmiaDB {
   }
 
   async clearOldStories(): Promise<void> {
-    if (!this.db) await this.init();
+    await this.ensureInit();
     
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['stories'], 'readwrite');
@@ -168,7 +194,7 @@ class FantasmiaDB {
         resolve();
       };
       
-      request.onerror = () => reject(request.error);
+      request.onerror = () => reject(transaction.error);
     });
   }
 }
@@ -261,8 +287,9 @@ export const getStoryImage = async (storyId: string, fallbackUrl?: string): Prom
 // Funzioni per gestire le storie in IndexedDB
 export const saveStoryToCache = async (story: any): Promise<void> => {
   try {
+    console.log('Tentativo di salvare storia in cache:', story.id, story.title);
     await fantasmiaDB.saveStory(story);
-    console.log('Story saved to IndexedDB cache:', story.id);
+    console.log('Storia salvata in IndexedDB cache:', story.id);
   } catch (error) {
     console.error('Failed to save story to cache:', error);
   }
@@ -279,7 +306,9 @@ export const getStoryFromCache = async (storyId: string): Promise<any | null> =>
 
 export const getAllStoriesFromCache = async (): Promise<any[]> => {
   try {
-    return await fantasmiaDB.getAllStories();
+    const stories = await fantasmiaDB.getAllStories();
+    console.log('Recuperate tutte le storie da cache:', stories.length);
+    return stories;
   } catch (error) {
     console.error('Failed to get stories from cache:', error);
     return [];

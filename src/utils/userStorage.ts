@@ -187,6 +187,8 @@ export const saveStory = async (story: Story) => {
       lastModified: new Date().toISOString()
     };
     
+    console.log('Salvando storia:', storyWithAuthor.id, storyWithAuthor.title);
+    
     // Save to user's personal archive
     updateUserStoryArchive(currentUser.id, storyWithAuthor);
     
@@ -202,9 +204,14 @@ export const saveStory = async (story: Story) => {
     
     localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
     
-    // Save to IndexedDB for persistence
-    const { saveStoryToCache } = await import('./imageStorage');
-    await saveStoryToCache(storyWithAuthor);
+    // SEMPRE salva in IndexedDB per persistenza
+    try {
+      const { saveStoryToCache } = await import('./imageStorage');
+      await saveStoryToCache(storyWithAuthor);
+      console.log('Storia salvata anche in IndexedDB');
+    } catch (error) {
+      console.error('Errore nel salvare in IndexedDB:', error);
+    }
     
     // Update directory structure
     const categoryMapping = {
@@ -259,21 +266,29 @@ const updateUserStoryArchive = (userId: string, story: Story) => {
 
 export const getStories = async (): Promise<Story[]> => {
   try {
+    console.log('Recuperando storie...');
     let stored = localStorage.getItem('fantasmia_stories');
     let stories = stored ? JSON.parse(stored) : [];
     
+    console.log('Storie in localStorage:', stories.length);
+    
     // Se localStorage è vuoto, prova a recuperare da IndexedDB
     if (stories.length === 0) {
+      console.log('localStorage vuoto, recuperando da IndexedDB...');
       const { getAllStoriesFromCache } = await import('./imageStorage');
       const cachedStories = await getAllStoriesFromCache();
+      
+      console.log('Storie trovate in IndexedDB:', cachedStories.length);
       
       if (cachedStories.length > 0) {
         // Ripristina in localStorage
         localStorage.setItem('fantasmia_stories', JSON.stringify(cachedStories));
         stories = cachedStories;
+        console.log('Storie ripristinate in localStorage da IndexedDB');
       }
     }
     
+    console.log('Totale storie restituite:', stories.length);
     return stories;
   } catch (error) {
     console.error('Error getting stories:', error);
@@ -561,6 +576,8 @@ export const saveReadingStory = async (story: ReadingStory) => {
     updated_at: new Date().toISOString()
   };
   
+  console.log('Salvando reading story:', storyWithMeta.id, storyWithMeta.title);
+  
   const stories = await getReadingStories();
   const existingIndex = stories.findIndex(s => s.id === story.id);
   
@@ -572,32 +589,39 @@ export const saveReadingStory = async (story: ReadingStory) => {
   
   localStorage.setItem('fantasmia_reading_stories', JSON.stringify(stories));
   
-  // Save to IndexedDB for persistence
+  // SEMPRE salva in IndexedDB per persistenza
   try {
     const { saveStoryToCache } = await import('./imageStorage');
     await saveStoryToCache(storyWithMeta);
+    console.log('Reading story salvata anche in IndexedDB');
   } catch (error) {
-    console.warn('Failed to save reading story to IndexedDB:', error);
+    console.error('Failed to save reading story to IndexedDB:', error);
   }
 };
 
 export const getReadingStories = async (): Promise<ReadingStory[]> => {
   try {
+    console.log('Recuperando reading stories...');
     let stored = localStorage.getItem('fantasmia_reading_stories');
     let stories = stored ? JSON.parse(stored) : [];
     
+    console.log('Reading stories in localStorage:', stories.length);
+    
     // Se localStorage è vuoto, prova a recuperare da IndexedDB
     if (stories.length === 0) {
+      console.log('localStorage vuoto, recuperando reading stories da IndexedDB...');
       const { getAllStoriesFromCache } = await import('./imageStorage');
       const cachedStories = await getAllStoriesFromCache();
       
       // Filtra per reading stories
       const readingStories = cachedStories.filter((story: any) => story.category === 'reading_story');
+      console.log('Reading stories trovate in IndexedDB:', readingStories.length);
       
       if (readingStories.length > 0) {
         // Ripristina in localStorage
         localStorage.setItem('fantasmia_reading_stories', JSON.stringify(readingStories));
         stories = readingStories;
+        console.log('Reading stories ripristinate in localStorage da IndexedDB');
       }
     }
     
@@ -655,6 +679,8 @@ export const saveScienceStory = async (story: ScienceStory) => {
     updated_at: new Date().toISOString()
   };
   
+  console.log('Salvando science story:', storyWithMeta.id, storyWithMeta.title);
+  
   const stories = await getScienceStories();
   const existingIndex = stories.findIndex(s => s.id === story.id);
   
@@ -666,32 +692,39 @@ export const saveScienceStory = async (story: ScienceStory) => {
   
   localStorage.setItem('fantasmia_science_stories', JSON.stringify(stories));
   
-  // Save to IndexedDB for persistence
+  // SEMPRE salva in IndexedDB per persistenza
   try {
     const { saveStoryToCache } = await import('./imageStorage');
     await saveStoryToCache(storyWithMeta);
+    console.log('Science story salvata anche in IndexedDB');
   } catch (error) {
-    console.warn('Failed to save science story to IndexedDB:', error);
+    console.error('Failed to save science story to IndexedDB:', error);
   }
 };
 
 export const getScienceStories = async (): Promise<ScienceStory[]> => {
   try {
+    console.log('Recuperando science stories...');
     let stored = localStorage.getItem('fantasmia_science_stories');
     let stories = stored ? JSON.parse(stored) : [];
     
+    console.log('Science stories in localStorage:', stories.length);
+    
     // Se localStorage è vuoto, prova a recuperare da IndexedDB
     if (stories.length === 0) {
+      console.log('localStorage vuoto, recuperando science stories da IndexedDB...');
       const { getAllStoriesFromCache } = await import('./imageStorage');
       const cachedStories = await getAllStoriesFromCache();
       
       // Filtra per science stories
       const scienceStories = cachedStories.filter((story: any) => story.category === 'science_story');
+      console.log('Science stories trovate in IndexedDB:', scienceStories.length);
       
       if (scienceStories.length > 0) {
         // Ripristina in localStorage
         localStorage.setItem('fantasmia_science_stories', JSON.stringify(scienceStories));
         stories = scienceStories;
+        console.log('Science stories ripristinate in localStorage da IndexedDB');
       }
     }
     
