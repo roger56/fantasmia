@@ -103,72 +103,55 @@ const SuperuserReadingStoriesView = () => {
             </Button>
           </div>
 
-          {/* Stories Grid */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {stories.length === 0 ? (
-              <div className="col-span-full">
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Nessuna storia di lettura trovata
-                    </h3>
-                    <p className="text-gray-500 mb-4">
-                      Inizia creando la tua prima storia di lettura.
-                    </p>
-                    <Button
-                      onClick={() => navigate('/superuser-reading-stories-management')}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Crea Prima Storia
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              stories.map((story) => (
-                <Card key={story.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="text-lg line-clamp-2">{story.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {story.image_url && (
-                        <div className="w-full h-32 bg-gray-100 rounded overflow-hidden">
-                          <img 
-                            src={story.image_url} 
-                            alt={story.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      
-                      <p className="text-sm text-gray-600 line-clamp-3">
-                        {story.content.substring(0, 150)}
-                        {story.content.length > 150 && '...'}
-                      </p>
-                      
-                      <div className="text-xs text-gray-500">
-                        Creata: {new Date(story.created_at).toLocaleDateString('it-IT')}
+          {/* Stories List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">📚 Storie di Lettura ({stories.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stories.length === 0 ? (
+                <div className="text-center text-slate-600 py-8">
+                  <p>Nessuna storia di lettura trovata.</p>
+                  <p className="text-sm mt-2">Crea la prima storia per iniziare!</p>
+                </div>
+              ) : (
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {stories.map((story) => (
+                    <div key={story.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {new Date(story.created_at).toLocaleDateString('it-IT')}
+                        </p>
                       </div>
-                      
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex gap-1 ml-2">
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
                           onClick={() => navigate(`/superuser-reading-story-viewer/${story.id}`)}
-                          className="flex-1"
+                          className="h-8 w-8 p-0"
+                          title="Visualizza"
                         >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Visualizza
+                          <Eye className="w-4 h-4" />
                         </Button>
-                        
+                        {story.image_url && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(story.image_url, '_blank')}
+                            className="h-8 w-8 p-0"
+                            title="Mostra immagine"
+                          >
+                            🖼️
+                          </Button>
+                        )}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              title="Elimina"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -194,11 +177,11 @@ const SuperuserReadingStoriesView = () => {
                         </AlertDialog>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </>

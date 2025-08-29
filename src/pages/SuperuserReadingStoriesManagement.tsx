@@ -195,7 +195,7 @@ const SuperuserReadingStoriesManagement = () => {
           <h1 className="text-2xl font-bold text-slate-800">📖 Gestione Storie da Leggere</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="max-w-md mx-auto">
           {/* Form Section */}
           <Card className="h-fit">
             <CardHeader className="pb-4">
@@ -275,80 +275,6 @@ const SuperuserReadingStoriesManagement = () => {
                   {isEditing ? 'Aggiorna' : 'Salva'} Storia
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Stories List */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
-                Storie Esistenti ({stories.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {stories.length === 0 ? (
-                <div className="text-center text-slate-600 py-8">
-                  <BookOpen className="w-12 h-12 mx-auto mb-4 text-slate-400" />
-                  <p>Nessuna storia creata ancora.</p>
-                  <p className="text-sm">Crea la prima storia per iniziare!</p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {stories.map((story) => (
-                    <div key={story.id} className="border border-slate-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold text-slate-800 truncate">{story.title}</h3>
-                        <div className="flex gap-1 ml-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(story)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Sei sicuro di voler eliminare la storia "{story.title}"? 
-                                  Questa azione non può essere annullata.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annulla</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDelete(story.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Elimina
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                      <p className="text-slate-600 text-sm line-clamp-3 mb-2">
-                        {story.content}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
