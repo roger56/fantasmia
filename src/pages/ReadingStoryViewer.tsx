@@ -10,6 +10,7 @@ import StoryLayout from '@/components/shared/StoryLayout';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import { translateToEnglish } from '@/utils/translation';
+import ImageViewModal from '@/components/shared/ImageViewModal';
 
 const ReadingStoryViewer = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +24,7 @@ const ReadingStoryViewer = () => {
   const [language, setLanguage] = useState<'italian' | 'english'>('italian');
   const [translatedContent, setTranslatedContent] = useState<string>('');
   const [isTranslating, setIsTranslating] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   useEffect(() => {
     const checkAuthAndLoadStory = async () => {
@@ -42,12 +44,13 @@ const ReadingStoryViewer = () => {
         if (foundStory) {
           setStory(foundStory);
           
-          // Se la storia ha un'immagine, caricala dalla cache
+          // Se la storia ha un'immagine, SEMPRE caricala dalla cache IndexedDB
           if (foundStory.image_url) {
+            console.log('📖 Caricamento immagine per storia di lettura:', foundStory.id);
             const { getStoryImage } = await import('@/utils/imageStorage');
             try {
               const cachedImageUrl = await getStoryImage(foundStory.id, foundStory.image_url);
-              if (cachedImageUrl && cachedImageUrl !== foundStory.image_url) {
+              if (cachedImageUrl) {
                 // Aggiorna la storia con l'URL della cache locale
                 setStory(prev => prev ? { ...prev, image_url: cachedImageUrl } : null);
               }
@@ -307,7 +310,7 @@ const ReadingStoryViewer = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-full min-w-[200px]" align="start">
                       {story.image_url ? (
-                        <DropdownMenuItem onClick={() => window.open(story.image_url, '_blank')} className="cursor-pointer">
+                        <DropdownMenuItem onClick={() => setShowImageModal(true)} className="cursor-pointer">
                           <ImageIcon className="w-4 h-4 mr-2" />
                           Visualizza immagine
                         </DropdownMenuItem>
@@ -332,6 +335,16 @@ const ReadingStoryViewer = () => {
           </Card>
         </div>
       </StoryLayout>
+      
+      {/* Image View Modal */}
+      {story.image_url && (
+        <ImageViewModal
+          isOpen={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          imageUrl={story.image_url}
+          storyTitle={story.title}
+        />
+      )}
     </>
   );
 };

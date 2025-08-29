@@ -8,6 +8,7 @@ import { getReadingStories, deleteReadingStory, ReadingStory } from '@/utils/use
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import ImageViewModal from '@/components/shared/ImageViewModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const SuperuserReadingStoriesView = () => {
@@ -15,6 +16,9 @@ const SuperuserReadingStoriesView = () => {
   const [stories, setStories] = useState<ReadingStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  const [selectedStoryTitle, setSelectedStoryTitle] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -138,7 +142,11 @@ const SuperuserReadingStoriesView = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => window.open(story.image_url, '_blank')}
+                            onClick={() => {
+                              setSelectedImageUrl(story.image_url!);
+                              setSelectedStoryTitle(story.title);
+                              setShowImageModal(true);
+                            }}
                             className="h-8 w-8 p-0"
                             title="Mostra immagine"
                           >
@@ -184,6 +192,14 @@ const SuperuserReadingStoriesView = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Image View Modal */}
+      <ImageViewModal
+        isOpen={showImageModal}
+        onClose={() => setShowImageModal(false)}
+        imageUrl={selectedImageUrl}
+        storyTitle={selectedStoryTitle}
+      />
     </>
   );
 };

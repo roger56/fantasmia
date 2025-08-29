@@ -263,23 +263,39 @@ export const downloadAndCacheImage = async (imageUrl: string, storyId: string): 
   }
 };
 
-// Funzione per ottenere immagine (da cache o da URL)
+// Funzione per ottenere immagine (da cache o da URL) - PRIORITÀ INDEXEDDB
 export const getStoryImage = async (storyId: string, fallbackUrl?: string): Promise<string | null> => {
   try {
-    // Prima prova dalla cache locale
+    console.log('🖼️ Recupero immagine per storyId:', storyId);
+    
+    // SEMPRE prima prova dalla cache locale IndexedDB
+    await fantasmiaDB.init();
     const cachedImage = await fantasmiaDB.getImage(storyId);
     if (cachedImage) {
+      console.log('✅ Immagine trovata in IndexedDB cache per:', storyId);
       return URL.createObjectURL(cachedImage);
     }
 
-    // Se c'è un fallback URL, prova a scaricarlo
+    console.log('⚠️ Immagine non trovata in cache per:', storyId);
+
+    // Se c'è un fallback URL, prova a scaricarlo E salvarlo in cache
     if (fallbackUrl) {
-      return await downloadAndCacheImage(fallbackUrl, storyId);
+      console.log('🔄 Tentativo download da fallback URL:', fallbackUrl);
+      try {
+        const downloadedUrl = await downloadAndCacheImage(fallbackUrl, storyId);
+        console.log('✅ Immagine scaricata e cachata con successo');
+        return downloadedUrl;
+      } catch (downloadError) {
+        console.error('❌ Errore nel download della immagine:', downloadError);
+        // Se il download fallisce ma abbiamo comunque l'URL, restituiscilo
+        return fallbackUrl;
+      }
     }
 
+    console.log('❌ Nessuna immagine disponibile per:', storyId);
     return null;
   } catch (error) {
-    console.error('Failed to get story image:', error);
+    console.error('❌ Errore generale nel recupero immagine:', error);
     return fallbackUrl || null;
   }
 };

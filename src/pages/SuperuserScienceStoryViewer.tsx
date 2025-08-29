@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Save, Upload, Volume2, ChevronDown, Edit, PenTool, Wand2, Feather } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import ImageViewModal from '@/components/shared/ImageViewModal';
 import { getScienceStories, updateScienceStory, ScienceStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
@@ -23,6 +24,7 @@ const SuperuserScienceStoryViewer = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const { toast } = useToast();
   const { isPlaying, isPaused, speak, stop, getButtonText } = useTTS();
 
@@ -270,7 +272,7 @@ const SuperuserScienceStoryViewer = () => {
                         src={imageUrl} 
                         alt="Immagine storia" 
                         className="max-w-full h-48 object-contain rounded border cursor-pointer"
-                        onClick={() => window.open(imageUrl, '_blank')}
+                        onClick={() => setShowImageModal(true)}
                       />
                     </div>
                   )}
@@ -287,6 +289,16 @@ const SuperuserScienceStoryViewer = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Image View Modal */}
+      {imageUrl && (
+        <ImageViewModal
+          isOpen={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          imageUrl={imageUrl}
+          storyTitle={story?.title}
+        />
+      )}
     </>
   );
 };
