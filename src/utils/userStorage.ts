@@ -41,6 +41,7 @@ export interface Story {
   isPublic: boolean;
   language?: 'italian' | 'english';
   category?: string;
+  image_url?: string;
 }
 
 export const saveUser = (user: User) => {

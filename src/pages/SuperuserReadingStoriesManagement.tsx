@@ -18,6 +18,8 @@ const SuperuserReadingStoriesManagement = () => {
   const [editingStory, setEditingStory] = useState<ReadingStory | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -88,13 +90,38 @@ const SuperuserReadingStoriesManagement = () => {
       });
     } else {
       // Create new story
+      const storyId = crypto.randomUUID();
       const newStory: ReadingStory = {
-        id: crypto.randomUUID(),
+        id: storyId,
         title,
         content,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        image_url: imageUrl || undefined
       };
+
+      // Save image to IndexedDB if present
+      if (imageFile && imageUrl) {
+        try {
+          const { uploadImageToStorage, fantasmiaDB } = await import('@/utils/imageStorage');
+          
+          // Convert file to blob
+          const blob = new Blob([imageFile], { type: imageFile.type });
+          
+          try {
+            // Try to upload to Supabase Storage
+            const publicUrl = await uploadImageToStorage(blob, storyId, title);
+            newStory.image_url = publicUrl;
+          } catch (storageError) {
+            console.warn('Storage upload failed, saving only locally:', storageError);
+          }
+          
+          // Always save locally for persistence
+          await fantasmiaDB.saveImage(storyId, blob);
+        } catch (error) {
+          console.error('Error saving image:', error);
+        }
+      }
       await saveReadingStory(newStory);
       toast({
         title: "Successo",
@@ -104,6 +131,8 @@ const SuperuserReadingStoriesManagement = () => {
 
     setTitle('');
     setContent('');
+    setImageFile(null);
+    setImageUrl('');
     setIsEditing(false);
     setEditingStory(null);
     loadStories();
@@ -113,7 +142,18 @@ const SuperuserReadingStoriesManagement = () => {
     setEditingStory(story);
     setTitle(story.title);
     setContent(story.content);
+    setImageUrl(story.image_url || '');
     setIsEditing(true);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      // Create a temporary URL for preview
+      const tempUrl = URL.createObjectURL(file);
+      setImageUrl(tempUrl);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -129,6 +169,8 @@ const SuperuserReadingStoriesManagement = () => {
   const handleCancel = () => {
     setTitle('');
     setContent('');
+    setImageFile(null);
+    setImageUrl('');
     setIsEditing(false);
     setEditingStory(null);
   };
@@ -188,6 +230,31 @@ const SuperuserReadingStoriesManagement = () => {
                   maxLength={2000}
                   className="resize-none text-sm"
                 />
+              </div>
+
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Immagine (Opzionale)
+                </label>
+                <div className="space-y-3">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full"
+                  />
+                  {imageUrl && (
+                    <div className="border rounded-lg p-3">
+                      <p className="text-sm text-slate-600 mb-2">Anteprima immagine:</p>
+                      <img 
+                        src={imageUrl} 
+                        alt="Anteprima" 
+                        className="max-w-full h-32 object-contain rounded border"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-3">

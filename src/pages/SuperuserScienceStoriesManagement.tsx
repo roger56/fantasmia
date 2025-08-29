@@ -69,6 +69,18 @@ const SuperuserScienceStoriesManagement = () => {
         image_url: imageUrl || undefined
       };
 
+      // Save image to IndexedDB if present for persistence
+      if (imageFile && imageUrl) {
+        try {
+          const { saveUploadedImageToPersistentStorage } = await import('@/utils/imageStorage');
+          const persistentUrl = await saveUploadedImageToPersistentStorage(imageFile, storyId, title);
+          newStory.image_url = persistentUrl;
+        } catch (error) {
+          console.error('Error saving image:', error);
+          // Continue without image if save fails
+        }
+      }
+
       // Save the story
       saveScienceStory(newStory);
 

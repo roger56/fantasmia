@@ -326,6 +326,43 @@ export const cleanupCache = async (): Promise<void> => {
   }
 };
 
+// Funzione per caricare e persistere immagini caricate da file
+export const saveUploadedImageToPersistentStorage = async (file: File, storyId: string, storyTitle: string): Promise<string> => {
+  try {
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Il file selezionato non è un\'immagine valida');
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error('L\'immagine è troppo grande. Dimensione massima: 10MB');
+    }
+
+    // Convert to blob
+    const blob = new Blob([file], { type: file.type });
+    
+    let publicUrl: string | null = null;
+    
+    try {
+      // Try to upload to Supabase Storage
+      publicUrl = await uploadImageToStorage(blob, storyId, storyTitle);
+      console.log('Image uploaded to Supabase Storage:', publicUrl);
+    } catch (storageError) {
+      console.warn('Storage upload failed, saving only locally:', storageError);
+    }
+    
+    // Always save locally for persistence (CRITICAL for Superuser uploads)
+    await fantasmiaDB.saveImage(storyId, blob);
+    console.log('Image saved to IndexedDB for persistence:', storyId);
+    
+    // Return either the public URL or a local object URL
+    return publicUrl || URL.createObjectURL(blob);
+  } catch (error) {
+    console.error('Failed to save uploaded image:', error);
+    throw error;
+  }
+};
+
 // Inizializza la pulizia automatica quando il modulo viene caricato
 if (typeof window !== 'undefined') {
   // Pulizia al caricamento della pagina

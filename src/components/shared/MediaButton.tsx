@@ -44,6 +44,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const [showStyleSelector, setShowStyleSelector] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [generatedImageForConfirm, setGeneratedImageForConfirm] = useState<string | null>(null);
+  const [fileInputRef, setFileInputRef] = useState<HTMLInputElement | null>(null);
 
   // Reset state when story changes
   useEffect(() => {
@@ -366,6 +367,116 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     });
   };
 
+  const handleUploadImage = () => {
+    // Create a hidden file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleFileUpload(file);
+      }
+    };
+    input.click();
+  };
+
+  const handleFileUpload = async (file: File) => {
+    try {
+      setIsGenerating(true);
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Il file selezionato non è un\'immagine valida');
+      }
+
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('L\'immagine è troppo grande. Dimensione massima: 10MB');
+      }
+
+      // Create object URL for preview
+      const imageUrl = URL.createObjectURL(file);
+      
+      // Convert to blob for storage
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+
+      // Save to IndexedDB if we have a storyId
+      if (storyId) {
+        const { uploadImageToStorage, fantasmiaDB } = await import('@/utils/imageStorage');
+        
+        try {
+          // Try to upload to Supabase Storage
+          const publicUrl = await uploadImageToStorage(blob, storyId, storyTitle || 'uploaded-image');
+          
+          // Also save locally in IndexedDB for persistence
+          await fantasmiaDB.saveImage(storyId, blob);
+          
+          // Update story with new image URL
+          const { updateScienceStory, updateReadingStory, getScienceStories, getReadingStories } = await import('@/utils/userStorage');
+          
+          const scienceStories = await getScienceStories();
+          const isScienceStory = scienceStories.some(s => s.id === storyId);
+          
+          if (isScienceStory) {
+            await updateScienceStory(storyId, { image_url: publicUrl });
+          } else {
+            const readingStories = await getReadingStories();
+            const isReadingStory = readingStories.some(s => s.id === storyId);
+            
+            if (isReadingStory) {
+              await updateReadingStory(storyId, { image_url: publicUrl });
+            }
+          }
+          
+          setGeneratedImage(imageUrl);
+          setShowImageDialog(true);
+          
+          toast({
+            title: "Immagine caricata!",
+            description: "L'immagine è stata caricata e associata alla storia con successo",
+            variant: "default"
+          });
+        } catch (storageError) {
+          console.warn('Storage upload failed, saving only locally:', storageError);
+          
+          // If upload fails, just save locally
+          const { fantasmiaDB } = await import('@/utils/imageStorage');
+          await fantasmiaDB.saveImage(storyId, blob);
+          
+          setGeneratedImage(imageUrl);
+          setShowImageDialog(true);
+          
+          toast({
+            title: "Immagine caricata localmente",
+            description: "L'immagine è stata salvata nella cache locale",
+            variant: "default"
+          });
+        }
+      } else {
+        // No storyId, just show preview
+        setGeneratedImage(imageUrl);
+        setShowImageDialog(true);
+        
+        toast({
+          title: "Immagine caricata",
+          description: "Immagine visualizzata in anteprima",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Errore nel caricamento",
+        description: error instanceof Error ? error.message : "Errore nel caricamento dell'immagine",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <>
       <TooltipProvider>
@@ -394,6 +505,19 @@ const MediaButton: React.FC<MediaButtonProps> = ({
                   Disegno
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="bg-white border shadow-lg">
+                  {/* Carica immagine - solo per Superuser */}
+                  {isDebugMode && (
+                    <>
+                      <DropdownMenuItem 
+                        className="cursor-pointer"
+                        onClick={() => handleUploadImage()}
+                        disabled={isGenerating}
+                      >
+                        📂 Carica immagine
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem 
                     className="cursor-pointer"
                     onClick={() => handleMediaAction('Disegno', 'Fumetto')}

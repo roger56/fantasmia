@@ -26,6 +26,8 @@ const StoryViewer = () => {
   const [editedTitle, setEditedTitle] = useState('');
   const [translatedTitle, setTranslatedTitle] = useState('');
   const [showTextImprover, setShowTextImprover] = useState(false);
+  const [storyImage, setStoryImage] = useState<string | null>(null);
+  const [isSupuserMode, setIsSuperuserMode] = useState(false);
   
   const { speak, getButtonText } = useTTS();
   const { isTranslated, isTranslating, translateContent, getCurrentLanguage } = useTranslation();
@@ -70,6 +72,18 @@ const StoryViewer = () => {
         setStory(foundStory);
         setEditedContent(foundStory.content || '');
         setEditedTitle(foundStory.title || '');
+        
+        // Check if we're in Superuser mode
+        const currentPath = window.location.pathname;
+        setIsSuperuserMode(currentPath.includes('superuser'));
+        
+        // Load image if available
+        if (foundStory.image_url) {
+          // Try to get from cache first, then fallback to URL
+          const { getStoryImage } = await import('@/utils/imageStorage');
+          const cachedImage = await getStoryImage(foundStory.id, foundStory.image_url);
+          setStoryImage(cachedImage);
+        }
       }
     };
     loadStory();
@@ -185,6 +199,7 @@ const StoryViewer = () => {
             <MediaButton 
               storyContent={editedContent}
               storyTitle={displayTitle}
+              storyId={story.id}
               userId={story.authorId}
               className="w-full sm:w-auto"
             />
@@ -271,6 +286,29 @@ const StoryViewer = () => {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Story Image - show if available */}
+            {storyImage && (
+              <div className="mb-6">
+                <div className="border rounded-lg p-4 bg-slate-50">
+                  <h4 className="text-sm font-medium text-slate-700 mb-3">
+                    {isSupuserMode ? '🖼️ Immagine della storia:' : '🎨 Immagine associata:'}
+                  </h4>
+                  <div className="flex justify-center">
+                    <img 
+                      src={storyImage} 
+                      alt={`Immagine per "${displayTitle}"`}
+                      className="max-w-full h-auto max-h-64 object-contain rounded border"
+                    />
+                  </div>
+                  {isSupuserMode && (
+                    <p className="text-xs text-slate-500 mt-2 text-center">
+                      Come Superuser, puoi visualizzare e sostituire questa immagine usando il pulsante MEDIA
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {isEditing ? (
               <Textarea
                 value={editedContent}
