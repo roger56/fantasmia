@@ -1,23 +1,24 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, Eye, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Eye, Image, Trash2 } from 'lucide-react';
 import { getReadingStories, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewModal from '@/components/shared/ImageViewModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { fantasmiaDB, getStoryImage } from '@/utils/imageStorage';
 
 const SuperuserReadingStoriesView = () => {
   const navigate = useNavigate();
   const [stories, setStories] = useState<ReadingStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [imageStatus, setImageStatus] = useState<Record<string, boolean>>({});
   const [showImageModal, setShowImageModal] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string>('');
   const { toast } = useToast();
 
@@ -42,8 +43,20 @@ const SuperuserReadingStoriesView = () => {
     try {
       const readingStories = await getReadingStories();
       setStories(readingStories);
+      
+      // Check image status for each story
+      const statusMap: Record<string, boolean> = {};
+      for (const story of readingStories) {
+        statusMap[story.id] = await fantasmiaDB.hasImage(story.id);
+      }
+      setImageStatus(statusMap);
     } catch (error) {
       console.error('Error loading reading stories:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare le storie",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -55,6 +68,12 @@ const SuperuserReadingStoriesView = () => {
       
       if (deleted) {
         setStories(stories.filter(story => story.id !== id));
+        
+        // Update image status
+        const newImageStatus = { ...imageStatus };
+        delete newImageStatus[id];
+        setImageStatus(newImageStatus);
+        
         toast({
           title: "Successo",
           description: "Storia eliminata con successo"
@@ -67,6 +86,22 @@ const SuperuserReadingStoriesView = () => {
       toast({
         title: "Errore",
         description: "Si è verificato un errore durante l'eliminazione",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleImageClick = async (story: ReadingStory) => {
+    try {
+      const imageUrl = await getStoryImage(story.id);
+      setSelectedImageUrl(imageUrl);
+      setSelectedStoryTitle(story.title);
+      setShowImageModal(true);
+    } catch (error) {
+      console.error('Error loading image:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare l'immagine",
         variant: "destructive"
       });
     }
@@ -138,21 +173,21 @@ const SuperuserReadingStoriesView = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        {story.image_url && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedImageUrl(story.image_url!);
-                              setSelectedStoryTitle(story.title);
-                              setShowImageModal(true);
-                            }}
-                            className="h-8 w-8 p-0"
-                            title="Mostra immagine"
-                          >
-                            🖼️
-                          </Button>
-                        )}
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleImageClick(story)}
+                          className="h-8 w-8 p-0"
+                          title="Mostra immagine"
+                        >
+                          <Image 
+                            className={`w-4 h-4 ${
+                              imageStatus[story.id] ? 'text-green-600' : 'text-red-600'
+                            }`} 
+                          />
+                        </Button>
+                        
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
