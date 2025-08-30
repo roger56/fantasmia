@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 interface ImageViewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  imageUrl: string;
+  imageUrl: string | null;
   storyTitle?: string;
 }
 
