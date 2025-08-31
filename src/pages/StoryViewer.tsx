@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import { useTranslation } from '@/hooks/useTranslation';
 import HomeButton from '@/components/HomeButton';
-import MediaButton from '@/components/shared/MediaButton';
+import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import TextImprover from '@/components/shared/TextImprover';
 
@@ -196,11 +196,11 @@ const StoryViewer = () => {
               {getButtonText()}
             </Button>
             
-            <MediaButton 
+            <CreativeMediaMenu 
               storyContent={editedContent}
               storyTitle={displayTitle}
               storyId={story.id}
-              userId={story.authorId}
+              onImageAssociated={(imageUrl) => setStoryImage(imageUrl)}
               className="w-full sm:w-auto"
             />
             
