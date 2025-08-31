@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { ArrowLeft, BookOpen, Volume2, Eye, Image, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getStoriesForUser, getUserByName, deleteStory, hasStoryImages } from '@/utils/userStorage';
+import { fantasmiaDB } from '@/utils/imageStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import HomeButton from '@/components/HomeButton';
@@ -55,6 +56,7 @@ const UserArchive = () => {
   const [selectedStory, setSelectedStory] = useState<TableRow | null>(null);
   const [currentScreen, setCurrentScreen] = useState<1 | 2>(1);
   const [currentUser, setCurrentUser] = useState<string>('');
+  const [storiesWithImages, setStoriesWithImages] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const checkAuthAndLoadStories = async () => {
@@ -100,6 +102,16 @@ const UserArchive = () => {
         mediaGenerations: []
       }));
       setStories(storiesWithMedia);
+
+      // Check which stories have images in IndexedDB
+      const imagesSet = new Set<string>();
+      for (const story of userStories) {
+        const hasImage = await fantasmiaDB.hasImage(story.id);
+        if (hasImage) {
+          imagesSet.add(story.id);
+        }
+      }
+      setStoriesWithImages(imagesSet);
     } catch (error) {
       console.error('Error fetching user stories:', error);
       setStories([]);
@@ -239,9 +251,21 @@ const UserArchive = () => {
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-base truncate" title={row.storyTitle}>
-              {row.storyTitle}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-base truncate" title={row.storyTitle}>
+                {row.storyTitle}
+              </h3>
+              {/* Image status icon */}
+              <div title={storiesWithImages.has(row.storyId) ? 'Immagine presente' : 'Immagine assente'}>
+                <Image 
+                  className={`w-4 h-4 ${
+                    storiesWithImages.has(row.storyId) 
+                      ? 'text-green-600' 
+                      : 'text-red-500'
+                  }`}
+                />
+              </div>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
               {row.date}
             </p>
@@ -469,7 +493,21 @@ const UserArchive = () => {
                 <TableBody>
                   {tableRows.map((row, index) => (
                     <TableRow key={`${row.storyId}-${index}`}>
-                      <TableCell className="font-medium">{row.storyTitle}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {row.storyTitle}
+                          {/* Image status icon */}
+                          <div title={storiesWithImages.has(row.storyId) ? 'Immagine presente' : 'Immagine assente'}>
+                            <Image 
+                              className={`w-4 h-4 ${
+                                storiesWithImages.has(row.storyId) 
+                                  ? 'text-green-600' 
+                                  : 'text-red-500'
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      </TableCell>
                       <TableCell>{row.date}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">

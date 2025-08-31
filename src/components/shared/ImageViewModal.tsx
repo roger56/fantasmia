@@ -68,7 +68,7 @@ export const ImageViewModal: React.FC<ImageViewModalProps> = ({
     setShowShareMenu(false);
   };
 
-  const handleUploadImage = () => {
+  const handleUploadImage = async () => {
     // Solo per Superuser
     const isAuthenticated = localStorage.getItem('userType') === 'superuser';
     if (!isAuthenticated) {
@@ -83,11 +83,33 @@ export const ImageViewModal: React.FC<ImageViewModalProps> = ({
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        // Handle file upload logic here
-        console.log('File selected:', file);
+      if (file && storyTitle) {
+        try {
+          const { saveUploadedImageToPersistentStorage } = await import('@/utils/imageStorage');
+          
+          // Generate a story ID if not provided (for context)
+          const currentStoryId = window.location.pathname.split('/').pop() || 'unknown';
+          
+          await saveUploadedImageToPersistentStorage(file, currentStoryId, storyTitle);
+          
+          toast({
+            title: "Immagine caricata",
+            description: "L'immagine è stata salvata con successo",
+            variant: "default"
+          });
+          
+          // Refresh the page to show the new image
+          window.location.reload();
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          toast({
+            title: "Errore",
+            description: "Impossibile caricare l'immagine",
+            variant: "destructive"
+          });
+        }
       }
     };
     input.click();
@@ -119,8 +141,9 @@ export const ImageViewModal: React.FC<ImageViewModalProps> = ({
               })()}
               <Button
                 onClick={() => {
-                  // Qui andrà la logica per aprire il MediaButton per generazione AI
+                  // Close modal and trigger AI generation (implementation depends on parent component)
                   onClose();
+                  // This would need to be passed as a prop from parent components
                 }}
                 variant="outline"
               >

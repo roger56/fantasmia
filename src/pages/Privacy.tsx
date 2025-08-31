@@ -102,7 +102,7 @@ const Privacy = () => {
 
             <div className="flex justify-center pt-6">
               <Button 
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/new-profile')}
                 className="bg-green-600 hover:bg-green-700 px-8"
               >
                 Confermo la presa visione e accetto le condizioni

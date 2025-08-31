@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { ArrowLeft, BookOpen, Volume2, Eye, Image, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getAllStoriesForSuperuser, deleteStory, getAllAuthors, hasStoryImages, publishStoryFromArchive, unpublishStory, isStoryPublished } from '@/utils/userStorage';
+import { fantasmiaDB } from '@/utils/imageStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,6 +58,7 @@ const SuperuserArchive = () => {
   const [selectedStory, setSelectedStory] = useState<TableRow | null>(null);
   const [currentScreen, setCurrentScreen] = useState<1 | 2>(1);
   const [authors, setAuthors] = useState<string[]>([]);
+  const [storiesWithImages, setStoriesWithImages] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchStoriesWithMedia = async () => {
@@ -85,6 +87,16 @@ const SuperuserArchive = () => {
         // Load authors for filter
         const authorList = await getAllAuthors();
         setAuthors(authorList);
+
+        // Check which stories have images in IndexedDB
+        const imagesSet = new Set<string>();
+        for (const story of filteredStories) {
+          const hasImage = await fantasmiaDB.hasImage(story.id);
+          if (hasImage) {
+            imagesSet.add(story.id);
+          }
+        }
+        setStoriesWithImages(imagesSet);
       } catch (error) {
         console.error('Error fetching stories:', error);
         setStories([]);
@@ -256,9 +268,21 @@ const SuperuserArchive = () => {
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-base truncate" title={row.storyTitle}>
-              {row.storyTitle}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-base truncate" title={row.storyTitle}>
+                {row.storyTitle}
+              </h3>
+              {/* Image status icon */}
+              <div title={storiesWithImages.has(row.storyId) ? 'Immagine presente' : 'Immagine assente'}>
+                <Image 
+                  className={`w-4 h-4 ${
+                    storiesWithImages.has(row.storyId) 
+                      ? 'text-green-600' 
+                      : 'text-red-500'
+                  }`}
+                />
+              </div>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
               di {row.author}
             </p>

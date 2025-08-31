@@ -91,13 +91,8 @@ const ScienceStories = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-sm text-slate-600">
-                        <p className="line-clamp-2">
-                          {story.content.substring(0, 150)}...
-                        </p>
-                        <div className="mt-2 pt-2 border-t text-xs text-slate-500">
-                          Pubblicata il {new Date(story.created_at).toLocaleDateString('it-IT')}
-                        </div>
+                      <div className="mt-2 pt-2 border-t text-xs text-slate-500">
+                        Pubblicata il {new Date(story.created_at).toLocaleDateString('it-IT')}
                       </div>
                     </CardContent>
                   </Card>

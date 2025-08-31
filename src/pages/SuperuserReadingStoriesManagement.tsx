@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, BookOpen, Edit, Trash2, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, Edit, Trash2, Plus, Image } from 'lucide-react';
 import { saveReadingStory, getReadingStories, updateReadingStory, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
+import { fantasmiaDB } from '@/utils/imageStorage';
 
 const SuperuserReadingStoriesManagement = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const SuperuserReadingStoriesManagement = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [storiesWithImages, setStoriesWithImages] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Check if user is authenticated as superuser
@@ -40,6 +42,16 @@ const SuperuserReadingStoriesManagement = () => {
     setStories(readingStories.sort((a, b) => 
       new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     ));
+    
+    // Check which stories have images in IndexedDB
+    const imagesSet = new Set<string>();
+    for (const story of readingStories) {
+      const hasImage = await fantasmiaDB.hasImage(story.id);
+      if (hasImage) {
+        imagesSet.add(story.id);
+      }
+    }
+    setStoriesWithImages(imagesSet);
   };
 
   const handleSave = async () => {
@@ -195,7 +207,7 @@ const SuperuserReadingStoriesManagement = () => {
           <h1 className="text-2xl font-bold text-slate-800">📖 Gestione Storie da Leggere</h1>
         </div>
 
-        <div className="max-w-md mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Form Section */}
           <Card className="h-fit">
             <CardHeader className="pb-4">
@@ -275,6 +287,93 @@ const SuperuserReadingStoriesManagement = () => {
                   {isEditing ? 'Aggiorna' : 'Salva'} Storia
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Stories List */}
+          <Card className="h-fit">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <BookOpen className="w-4 h-4" />
+                Storie Esistenti ({stories.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {stories.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <BookOpen className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                  <p>Nessuna storia creata</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {stories.map((story) => (
+                    <div key={story.id} className="border rounded-lg p-3 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-sm truncate" title={story.title}>
+                              {story.title}
+                            </h3>
+                            {/* Image status icon */}
+                            <div title={storiesWithImages.has(story.id) ? 'Immagine presente' : 'Immagine assente'}>
+                              <Image 
+                                className={`w-4 h-4 ${
+                                  storiesWithImages.has(story.id) 
+                                    ? 'text-green-600' 
+                                    : 'text-red-500'
+                                }`}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {new Date(story.updated_at).toLocaleDateString('it-IT')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(story)}
+                            title="Modifica storia"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                title="Elimina storia"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Sei sicuro di voler eliminare la storia "{story.title}"? 
+                                  Questa azione non può essere annullata.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annulla</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDelete(story.id)}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Elimina
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
