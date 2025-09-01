@@ -173,6 +173,11 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
         variant: "default"
       });
       
+      // Trigger page refresh to update icon status
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (error) {
       console.error('Error saving image:', error);
       toast({
