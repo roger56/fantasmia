@@ -87,6 +87,20 @@ const StoryViewer = () => {
       }
     };
     loadStory();
+
+    // Listen for AI generation events from ImageViewModal
+    const handleGenerateImageWithAI = () => {
+      // This will show the MEDIA menu dropdown programmatically
+      const mediaButton = document.querySelector('[data-media-button]') as HTMLButtonElement;
+      if (mediaButton) {
+        mediaButton.click();
+      }
+    };
+
+    window.addEventListener('generateImageWithAI', handleGenerateImageWithAI);
+    return () => {
+      window.removeEventListener('generateImageWithAI', handleGenerateImageWithAI);
+    };
   }, [storyId]);
 
   const handleTranslate = async () => {
@@ -196,13 +210,15 @@ const StoryViewer = () => {
               {getButtonText()}
             </Button>
             
-            <CreativeMediaMenu 
-              storyContent={editedContent}
-              storyTitle={displayTitle}
-              storyId={story.id}
-              onImageAssociated={(imageUrl) => setStoryImage(imageUrl)}
-              className="w-full sm:w-auto"
-            />
+            <div data-media-button>
+              <CreativeMediaMenu 
+                storyContent={editedContent}
+                storyTitle={displayTitle}
+                storyId={story.id}
+                onImageAssociated={(imageUrl) => setStoryImage(imageUrl)}
+                className="w-full sm:w-auto"
+              />
+            </div>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

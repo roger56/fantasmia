@@ -141,9 +141,10 @@ export const ImageViewModal: React.FC<ImageViewModalProps> = ({
               })()}
               <Button
                 onClick={() => {
-                  // Close modal and trigger AI generation (implementation depends on parent component)
+                  // Trigger AI generation through parent component
+                  const event = new CustomEvent('generateImageWithAI');
+                  window.dispatchEvent(event);
                   onClose();
-                  // This would need to be passed as a prop from parent components
                 }}
                 variant="outline"
               >

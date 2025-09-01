@@ -58,7 +58,7 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
     
     try {
       // Call the Edge Function to generate image
-      const response = await fetch('/functions/v1/generate-image', {
+      const response = await fetch('https://aomisprfxjatoibvcmhh.supabase.co/functions/v1/generate-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
