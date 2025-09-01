@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import { useTranslation } from '@/hooks/useTranslation';
 import HomeButton from '@/components/HomeButton';
-import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
+import MediaButton from '@/components/shared/MediaButton';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import TextImprover from '@/components/shared/TextImprover';
 
@@ -26,81 +26,18 @@ const StoryViewer = () => {
   const [editedTitle, setEditedTitle] = useState('');
   const [translatedTitle, setTranslatedTitle] = useState('');
   const [showTextImprover, setShowTextImprover] = useState(false);
-  const [storyImage, setStoryImage] = useState<string | null>(null);
-  const [isSupuserMode, setIsSuperuserMode] = useState(false);
   
   const { speak, getButtonText } = useTTS();
   const { isTranslated, isTranslating, translateContent, getCurrentLanguage } = useTranslation();
 
-  // Format CSS content by removing guided questions
-  const formatCSSContent = (content: string) => {
-    if (!content) return content;
-    
-    const cssQuestions = [
-      'Domanda iniziale:',
-      'Chi lo vede per primo?',
-      'Che cosa succede nel villaggio / a scuola / in casa?',
-      'Chi è contento e chi no?',
-      'C\'è qualcuno che dice NO?',
-      'Qual è il momento più buffo o spaventoso?',
-      'Cosa decide il personaggio?',
-      'E adesso com\'è il mondo?'
-    ];
-    
-    let formattedContent = content;
-    
-    // Remove question headers and keep only user answers
-    cssQuestions.forEach(question => {
-      const regex = new RegExp(`${question.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`, 'gi');
-      formattedContent = formattedContent.replace(regex, '');
-    });
-    
-    // Clean up extra whitespace and line breaks
-    formattedContent = formattedContent
-      .replace(/\n{3,}/g, '\n\n')
-      .replace(/^\s+|\s+$/g, '')
-      .trim();
-    
-    return formattedContent;
-  };
-
   useEffect(() => {
-    const loadStory = async () => {
-      const stories = await getStories();
-      const foundStory = stories.find(s => s.id === storyId);
-      if (foundStory) {
-        setStory(foundStory);
-        setEditedContent(foundStory.content || '');
-        setEditedTitle(foundStory.title || '');
-        
-        // Check if we're in Superuser mode
-        const currentPath = window.location.pathname;
-        setIsSuperuserMode(currentPath.includes('superuser'));
-        
-        // Load image if available
-        if (foundStory.image_url) {
-          // Try to get from cache first, then fallback to URL
-          const { getStoryImage } = await import('@/utils/imageStorage');
-          const cachedImage = await getStoryImage(foundStory.id, foundStory.image_url);
-          setStoryImage(cachedImage);
-        }
-      }
-    };
-    loadStory();
-
-    // Listen for AI generation events from ImageViewModal
-    const handleGenerateImageWithAI = () => {
-      // This will show the MEDIA menu dropdown programmatically
-      const mediaButton = document.querySelector('[data-media-button]') as HTMLButtonElement;
-      if (mediaButton) {
-        mediaButton.click();
-      }
-    };
-
-    window.addEventListener('generateImageWithAI', handleGenerateImageWithAI);
-    return () => {
-      window.removeEventListener('generateImageWithAI', handleGenerateImageWithAI);
-    };
+    const stories = getStories();
+    const foundStory = stories.find(s => s.id === storyId);
+    if (foundStory) {
+      setStory(foundStory);
+      setEditedContent(foundStory.content || '');
+      setEditedTitle(foundStory.title || '');
+    }
   }, [storyId]);
 
   const handleTranslate = async () => {
@@ -210,15 +147,12 @@ const StoryViewer = () => {
               {getButtonText()}
             </Button>
             
-            <div data-media-button>
-              <CreativeMediaMenu 
-                storyContent={editedContent}
-                storyTitle={displayTitle}
-                storyId={story.id}
-                onImageAssociated={(imageUrl) => setStoryImage(imageUrl)}
-                className="w-full sm:w-auto"
-              />
-            </div>
+            <MediaButton 
+              storyContent={editedContent}
+              storyTitle={displayTitle}
+              userId={story.authorId}
+              className="w-full sm:w-auto"
+            />
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -302,29 +236,6 @@ const StoryViewer = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Story Image - show if available */}
-            {storyImage && (
-              <div className="mb-6">
-                <div className="border rounded-lg p-4 bg-slate-50">
-                  <h4 className="text-sm font-medium text-slate-700 mb-3">
-                    {isSupuserMode ? '🖼️ Immagine della storia:' : '🎨 Immagine associata:'}
-                  </h4>
-                  <div className="flex justify-center">
-                    <img 
-                      src={storyImage} 
-                      alt={`Immagine per "${displayTitle}"`}
-                      className="max-w-full h-auto max-h-64 object-contain rounded border"
-                    />
-                  </div>
-                  {isSupuserMode && (
-                    <p className="text-xs text-slate-500 mt-2 text-center">
-                      Come Superuser, puoi visualizzare e sostituire questa immagine usando il pulsante MEDIA
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
             {isEditing ? (
               <Textarea
                 value={editedContent}
@@ -346,7 +257,7 @@ const StoryViewer = () => {
                   overflowY: 'auto'
                 }}
               >
-                {story?.mode === 'CSS' ? formatCSSContent(editedContent) : editedContent}
+                {editedContent}
               </div>
             )}
           </CardContent>

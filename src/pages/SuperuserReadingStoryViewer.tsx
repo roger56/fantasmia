@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Save, Volume2, ChevronDown, Edit, PenTool, Wand2, Feather } from 'lucide-react';
+import { ArrowLeft, Save, Volume2, Palette, Camera, ImageIcon, Video, Film, Music, ChevronDown, Edit, PenTool, Wand2, Feather } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import { getReadingStories, updateReadingStory, ReadingStory } from '@/utils/userStorage';
@@ -13,7 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import HomeButton from '@/components/HomeButton';
 import PoetryGenerator from '@/components/shared/PoetryGenerator';
-import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
 
 const SuperuserReadingStoryViewer = () => {
   const { id } = useParams<{ id: string }>();
@@ -40,10 +39,10 @@ const SuperuserReadingStoryViewer = () => {
     }
   }, [navigate, id]);
 
-  const loadStory = async () => {
+  const loadStory = () => {
     if (!id) return;
     
-    const stories = await getReadingStories();
+    const stories = getReadingStories();
     const foundStory = stories.find(s => s.id === id);
     
     if (foundStory) {
@@ -60,7 +59,7 @@ const SuperuserReadingStoryViewer = () => {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!story || !title.trim() || !content.trim()) {
       toast({
         title: "Errore",
@@ -70,7 +69,7 @@ const SuperuserReadingStoryViewer = () => {
       return;
     }
 
-    await updateReadingStory(story.id, {
+    updateReadingStory(story.id, {
       title: title.trim(),
       content: content.trim()
     });
@@ -153,13 +152,56 @@ const SuperuserReadingStoryViewer = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* MEDIA Button with full functionality */}
-            <CreativeMediaMenu
-              storyContent={content}
-              storyTitle={title}
-              storyId={id}
-              className="mr-2"
-            />
+            {/* MEDIA Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="justify-between">
+                  <span className="flex items-center gap-2">
+                    <Palette className="w-4 h-4" />
+                    📺 MEDIA
+                  </span>
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini realistica sarà presto disponibile" })} className="cursor-pointer">
+                  <Camera className="w-4 h-4 mr-2" />
+                  Realistica
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini cartoon sarà presto disponibile" })} className="cursor-pointer">
+                  <Palette className="w-4 h-4 mr-2" />
+                  Cartoon
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini fotografiche sarà presto disponibile" })} className="cursor-pointer">
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                  Fotografica
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini manga sarà presto disponibile" })} className="cursor-pointer">
+                  <Palette className="w-4 h-4 mr-2" />
+                  Manga
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini acquarello sarà presto disponibile" })} className="cursor-pointer">
+                  <Palette className="w-4 h-4 mr-2" />
+                  Acquarello
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione immagini carboncino sarà presto disponibile" })} className="cursor-pointer">
+                  <Palette className="w-4 h-4 mr-2" />
+                  Carboncino
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione video sarà presto disponibile" })} className="cursor-pointer">
+                  <Video className="w-4 h-4 mr-2" />
+                  Genera Video
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione video avanzato sarà presto disponibile" })} className="cursor-pointer">
+                  <Film className="w-4 h-4 mr-2" />
+                  Video Avanzato
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Funzione in sviluppo", description: "Generazione musica di sottofondo sarà presto disponibile" })} className="cursor-pointer">
+                  <Music className="w-4 h-4 mr-2" />
+                  Musica di Sottofondo
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* MODIFICA Dropdown */}
             <DropdownMenu>
@@ -230,8 +272,8 @@ const SuperuserReadingStoryViewer = () => {
               <ScrollArea 
                 className="border rounded-md p-4"
                 style={{ 
-                  minHeight: '20em', 
-                  maxHeight: '40em' 
+                  minHeight: '3em', 
+                  maxHeight: '10em' 
                 }}
               >
                 <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">

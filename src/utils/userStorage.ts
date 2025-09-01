@@ -1,21 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
-import { AuthBridge } from './authBridge';
-
-// Generate a proper UUID v4
-const generateUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-};
 
 export interface User {
   id: string;
   name: string;
   email?: string;
   age?: number;
-  gender?: 'male' | 'female';
   password: string;
   lastAccess?: string;
   unreadMessages?: Message[];
@@ -35,13 +24,11 @@ export interface Story {
   content?: string;
   status: 'completed' | 'suspended' | 'in-progress';
   lastModified: string;
-  mode: 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'ALOVAF' | 'CAMPBELL' | 'CSS' | 'PROFESSION';
+  mode: 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS';
   authorId: string;
   authorName: string;
   isPublic: boolean;
   language?: 'italian' | 'english';
-  category?: string;
-  image_url?: string;
 }
 
 export const saveUser = (user: User) => {
@@ -71,7 +58,7 @@ export const updateUser = (user: User) => {
 
 // Create the base directory structure for a new user
 const createUserDirectoryStructure = (userId: string) => {
-  const categories = ['GHOST', 'PROPP', 'AIROTS', 'UNA_PAROLA_TANTE_STORIE', 'CAMPBELL', 'CSS', 'PROFESSION'];
+  const categories = ['GHOST', 'PROPP', 'AIROTS', 'UNA_PAROLA_TANTE_STORIE', 'CAMPBELL', 'CSS'];
   const baseStructureKey = 'fantasmia_directory_structure';
   
   // Get existing structure or create new one
@@ -102,136 +89,176 @@ export const getUsers = (): User[] => {
   return stored ? JSON.parse(stored) : [];
 };
 
-export const getUserByEmailAndPassword = (email: string, password: string): User | null => {
-  const users = getUsers();
-  // Trim spaces and make comparison case-insensitive for both email and password
-  const cleanEmail = email.trim().toLowerCase();
-  const cleanPassword = password.trim().toLowerCase();
-  
-  return users.find(u => {
-    const userEmail = (u.email || '').trim().toLowerCase();
-    const userPassword = (u.password || '').trim().toLowerCase();
-    return userEmail === cleanEmail && userPassword === cleanPassword;
-  }) || null;
-};
-
-export const getUserByNameAndPassword = (name: string, password: string): User | null => {
-  const users = getUsers();
-  // Trim spaces and make comparison case-insensitive for both name and password
-  const cleanName = name.trim().toLowerCase();
-  const cleanPassword = password.trim().toLowerCase();
-  
-  return users.find(u => {
-    const userName = (u.name || '').trim().toLowerCase();
-    const userPassword = (u.password || '').trim().toLowerCase();
-    return userName === cleanName && userPassword === cleanPassword;
-  }) || null;
-};
-
 export const getUserById = (id: string): User | null => {
   const users = getUsers();
   return users.find(u => u.id === id) || null;
 };
 
-export const getUserByName = (name: string): User | null => {
+export const authenticateUser = (name: string, password: string): User | null => {
   const users = getUsers();
-  const cleanName = name.trim().toLowerCase();
-  return users.find(u => {
-    const userName = (u.name || '').trim().toLowerCase();
-    return userName === cleanName;
-  }) || null;
+  const user = users.find(u => u.name.toLowerCase() === name.toLowerCase());
+  
+  if (user && user.password.toLowerCase() === password.toLowerCase()) {
+    // Update last access
+    user.lastAccess = new Date().toISOString();
+    saveUser(user);
+    return user;
+  }
+  
+  return null;
 };
 
-export const deleteUser = (id: string): boolean => {
+export const sendMessage = (fromUserId: string, toUserIds: string[], content: string, isBroadcast: boolean = false) => {
   const users = getUsers();
-  const index = users.findIndex(u => u.id === id);
+  const message: Message = {
+    id: Date.now().toString(),
+    from: fromUserId,
+    content,
+    timestamp: new Date().toISOString(),
+    read: false
+  };
+
+  const targetUsers = isBroadcast ? users : users.filter(u => toUserIds.includes(u.id));
   
-  if (index >= 0) {
-    users.splice(index, 1);
-    localStorage.setItem('fantasmia_users', JSON.stringify(users));
-    return true;
+  targetUsers.forEach(user => {
+    if (!user.unreadMessages) user.unreadMessages = [];
+    user.unreadMessages.push(message);
+    saveUser(user);
+  });
+};
+
+export const markMessagesAsRead = (userId: string) => {
+  const user = getUserById(userId);
+  if (user && user.unreadMessages) {
+    user.unreadMessages = user.unreadMessages.map(m => ({ ...m, read: true }));
+    saveUser(user);
   }
-  return false;
 };
 
 export const saveStory = async (story: Story) => {
+  // Try to save to Supabase first, then fallback to localStorage
   try {
-    // Get authenticated user using AuthBridge
-    const authStatus = await AuthBridge.isAuthenticated();
+    // Check for both real Supabase session and bridged session
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!authStatus.authenticated || !authStatus.userName) {
-      console.error('No authenticated user found');
-      return;
-    }
+    // Import AuthBridge dynamically to avoid circular dependency
+    const { AuthBridge } = await import('./authBridge');
+    const bridgedSession = AuthBridge.getCurrentBridgedSession();
     
-    // Get user details by name
-    const currentUser = getUserByName(authStatus.userName);
-    if (!currentUser) {
-      console.error('User not found:', authStatus.userName);
-      return;
-    }
+    if (session || bridgedSession) {
+      // Determine user ID and name
+      let userId = session?.user.id;
+      let userName = story.authorName;
+      
+      if (bridgedSession && !session) {
+        // Use bridged session data
+        userId = bridgedSession.user.id;
+        userName = bridgedSession.user.user_metadata?.name || story.authorName;
+      }
+      
+      // User è autenticato - salva in Supabase
+      const storyData = {
+        title: story.title,
+        content: story.content || '',
+        category: story.mode,
+        mode: story.mode,
+        status: story.status,
+        user_id: userId,
+        author_id: userId,
+        author_name: userName, // Il trigger automaticamente lo correggerà se necessario
+        user_name: userName,
+        is_public: story.isPublic || false,
+        language: story.language || 'italian'
+      };
 
-    // For CSS stories, clean the content to remove questions
-    let processedContent = story.content;
-    if (story.mode === 'CSS' && story.content) {
-      // Extract only the user's answers, not the questions
-      const lines = story.content.split('\n\n').filter(line => line.trim());
-      processedContent = lines.join('\n\n');
-    }
+      const { data, error } = await supabase
+        .from('stories')
+        .insert([storyData])
+        .select()
+        .single();
 
-    const storyWithAuthor = {
-      ...story,
-      content: processedContent,
-      authorId: currentUser.id,
-      authorName: currentUser.name,
-      id: story.id || generateUUID(),
-      lastModified: new Date().toISOString()
-    };
-    
-    console.log('Salvando storia:', storyWithAuthor.id, storyWithAuthor.title);
-    
-    // Save to user's personal archive
-    updateUserStoryArchive(currentUser.id, storyWithAuthor);
-    
-    // Also save to global stories for compatibility
-    const stories = await getStories();
-    const existingIndex = stories.findIndex(s => s.id === storyWithAuthor.id);
-    
-    if (existingIndex >= 0) {
-      stories[existingIndex] = storyWithAuthor;
+      if (error) {
+        console.error('Errore salvataggio Supabase:', error);
+        // Fallback a localStorage
+        saveStoryToLocalStorage(story);
+      } else {
+        console.log('Storia salvata in Supabase:', data);
+        // Salva anche in localStorage per compatibilità
+        const storyWithSupabaseData = {
+          ...story,
+          id: data.id,
+          authorName: data.author_name || data.user_name || story.authorName
+        };
+        saveStoryToLocalStorage(storyWithSupabaseData);
+      }
     } else {
-      stories.push(storyWithAuthor);
+      // User non autenticato - salva solo in localStorage
+      console.log('Utente non autenticato, salvataggio in localStorage');
+      saveStoryToLocalStorage(story);
     }
-    
-    localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
-    
-    // SEMPRE salva in IndexedDB per persistenza
-    try {
-      const { saveStoryToCache } = await import('./imageStorage');
-      await saveStoryToCache(storyWithAuthor);
-      console.log('Storia salvata anche in IndexedDB');
-    } catch (error) {
-      console.error('Errore nel salvare in IndexedDB:', error);
-    }
-    
-    // Update directory structure
-    const categoryMapping = {
-      'GHOST': 'GHOST',
-      'PROPP': 'PROPP',
-      'PROPP_FREE': 'PROPP',
-      'AIROTS': 'AIROTS',
-      'PAROLE_CHIAMANO': 'UNA_PAROLA_TANTE_STORIE',
-      'ALOVAF': 'UNA_PAROLA_TANTE_STORIE',
-      'CAMPBELL': 'CAMPBELL',
-      'CSS': 'CSS',
-      'PROFESSION': 'PROFESSION'
-    };
-    
-    const category = categoryMapping[story.mode] || 'GHOST';
-    updateDirectoryStructure(currentUser.id, category, story.title);
   } catch (error) {
-    console.error('Error saving story:', error);
+    console.error('Errore during save:', error);
+    // Fallback a localStorage
+    saveStoryToLocalStorage(story);
   }
+};
+
+// Funzione separata per il salvataggio localStorage (per compatibilità)
+const saveStoryToLocalStorage = (story: Story) => {
+  const stories = getStories();
+  const existingIndex = stories.findIndex(s => s.id === story.id);
+  
+  // Ensure user directory structure exists
+  ensureUserDirectoryStructure(story.authorId);
+  
+  // Create organized path according to specifications
+  const documentPath = `/Documenti/FANTASMIA/${story.authorId}/${story.mode}/${story.title}.txt`;
+  
+  // Add path to story
+  const storyWithPath = {
+    ...story,
+    documentPath,
+    createdAt: story.lastModified,
+    category: story.mode // For compatibility with database
+  };
+  
+  if (existingIndex >= 0) {
+    stories[existingIndex] = storyWithPath;
+  } else {
+    stories.push(storyWithPath);
+  }
+  
+  localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
+  
+  // Update user's personal archive - FIXED: ensure stories appear in personal archive
+  updateUserStoryArchive(story.authorId, storyWithPath);
+  
+  // Update directory structure
+  updateDirectoryStructure(story.authorId, story.mode, story.title);
+};
+
+// Ensure user directory structure exists
+const ensureUserDirectoryStructure = (userId: string) => {
+  const categories = ['GHOST', 'PROPP', 'AIROTS', 'UNA_PAROLA_TANTE_STORIE', 'CAMPBELL', 'CSS'];
+  const baseStructureKey = 'fantasmia_directory_structure';
+  
+  const existingStructure = JSON.parse(localStorage.getItem(baseStructureKey) || '{}');
+  
+  if (!existingStructure['FANTASMIA']) {
+    existingStructure['FANTASMIA'] = {};
+  }
+  
+  if (!existingStructure['FANTASMIA'][userId]) {
+    existingStructure['FANTASMIA'][userId] = {};
+  }
+  
+  categories.forEach(category => {
+    if (!existingStructure['FANTASMIA'][userId][category]) {
+      existingStructure['FANTASMIA'][userId][category] = {};
+    }
+  });
+  
+  localStorage.setItem(baseStructureKey, JSON.stringify(existingStructure));
 };
 
 // Update directory structure with new file
@@ -265,79 +292,20 @@ const updateUserStoryArchive = (userId: string, story: Story) => {
   localStorage.setItem(userArchiveKey, JSON.stringify(userArchive));
 };
 
-export const getStories = async (): Promise<Story[]> => {
-  try {
-    console.log('Recuperando storie...');
-    let stored = localStorage.getItem('fantasmia_stories');
-    let stories = stored ? JSON.parse(stored) : [];
-    
-    console.log('Storie in localStorage:', stories.length);
-    
-    // Se localStorage è vuoto, prova a recuperare da IndexedDB
-    if (stories.length === 0) {
-      console.log('localStorage vuoto, recuperando da IndexedDB...');
-      const { getAllStoriesFromCache } = await import('./imageStorage');
-      const cachedStories = await getAllStoriesFromCache();
-      
-      console.log('Storie trovate in IndexedDB:', cachedStories.length);
-      
-      if (cachedStories.length > 0) {
-        // Ripristina in localStorage
-        localStorage.setItem('fantasmia_stories', JSON.stringify(cachedStories));
-        stories = cachedStories;
-        console.log('Storie ripristinate in localStorage da IndexedDB');
-      }
-    }
-    
-    console.log('Totale storie restituite:', stories.length);
-    return stories;
-  } catch (error) {
-    console.error('Error getting stories:', error);
-    return [];
-  }
+export const getStories = (): Story[] => {
+  const stored = localStorage.getItem('fantasmia_stories');
+  return stored ? JSON.parse(stored) : [];
 };
 
-export const getStoriesForUser = async (userId: string, includePublic: boolean = false): Promise<Story[]> => {
-  try {
-    // Get user's personal archive da localStorage
-    const userArchiveKey = `fantasmia_user_archive_${userId}`;
-    let userArchive = JSON.parse(localStorage.getItem(userArchiveKey) || '[]');
-    
-    // Se non ci sono storie in localStorage, prova a recuperarle da IndexedDB
-    if (userArchive.length === 0) {
-      try {
-        const { getAllStoriesFromCache } = await import('./imageStorage');
-        const cachedStories = await getAllStoriesFromCache();
-        userArchive = cachedStories.filter((story: Story) => story.authorId === userId);
-        
-        // Ripristina in localStorage se trovate in IndexedDB
-        if (userArchive.length > 0) {
-          localStorage.setItem(userArchiveKey, JSON.stringify(userArchive));
-        }
-      } catch (error) {
-        console.warn('Failed to load stories from IndexedDB cache:', error);
-      }
-    }
-    
-    // Sort by descending date
-    return userArchive.sort((a: Story, b: Story) => 
-      new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
-    );
-  } catch (error) {
-    console.error('Error getting stories for user:', error);
-    return [];
-  }
-};
-
-export const getStoriesForUserByName = async (userName: string): Promise<Story[]> => {
-  try {
-    const stories = await getStories();
-    const userStories = stories.filter(story => story.authorName === userName);
-    return userStories;
-  } catch (error) {
-    console.error('Error fetching user stories:', error);
-    return [];
-  }
+export const getStoriesForUser = (userId: string, includePublic: boolean = false): Story[] => {
+  // Get user's personal archive
+  const userArchiveKey = `fantasmia_user_archive_${userId}`;
+  const userArchive = JSON.parse(localStorage.getItem(userArchiveKey) || '[]');
+  
+  // Sort by descending date
+  return userArchive.sort((a: Story, b: Story) => 
+    new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+  );
 };
 
 export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
@@ -365,7 +333,7 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
           content: story.content || '',
           status: story.status as 'completed' | 'suspended' | 'in-progress',
           lastModified: story.updated_at || story.created_at,
-          mode: (story.mode || story.category) as 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'ALOVAF' | 'CAMPBELL' | 'CSS' | 'PROFESSION',
+          mode: (story.mode || story.category) as 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS',
           authorId: story.author_id || story.user_id,
           authorName: story.author_name || story.user_name || 'Utente Sconosciuto',
           isPublic: story.is_public || false,
@@ -374,267 +342,159 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
       }
     }
     
-    // Get localStorage stories - now async
-    const localStories = await getStories();
+    // Get localStorage stories
+    const localStories = getStories();
     const users = getUsers();
-    
-    // Get all user archives to include user personal stories
-    const allUserStories: Story[] = [];
-    for (const user of users) {
-      if (user.name !== 'superuser') {  // Exclude Superuser's own stories
-        const userArchive = await getStoriesForUser(user.id);
-        allUserStories.push(...userArchive);
-      }
-    }
     
     // Process localStorage stories and ensure proper author names
     const processedLocalStories = localStories.map(story => {
       const user = users.find(u => u.id === story.authorId);
       return {
         ...story,
-        authorName: user ? user.name : story.authorName || 'Utente Sconosciuto'
+        authorName: user?.name || story.authorName || 'Utente Sconosciuto'
       };
     });
     
-    // Merge all stories, avoiding duplicates based on ID
+    // Merge stories from both sources, removing duplicates by title and author
     const allStories = [...supabaseStories];
     
-    // Add user archive stories first
-    allUserStories.forEach(userStory => {
-      if (!allStories.find(story => story.id === userStory.id)) {
-        allStories.push(userStory);
-      }
-    });
-    
-    // Then add processed localStorage stories
     processedLocalStories.forEach(localStory => {
-      if (!allStories.find(story => story.id === localStory.id)) {
+      // Check if this story already exists in Supabase stories
+      const existsInSupabase = supabaseStories.some(supabaseStory => 
+        supabaseStory.title === localStory.title && 
+        supabaseStory.authorName === localStory.authorName
+      );
+      
+      if (!existsInSupabase) {
         allStories.push(localStory);
       }
     });
     
-    // Sort by most recent modification
+    // Sort by descending date
     return allStories.sort((a, b) => 
       new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
     );
   } catch (error) {
     console.error('Error fetching stories:', error);
-    // Fallback to localStorage and user archives
-    const localStories = await getStories();
+    
+    // Complete fallback to localStorage only
+    const stories = getStories();
     const users = getUsers();
     
-    // Get all user archives as fallback
-    const allUserStories: Story[] = [];
-    for (const user of users) {
-      if (user.name !== 'superuser') {  // Exclude Superuser's own stories
-        const userArchive = await getStoriesForUser(user.id);
-        allUserStories.push(...userArchive);
-      }
-    }
-    
-    const processedLocalStories = localStories.map(story => {
-      const user = users.find(u => u.id === story.authorId);
-      return {
-        ...story,
-        authorName: user ? user.name : story.authorName || 'Utente Sconosciuto'
-      };
-    });
-    
-    const allStories = [...allUserStories];
-    processedLocalStories.forEach(localStory => {
-      if (!allStories.find(story => story.id === localStory.id)) {
-        allStories.push(localStory);
-      }
-    });
-    
-    return allStories.sort((a, b) => 
-      new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
-    );
+    return stories
+      .map(story => {
+        const user = users.find(u => u.id === story.authorId);
+        return {
+          ...story,
+          authorName: user?.name || story.authorName || 'Utente Sconosciuto'
+        };
+      })
+      .sort((a, b) => 
+        new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+      );
   }
 };
 
+export const getStoriesByCategory = (category: string): Story[] => {
+  const stories = getStories();
+  return stories
+    .filter(s => s.mode === category)
+    .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+};
+
+export const getStoriesByUserAndCategory = (userId: string, category: string): Story[] => {
+  const userStories = getStoriesForUser(userId);
+  return userStories.filter(s => s.mode === category);
+};
+
+export const getStoryById = (storyId: string): Story | null => {
+  const stories = getStories();
+  return stories.find(s => s.id === storyId) || null;
+};
+
+export const updateStory = (storyId: string, updates: Partial<Story>) => {
+  const stories = getStories();
+  const storyIndex = stories.findIndex(s => s.id === storyId);
+  
+  if (storyIndex >= 0) {
+    stories[storyIndex] = { ...stories[storyIndex], ...updates, lastModified: new Date().toISOString() };
+    localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
+  }
+};
+
+export const deleteStory = (storyId: string): boolean => {
+  const stories = getStories();
+  const storyIndex = stories.findIndex(s => s.id === storyId);
+  
+  if (storyIndex >= 0) {
+    stories.splice(storyIndex, 1);
+    localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
+    return true;
+  }
+  return false;
+};
+
+// Initialize directory structure for existing users
+export const initializeDirectoryStructureForExistingUsers = () => {
+  const users = getUsers();
+  users.forEach(user => {
+    ensureUserDirectoryStructure(user.id);
+  });
+};
+
+// Get directory structure for navigation
+export const getDirectoryStructure = () => {
+  const baseStructureKey = 'fantasmia_directory_structure';
+  return JSON.parse(localStorage.getItem(baseStructureKey) || '{}');
+};
+
+// Get files in a specific directory
+export const getFilesInDirectory = (userId: string, category: string): string[] => {
+  const structure = getDirectoryStructure();
+  if (structure['FANTASMIA'] && 
+      structure['FANTASMIA'][userId] && 
+      structure['FANTASMIA'][userId][category]) {
+    return Object.keys(structure['FANTASMIA'][userId][category]);
+  }
+  return [];
+};
+
+// Get all unique authors from stories
 export const getAllAuthors = async (): Promise<string[]> => {
-  const allStories = await getAllStoriesForSuperuser();
-  const authors = Array.from(new Set(allStories.map(story => story.authorName).filter(Boolean)));
-  return authors.sort();
+  const stories = await getAllStoriesForSuperuser();
+  const uniqueAuthors = new Set(stories.map(story => story.authorName));
+  return Array.from(uniqueAuthors).sort();
 };
 
-export const updateStory = async (storyId: string, updates: Partial<Story>) => {
-  try {
-    const stories = await getStories();
-    const existingIndex = stories.findIndex(s => s.id === storyId);
-    
-    if (existingIndex >= 0) {
-      stories[existingIndex] = { ...stories[existingIndex], ...updates, lastModified: new Date().toISOString() };
-      localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
-      
-      // Also update in user's personal archive
-      const authStatus = await AuthBridge.isAuthenticated();
-      if (authStatus.authenticated && authStatus.userName) {
-        const currentUser = getUserByName(authStatus.userName);
-        if (currentUser) {
-          updateUserStoryArchive(currentUser.id, stories[existingIndex]);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error updating story:', error);
-  }
-};
-
-export const deleteStory = async (storyId: string): Promise<boolean> => {
-  try {
-    // Delete from main stories
-    const stories = await getStories();
-    const storyIndex = stories.findIndex(s => s.id === storyId);
-    
-    if (storyIndex >= 0) {
-      const deletedStory = stories[storyIndex];
-      stories.splice(storyIndex, 1);
-      localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
-      
-      // Also delete from user's personal archive
-      const userArchiveKey = `fantasmia_user_archive_${deletedStory.authorId}`;
-      const userArchive = JSON.parse(localStorage.getItem(userArchiveKey) || '[]');
-      const userStoryIndex = userArchive.findIndex((s: Story) => s.id === storyId);
-      
-      if (userStoryIndex >= 0) {
-        userArchive.splice(userStoryIndex, 1);
-        localStorage.setItem(userArchiveKey, JSON.stringify(userArchive));
-      }
-      
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('Error deleting story:', error);
-    return false;
-  }
-};
-
-export const getStoryById = async (id: string): Promise<Story | null> => {
-  const stories = await getStories();
-  return stories.find(s => s.id === id) || null;
-};
-
-// Story Images Management
-interface StoryImage {
-  storyId: string;
-  imageCount: number;
-  lastImageCreated: string;
-}
-
-export const markStoryAsHavingImages = (storyId: string) => {
-  const images = getStoryImages();
-  const existingIndex = images.findIndex(img => img.storyId === storyId);
-  
-  if (existingIndex >= 0) {
-    images[existingIndex] = {
-      ...images[existingIndex],
-      imageCount: images[existingIndex].imageCount + 1,
-      lastImageCreated: new Date().toISOString()
-    };
-  } else {
-    images.push({
-      storyId,
-      imageCount: 1,
-      lastImageCreated: new Date().toISOString()
-    });
-  }
-  
-  localStorage.setItem('fantasmia_story_images', JSON.stringify(images));
-};
-
-export const getStoryImages = (): StoryImage[] => {
-  const stored = localStorage.getItem('fantasmia_story_images');
-  return stored ? JSON.parse(stored) : [];
-};
-
-export const hasStoryImages = (storyId: string): boolean => {
-  const images = getStoryImages();
-  const storyImage = images.find(img => img.storyId === storyId);
-  return storyImage ? storyImage.imageCount > 0 : false;
-};
-
-// Reading Stories Management (for superuser-curated stories)
+// Reading Stories Management (SuperUser only)
 export interface ReadingStory {
   id: string;
   title: string;
   content: string;
   created_at: string;
   updated_at: string;
-  author?: string;
-  image_url?: string;
-  category?: string;
 }
 
-export const saveReadingStory = async (story: ReadingStory) => {
-  // Mark as superuser story for public access
-  const storyWithMeta = {
-    ...story,
-    author: 'superuser',
-    category: 'reading_story',
-    updated_at: new Date().toISOString()
-  };
-  
-  console.log('Salvando reading story:', storyWithMeta.id, storyWithMeta.title);
-  
-  const stories = await getReadingStories();
+export const saveReadingStory = (story: ReadingStory) => {
+  const stories = getReadingStories();
   const existingIndex = stories.findIndex(s => s.id === story.id);
   
   if (existingIndex >= 0) {
-    stories[existingIndex] = storyWithMeta;
+    stories[existingIndex] = { ...story, updated_at: new Date().toISOString() };
   } else {
-    stories.push(storyWithMeta);
+    stories.push(story);
   }
   
   localStorage.setItem('fantasmia_reading_stories', JSON.stringify(stories));
-  
-  // SEMPRE salva in IndexedDB per persistenza
-  try {
-    const { saveStoryToCache } = await import('./imageStorage');
-    await saveStoryToCache(storyWithMeta);
-    console.log('Reading story salvata anche in IndexedDB');
-  } catch (error) {
-    console.error('Failed to save reading story to IndexedDB:', error);
-  }
 };
 
-export const getReadingStories = async (): Promise<ReadingStory[]> => {
-  try {
-    console.log('Recuperando reading stories...');
-    let stored = localStorage.getItem('fantasmia_reading_stories');
-    let stories = stored ? JSON.parse(stored) : [];
-    
-    console.log('Reading stories in localStorage:', stories.length);
-    
-    // Se localStorage è vuoto, prova a recuperare da IndexedDB
-    if (stories.length === 0) {
-      console.log('localStorage vuoto, recuperando reading stories da IndexedDB...');
-      const { getAllStoriesFromCache } = await import('./imageStorage');
-      const cachedStories = await getAllStoriesFromCache();
-      
-      // Filtra per reading stories
-      const readingStories = cachedStories.filter((story: any) => story.category === 'reading_story');
-      console.log('Reading stories trovate in IndexedDB:', readingStories.length);
-      
-      if (readingStories.length > 0) {
-        // Ripristina in localStorage
-        localStorage.setItem('fantasmia_reading_stories', JSON.stringify(readingStories));
-        stories = readingStories;
-        console.log('Reading stories ripristinate in localStorage da IndexedDB');
-      }
-    }
-    
-    return stories;
-  } catch (error) {
-    console.error('Error getting reading stories:', error);
-    return [];
-  }
+export const getReadingStories = (): ReadingStory[] => {
+  const stored = localStorage.getItem('fantasmia_reading_stories');
+  return stored ? JSON.parse(stored) : [];
 };
 
-export const updateReadingStory = async (id: string, updates: Partial<ReadingStory>) => {
-  const stories = await getReadingStories();
+export const updateReadingStory = (id: string, updates: Partial<ReadingStory>) => {
+  const stories = getReadingStories();
   const storyIndex = stories.findIndex(s => s.id === id);
   
   if (storyIndex >= 0) {
@@ -647,8 +507,8 @@ export const updateReadingStory = async (id: string, updates: Partial<ReadingSto
   }
 };
 
-export const deleteReadingStory = async (id: string): Promise<boolean> => {
-  const stories = await getReadingStories();
+export const deleteReadingStory = (id: string): boolean => {
+  const stories = getReadingStories();
   const storyIndex = stories.findIndex(s => s.id === id);
   
   if (storyIndex >= 0) {
@@ -657,193 +517,4 @@ export const deleteReadingStory = async (id: string): Promise<boolean> => {
     return true;
   }
   return false;
-};
-
-// Science Stories Management (new feature)
-export interface ScienceStory {
-  id: string;
-  title: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-  author?: string;
-  image_url?: string;
-  category?: string;
-}
-
-export const saveScienceStory = async (story: ScienceStory) => {
-  // Mark as superuser story for public access
-  const storyWithMeta = {
-    ...story,
-    author: 'superuser',
-    category: 'science_story',
-    updated_at: new Date().toISOString()
-  };
-  
-  console.log('Salvando science story:', storyWithMeta.id, storyWithMeta.title);
-  
-  const stories = await getScienceStories();
-  const existingIndex = stories.findIndex(s => s.id === story.id);
-  
-  if (existingIndex >= 0) {
-    stories[existingIndex] = storyWithMeta;
-  } else {
-    stories.push(storyWithMeta);
-  }
-  
-  localStorage.setItem('fantasmia_science_stories', JSON.stringify(stories));
-  
-  // SEMPRE salva in IndexedDB per persistenza
-  try {
-    const { saveStoryToCache } = await import('./imageStorage');
-    await saveStoryToCache(storyWithMeta);
-    console.log('Science story salvata anche in IndexedDB');
-  } catch (error) {
-    console.error('Failed to save science story to IndexedDB:', error);
-  }
-};
-
-export const getScienceStories = async (): Promise<ScienceStory[]> => {
-  try {
-    console.log('Recuperando science stories...');
-    let stored = localStorage.getItem('fantasmia_science_stories');
-    let stories = stored ? JSON.parse(stored) : [];
-    
-    console.log('Science stories in localStorage:', stories.length);
-    
-    // Se localStorage è vuoto, prova a recuperare da IndexedDB
-    if (stories.length === 0) {
-      console.log('localStorage vuoto, recuperando science stories da IndexedDB...');
-      const { getAllStoriesFromCache } = await import('./imageStorage');
-      const cachedStories = await getAllStoriesFromCache();
-      
-      // Filtra per science stories
-      const scienceStories = cachedStories.filter((story: any) => story.category === 'science_story');
-      console.log('Science stories trovate in IndexedDB:', scienceStories.length);
-      
-      if (scienceStories.length > 0) {
-        // Ripristina in localStorage
-        localStorage.setItem('fantasmia_science_stories', JSON.stringify(scienceStories));
-        stories = scienceStories;
-        console.log('Science stories ripristinate in localStorage da IndexedDB');
-      }
-    }
-    
-    return stories;
-  } catch (error) {
-    console.error('Error getting science stories:', error);
-    return [];
-  }
-};
-
-export const updateScienceStory = async (id: string, updates: Partial<ScienceStory>) => {
-  const stories = await getScienceStories();
-  const storyIndex = stories.findIndex(s => s.id === id);
-  
-  if (storyIndex >= 0) {
-    stories[storyIndex] = { 
-      ...stories[storyIndex], 
-      ...updates, 
-      updated_at: new Date().toISOString() 
-    };
-    localStorage.setItem('fantasmia_science_stories', JSON.stringify(stories));
-  }
-};
-
-export const deleteScienceStory = async (id: string): Promise<boolean> => {
-  const stories = await getScienceStories();
-  const storyIndex = stories.findIndex(s => s.id === id);
-  
-  if (storyIndex >= 0) {
-    stories.splice(storyIndex, 1);
-    localStorage.setItem('fantasmia_science_stories', JSON.stringify(stories));
-    return true;
-  }
-  return false;
-};
-
-// Published Stories Management (for public archive)
-export interface PublishedStory {
-  id: string;
-  title: string;
-  content: string;
-  published_at: string;
-  original_author: string;
-  image_url?: string;
-}
-
-export const publishStoryFromArchive = async (storyId: string, authorName?: string) => {
-  const story = await getStoryById(storyId);
-  if (!story) return false;
-
-  const publishedStories = getPublishedStories();
-  const existingIndex = publishedStories.findIndex(s => s.id === storyId);
-  
-  const publishedStory: PublishedStory = {
-    id: storyId,
-    title: story.title,
-    content: story.content || '',
-    published_at: new Date().toISOString(),
-    original_author: authorName || story.authorName
-  };
-
-  if (existingIndex >= 0) {
-    publishedStories[existingIndex] = publishedStory;
-  } else {
-    publishedStories.push(publishedStory);
-  }
-  
-  localStorage.setItem('fantasmia_published_stories', JSON.stringify(publishedStories));
-  return true;
-};
-
-export const unpublishStory = (storyId: string): boolean => {
-  const publishedStories = getPublishedStories();
-  const storyIndex = publishedStories.findIndex(s => s.id === storyId);
-  
-  if (storyIndex >= 0) {
-    publishedStories.splice(storyIndex, 1);
-    localStorage.setItem('fantasmia_published_stories', JSON.stringify(publishedStories));
-    return true;
-  }
-  return false;
-};
-
-export const getPublishedStories = (): PublishedStory[] => {
-  const stored = localStorage.getItem('fantasmia_published_stories');
-  const stories = stored ? JSON.parse(stored) : [];
-  // Sort alphabetically by title
-  return stories.sort((a: PublishedStory, b: PublishedStory) => a.title.localeCompare(b.title));
-};
-
-export const isStoryPublished = (storyId: string): boolean => {
-  const publishedStories = getPublishedStories();
-  return publishedStories.some(story => story.id === storyId);
-};
-
-// Missing exports for compatibility
-export const authenticateUser = (nameOrEmail: string, password: string) => {
-  // First try to authenticate by name (for normal users)
-  const userByName = getUserByNameAndPassword(nameOrEmail, password);
-  if (userByName) {
-    return userByName;
-  }
-  
-  // If that fails, try by email (for backward compatibility)
-  return getUserByEmailAndPassword(nameOrEmail, password);
-};
-
-export const sendMessage = (fromUserId: string, targetUsers: string[] | string, content: string, isBroadcast?: boolean) => {
-  // Placeholder implementation
-  console.log('Message sent:', { fromUserId, targetUsers, content, isBroadcast });
-};
-
-export const markMessagesAsRead = (userId: string) => {
-  // Placeholder implementation
-  console.log('Messages marked as read for user:', userId);
-};
-
-export const initializeDirectoryStructureForExistingUsers = () => {
-  // Placeholder implementation
-  console.log('Directory structure initialized');
 };

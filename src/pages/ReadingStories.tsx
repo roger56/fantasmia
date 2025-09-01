@@ -22,7 +22,7 @@ const ReadingStories = () => {
     const checkAuth = async () => {
       const authStatus = await AuthBridge.isAuthenticated();
       if (!authStatus.authenticated) {
-        navigate('/');
+        navigate('/home');
         return;
       }
       
@@ -37,10 +37,12 @@ const ReadingStories = () => {
   const loadReadingStories = async () => {
     setLoadingStories(true);
     try {
-      // Get reading stories from localStorage (created by SuperUser)
-      const readingStories = await getReadingStories();
-      // Sort alphabetically by title
-      setStories(readingStories.sort((a, b) => a.title.localeCompare(b.title)));
+      // Get stories from localStorage (created by SuperUser)
+      const readingStories = getReadingStories();
+      const sortedStories = readingStories.sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
+      setStories(sortedStories);
     } catch (error) {
       toast({
         title: "Errore",
@@ -69,8 +71,8 @@ const ReadingStories = () => {
     <>
       <ProfileIndicator />
       <StoryLayout
-        title="Storie Magiche"
-        subtitle="Le storie che si raccontano nel mondo"
+        title="Lettura Storie"
+        subtitle="Storie caricate dal SuperUser"
         onBack={() => navigate('/dashboard')}
         showHomeButton={true}
       >
@@ -85,7 +87,7 @@ const ReadingStories = () => {
               <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-medium mb-2">Nessuna storia disponibile</h3>
               <p className="text-muted-foreground">
-                Il SuperUser non ha ancora pubblicato storie per la lettura.
+                Il SuperUser non ha ancora caricato storie per la lettura.
               </p>
             </CardContent>
           </Card>
@@ -108,7 +110,6 @@ const ReadingStories = () => {
                     >
                       <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
                       <p className="text-xs text-slate-500 mt-1">
-                        {story.author && `di ${story.author} • `}
                         Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
                       </p>
                     </div>

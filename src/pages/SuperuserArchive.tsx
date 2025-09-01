@@ -7,8 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { ArrowLeft, BookOpen, Volume2, Eye, Image, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getAllStoriesForSuperuser, deleteStory, getAllAuthors, hasStoryImages, publishStoryFromArchive, unpublishStory, isStoryPublished } from '@/utils/userStorage';
-import { fantasmiaDB } from '@/utils/imageStorage';
+import { getAllStoriesForSuperuser, deleteStory, getAllAuthors } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,21 +57,14 @@ const SuperuserArchive = () => {
   const [selectedStory, setSelectedStory] = useState<TableRow | null>(null);
   const [currentScreen, setCurrentScreen] = useState<1 | 2>(1);
   const [authors, setAuthors] = useState<string[]>([]);
-  const [storiesWithImages, setStoriesWithImages] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchStoriesWithMedia = async () => {
-        // Filter out superuser-created stories (reading and science stories)
-        try {
-          const allStories = await getAllStoriesForSuperuser();
-          // Filter out stories created by superuser for central catalog AND stories without proper user info
-          const filteredStories = allStories.filter(story => {
-            const hasProperAuthor = story.authorName && story.authorName.trim() !== '' && story.authorName !== 'superuser';
-            const isNotSystemStory = !story.category || (story.category !== 'reading_story' && story.category !== 'science_story');
-            return hasProperAuthor && isNotSystemStory;
-          });
-          // Convert to StoryWithMedia format
-          const allStoriesWithMedia: StoryWithMedia[] = filteredStories.map(story => ({
+      // Since the database relation doesn't exist yet, use only localStorage for now
+      try {
+        const allStories = await getAllStoriesForSuperuser();
+        // Convert to StoryWithMedia format
+        const allStoriesWithMedia: StoryWithMedia[] = allStories.map(story => ({
           id: story.id,
           title: story.title,
           content: story.content || '',
@@ -87,16 +79,6 @@ const SuperuserArchive = () => {
         // Load authors for filter
         const authorList = await getAllAuthors();
         setAuthors(authorList);
-
-        // Check which stories have images in IndexedDB
-        const imagesSet = new Set<string>();
-        for (const story of filteredStories) {
-          const hasImage = await fantasmiaDB.hasImage(story.id);
-          if (hasImage) {
-            imagesSet.add(story.id);
-          }
-        }
-        setStoriesWithImages(imagesSet);
       } catch (error) {
         console.error('Error fetching stories:', error);
         setStories([]);
@@ -251,8 +233,7 @@ const SuperuserArchive = () => {
     { value: 'AIROTS', label: 'AIROTS' },
     { value: 'PAROLE_CHIAMANO', label: 'Una Parola, Tante Storie' },
     { value: 'CAMPBELL', label: 'Carte di Campbell' },
-    { value: 'CSS', label: 'Cosa Succede se...' },
-    { value: 'PROFESSION', label: 'Cosa farei se...' }
+    { value: 'CSS', label: 'Cosa Succede se...' }
   ];
 
   // Mobile Card Component for first screen
@@ -268,21 +249,9 @@ const SuperuserArchive = () => {
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium text-base truncate" title={row.storyTitle}>
-                {row.storyTitle}
-              </h3>
-              {/* Image status icon */}
-              <div title={storiesWithImages.has(row.storyId) ? 'Immagine presente' : 'Immagine assente'}>
-                <Image 
-                  className={`w-4 h-4 ${
-                    storiesWithImages.has(row.storyId) 
-                      ? 'text-green-600' 
-                      : 'text-red-500'
-                  }`}
-                />
-              </div>
-            </div>
+            <h3 className="font-medium text-base truncate" title={row.storyTitle}>
+              {row.storyTitle}
+            </h3>
             <p className="text-sm text-muted-foreground mt-1">
               di {row.author}
             </p>
@@ -435,17 +404,8 @@ const SuperuserArchive = () => {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      {hasStoryImages(selectedStory.storyId) ? (
-                        <>
-                          <span className="text-2xl">✓</span>
-                          <span className="text-sm">Immagini create</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-2xl">✗</span>
-                          <span className="text-sm">Nessuna immagine</span>
-                        </>
-                      )}
+                      <Image className="w-4 h-4" />
+                      <span className="text-sm">Nessuna immagine</span>
                     </div>
                   )}
                 </div>
@@ -473,7 +433,7 @@ const SuperuserArchive = () => {
           <div className="flex items-center">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/superuser')}
+              onClick={() => navigate('/dashboard')}
               className="mr-4"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -597,94 +557,82 @@ const SuperuserArchive = () => {
                           </TableCell>
                           <TableCell>{row.author}</TableCell>
                           <TableCell>{row.date}</TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex justify-center">
-                        {hasStoryImages(row.storyId) ? (
-                          <span className="text-2xl text-green-600">✓</span>
-                        ) : (
-                          <span className="text-2xl text-gray-400">✗</span>
-                        )}
-                      </div>
-                    </TableCell>
-                           <TableCell>
-                             <div className="flex items-center gap-2">
-                               <Button
-                                 variant="ghost"
-                                 size="sm"
-                                 onClick={() => navigate(`/story/${row.storyId}`)}
-                                 title="Visualizza storia"
-                               >
-                                 <Eye className="w-4 h-4" />
-                               </Button>
-                               <Button
-                                 variant="ghost"
-                                 size="sm"
-                                 onClick={(e) => {
-                                   const story = stories.find(s => s.id === row.storyId);
-                                   if (story) {
-                                     handleTextToSpeech(story.content, row.storyId, e);
-                                   }
-                                 }}
-                                 title="Leggi ad alta voce"
-                               >
-                                 <Volume2 className="w-4 h-4" />
-                               </Button>
-                               <Button
-                                 variant="ghost"
-                                 size="sm"
-                                 onClick={(e) => {
-                                   e.stopPropagation();
-                                   if (isStoryPublished(row.storyId)) {
-                                     unpublishStory(row.storyId);
-                                     toast({
-                                       title: "Storia rimossa",
-                                       description: "La storia è stata rimossa dall'archivio pubblico"
-                                     });
-                                   } else {
-                                     publishStoryFromArchive(row.storyId, row.author);
-                                     toast({
-                                       title: "Storia pubblicata",
-                                       description: "La storia è ora disponibile nell'archivio pubblico"
-                                     });
-                                   }
-                                 }}
-                                 className={isStoryPublished(row.storyId) ? 'text-green-600' : 'text-blue-600'}
-                                 title={isStoryPublished(row.storyId) ? 'Rimuovi dall\'archivio pubblico' : 'Pubblica nell\'archivio pubblico'}
-                               >
-                                 <BookOpen className="w-4 h-4" />
-                               </Button>
-                               <AlertDialog>
-                                 <AlertDialogTrigger asChild>
-                                   <Button
-                                     variant="ghost"
-                                     size="sm"
-                                     title="Elimina storia"
-                                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                   >
-                                     <Trash2 className="w-4 h-4" />
-                                   </Button>
-                                 </AlertDialogTrigger>
-                                 <AlertDialogContent>
-                                   <AlertDialogHeader>
-                                     <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
-                                     <AlertDialogDescription>
-                                       Sei sicuro di voler eliminare la storia "{row.storyTitle}"? 
-                                       Questa azione non può essere annullata.
-                                     </AlertDialogDescription>
-                                   </AlertDialogHeader>
-                                   <AlertDialogFooter>
-                                     <AlertDialogCancel>Annulla</AlertDialogCancel>
-                                     <AlertDialogAction 
-                                       onClick={() => handleDeleteStory(row.storyId)}
-                                       className="bg-red-600 hover:bg-red-700"
-                                     >
-                                       Elimina
-                                     </AlertDialogAction>
-                                   </AlertDialogFooter>
-                                 </AlertDialogContent>
-                               </AlertDialog>
-                             </div>
-                           </TableCell>
+                          <TableCell>
+                            {row.imageUrl ? (
+                              <div className="flex items-center gap-2">
+                                <img 
+                                  src={row.imageUrl} 
+                                  alt="Anteprima" 
+                                  className="w-16 h-16 object-cover rounded border"
+                                />
+                                <div className="text-xs text-slate-600">
+                                  <Badge variant="outline" className="text-xs">
+                                    {row.imageStyle}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-slate-400">
+                                <Image className="w-4 h-4" />
+                                <span className="text-xs">Nessuna immagine</span>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/story/${row.storyId}`)}
+                                title="Visualizza storia"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  const story = stories.find(s => s.id === row.storyId);
+                                  if (story) {
+                                    handleTextToSpeech(story.content, row.storyId, e);
+                                  }
+                                }}
+                                title="Leggi ad alta voce"
+                              >
+                                <Volume2 className="w-4 h-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    title="Elimina storia"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Sei sicuro di voler eliminare la storia "{row.storyTitle}"? 
+                                      Questa azione non può essere annullata.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Annulla</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => handleDeleteStory(row.storyId)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Elimina
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

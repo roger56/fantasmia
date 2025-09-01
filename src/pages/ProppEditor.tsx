@@ -97,7 +97,7 @@ const ProppEditor = () => {
 
   const handleSuspend = async () => {
     const story = {
-      id: editStory ? editStory.id : crypto.randomUUID(),
+      id: editStory ? editStory.id : Date.now().toString(),
       title: storyTitle || `Storia sospesa - ${new Date().toLocaleDateString()}`,
       content: finalStory,
       status: 'suspended' as const,
@@ -178,7 +178,7 @@ const ProppEditor = () => {
     }
 
     const story = {
-      id: editStory ? editStory.id : crypto.randomUUID(),
+      id: editStory ? editStory.id : Date.now().toString(),
       title: storyTitle,
       content: finalStory,
       status: 'completed' as const,

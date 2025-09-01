@@ -12,13 +12,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  // Log all incoming requests for debugging
-  console.log('Request method:', req.method)
-  console.log('Request headers:', Object.fromEntries(req.headers.entries()))
-  
-  // Skip authentication for now - handle edge function authentication later
-  // The function will work without JWT validation
-
   try {
     const { prompt, style, storyId, storyTitle, userId } = await req.json()
 
@@ -71,17 +64,14 @@ serve(async (req) => {
     console.log('Original prompt:', prompt)
     console.log('Cleaned prompt:', cleanPrompt)
 
-    // Create simplified prompts based on style
+    // Create safe prompt templates based on style
     const createStylePrompt = (content: string, artStyle: string) => {
-      const styleMap = {
-        'fumetto': `${content}. Stile fumetto colorato e allegro, per bambini.`,
-        'fotografico': `${content}. Stile fotografico realistico, bellissima illuminazione.`,
-        'astratto': `${content}. Interpretazione artistica astratta con colori armoniosi.`,
-        'manga': `${content}. Stile manga giapponese, pulito e espressivo.`,
-        'acquarello': `${content}. Stile acquerello delicato, colori soft.`,
-        'carboncino': `${content}. Disegno a carboncino artistico, bianco e nero.`
+      const safeTemplates = {
+        'fumetto': `Create a family-friendly cartoon illustration showing: ${content}. Use bright cheerful colors, cartoon style, clear outlines. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free illustration only. Pure visual storytelling without any readable content.`,
+        'fotografico': `Create a beautiful realistic image of: ${content}. Professional photography style, good lighting, peaceful scene. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free photography only. Family-friendly visual content without any readable content.`,
+        'astratto': `Create an abstract artistic interpretation of: ${content}. Use colors, shapes and artistic elements to represent the theme. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free abstract art only. Creative and peaceful visual art without any readable content.`
       }
-      return styleMap[artStyle] || `${content}. Illustrazione bella e familiare per bambini.`
+      return safeTemplates[artStyle] || `Create a beautiful, family-friendly illustration of: ${content}. ABSOLUTELY NO TEXT, NO WRITING, NO LETTERS, NO WORDS, NO SYMBOLS, NO NUMBERS visible anywhere in the image. Text-free image only.`
     }
 
     let enhancedPrompt = createStylePrompt(cleanPrompt, style)
@@ -227,61 +217,7 @@ serve(async (req) => {
     
     console.log(`Generated image with style: ${style}, size: 1024x1024, cost: ${cost}`)
 
-    // Upload to Supabase Storage for permanent access
-    let permanentUrl = imageUrl;
-    
-    try {
-      // Se l'URL è da OpenAI, scaricalo e caricalo su Storage
-      if (imageUrl.includes('oaidalleapiprodscus.blob.core.windows.net') || imageUrl.includes('openai.com') || imageUrl.startsWith('data:')) {
-        console.log('Uploading temporary image to permanent storage...');
-        
-        let imageBlob: Blob;
-        
-        if (imageUrl.startsWith('data:')) {
-          // Base64 data URL - converti in blob
-          const response = await fetch(imageUrl);
-          imageBlob = await response.blob();
-        } else {
-          // URL remoto - scarica il blob
-          const response = await fetch(imageUrl);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.status}`);
-          }
-          imageBlob = await response.blob();
-        }
-        
-        // Crea nome file sicuro
-        const timestamp = Date.now();
-        const safeTitle = storyTitle?.replace(/[^a-zA-Z0-9\-_]/g, '_').substring(0, 50) || 'story';
-        const fileName = `${safeTitle}_${storyId}_${timestamp}.png`;
-        
-        // Carica su Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('story-images')
-          .upload(fileName, imageBlob, {
-            contentType: 'image/png',
-            upsert: false
-          });
-
-        if (uploadError) {
-          console.error('Error uploading to Supabase Storage:', uploadError);
-          // Non bloccare, usa l'URL originale
-        } else {
-          // Ottieni URL pubblico permanente
-          const { data: { publicUrl } } = supabase.storage
-            .from('story-images')
-            .getPublicUrl(fileName);
-          
-          permanentUrl = publicUrl;
-          console.log('Image uploaded to permanent storage:', permanentUrl);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to upload to permanent storage:', error);
-      // Continua con l'URL originale
-    }
-
-    // Save media generation record with permanent URL
+    // Save media generation record
     const { data: mediaGeneration, error: mediaError } = await supabase
       .from('media_generations')
       .insert({
@@ -289,7 +225,7 @@ serve(async (req) => {
         user_id: userId,
         media_type: 'image',
         media_style: style,
-        media_url: permanentUrl, // Usa l'URL permanente
+        media_url: imageUrl,
         cost: cost
       })
       .select()
@@ -303,7 +239,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        imageUrl: permanentUrl, // Ritorna l'URL permanente
+        imageUrl,
         cost,
         style,
         mediaId: mediaGeneration?.id || null

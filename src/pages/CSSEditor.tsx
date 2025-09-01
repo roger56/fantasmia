@@ -85,7 +85,7 @@ const CSSEditor = () => {
     const storyContent = getFullStoryWithQuestions();
 
     const storyData = {
-      id: editStory?.id || crypto.randomUUID(),
+      id: editStory?.id || Date.now().toString(),
       title,
       content: storyContent,
       status: 'completed' as const,
@@ -99,7 +99,7 @@ const CSSEditor = () => {
 
     try {
       if (editStory) {
-        await updateStory(editStory.id, storyData);
+        updateStory(editStory.id, storyData);
         toast({
           title: "Storia aggiornata!",
           description: `"${title}" è stata aggiornata con successo.`

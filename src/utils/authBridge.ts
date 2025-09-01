@@ -43,7 +43,7 @@ export class AuthBridge {
   }
 
   /**
-   * Create a new user in Supabase Auth and profiles
+   * Create a new user in Supabase Auth and user_profiles
    */
   private static async createSupabaseUser(localUser: User): Promise<SupabaseAuthResult> {
     try {
@@ -57,8 +57,7 @@ export class AuthBridge {
         options: {
           data: {
             name: localUser.name,
-            age: localUser.age,
-            gender: localUser.gender
+            age: localUser.age
           }
         }
       });
@@ -176,8 +175,7 @@ export class AuthBridge {
           email: localUser.email || `${localUser.name}@fantasmia.local`,
           user_metadata: {
             name: localUser.name,
-            age: localUser.age,
-            gender: localUser.gender
+            age: localUser.age
           }
         },
         expires_at: Date.now() + (24 * 60 * 60 * 1000), // 24 hours

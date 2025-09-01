@@ -5,11 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, BookOpen, Edit, Trash2, Plus, Image } from 'lucide-react';
+import { ArrowLeft, BookOpen, Edit, Trash2, Plus } from 'lucide-react';
 import { saveReadingStory, getReadingStories, updateReadingStory, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
-import { fantasmiaDB } from '@/utils/imageStorage';
 
 const SuperuserReadingStoriesManagement = () => {
   const navigate = useNavigate();
@@ -19,10 +18,7 @@ const SuperuserReadingStoriesManagement = () => {
   const [editingStory, setEditingStory] = useState<ReadingStory | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imageUrl, setImageUrl] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [storiesWithImages, setStoriesWithImages] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Check if user is authenticated as superuser
@@ -37,24 +33,14 @@ const SuperuserReadingStoriesManagement = () => {
     }
   }, [navigate]);
 
-  const loadStories = async () => {
-    const readingStories = await getReadingStories();
+  const loadStories = () => {
+    const readingStories = getReadingStories();
     setStories(readingStories.sort((a, b) => 
       new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     ));
-    
-    // Check which stories have images in IndexedDB
-    const imagesSet = new Set<string>();
-    for (const story of readingStories) {
-      const hasImage = await fantasmiaDB.hasImage(story.id);
-      if (hasImage) {
-        imagesSet.add(story.id);
-      }
-    }
-    setStoriesWithImages(imagesSet);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!title.trim()) {
       toast({
         title: "Errore",
@@ -95,46 +81,21 @@ const SuperuserReadingStoriesManagement = () => {
 
     if (editingStory) {
       // Update existing story
-      await updateReadingStory(editingStory.id, { title, content });
+      updateReadingStory(editingStory.id, { title, content });
       toast({
         title: "Successo",
         description: "Storia aggiornata con successo",
       });
     } else {
       // Create new story
-      const storyId = crypto.randomUUID();
       const newStory: ReadingStory = {
-        id: storyId,
+        id: Date.now().toString(),
         title,
         content,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        image_url: imageUrl || undefined
+        updated_at: new Date().toISOString()
       };
-
-      // Save image to IndexedDB if present
-      if (imageFile && imageUrl) {
-        try {
-          const { uploadImageToStorage, fantasmiaDB } = await import('@/utils/imageStorage');
-          
-          // Convert file to blob
-          const blob = new Blob([imageFile], { type: imageFile.type });
-          
-          try {
-            // Try to upload to Supabase Storage
-            const publicUrl = await uploadImageToStorage(blob, storyId, title);
-            newStory.image_url = publicUrl;
-          } catch (storageError) {
-            console.warn('Storage upload failed, saving only locally:', storageError);
-          }
-          
-          // Always save locally for persistence
-          await fantasmiaDB.saveImage(storyId, blob);
-        } catch (error) {
-          console.error('Error saving image:', error);
-        }
-      }
-      await saveReadingStory(newStory);
+      saveReadingStory(newStory);
       toast({
         title: "Successo",
         description: "Storia creata con successo",
@@ -143,8 +104,6 @@ const SuperuserReadingStoriesManagement = () => {
 
     setTitle('');
     setContent('');
-    setImageFile(null);
-    setImageUrl('');
     setIsEditing(false);
     setEditingStory(null);
     loadStories();
@@ -154,22 +113,11 @@ const SuperuserReadingStoriesManagement = () => {
     setEditingStory(story);
     setTitle(story.title);
     setContent(story.content);
-    setImageUrl(story.image_url || '');
     setIsEditing(true);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      // Create a temporary URL for preview
-      const tempUrl = URL.createObjectURL(file);
-      setImageUrl(tempUrl);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (await deleteReadingStory(id)) {
+  const handleDelete = (id: string) => {
+    if (deleteReadingStory(id)) {
       toast({
         title: "Successo",
         description: "Storia eliminata con successo",
@@ -181,8 +129,6 @@ const SuperuserReadingStoriesManagement = () => {
   const handleCancel = () => {
     setTitle('');
     setContent('');
-    setImageFile(null);
-    setImageUrl('');
     setIsEditing(false);
     setEditingStory(null);
   };
@@ -207,7 +153,7 @@ const SuperuserReadingStoriesManagement = () => {
           <h1 className="text-2xl font-bold text-slate-800">📖 Gestione Storie da Leggere</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Form Section */}
           <Card className="h-fit">
             <CardHeader className="pb-4">
@@ -244,31 +190,6 @@ const SuperuserReadingStoriesManagement = () => {
                 />
               </div>
 
-              {/* Image Upload */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Immagine (Opzionale)
-                </label>
-                <div className="space-y-3">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="w-full"
-                  />
-                  {imageUrl && (
-                    <div className="border rounded-lg p-3">
-                      <p className="text-sm text-slate-600 mb-2">Anteprima immagine:</p>
-                      <img 
-                        src={imageUrl} 
-                        alt="Anteprima" 
-                        className="max-w-full h-32 object-contain rounded border"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
               <div className="flex gap-3">
                 {isEditing && (
                   <Button 
@@ -291,62 +212,43 @@ const SuperuserReadingStoriesManagement = () => {
           </Card>
 
           {/* Stories List */}
-          <Card className="h-fit">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <BookOpen className="w-4 h-4" />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
                 Storie Esistenti ({stories.length})
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent>
               {stories.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  <BookOpen className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-                  <p>Nessuna storia creata</p>
+                <div className="text-center text-slate-600 py-8">
+                  <BookOpen className="w-12 h-12 mx-auto mb-4 text-slate-400" />
+                  <p>Nessuna storia creata ancora.</p>
+                  <p className="text-sm">Crea la prima storia per iniziare!</p>
                 </div>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {stories.map((story) => (
-                    <div key={story.id} className="border rounded-lg p-3 hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-sm truncate" title={story.title}>
-                              {story.title}
-                            </h3>
-                            {/* Image status icon */}
-                            <div title={storiesWithImages.has(story.id) ? 'Immagine presente' : 'Immagine assente'}>
-                              <Image 
-                                className={`w-4 h-4 ${
-                                  storiesWithImages.has(story.id) 
-                                    ? 'text-green-600' 
-                                    : 'text-red-500'
-                                }`}
-                              />
-                            </div>
-                          </div>
-                          <p className="text-xs text-slate-500 mt-1">
-                            {new Date(story.updated_at).toLocaleDateString('it-IT')}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 ml-2">
+                    <div key={story.id} className="border border-slate-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-slate-800 truncate">{story.title}</h3>
+                        <div className="flex gap-1 ml-2">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(story)}
-                            title="Modifica storia"
+                            className="h-8 w-8 p-0"
                           >
-                            <Edit className="w-3 h-3" />
+                            <Edit className="w-4 h-4" />
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                title="Elimina storia"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -361,7 +263,7 @@ const SuperuserReadingStoriesManagement = () => {
                                 <AlertDialogCancel>Annulla</AlertDialogCancel>
                                 <AlertDialogAction 
                                   onClick={() => handleDelete(story.id)}
-                                  className="bg-destructive hover:bg-destructive/90"
+                                  className="bg-red-600 hover:bg-red-700"
                                 >
                                   Elimina
                                 </AlertDialogAction>
@@ -370,6 +272,12 @@ const SuperuserReadingStoriesManagement = () => {
                           </AlertDialog>
                         </div>
                       </div>
+                      <p className="text-slate-600 text-sm line-clamp-3 mb-2">
+                        {story.content}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
+                      </p>
                     </div>
                   ))}
                 </div>

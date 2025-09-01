@@ -8,7 +8,7 @@ const TermsAcceptance = () => {
   const navigate = useNavigate();
 
   const handleAccept = () => {
-    navigate('/privacy');
+    navigate('/new-profile');
   };
 
   return (

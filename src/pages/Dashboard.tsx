@@ -17,7 +17,7 @@ const Dashboard = () => {
     const checkAuth = async () => {
       const authStatus = await AuthBridge.isAuthenticated();
       if (!authStatus.authenticated) {
-        navigate('/');
+        navigate('/home');
         return;
       }
       
@@ -54,14 +54,14 @@ const Dashboard = () => {
       title: 'Lettura Storie',
       icon: BookText,
       description: 'Leggi le storie che si raccontano nel mondo',
-      path: '/story-type-selection'
+      path: '/reading-stories'
     },
     {
       id: 'archive-complete',
-      title: 'IL TUO ARCHIVIO MAGICO',
+      title: 'Archivio Globale',
       icon: BookOpen,
-      description: 'vedi e modifica le tue storie fantastiche',
-      path: isSuperuser ? '/superuser-archive' : '/user-archive'
+      description: 'Visualizza tutte le storie create dagli utenti',
+      path: '/superuser-archive'
     }
   ];
 
@@ -74,23 +74,15 @@ const Dashboard = () => {
       description: 'Accedi alle funzionalità di amministrazione',
       path: '/superuser'
     });
-    
-    dashboardOptions.push({
-      id: 'superuser-science-stories',
-      title: 'Gestione Storie Scientifiche',
-      icon: BookOpen,
-      description: 'Gestisci le storie di Magia della Scienza',
-      path: '/superuser-science-stories-view'
-    });
   }
 
   return (
     <>
       <ProfileIndicator />
       <StoryLayout
-      title="FANTAS-Mia"
+      title="FANTAS(m)IA"
       subtitle="Dashboard Principale"
-      onBack={() => navigate('/')}
+      onBack={() => navigate('/profiles')}
       showHomeButton={true}
     >
       {/* Dashboard Options Grid */}

@@ -15,7 +15,7 @@ const CreateStory = () => {
     const checkAuth = async () => {
       const authStatus = await AuthBridge.isAuthenticated();
       if (!authStatus.authenticated) {
-        navigate('/');
+        navigate('/home');
         return;
       }
       setIsAuthenticated(true);
@@ -118,9 +118,6 @@ const CreateStory = () => {
               <h2 className="text-xl font-semibold mb-2 text-red-600 text-center">
                 SCEGLI LA CATEGORIA CHE VUOI USARE PER LA TUA STORIA
               </h2>
-              <p className="text-center text-slate-600 text-sm mt-2">
-                le stelle sono simbolo dell'impegno necessario
-              </p>
             </CardContent>
           </Card>
 

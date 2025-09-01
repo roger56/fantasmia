@@ -17,8 +17,7 @@ const NewProfile = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    age: '',
-    gender: '' as 'male' | 'female' | ''
+    age: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -61,11 +60,10 @@ const NewProfile = () => {
 
     // Create user with password same as name (temporary solution)
     const newUser = {
-      id: crypto.randomUUID(),
+      id: Date.now().toString(),
       name: formData.name.trim(),
       email: formData.email.trim() || undefined,
       age: parseInt(formData.age),
-      gender: formData.gender as 'male' | 'female' | undefined,
       password: formData.name.trim(), // Password same as name
       lastAccess: new Date().toISOString(),
       unreadMessages: []
@@ -81,9 +79,9 @@ const NewProfile = () => {
       description: `Il profilo ${formData.name} è stato creato con successo`,
     });
 
-    // Navigate to privacy page for acceptance
+    // Navigate to privacy acceptance screen with new profile
     setTimeout(() => {
-      navigate('/privacy');
+      navigate('/privacy-acceptance', { state: { profileId: newUser.id, profileName: newUser.name } });
     }, 1500);
   };
 
@@ -150,30 +148,6 @@ const NewProfile = () => {
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 className="text-lg"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Sesso (facoltativo)
-              </label>
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant={formData.gender === 'male' ? 'default' : 'outline'}
-                  onClick={() => handleInputChange('gender', 'male')}
-                  className="flex-1"
-                >
-                  Maschio
-                </Button>
-                <Button
-                  type="button"
-                  variant={formData.gender === 'female' ? 'default' : 'outline'}
-                  onClick={() => handleInputChange('gender', 'female')}
-                  className="flex-1"
-                >
-                  Femmina
-                </Button>
-              </div>
             </div>
 
             <div className="bg-blue-50 p-3 rounded-md">

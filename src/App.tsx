@@ -38,17 +38,6 @@ import SuperuserReadingStoriesManagement from "./pages/SuperuserReadingStoriesMa
 import SuperuserReadingStoriesView from "./pages/SuperuserReadingStoriesView";
 import SuperuserReadingStoryViewer from "./pages/SuperuserReadingStoryViewer";
 import ReadingStoryViewer from "./pages/ReadingStoryViewer";
-import Archive from "./pages/Archive";
-import StoryTypeSelection from "./pages/StoryTypeSelection";
-import ScienceStories from "./pages/ScienceStories";
-import ScienceStoryViewer from "./pages/ScienceStoryViewer";
-import SuperuserScienceStoriesView from "./pages/SuperuserScienceStoriesView";
-import SuperuserScienceStoriesManagement from "./pages/SuperuserScienceStoriesManagement";
-import SuperuserScienceStoryViewer from "./pages/SuperuserScienceStoryViewer";
-import SuperuserStoryManagementSelection from "./pages/SuperuserStoryManagementSelection";
-import UserArchive from "./pages/UserArchive";
-
-// Import NotFound component
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,7 +50,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<NewHome />} />
-          <Route path="/superuser-story-management-selection" element={<SuperuserStoryManagementSelection />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/company" element={<Company />} />
           <Route path="/spare" element={<Spare />} />
@@ -80,7 +69,6 @@ const App = () => (
           <Route path="/ghost-editor" element={<GhostEditor />} />
           <Route path="/story/:storyId" element={<StoryViewer />} />
           <Route path="/superuser-archive" element={<SuperuserArchive />} />
-          <Route path="/user-archive" element={<UserArchive />} />
           <Route path="/superuser-users" element={<SuperuserUsers />} />
           <Route path="/superuser-settings" element={<SuperuserSettings />} />
           <Route path="/superuser-password-change" element={<SuperuserPasswordChange />} />
@@ -91,19 +79,10 @@ const App = () => (
           <Route path="/campbell-editor" element={<CampbellEditor />} />
           <Route path="/css-editor" element={<CSSEditor />} />
           <Route path="/reading-stories" element={<ReadingStories />} />
-          <Route path="/reading-story-viewer/:id" element={<ReadingStoryViewer />} />
+          <Route path="/reading-story-viewer/:storyId" element={<ReadingStoryViewer />} />
           <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
           <Route path="/superuser-reading-story-viewer/:id" element={<SuperuserReadingStoryViewer />} />
-        {/* Add new routes for science stories */}
-        <Route path="/story-type-selection" element={<StoryTypeSelection />} />
-        <Route path="/science-stories" element={<ScienceStories />} />
-        <Route path="/science-story-viewer/:id" element={<ScienceStoryViewer />} />
-        
-        {/* Superuser science stories management */}
-        <Route path="/superuser-science-stories-view" element={<SuperuserScienceStoriesView />} />
-        <Route path="/superuser-science-stories-management" element={<SuperuserScienceStoriesManagement />} />
-        <Route path="/superuser-science-story-viewer/:id" element={<SuperuserScienceStoryViewer />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

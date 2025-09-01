@@ -85,6 +85,17 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
 
   return (
     <div className="flex items-center gap-2">
+      {/* Pulsante Inglese */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleTranslate}
+        className="flex items-center gap-2"
+      >
+        <Languages className="w-4 h-4" />
+        Inglese
+      </Button>
+
       {/* Menu Leggi (Voci) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
