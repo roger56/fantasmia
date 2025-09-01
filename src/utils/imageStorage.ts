@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 // IndexedDB per cache locale di immagini e storie
 class FantasmiaDB {
   private dbName = 'fantasmia-cache';
-  private version = 2;
+  private version = 3; // Incrementato per forzare aggiornamento
   private db: IDBDatabase | null = null;
   private initPromise: Promise<void> | null = null;
 
