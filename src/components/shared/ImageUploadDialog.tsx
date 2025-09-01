@@ -59,6 +59,7 @@ export const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({
   };
 
   const handleAIGeneration = () => {
+    console.log('AI generation clicked for story:', storyId);
     onAIGeneration();
     onClose();
   };

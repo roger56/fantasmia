@@ -55,25 +55,23 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
     
     setIsGenerating(true);
     setShowPreview(true);
+    setGeneratedImageUrl(null); // Reset previous image
     
     try {
-      // Get proper session token
-      const session = AuthBridge.getCurrentBridgedSession();
-      const authHeaders: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-      };
-      
-      if (session?.access_token) {
-        authHeaders['Authorization'] = `Bearer ${session.access_token}`;
-      }
+      console.log('Starting image generation with style:', style);
+      console.log('Story content:', storyContent.substring(0, 100));
+      console.log('Story ID:', storyId);
+      console.log('Story Title:', storyTitle);
       
       // Call the Edge Function to generate image
       const response = await fetch('https://aomisprfxjatoibvcmhh.supabase.co/functions/v1/generate-image', {
         method: 'POST',
-        headers: authHeaders,
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
         body: JSON.stringify({
-          prompt: storyContent.substring(0, 500), // Limit prompt length
+          prompt: storyContent.substring(0, 500),
           style: style,
           storyId: storyId,
           storyTitle: storyTitle,
@@ -81,17 +79,26 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
         }),
       });
       
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Errore nella generazione dell\'immagine');
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`Errore HTTP ${response.status}: ${errorText}`);
       }
       
       const data = await response.json();
+      console.log('Generated image data:', data);
+      
+      if (!data.imageUrl) {
+        throw new Error('Nessuna immagine ricevuta dal server');
+      }
+      
       setGeneratedImageUrl(data.imageUrl);
       
       toast({
         title: "Immagine generata",
-        description: `Stile: ${style} - Costo: $${data.cost}`,
+        description: `Stile: ${style}`,
         variant: "default"
       });
       
@@ -103,6 +110,7 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
         variant: "destructive"
       });
       setShowPreview(false);
+      setGeneratedImageUrl(null);
     } finally {
       setIsGenerating(false);
     }
