@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import HomeButton from '@/components/HomeButton';
 import PoetryGenerator from '@/components/shared/PoetryGenerator';
-import MediaButton from '@/components/shared/MediaButton';
+import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
 
 const SuperuserReadingStoryViewer = () => {
   const { id } = useParams<{ id: string }>();
@@ -154,7 +154,7 @@ const SuperuserReadingStoryViewer = () => {
             </DropdownMenu>
 
             {/* MEDIA Button with full functionality */}
-            <MediaButton
+            <CreativeMediaMenu
               storyContent={content}
               storyTitle={title}
               storyId={id}
