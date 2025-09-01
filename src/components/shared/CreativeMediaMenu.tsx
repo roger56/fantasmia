@@ -57,13 +57,21 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
     setShowPreview(true);
     
     try {
+      // Get proper session token
+      const session = AuthBridge.getCurrentBridgedSession();
+      const authHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+      };
+      
+      if (session?.access_token) {
+        authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
       // Call the Edge Function to generate image
       const response = await fetch('https://aomisprfxjatoibvcmhh.supabase.co/functions/v1/generate-image', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
+        headers: authHeaders,
         body: JSON.stringify({
           prompt: storyContent.substring(0, 500), // Limit prompt length
           style: style,
@@ -235,9 +243,12 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
           </DropdownMenuSub>
 
           {/* Carica da PC option for Superuser */}
-          {(() => {
-            const authStatus = localStorage.getItem('userType') === 'superuser';
-            return authStatus && (
+          {React.useMemo(() => {
+            const currentUser = localStorage.getItem('currentUser');
+            const user = currentUser ? JSON.parse(currentUser) : null;
+            const isSuperuser = user?.name?.toLowerCase() === 'superuser';
+            
+            return isSuperuser && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => {
@@ -248,10 +259,12 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
                     const file = (e.target as HTMLInputElement).files?.[0];
                     if (file && storyId) {
                       try {
-                        const { saveUploadedImageToPersistentStorage } = await import('@/utils/imageStorage');
-                        await saveUploadedImageToPersistentStorage(file, storyId, storyTitle || 'untitled');
+                        // Convert file to blob and save directly to fantasmiaDB
+                        await fantasmiaDB.saveImage(storyId, file);
+                        
                         setHasAssociatedImage(true);
                         onImageAssociated?.(URL.createObjectURL(file));
+                        
                         toast({
                           title: "Immagine caricata",
                           description: "L'immagine è stata associata alla storia con successo",
@@ -274,7 +287,7 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
                 </DropdownMenuItem>
               </>
             );
-          })()}
+          }, [storyId, storyTitle, onImageAssociated])}
 
           <DropdownMenuSeparator />
 

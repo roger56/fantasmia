@@ -15,6 +15,9 @@ serve(async (req) => {
   // Log all incoming requests for debugging
   console.log('Request method:', req.method)
   console.log('Request headers:', Object.fromEntries(req.headers.entries()))
+  
+  // Skip authentication for now - handle edge function authentication later
+  // The function will work without JWT validation
 
   try {
     const { prompt, style, storyId, storyTitle, userId } = await req.json()

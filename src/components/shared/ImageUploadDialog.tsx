@@ -31,8 +31,9 @@ export const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
-          const { saveUploadedImageToPersistentStorage } = await import('@/utils/imageStorage');
-          await saveUploadedImageToPersistentStorage(file, storyId, storyTitle);
+          // Save directly to fantasmiaDB
+          const { fantasmiaDB } = await import('@/utils/imageStorage');
+          await fantasmiaDB.saveImage(storyId, file);
           
           const imageUrl = URL.createObjectURL(file);
           onImageUploaded(imageUrl);
