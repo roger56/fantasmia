@@ -15,31 +15,68 @@ class FantasmiaDB {
     if (this.initPromise) return this.initPromise;
     
     this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.version);
+      // Prima elimina il database esistente se corrotto
+      const deleteRequest = indexedDB.deleteDatabase(this.dbName);
       
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        this.db = request.result;
-        console.log('IndexedDB inizializzato con successo');
-        resolve();
+      deleteRequest.onsuccess = () => {
+        console.log('Database precedente eliminato, creando nuovo database');
+        this.createNewDatabase(resolve, reject);
       };
       
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        
-        // Store per le immagini
-        if (!db.objectStoreNames.contains('images')) {
-          db.createObjectStore('images', { keyPath: 'storyId' });
-        }
-        
-        // Store per le storie
-        if (!db.objectStoreNames.contains('stories')) {
-          db.createObjectStore('stories', { keyPath: 'id' });
-        }
+      deleteRequest.onerror = () => {
+        console.log('Errore eliminazione database, procedendo con creazione');
+        this.createNewDatabase(resolve, reject);
+      };
+      
+      deleteRequest.onblocked = () => {
+        console.log('Eliminazione bloccata, procedendo con creazione');
+        this.createNewDatabase(resolve, reject);
       };
     });
     
     return this.initPromise;
+  }
+
+  private createNewDatabase(resolve: () => void, reject: (error: any) => void): void {
+    const request = indexedDB.open(this.dbName, this.version);
+    
+    request.onerror = () => {
+      console.error('Errore apertura database:', request.error);
+      reject(request.error);
+    };
+    
+    request.onsuccess = () => {
+      this.db = request.result;
+      console.log('IndexedDB inizializzato con successo, version:', this.db.version);
+      
+      // Verifica che gli object stores esistano
+      if (!this.db.objectStoreNames.contains('images') || !this.db.objectStoreNames.contains('stories')) {
+        console.error('Object stores mancanti dopo inizializzazione');
+        reject(new Error('Object stores non creati correttamente'));
+        return;
+      }
+      
+      resolve();
+    };
+    
+    request.onupgradeneeded = (event) => {
+      const db = request.result;
+      console.log('Upgrade necessario, creando object stores');
+      
+      // Elimina object stores esistenti se presenti
+      if (db.objectStoreNames.contains('images')) {
+        db.deleteObjectStore('images');
+      }
+      if (db.objectStoreNames.contains('stories')) {
+        db.deleteObjectStore('stories');
+      }
+      
+      // Crea nuovi object stores
+      db.createObjectStore('images', { keyPath: 'storyId' });
+      db.createObjectStore('stories', { keyPath: 'id' });
+      
+      console.log('Object stores creati:', Array.from(db.objectStoreNames));
+    };
   }
 
   async ensureInit(): Promise<void> {
