@@ -62,6 +62,7 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           prompt: storyContent.substring(0, 500), // Limit prompt length
@@ -232,6 +233,48 @@ export const CreativeMediaMenu: React.FC<CreativeMediaMenuProps> = ({
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
+
+          {/* Carica da PC option for Superuser */}
+          {(() => {
+            const authStatus = localStorage.getItem('userType') === 'superuser';
+            return authStatus && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file && storyId) {
+                      try {
+                        const { saveUploadedImageToPersistentStorage } = await import('@/utils/imageStorage');
+                        await saveUploadedImageToPersistentStorage(file, storyId, storyTitle || 'untitled');
+                        setHasAssociatedImage(true);
+                        onImageAssociated?.(URL.createObjectURL(file));
+                        toast({
+                          title: "Immagine caricata",
+                          description: "L'immagine è stata associata alla storia con successo",
+                          variant: "default"
+                        });
+                      } catch (error) {
+                        console.error('Error uploading image:', error);
+                        toast({
+                          title: "Errore",
+                          description: "Impossibile caricare l'immagine",
+                          variant: "destructive"
+                        });
+                      }
+                    }
+                  };
+                  input.click();
+                }}>
+                  <Image className="w-4 h-4 mr-2" />
+                  Carica da PC
+                </DropdownMenuItem>
+              </>
+            );
+          })()}
 
           <DropdownMenuSeparator />
 

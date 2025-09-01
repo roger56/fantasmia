@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { X, Share2, Copy, Mail } from 'lucide-react';
+import { X, Share2, Copy, Mail, Sparkles, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImageViewModalProps {
@@ -127,18 +127,6 @@ export const ImageViewModal: React.FC<ImageViewModalProps> = ({
               Puoi caricarne una dal tuo computer o generarne una con l'intelligenza artificiale.
             </p>
             <div className="flex justify-center gap-4">
-              {/* Check if user is superuser (authenticated) */}
-              {(() => {
-                const isAuthenticated = localStorage.getItem('userType') === 'superuser';
-                return isAuthenticated && (
-                  <Button
-                    onClick={handleUploadImage}
-                    className="mr-2"
-                  >
-                    Carica da PC
-                  </Button>
-                );
-              })()}
               <Button
                 onClick={() => {
                   // Trigger AI generation through parent component
@@ -146,10 +134,26 @@ export const ImageViewModal: React.FC<ImageViewModalProps> = ({
                   window.dispatchEvent(event);
                   onClose();
                 }}
-                variant="outline"
+                className="flex items-center gap-2"
               >
-                Genera con AI
+                <Sparkles className="w-4 h-4" />
+                Crea immagine con AI
               </Button>
+              
+              {/* Check if user is superuser (authenticated) */}
+              {(() => {
+                const isAuthenticated = localStorage.getItem('userType') === 'superuser';
+                return isAuthenticated && (
+                  <Button
+                    onClick={handleUploadImage}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Carica da PC
+                  </Button>
+                );
+              })()}
             </div>
           </div>
         )}

@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewModal from '@/components/shared/ImageViewModal';
+import ImageUploadDialog from '@/components/shared/ImageUploadDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { fantasmiaDB, getStoryImage } from '@/utils/imageStorage';
 
@@ -20,6 +21,8 @@ const SuperuserScienceStoriesView = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string>('');
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [selectedStoryId, setSelectedStoryId] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -95,19 +98,39 @@ const SuperuserScienceStoriesView = () => {
   };
 
   const handleImageClick = async (story: ScienceStory) => {
-    try {
-      const imageUrl = await getStoryImage(story.id);
-      setSelectedImageUrl(imageUrl);
+    const hasImage = imageStatus[story.id];
+    
+    if (hasImage) {
+      // Show existing image
+      try {
+        const imageUrl = await getStoryImage(story.id);
+        setSelectedImageUrl(imageUrl);
+        setSelectedStoryTitle(story.title);
+        setShowImageModal(true);
+      } catch (error) {
+        console.error('Error loading image:', error);
+        toast({
+          title: "Errore",
+          description: "Impossibile caricare l'immagine",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Show upload dialog for creating new image
+      setSelectedStoryId(story.id);
       setSelectedStoryTitle(story.title);
-      setShowImageModal(true);
-    } catch (error) {
-      console.error('Error loading image:', error);
-      toast({
-        title: "Errore",
-        description: "Impossibile caricare l'immagine",
-        variant: "destructive"
-      });
+      setShowUploadDialog(true);
     }
+  };
+
+  const handleImageUploaded = (imageUrl: string) => {
+    setImageStatus(prev => ({ ...prev, [selectedStoryId]: true }));
+    loadStories(); // Refresh the list
+  };
+
+  const handleAIGeneration = () => {
+    // Navigate to story viewer where AI generation can be done via MEDIA button
+    navigate(`/superuser-science-story-viewer/${selectedStoryId}`);
   };
 
   if (!isAuthenticated || loading) {
@@ -237,6 +260,16 @@ const SuperuserScienceStoriesView = () => {
         onClose={() => setShowImageModal(false)}
         imageUrl={selectedImageUrl}
         storyTitle={selectedStoryTitle}
+      />
+      
+      {/* Image Upload Dialog */}
+      <ImageUploadDialog
+        isOpen={showUploadDialog}
+        onClose={() => setShowUploadDialog(false)}
+        storyId={selectedStoryId}
+        storyTitle={selectedStoryTitle}
+        onImageUploaded={handleImageUploaded}
+        onAIGeneration={handleAIGeneration}
       />
     </>
   );

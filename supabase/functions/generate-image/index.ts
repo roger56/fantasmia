@@ -12,6 +12,10 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  // Log all incoming requests for debugging
+  console.log('Request method:', req.method)
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()))
+
   try {
     const { prompt, style, storyId, storyTitle, userId } = await req.json()
 
