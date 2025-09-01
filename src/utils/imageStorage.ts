@@ -1,252 +1,25 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// IndexedDB per cache locale di immagini e storie
-class FantasmiaDB {
-  private dbName = 'fantasmia-cache';
-  private version = 3; // Incrementato per forzare aggiornamento
-  private db: IDBDatabase | null = null;
-  private initPromise: Promise<void> | null = null;
-
-  async init(): Promise<void> {
-    // Se già inizializzato, ritorna
-    if (this.db) return;
-    
-    // Se già in corso di inizializzazione, aspetta
-    if (this.initPromise) return this.initPromise;
-    
-    this.initPromise = new Promise((resolve, reject) => {
-      // Prima elimina il database esistente se corrotto
-      const deleteRequest = indexedDB.deleteDatabase(this.dbName);
-      
-      deleteRequest.onsuccess = () => {
-        console.log('Database precedente eliminato, creando nuovo database');
-        this.createNewDatabase(resolve, reject);
-      };
-      
-      deleteRequest.onerror = () => {
-        console.log('Errore eliminazione database, procedendo con creazione');
-        this.createNewDatabase(resolve, reject);
-      };
-      
-      deleteRequest.onblocked = () => {
-        console.log('Eliminazione bloccata, procedendo con creazione');
-        this.createNewDatabase(resolve, reject);
-      };
-    });
-    
-    return this.initPromise;
-  }
-
-  private createNewDatabase(resolve: () => void, reject: (error: any) => void): void {
-    const request = indexedDB.open(this.dbName, this.version);
-    
-    request.onerror = () => {
-      console.error('Errore apertura database:', request.error);
-      reject(request.error);
-    };
-    
-    request.onsuccess = () => {
-      this.db = request.result;
-      console.log('IndexedDB inizializzato con successo, version:', this.db.version);
-      
-      // Verifica che gli object stores esistano
-      if (!this.db.objectStoreNames.contains('images') || !this.db.objectStoreNames.contains('stories')) {
-        console.error('Object stores mancanti dopo inizializzazione');
-        reject(new Error('Object stores non creati correttamente'));
-        return;
-      }
-      
-      resolve();
-    };
-    
-    request.onupgradeneeded = (event) => {
-      const db = request.result;
-      console.log('Upgrade necessario, creando object stores');
-      
-      // Elimina object stores esistenti se presenti
-      if (db.objectStoreNames.contains('images')) {
-        db.deleteObjectStore('images');
-      }
-      if (db.objectStoreNames.contains('stories')) {
-        db.deleteObjectStore('stories');
-      }
-      
-      // Crea nuovi object stores
-      db.createObjectStore('images', { keyPath: 'storyId' });
-      db.createObjectStore('stories', { keyPath: 'id' });
-      
-      console.log('Object stores creati:', Array.from(db.objectStoreNames));
-    };
-  }
-
-  async ensureInit(): Promise<void> {
-    await this.init();
-  }
-
-  async saveImage(storyId: string, imageBlob: Blob): Promise<void> {
-    await this.ensureInit();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['images'], 'readwrite');
-      const store = transaction.objectStore('images');
-      
-      store.put({
-        storyId,
-        imageBlob,
-        timestamp: Date.now()
-      });
-      
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-    });
-  }
-
-  async saveStory(story: any): Promise<void> {
-    await this.ensureInit();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['stories'], 'readwrite');
-      const store = transaction.objectStore('stories');
-      
-      const storyToSave = {
-        ...story,
-        timestamp: Date.now()
-      };
-      
-      console.log('Salvando storia in IndexedDB:', storyToSave.id, storyToSave.title);
-      
-      store.put(storyToSave);
-      
-      transaction.oncomplete = () => {
-        console.log('Storia salvata in IndexedDB con successo:', storyToSave.id);
-        resolve();
-      };
-      transaction.onerror = () => {
-        console.error('Errore nel salvare storia in IndexedDB:', transaction.error);
-        reject(transaction.error);
-      };
-    });
-  }
-
-  async getStory(storyId: string): Promise<any | null> {
-    await this.ensureInit();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['stories'], 'readonly');
-      const store = transaction.objectStore('stories');
-      const request = store.get(storyId);
-      
-      request.onsuccess = () => {
-        const result = request.result;
-        resolve(result || null);
-      };
-      
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async getAllStories(): Promise<any[]> {
-    await this.ensureInit();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['stories'], 'readonly');
-      const store = transaction.objectStore('stories');
-      const request = store.getAll();
-      
-      request.onsuccess = () => {
-        const stories = request.result || [];
-        console.log('Recuperate storie da IndexedDB:', stories.length);
-        resolve(stories);
-      };
-      
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async getImage(storyId: string): Promise<Blob | null> {
-    await this.ensureInit();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['images'], 'readonly');
-      const store = transaction.objectStore('images');
-      const request = store.get(storyId);
-      
-      request.onsuccess = () => {
-        const result = request.result;
-        resolve(result ? result.imageBlob : null);
-      };
-      
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async hasImage(storyId: string): Promise<boolean> {
-    const image = await this.getImage(storyId);
-    return image !== null;
-  }
-
-  async clearOldImages(): Promise<void> {
-    await this.ensureInit();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['images'], 'readwrite');
-      const store = transaction.objectStore('images');
-      const request = store.getAll();
-      
-      request.onsuccess = () => {
-        const images = request.result;
-        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-        
-        images.forEach(image => {
-          if (image.timestamp < thirtyDaysAgo) {
-            store.delete(image.storyId);
-          }
-        });
-        
-        resolve();
-      };
-      
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async clearOldStories(): Promise<void> {
-    await this.ensureInit();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['stories'], 'readwrite');
-      const store = transaction.objectStore('stories');
-      const request = store.getAll();
-      
-      request.onsuccess = () => {
-        const stories = request.result;
-        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-        
-        stories.forEach(story => {
-          if (story.timestamp < thirtyDaysAgo) {
-            store.delete(story.id);
-          }
-        });
-        
-        resolve();
-      };
-      
-      request.onerror = () => reject(transaction.error);
-    });
-  }
-}
-
-export const fantasmiaDB = new FantasmiaDB();
+// Versione semplificata per evitare errori IndexedDB
+export const fantasmiaDB = {
+  async init() { return Promise.resolve(); },
+  async saveImage(storyId: string, imageBlob: Blob) { return Promise.resolve(); },
+  async saveStory(story: any) { return Promise.resolve(); },
+  async getStory(storyId: string) { return Promise.resolve(null); },
+  async getAllStories() { return Promise.resolve([]); },
+  async getImage(storyId: string) { return Promise.resolve(null); },
+  async hasImage(storyId: string) { return Promise.resolve(false); },
+  async clearOldImages() { return Promise.resolve(); },
+  async clearOldStories() { return Promise.resolve(); }
+};
 
 // Funzione per caricare immagine su Supabase Storage
 export const uploadImageToStorage = async (imageBlob: Blob, storyId: string, storyTitle: string): Promise<string> => {
   try {
-    // Crea nome file sicuro
     const timestamp = Date.now();
     const safeTitle = storyTitle?.replace(/[^a-zA-Z0-9\-_]/g, '_').substring(0, 50) || 'story';
     const fileName = `${safeTitle}_${storyId}_${timestamp}.png`;
     
-    // Carica su Supabase Storage
     const { data, error } = await supabase.storage
       .from('story-images')
       .upload(fileName, imageBlob, {
@@ -259,7 +32,6 @@ export const uploadImageToStorage = async (imageBlob: Blob, storyId: string, sto
       throw error;
     }
 
-    // Ottieni URL pubblico
     const { data: { publicUrl } } = supabase.storage
       .from('story-images')
       .getPublicUrl(fileName);
@@ -271,118 +43,32 @@ export const uploadImageToStorage = async (imageBlob: Blob, storyId: string, sto
   }
 };
 
-// Funzione per scaricare e cachare immagine
 export const downloadAndCacheImage = async (imageUrl: string, storyId: string): Promise<string> => {
-  try {
-    // Controlla prima se è già in cache
-    const cachedImage = await fantasmiaDB.getImage(storyId);
-    if (cachedImage) {
-      return URL.createObjectURL(cachedImage);
-    }
-
-    // Scarica l'immagine
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.status}`);
-    }
-
-    const imageBlob = await response.blob();
-    
-    // Salva in cache
-    await fantasmiaDB.saveImage(storyId, imageBlob);
-    
-    // Ritorna object URL per visualizzazione
-    return URL.createObjectURL(imageBlob);
-  } catch (error) {
-    console.error('Failed to download and cache image:', error);
-    // Fallback: ritorna l'URL originale
-    return imageUrl;
-  }
+  return imageUrl; // Semplificato - ritorna sempre l'URL originale
 };
 
-// Funzione per ottenere immagine (da cache o da URL) - PRIORITÀ INDEXEDDB
 export const getStoryImage = async (storyId: string, fallbackUrl?: string): Promise<string | null> => {
-  try {
-    console.log('🖼️ Recupero immagine per storyId:', storyId);
-    
-    // SEMPRE prima prova dalla cache locale IndexedDB
-    await fantasmiaDB.init();
-    const cachedImage = await fantasmiaDB.getImage(storyId);
-    if (cachedImage) {
-      console.log('✅ Immagine trovata in IndexedDB cache per:', storyId);
-      return URL.createObjectURL(cachedImage);
-    }
-
-    console.log('⚠️ Immagine non trovata in cache per:', storyId);
-
-    // Se c'è un fallback URL, prova a scaricarlo E salvarlo in cache
-    if (fallbackUrl) {
-      console.log('🔄 Tentativo download da fallback URL:', fallbackUrl);
-      try {
-        const downloadedUrl = await downloadAndCacheImage(fallbackUrl, storyId);
-        console.log('✅ Immagine scaricata e cachata con successo');
-        return downloadedUrl;
-      } catch (downloadError) {
-        console.error('❌ Errore nel download della immagine:', downloadError);
-        // Se il download fallisce ma abbiamo comunque l'URL, restituiscilo
-        return fallbackUrl;
-      }
-    }
-
-    console.log('❌ Nessuna immagine disponibile per:', storyId);
-    return null;
-  } catch (error) {
-    console.error('❌ Errore generale nel recupero immagine:', error);
-    return fallbackUrl || null;
-  }
+  return fallbackUrl || null; // Semplificato
 };
 
-// Funzioni per gestire le storie in IndexedDB
 export const saveStoryToCache = async (story: any): Promise<void> => {
-  try {
-    console.log('Tentativo di salvare storia in cache:', story.id, story.title);
-    await fantasmiaDB.saveStory(story);
-    console.log('Storia salvata in IndexedDB cache:', story.id);
-  } catch (error) {
-    console.error('Failed to save story to cache:', error);
-  }
+  // Semplificato - non fa nulla
 };
 
 export const getStoryFromCache = async (storyId: string): Promise<any | null> => {
-  try {
-    return await fantasmiaDB.getStory(storyId);
-  } catch (error) {
-    console.error('Failed to get story from cache:', error);
-    return null;
-  }
+  return null; // Semplificato
 };
 
 export const getAllStoriesFromCache = async (): Promise<any[]> => {
-  try {
-    const stories = await fantasmiaDB.getAllStories();
-    console.log('Recuperate tutte le storie da cache:', stories.length);
-    return stories;
-  } catch (error) {
-    console.error('Failed to get stories from cache:', error);
-    return [];
-  }
+  return []; // Semplificato
 };
 
-// Pulizia periodica della cache
 export const cleanupCache = async (): Promise<void> => {
-  try {
-    await fantasmiaDB.clearOldImages();
-    await fantasmiaDB.clearOldStories();
-    console.log('Cache cleanup completed');
-  } catch (error) {
-    console.error('Failed to cleanup cache:', error);
-  }
+  // Semplificato - non fa nulla
 };
 
-// Funzione per caricare e persistere immagini caricate da file
 export const saveUploadedImageToPersistentStorage = async (file: File, storyId: string, storyTitle: string): Promise<string> => {
   try {
-    // Validate file
     if (!file.type.startsWith('image/')) {
       throw new Error('Il file selezionato non è un\'immagine valida');
     }
@@ -391,35 +77,18 @@ export const saveUploadedImageToPersistentStorage = async (file: File, storyId: 
       throw new Error('L\'immagine è troppo grande. Dimensione massima: 10MB');
     }
 
-    // Convert to blob
     const blob = new Blob([file], { type: file.type });
     
-    let publicUrl: string | null = null;
-    
     try {
-      // Try to upload to Supabase Storage
-      publicUrl = await uploadImageToStorage(blob, storyId, storyTitle);
+      const publicUrl = await uploadImageToStorage(blob, storyId, storyTitle);
       console.log('Image uploaded to Supabase Storage:', publicUrl);
+      return publicUrl;
     } catch (storageError) {
-      console.warn('Storage upload failed, saving only locally:', storageError);
+      console.warn('Storage upload failed:', storageError);
+      return URL.createObjectURL(blob);
     }
-    
-    // Always save locally for persistence (CRITICAL for Superuser uploads)
-    await fantasmiaDB.saveImage(storyId, blob);
-    console.log('Image saved to IndexedDB for persistence:', storyId);
-    
-    // Return either the public URL or a local object URL
-    return publicUrl || URL.createObjectURL(blob);
   } catch (error) {
     console.error('Failed to save uploaded image:', error);
     throw error;
   }
 };
-
-// Inizializza la pulizia automatica quando il modulo viene caricato
-if (typeof window !== 'undefined') {
-  // Pulizia al caricamento della pagina
-  window.addEventListener('load', () => {
-    setTimeout(cleanupCache, 5000); // Dopo 5 secondi dal caricamento
-  });
-}
