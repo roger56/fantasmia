@@ -35,6 +35,7 @@ import CSSEditor from "./pages/CSSEditor";
 import ReadingStories from "./pages/ReadingStories";
 import ReadingStoryTypeSelection from "./pages/ReadingStoryTypeSelection";
 import SuperuserReadingStoriesManagement from "./pages/SuperuserReadingStoriesManagement";
+import SuperuserStoryTypeSelection from "./pages/SuperuserStoryTypeSelection";
 import SuperuserReadingStoriesView from "./pages/SuperuserReadingStoriesView";
 import SuperuserReadingStoryViewer from "./pages/SuperuserReadingStoryViewer";
 import ReadingStoryViewer from "./pages/ReadingStoryViewer";
@@ -82,6 +83,7 @@ const App = () => (
           <Route path="/reading-stories/science" element={<ReadingStories />} />
           <Route path="/reading-stories/magic" element={<ReadingStories />} />
           <Route path="/reading-story-viewer/:storyId" element={<ReadingStoryViewer />} />
+          <Route path="/superuser-story-type-selection" element={<SuperuserStoryTypeSelection />} />
           <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
           <Route path="/superuser-reading-story-viewer/:id" element={<SuperuserReadingStoryViewer />} />
