@@ -34,6 +34,7 @@ import AirotsEditor from "./pages/AirotsEditor";
 import CampbellEditor from "./pages/CampbellEditor";
 import CSSEditor from "./pages/CSSEditor";
 import ReadingStories from "./pages/ReadingStories";
+import ReadingStoryTypeSelection from "./pages/ReadingStoryTypeSelection";
 import SuperuserReadingStoriesManagement from "./pages/SuperuserReadingStoriesManagement";
 import SuperuserReadingStoriesView from "./pages/SuperuserReadingStoriesView";
 import SuperuserReadingStoryViewer from "./pages/SuperuserReadingStoryViewer";
@@ -78,7 +79,10 @@ const App = () => (
           <Route path="/airots-editor" element={<AirotsEditor />} />
           <Route path="/campbell-editor" element={<CampbellEditor />} />
           <Route path="/css-editor" element={<CSSEditor />} />
+          <Route path="/reading-story-type-selection" element={<ReadingStoryTypeSelection />} />
           <Route path="/reading-stories" element={<ReadingStories />} />
+          <Route path="/reading-stories/science" element={<ReadingStories />} />
+          <Route path="/reading-stories/magic" element={<ReadingStories />} />
           <Route path="/reading-story-viewer/:storyId" element={<ReadingStoryViewer />} />
           <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />

@@ -54,7 +54,7 @@ const Dashboard = () => {
       title: 'Lettura Storie',
       icon: BookText,
       description: 'Leggi le storie che si raccontano nel mondo',
-      path: '/reading-stories'
+      path: '/reading-story-type-selection'
     },
     {
       id: 'archive-complete',
