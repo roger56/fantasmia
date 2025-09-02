@@ -132,7 +132,7 @@ const Profiles = () => {
         <div className="flex items-center mb-6 pt-4">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/home')}
+            onClick={() => navigate('/')}
             className="mr-4"
           >
             <ArrowLeft className="w-5 h-5" />

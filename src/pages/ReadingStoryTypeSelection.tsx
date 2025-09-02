@@ -15,7 +15,7 @@ const ReadingStoryTypeSelection = () => {
     const checkAuth = async () => {
       const authStatus = await AuthBridge.isAuthenticated();
       if (!authStatus.authenticated) {
-        navigate('/home');
+        navigate('/');
         return;
       }
       
