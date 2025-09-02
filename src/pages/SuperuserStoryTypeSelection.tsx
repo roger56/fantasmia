@@ -39,7 +39,7 @@ const SuperuserStoryTypeSelection = () => {
       title: 'Storie Magiche',
       icon: Sparkles,
       description: 'Gestisci racconti di pura magia e fantasia',
-      path: '/superuser-reading-stories-view'
+      path: '/reading-stories/science'
     }
   ];
 
