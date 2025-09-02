@@ -51,14 +51,14 @@ const Dashboard = () => {
     },
     {
       id: 'reading-stories',
-      title: 'Lettura Storie',
+      title: 'LETTURA STORIE DEL MONDO',
       icon: BookText,
-      description: 'Leggi le storie che si raccontano nel mondo',
+      description: 'quante cose si dicono e si scoprono nel mondo',
       path: '/reading-story-type-selection'
     },
     {
       id: 'archive-complete',
-      title: 'Archivio Globale',
+      title: 'ARCHIVIO',
       icon: BookOpen,
       description: 'Visualizza tutte le storie create dagli utenti',
       path: '/superuser-archive'
