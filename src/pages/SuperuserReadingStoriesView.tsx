@@ -87,7 +87,7 @@ const SuperuserReadingStoriesView = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-2xl font-bold text-slate-800">📖 Gestione Storie da Leggere</h1>
+          <h1 className="text-2xl font-bold text-slate-800">📖 STORIE CHE SI RACCONTANO NEL MONDO</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -96,7 +96,7 @@ const SuperuserReadingStoriesView = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5" />
-                Storie Presenti ({stories.length})
+                Storie magiche del mondo ({stories.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
