@@ -3,15 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, Volume2, VolumeX, Languages, Globe, Share2, Image } from 'lucide-react';
+import { BookOpen, Volume2, VolumeX, Languages, Globe, Share2, Image, Trash2 } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
-import { getReadingStories, ReadingStory } from '@/utils/userStorage';
+import { getReadingStories, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { useTTS } from '@/hooks/useTTS';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import CreativeMediaMenuEnhanced from '@/components/shared/CreativeMediaMenuEnhanced';
 import { translateToEnglish } from '@/utils/translation';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const ReadingStoryViewer = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const ReadingStoryViewer = () => {
   const [translatedText, setTranslatedText] = useState<string>('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { isPlaying, speak, stop, getButtonText } = useTTS();
   const { toast } = useToast();
 
@@ -103,6 +105,27 @@ const ReadingStoryViewer = () => {
     });
   };
 
+  const handleDeleteStory = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    if (story && deleteReadingStory(story.id)) {
+      toast({
+        title: "Successo",
+        description: "Storia eliminata con successo"
+      });
+      navigate('/reading-stories');
+    } else {
+      toast({
+        title: "Errore",
+        description: "Impossibile eliminare la storia",
+        variant: "destructive"
+      });
+    }
+    setShowDeleteDialog(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -136,6 +159,16 @@ const ReadingStoryViewer = () => {
               {isTranslating ? 'Traducendo...' : (showTranslated ? 'Italiano' : 'Inglese')}
             </Button>
             
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeleteStory}
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              Elimina
+            </Button>
+            
             <CreativeMediaMenuEnhanced 
               storyContent={story.content}
               storyTitle={story.title}
@@ -163,6 +196,24 @@ const ReadingStoryViewer = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+              <AlertDialogDescription>
+                Sei sicuro di voler eliminare questa storia? Questa azione non può essere annullata.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+                Elimina
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </StoryLayout>
     </>
   );
