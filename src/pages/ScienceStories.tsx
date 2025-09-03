@@ -106,6 +106,15 @@ const ScienceStories = () => {
         subtitle="Storie che mescolano scienza e fantasia"
         onBack={() => navigate('/reading-story-type-selection')}
         showHomeButton={true}
+        headerContent={
+          <Button 
+            onClick={() => navigate('/science-story-editor')}
+            variant="default"
+            size="sm"
+          >
+            Aggiungi Storia
+          </Button>
+        }
       >
       <div className="max-w-4xl mx-auto">
         {loadingStories ? (
@@ -125,19 +134,9 @@ const ScienceStories = () => {
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Atom className="w-5 h-5" />
-                  Storie di Magia della Scienza ({stories.length})
-                </div>
-                <Button 
-                  onClick={() => navigate('/science-story-editor')}
-                  variant="default"
-                  size="sm"
-                  className="ml-4"
-                >
-                  Aggiungi Storia
-                </Button>
+              <CardTitle className="flex items-center gap-2">
+                <Atom className="w-5 h-5" />
+                Storie di Magia della Scienza ({stories.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
