@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, User, Lock, Shield, Globe } from 'lucide-react';
+import { ArrowLeft, User, Lock, Shield, Globe, Home } from 'lucide-react';
 import { getUsers, authenticateUser, markMessagesAsRead } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
 import { useToast } from '@/hooks/use-toast';
-import HomeButton from '@/components/HomeButton';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 const Profiles = () => {
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ const Profiles = () => {
     
     // Handle direct access for NEW PROFILE
     if (profileId === 'new-profile') {
-      navigate('/new-profile');
+      navigate('/terms-acceptance');
       return;
     }
   };
@@ -126,19 +126,38 @@ const Profiles = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <HomeButton />
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center mb-6 pt-4">
+      <ProfileIndicator />
+      
+      {/* Fixed Top Navigation Bar */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-slate-200 p-4">
+        <div className="flex justify-between items-center max-w-6xl mx-auto">
+          {/* Back Button - Top Left */}
           <Button 
             variant="ghost" 
             onClick={() => navigate('/')}
-            className="mr-4"
+            className="flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
+            Indietro
           </Button>
-          <h1 className="text-2xl font-bold text-slate-800">Elenco Profili</h1>
+          
+          {/* Page Title - Center */}
+          <h1 className="text-xl font-bold text-slate-800">Elenco Profili</h1>
+          
+          {/* Home Button - Top Right */}
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2"
+          >
+            <Home className="w-5 h-5" />
+            Home
+          </Button>
         </div>
+      </div>
+
+      {/* Main Content with top padding for fixed header */}
+      <div className="max-w-2xl mx-auto pt-20">
 
         {!selectedProfile ? (
           /* Profile Selection */
