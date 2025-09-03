@@ -40,9 +40,14 @@ const ReadingStories = () => {
   const loadReadingStories = async () => {
     setLoadingStories(true);
     try {
-      // Get stories from localStorage (created by SuperUser)
+      // Get stories from localStorage and filter for magic stories
       const readingStories = getReadingStories();
-      const sortedStories = readingStories.sort((a, b) => 
+      // Filter for magic stories based on category or fallback to general stories
+      const magicStories = readingStories.filter(story => 
+        story.category === 'magic' || 
+        (!story.category && story.category !== 'science') // Legacy stories without category
+      );
+      const sortedStories = magicStories.sort((a, b) => 
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       );
       setStories(sortedStories);
@@ -98,10 +103,19 @@ const ReadingStories = () => {
     <>
       <ProfileIndicator />
       <StoryLayout
-        title="Lettura Storie"
-        subtitle="Storie caricate dal SuperUser"
-        onBack={() => navigate('/dashboard')}
+        title="Storie Magiche"
+        subtitle="Storie magiche che si raccontano nel mondo"
+        onBack={() => navigate('/reading-story-type-selection')}
         showHomeButton={true}
+        headerContent={
+          <Button 
+            onClick={() => navigate('/magic-story-editor')}
+            variant="default"
+            size="sm"
+          >
+            Aggiungi Storia del Mondo
+          </Button>
+        }
       >
       <div className="max-w-4xl mx-auto">
         {loadingStories ? (
@@ -112,9 +126,9 @@ const ReadingStories = () => {
           <Card>
             <CardContent className="p-8 text-center">
               <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">Nessuna storia disponibile</h3>
+              <h3 className="text-lg font-medium mb-2">Nessuna storia magica disponibile</h3>
               <p className="text-muted-foreground">
-                Il SuperUser non ha ancora caricato storie per la lettura.
+                Il SuperUser non ha ancora caricato storie magiche del mondo.
               </p>
             </CardContent>
           </Card>
@@ -123,7 +137,7 @@ const ReadingStories = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5" />
-                Lista Storie ({stories.length})
+                Storie Magiche del Mondo ({stories.length})
               </CardTitle>
             </CardHeader>
             <CardContent>

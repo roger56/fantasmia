@@ -42,8 +42,9 @@ const ScienceStories = () => {
     try {
       // Get stories from localStorage and filter for science stories
       const readingStories = getReadingStories();
-      // Filter for science stories based on title or content containing "scienza"
+      // Filter for science stories based on category or content containing "scienza"
       const scienceStories = readingStories.filter(story => 
+        story.category === 'science' ||
         story.title.toLowerCase().includes('scienza') ||
         story.content.toLowerCase().includes('scienza')
       );

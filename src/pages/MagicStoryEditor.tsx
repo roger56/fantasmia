@@ -4,14 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Home, Atom } from 'lucide-react';
+import { ArrowLeft, Home, Sparkles } from 'lucide-react';
 import { saveReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ActionButtonGroup from '@/components/shared/ActionButtonGroup';
 import ModifyMenu from '@/components/shared/ModifyMenu';
 
-const ScienceStoryEditor = () => {
+const MagicStoryEditor = () => {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -38,26 +38,23 @@ const ScienceStoryEditor = () => {
     }
 
     try {
-      // Add "scienza" keyword to ensure it's categorized as science story
-      const scienceContent = content.includes('scienza') ? content : content + ' (scienza)';
-      
       const newStory = {
         id: crypto.randomUUID(),
         title: title.trim(),
-        content: scienceContent.trim(),
+        content: content.trim(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        category: 'science' // Categorize as science story
+        category: 'magic' // Categorize as magic story
       };
       
       saveReadingStory(newStory);
 
       toast({
         title: "Successo",
-        description: "Storia scientifica salvata con successo"
+        description: "Storia del mondo salvata con successo"
       });
 
-      navigate('/reading-stories/science');
+      navigate('/reading-stories/magic');
     } catch (error) {
       toast({
         title: "Errore",
@@ -85,7 +82,7 @@ const ScienceStoryEditor = () => {
           {/* Back Button - Top Left */}
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/reading-stories/science')}
+            onClick={() => navigate('/reading-stories/magic')}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -94,8 +91,8 @@ const ScienceStoryEditor = () => {
           
           {/* Page Title - Center */}
           <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <Atom className="w-5 h-5" />
-            Nuova Storia Scientifica
+            <Sparkles className="w-5 h-5" />
+            Nuova Storia del Mondo
           </h1>
           
           {/* Home Button - Top Right */}
@@ -123,7 +120,7 @@ const ScienceStoryEditor = () => {
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Inserisci il titolo della storia scientifica..."
+                placeholder="Inserisci il titolo della storia del mondo..."
                 className="text-lg"
               />
             </CardContent>
@@ -139,7 +136,7 @@ const ScienceStoryEditor = () => {
                 <Textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Scrivi qui la tua storia scientifica..."
+                  placeholder="Scrivi qui la tua storia del mondo..."
                   className="min-h-[300px] text-base leading-relaxed"
                 />
               ) : (
@@ -147,7 +144,7 @@ const ScienceStoryEditor = () => {
                   className="min-h-[300px] p-3 rounded-md border bg-background text-base leading-relaxed cursor-pointer hover:bg-slate-50"
                   onClick={() => setIsEditing(true)}
                 >
-                  {content || "Clicca qui per iniziare a scrivere la tua storia scientifica..."}
+                  {content || "Clicca qui per iniziare a scrivere la tua storia del mondo..."}
                 </div>
               )}
               
@@ -187,7 +184,7 @@ const ScienceStoryEditor = () => {
               className="px-8"
               disabled={!title.trim() || !content.trim()}
             >
-              Salva Storia Scientifica
+              Salva Storia del Mondo
             </Button>
           </div>
         </div>
@@ -196,4 +193,4 @@ const ScienceStoryEditor = () => {
   );
 };
 
-export default ScienceStoryEditor;
+export default MagicStoryEditor;

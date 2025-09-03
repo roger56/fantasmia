@@ -473,19 +473,27 @@ export interface ReadingStory {
   content: string;
   created_at: string;
   updated_at: string;
+  category?: string; // For categorization (science, magic, general)
 }
 
 export const saveReadingStory = (story: ReadingStory) => {
-  const stories = getReadingStories();
-  const existingIndex = stories.findIndex(s => s.id === story.id);
+  const existingStories = getReadingStories();
+  const index = existingStories.findIndex(s => s.id === story.id);
   
-  if (existingIndex >= 0) {
-    stories[existingIndex] = { ...story, updated_at: new Date().toISOString() };
+  // Add category based on story type for better categorization
+  const storyWithCategory = {
+    ...story,
+    category: story.category || 'general', // Default category
+    updated_at: new Date().toISOString()
+  };
+  
+  if (index >= 0) {
+    existingStories[index] = storyWithCategory;
   } else {
-    stories.push(story);
+    existingStories.push(storyWithCategory);
   }
   
-  localStorage.setItem('fantasmia_reading_stories', JSON.stringify(stories));
+  localStorage.setItem('fantasmia_reading_stories', JSON.stringify(existingStories));
 };
 
 export const getReadingStories = (): ReadingStory[] => {
