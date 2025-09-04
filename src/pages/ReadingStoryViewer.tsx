@@ -148,7 +148,7 @@ const ReadingStoryViewer = () => {
         subtitle="Storia da leggere"
         onBack={() => {
           if (isSuperuser) {
-            navigate('/superuser-story-type-selection');
+            navigate('/reading-story-type-selection');
           } else {
             navigate('/reading-stories');
           }
