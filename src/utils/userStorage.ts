@@ -496,6 +496,48 @@ export const saveReadingStory = (story: ReadingStory) => {
   localStorage.setItem('fantasmia_reading_stories', JSON.stringify(existingStories));
 };
 
+// Story Image Management
+export interface StoryImage {
+  id: string;
+  storyId: string;
+  imageUrl: string;
+  style: string;
+  created_at: string;
+}
+
+export const saveStoryImage = (storyId: string, imageUrl: string, style: string) => {
+  const images = getStoryImages();
+  const newImage: StoryImage = {
+    id: Date.now().toString(),
+    storyId,
+    imageUrl,
+    style,
+    created_at: new Date().toISOString()
+  };
+  
+  // Remove existing image for this story
+  const filteredImages = images.filter(img => img.storyId !== storyId);
+  filteredImages.push(newImage);
+  
+  localStorage.setItem('fantasmia_story_images', JSON.stringify(filteredImages));
+};
+
+export const getStoryImages = (): StoryImage[] => {
+  const stored = localStorage.getItem('fantasmia_story_images');
+  return stored ? JSON.parse(stored) : [];
+};
+
+export const getStoryImage = (storyId: string): StoryImage | null => {
+  const images = getStoryImages();
+  return images.find(img => img.storyId === storyId) || null;
+};
+
+export const deleteStoryImage = (storyId: string) => {
+  const images = getStoryImages();
+  const filteredImages = images.filter(img => img.storyId !== storyId);
+  localStorage.setItem('fantasmia_story_images', JSON.stringify(filteredImages));
+};
+
 export const getReadingStories = (): ReadingStory[] => {
   const stored = localStorage.getItem('fantasmia_reading_stories');
   return stored ? JSON.parse(stored) : [];

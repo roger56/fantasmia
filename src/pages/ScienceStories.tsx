@@ -9,6 +9,7 @@ import { getReadingStories, deleteReadingStory, ReadingStory } from '@/utils/use
 import StoryLayout from '@/components/shared/StoryLayout';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const ScienceStories = () => {
@@ -155,7 +156,10 @@ const ScienceStories = () => {
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
+                            <StoryImageIndicator storyId={story.id} />
+                          </div>
                           <p className="text-xs text-slate-500 mt-1">
                             Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
                           </p>

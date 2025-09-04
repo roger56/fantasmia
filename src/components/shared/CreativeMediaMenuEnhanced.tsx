@@ -1,24 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Languages, Volume2, Share2, Image, Video, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import { translateToEnglish } from '@/utils/translation';
+import { getStoryImage } from '@/utils/userStorage';
+import MediaGenerationDialog from './MediaGenerationDialog';
+import ImageViewerDialog from './ImageViewerDialog';
 
 interface CreativeMediaMenuEnhancedProps {
   storyContent: string;
   storyTitle: string;
+  storyId?: string;
   userRole?: 'superuser' | 'user';
 }
 
 const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
   storyContent,
   storyTitle,
+  storyId,
   userRole = 'user'
 }) => {
   const { toast } = useToast();
   const { isPlaying, speak, stop } = useTTS();
+  const [showMediaDialog, setShowMediaDialog] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [existingImage, setExistingImage] = useState<any>(null);
+
+  useEffect(() => {
+    if (storyId) {
+      const image = getStoryImage(storyId);
+      setExistingImage(image);
+    }
+  }, [storyId]);
 
   const handleTranslate = async () => {
     try {
@@ -78,11 +93,21 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
     }
   };
 
-  const handleMediaGeneration = (type: string, style: string) => {
-    toast({
-      title: "Generazione media",
-      description: `${type}: ${style} - Funzione in sviluppo`
-    });
+  const handleMediaGeneration = () => {
+    if (userRole === 'superuser' && storyId) {
+      setShowMediaDialog(true);
+    }
+  };
+
+  const handleViewImage = () => {
+    if (existingImage) {
+      setShowImageViewer(true);
+    } else {
+      toast({
+        title: "Nessuna immagine",
+        description: "Non è presente alcuna immagine per questa storia"
+      });
+    }
   };
 
   return (
@@ -122,79 +147,24 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Menu Media - Solo per Superuser, per utenti normali mostra solo se ci sono media esistenti */}
+      {/* Menu Media */}
       {userRole === 'superuser' ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <Palette className="w-4 h-4" />
-              Media
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            {/* Sottomenu Disegno */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Image className="w-4 h-4 mr-2" />
-                Disegno
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'fumetto')}>
-                  🎨 Fumetto
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'fotografico')}>
-                  📸 Fotografico
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'astratto')}>
-                  🎭 Astratto
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'manga')}>
-                  🎌 Manga
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'acquarello')}>
-                  🖌️ Acquarello
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'carboncino')}>
-                  ✏️ Carboncino
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            <DropdownMenuSeparator />
-
-            {/* Sottomenu Filmato */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Video className="w-4 h-4 mr-2" />
-                Filmato
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'futuristica')}>
-                  🚀 Futuristica
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'storica')}>
-                  🏛️ Storica
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'odierna')}>
-                  🌆 Odierna
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'fantasy')}>
-                  🧙‍♂️ Fantasy
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        // Per utenti normali: mostra solo il pulsante per visualizzare media esistenti (se presenti)
         <Button 
           variant="outline" 
           size="sm" 
           className="flex items-center gap-2"
-          onClick={() => toast({
-            title: "Visualizza Media",
-            description: "Funzione per visualizzare media esistenti - In sviluppo"
-          })}
+          onClick={handleMediaGeneration}
+        >
+          <Palette className="w-4 h-4" />
+          Media
+        </Button>
+      ) : (
+        // Per utenti normali: solo visualizzazione
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-2"
+          onClick={handleViewImage}
         >
           <Image className="w-4 h-4" />
           Media
@@ -218,6 +188,40 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Dialogs */}
+      {userRole === 'superuser' && storyId && (
+        <>
+          <MediaGenerationDialog
+            open={showMediaDialog}
+            onOpenChange={setShowMediaDialog}
+            storyContent={storyContent}
+            storyTitle={storyTitle}
+            storyId={storyId}
+            userId="superuser"
+          />
+          
+          {existingImage && (
+            <ImageViewerDialog
+              open={showImageViewer}
+              onOpenChange={setShowImageViewer}
+              imageUrl={existingImage.imageUrl}
+              storyTitle={storyTitle}
+              style={existingImage.style}
+            />
+          )}
+        </>
+      )}
+
+      {userRole === 'user' && existingImage && (
+        <ImageViewerDialog
+          open={showImageViewer}
+          onOpenChange={setShowImageViewer}
+          imageUrl={existingImage.imageUrl}
+          storyTitle={storyTitle}
+          style={existingImage.style}
+        />
+      )}
     </div>
   );
 };

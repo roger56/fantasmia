@@ -146,7 +146,7 @@ const ReadingStoryViewer = () => {
       <StoryLayout
         title={story.title}
         subtitle="Storia da leggere"
-        onBack={() => navigate('/reading-stories')}
+        onBack={() => navigate(isSuperuser ? '/superuser-story-type-selection' : '/reading-stories')}
         showHomeButton={true}
         headerContent={
           <div className="flex items-center gap-2">
@@ -176,6 +176,7 @@ const ReadingStoryViewer = () => {
             <CreativeMediaMenuEnhanced 
               storyContent={story.content}
               storyTitle={story.title}
+              storyId={story.id}
               userRole={isSuperuser ? 'superuser' : 'user'}
             />
           </div>
