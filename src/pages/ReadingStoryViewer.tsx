@@ -24,6 +24,7 @@ const ReadingStoryViewer = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isSuperuser, setIsSuperuser] = useState(false);
   const { isPlaying, speak, stop, getButtonText } = useTTS();
   const { toast } = useToast();
 
@@ -36,6 +37,7 @@ const ReadingStoryViewer = () => {
       }
       
       setIsAuthenticated(true);
+      setIsSuperuser(authStatus.userName === 'superuser');
       setLoading(false);
       loadStory();
     };
@@ -159,19 +161,22 @@ const ReadingStoryViewer = () => {
               {isTranslating ? 'Traducendo...' : (showTranslated ? 'Italiano' : 'Inglese')}
             </Button>
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDeleteStory}
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4" />
-              Elimina
-            </Button>
+            {isSuperuser && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDeleteStory}
+                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                Elimina
+              </Button>
+            )}
             
             <CreativeMediaMenuEnhanced 
               storyContent={story.content}
               storyTitle={story.title}
+              userRole={isSuperuser ? 'superuser' : 'user'}
             />
           </div>
         }

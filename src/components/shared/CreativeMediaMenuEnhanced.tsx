@@ -9,11 +9,13 @@ import { translateToEnglish } from '@/utils/translation';
 interface CreativeMediaMenuEnhancedProps {
   storyContent: string;
   storyTitle: string;
+  userRole?: 'superuser' | 'user';
 }
 
 const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
   storyContent,
-  storyTitle
+  storyTitle,
+  userRole = 'user'
 }) => {
   const { toast } = useToast();
   const { isPlaying, speak, stop } = useTTS();
@@ -120,68 +122,84 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Menu Media */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
-            <Palette className="w-4 h-4" />
-            Media
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
-          {/* Sottomenu Disegno */}
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <Image className="w-4 h-4 mr-2" />
-              Disegno
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'fumetto')}>
-                🎨 Fumetto
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'fotografico')}>
-                📸 Fotografico
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'astratto')}>
-                🎭 Astratto
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'manga')}>
-                🎌 Manga
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'acquarello')}>
-                🖌️ Acquarello
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'carboncino')}>
-                ✏️ Carboncino
-              </DropdownMenuItem>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+      {/* Menu Media - Solo per Superuser, per utenti normali mostra solo se ci sono media esistenti */}
+      {userRole === 'superuser' ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Palette className="w-4 h-4" />
+              Media
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            {/* Sottomenu Disegno */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Image className="w-4 h-4 mr-2" />
+                Disegno
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'fumetto')}>
+                  🎨 Fumetto
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'fotografico')}>
+                  📸 Fotografico
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'astratto')}>
+                  🎭 Astratto
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'manga')}>
+                  🎌 Manga
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'acquarello')}>
+                  🖌️ Acquarello
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleMediaGeneration('Disegno', 'carboncino')}>
+                  ✏️ Carboncino
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
-          <DropdownMenuSeparator />
+            <DropdownMenuSeparator />
 
-          {/* Sottomenu Filmato */}
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <Video className="w-4 h-4 mr-2" />
-              Filmato
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'futuristica')}>
-                🚀 Futuristica
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'storica')}>
-                🏛️ Storica
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'odierna')}>
-                🌆 Odierna
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'fantasy')}>
-                🧙‍♂️ Fantasy
-              </DropdownMenuItem>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            {/* Sottomenu Filmato */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Video className="w-4 h-4 mr-2" />
+                Filmato
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'futuristica')}>
+                  🚀 Futuristica
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'storica')}>
+                  🏛️ Storica
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'odierna')}>
+                  🌆 Odierna
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleMediaGeneration('Filmato', 'fantasy')}>
+                  🧙‍♂️ Fantasy
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        // Per utenti normali: mostra solo il pulsante per visualizzare media esistenti (se presenti)
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-2"
+          onClick={() => toast({
+            title: "Visualizza Media",
+            description: "Funzione per visualizzare media esistenti - In sviluppo"
+          })}
+        >
+          <Image className="w-4 h-4" />
+          Media
+        </Button>
+      )}
 
       {/* Menu Condividi */}
       <DropdownMenu>

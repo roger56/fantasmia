@@ -60,8 +60,8 @@ const Dashboard = () => {
       id: 'archive-complete',
       title: 'ARCHIVIO',
       icon: BookOpen,
-      description: 'Visualizza tutte le storie create dagli utenti',
-      path: '/superuser-archive'
+      description: isSuperuser ? 'Visualizza tutte le storie create dagli utenti' : 'Visualizza tutte le tue storie',
+      path: isSuperuser ? '/superuser-archive' : '/user-archive'
     }
   ];
 
@@ -80,8 +80,8 @@ const Dashboard = () => {
     <>
       <ProfileIndicator />
       <StoryLayout
-      title="FANTAS(m)IA"
-      subtitle="Dashboard Principale"
+      title="Fantas-Mia"
+      subtitle="Cosa vuoi fare oggi?"
       onBack={() => navigate('/profiles')}
       showHomeButton={true}
     >

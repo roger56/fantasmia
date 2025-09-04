@@ -32,14 +32,14 @@ const SuperuserStoryTypeSelection = () => {
       title: 'Magia della Scienza',
       icon: Atom,
       description: 'Gestisci storie che mescolano scienza e fantasia',
-      path: '/superuser-reading-stories-view'
+      path: '/reading-stories/science'
     },
     {
       id: 'magic-stories',
       title: 'Storie Magiche',
       icon: Sparkles,
       description: 'Gestisci racconti di pura magia e fantasia',
-      path: '/reading-stories/science'
+      path: '/reading-stories/magic'
     }
   ];
 

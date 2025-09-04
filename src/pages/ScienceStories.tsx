@@ -19,6 +19,7 @@ const ScienceStories = () => {
   const [loadingStories, setLoadingStories] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [storyToDelete, setStoryToDelete] = useState<string>('');
+  const [isSuperuser, setIsSuperuser] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,6 +31,7 @@ const ScienceStories = () => {
       }
       
       setIsAuthenticated(true);
+      setIsSuperuser(authStatus.userName === 'superuser');
       setLoading(false);
       loadScienceStories();
     };
@@ -108,13 +110,15 @@ const ScienceStories = () => {
         onBack={() => navigate('/reading-story-type-selection')}
         showHomeButton={true}
         headerContent={
-          <Button 
-            onClick={() => navigate('/science-story-editor')}
-            variant="default"
-            size="sm"
-          >
-            Aggiungi Storia
-          </Button>
+          isSuperuser ? (
+            <Button 
+              onClick={() => navigate('/science-story-editor')}
+              variant="default"
+              size="sm"
+            >
+              Aggiungi Storia
+            </Button>
+          ) : null
         }
       >
       <div className="max-w-4xl mx-auto">
@@ -156,15 +160,17 @@ const ScienceStories = () => {
                             Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
                           </p>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => handleDeleteClick(story.id, e)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
-                          title="Elimina storia"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {isSuperuser && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => handleDeleteClick(story.id, e)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                            title="Elimina storia"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}

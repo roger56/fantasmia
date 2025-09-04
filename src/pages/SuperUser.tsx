@@ -176,11 +176,11 @@ const SuperUser = () => {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6 pt-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/')}
-            className="mr-4"
-          >
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/profiles')}
+              className="mr-4"
+            >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-bold text-slate-800">Superuser</h1>
