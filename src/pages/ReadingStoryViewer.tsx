@@ -146,13 +146,7 @@ const ReadingStoryViewer = () => {
       <StoryLayout
         title={story.title}
         subtitle="Storia da leggere"
-        onBack={() => {
-          if (isSuperuser) {
-            navigate('/reading-story-type-selection');
-          } else {
-            navigate('/reading-stories');
-          }
-        }}
+        onBack={() => navigate('/reading-story-type-selection')}
         showHomeButton={true}
         headerContent={
           <div className="flex items-center gap-2">
