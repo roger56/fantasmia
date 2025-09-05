@@ -151,17 +151,6 @@ const ReadingStoryViewer = () => {
         showHomeButton={true}
         headerContent={
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleTranslate}
-              disabled={isTranslating}
-              className="flex items-center gap-2"
-            >
-              <Languages className="w-4 h-4" />
-              {isTranslating ? 'Traducendo...' : (showTranslated ? 'Italiano' : 'Inglese')}
-            </Button>
-            
             {isSuperuser && (
               <Button
                 variant="outline"

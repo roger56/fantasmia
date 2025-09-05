@@ -147,8 +147,8 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Menu Media */}
-      {userRole === 'superuser' ? (
+      {/* Menu Media per Superuser */}
+      {userRole === 'superuser' && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
@@ -157,7 +157,7 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
               className="flex items-center gap-2"
             >
               <Palette className="w-4 h-4" />
-              Media
+              MEDIA
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -172,17 +172,6 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      ) : (
-        // Per utenti normali: solo visualizzazione
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex items-center gap-2"
-          onClick={handleViewImage}
-        >
-          <Image className="w-4 h-4" />
-          Vedi
-        </Button>
       )}
 
       {/* Menu Condividi */}
