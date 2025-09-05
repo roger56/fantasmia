@@ -149,15 +149,29 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
 
       {/* Menu Media */}
       {userRole === 'superuser' ? (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex items-center gap-2"
-          onClick={handleMediaGeneration}
-        >
-          <Palette className="w-4 h-4" />
-          Media
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+            >
+              <Palette className="w-4 h-4" />
+              Media
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={handleMediaGeneration}>
+              🎨 Disegno
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast({ title: "In sviluppo", description: "Funzione filmato in fase di sviluppo" })}>
+              🎬 Filmato
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast({ title: "In sviluppo", description: "Funzione voci in fase di sviluppo" })}>
+              🗣️ Voci
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : (
         // Per utenti normali: solo visualizzazione
         <Button 

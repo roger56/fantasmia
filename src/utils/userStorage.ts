@@ -474,6 +474,8 @@ export interface ReadingStory {
   created_at: string;
   updated_at: string;
   category?: string; // For categorization (science, magic, general)
+  authorId?: string; // Author ID
+  authorName?: string; // Author name
 }
 
 export const saveReadingStory = (story: ReadingStory) => {
