@@ -13,6 +13,7 @@ import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import CreativeMediaMenuEnhanced from '@/components/shared/CreativeMediaMenuEnhanced';
 import { translateToEnglish } from '@/utils/translation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
 
 const ReadingStoryViewer = () => {
   const navigate = useNavigate();
@@ -188,6 +189,7 @@ const ReadingStoryViewer = () => {
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5" />
                 {story.title}
+                <StoryImageIndicator storyId={story.id} className="ml-2" />
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}

@@ -167,7 +167,7 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
           onClick={handleViewImage}
         >
           <Image className="w-4 h-4" />
-          Media
+          Vedi
         </Button>
       )}
 
