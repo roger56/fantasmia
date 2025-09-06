@@ -13,7 +13,7 @@ interface CreativeMediaMenuEnhancedProps {
   storyContent: string;
   storyTitle: string;
   storyId?: string;
-  userRole?: 'superuser' | 'user';
+  userRole?: 'superuser' | 'user' | 'Superuser';
 }
 
 const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
@@ -147,8 +147,8 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Menu Media per Superuser */}
-      {userRole === 'superuser' && (
+      {/* Menu Media solo per Superuser originale (non per il nuovo profilo superuser) */}
+      {userRole === 'Superuser' && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 

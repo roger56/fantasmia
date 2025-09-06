@@ -22,7 +22,7 @@ const Dashboard = () => {
       }
       
       setIsAuthenticated(true);
-      setIsSuperuser(authStatus.userName === 'superuser');
+      setIsSuperuser(authStatus.userName === 'superuser' || authStatus.userName === 'Superuser');
       setLoading(false);
     };
 

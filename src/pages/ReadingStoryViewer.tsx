@@ -26,6 +26,7 @@ const ReadingStoryViewer = () => {
   const [showTranslated, setShowTranslated] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isSuperuser, setIsSuperuser] = useState(false);
+  const [userRole, setUserRole] = useState<'superuser' | 'user' | 'Superuser'>('user');
   const { isPlaying, speak, stop, getButtonText } = useTTS();
   const { toast } = useToast();
 
@@ -38,7 +39,9 @@ const ReadingStoryViewer = () => {
       }
       
       setIsAuthenticated(true);
-      setIsSuperuser(authStatus.userName === 'superuser');
+      setIsSuperuser(authStatus.userName === 'superuser' || authStatus.userName === 'Superuser');
+      setUserRole(authStatus.userName === 'Superuser' ? 'Superuser' : 
+                  authStatus.userName === 'superuser' ? 'superuser' : 'user');
       setLoading(false);
       loadStory();
     };
@@ -167,7 +170,7 @@ const ReadingStoryViewer = () => {
               storyContent={story.content}
               storyTitle={story.title}
               storyId={story.id}
-              userRole={isSuperuser ? 'superuser' : 'user'}
+              userRole={userRole}
             />
           </div>
         }
