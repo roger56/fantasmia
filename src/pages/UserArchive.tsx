@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen, Eye } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
-import { getStories } from '@/utils/userStorage';
+import { getStories, getStoriesForUser } from '@/utils/userStorage';
 import StoryLayout from '@/components/shared/StoryLayout';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
@@ -27,9 +27,24 @@ const UserArchive = () => {
       setIsAuthenticated(true);
       setUserName(authStatus.userName);
       
-      // Load user's stories
-      const userStories = getStories().filter(story => story.authorName === authStatus.userName);
-      setStories(userStories);
+      // Load user's stories from personal archive
+      const userStories = getStoriesForUser(authStatus.userId);
+      
+      // Also check main stories list for backward compatibility
+      const mainStories = getStories().filter(story => 
+        story.authorName === authStatus.userName || 
+        story.authorId === authStatus.userId
+      );
+      
+      // Merge and deduplicate
+      const allUserStories = [...userStories];
+      mainStories.forEach(story => {
+        if (!allUserStories.find(existing => existing.id === story.id)) {
+          allUserStories.push(story);
+        }
+      });
+      
+      setStories(allUserStories);
       setLoading(false);
     };
 
