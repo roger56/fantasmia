@@ -94,7 +94,7 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
   };
 
   const handleMediaGeneration = () => {
-    if (userRole === 'superuser' && storyId) {
+    if ((userRole === 'superuser' || userRole === 'Superuser') && storyId) {
       setShowMediaDialog(true);
     }
   };
@@ -147,8 +147,8 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Menu Media solo per Superuser originale (non per il nuovo profilo superuser) */}
-      {userRole === 'Superuser' && (
+      {/* Menu Media per entrambi i tipi di Superuser */}
+      {(userRole === 'Superuser' || userRole === 'superuser') && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
@@ -193,7 +193,7 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
       </DropdownMenu>
 
       {/* Dialogs */}
-      {userRole === 'superuser' && storyId && (
+      {(userRole === 'superuser' || userRole === 'Superuser') && storyId && (
         <>
           <MediaGenerationDialog
             open={showMediaDialog}
@@ -201,7 +201,7 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
             storyContent={storyContent}
             storyTitle={storyTitle}
             storyId={storyId}
-            userId="superuser"
+            userId={userRole === 'Superuser' ? 'Superuser' : 'superuser'}
           />
           
           {existingImage && (
@@ -216,7 +216,21 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
         </>
       )}
 
+      {/* Visualizzazione per utenti normali */}
       {userRole === 'user' && existingImage && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleViewImage}
+          className="flex items-center gap-2"
+        >
+          <Image className="w-4 h-4" />
+          Visualizza Immagine
+        </Button>
+      )}
+
+      {/* Dialog visualizzazione per tutti i tipi di utente */}
+      {existingImage && (
         <ImageViewerDialog
           open={showImageViewer}
           onOpenChange={setShowImageViewer}
