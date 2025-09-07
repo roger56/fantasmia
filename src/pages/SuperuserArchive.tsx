@@ -7,7 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { ArrowLeft, BookOpen, Volume2, Eye, Image, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getAllStoriesForSuperuser, deleteStory, getAllAuthors } from '@/utils/userStorage';
+import { getAllStoriesForSuperuser, deleteStory, getAllAuthors, getStoryImage } from '@/utils/userStorage';
+import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
+import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,6 +59,8 @@ const SuperuserArchive = () => {
   const [selectedStory, setSelectedStory] = useState<TableRow | null>(null);
   const [currentScreen, setCurrentScreen] = useState<1 | 2>(1);
   const [authors, setAuthors] = useState<string[]>([]);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [selectedImageData, setSelectedImageData] = useState<{url: string, title: string, style: string} | null>(null);
 
   useEffect(() => {
     const fetchStoriesWithMedia = async () => {
@@ -226,6 +230,18 @@ const SuperuserArchive = () => {
     }
   };
 
+  const handleViewImage = (storyId: string, storyTitle: string) => {
+    const storyImage = getStoryImage(storyId);
+    if (storyImage) {
+      setSelectedImageData({
+        url: storyImage.imageUrl,
+        title: storyTitle,
+        style: storyImage.style
+      });
+      setShowImageViewer(true);
+    }
+  };
+
   const categories = [
     { value: 'all', label: 'Tutte le categorie' },
     { value: 'GHOST', label: 'GHOST' },
@@ -256,18 +272,34 @@ const SuperuserArchive = () => {
               di {row.author}
             </p>
           </div>
-          <div className="flex items-center gap-2 ml-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/story/${row.storyId}`);
-              }}
-              title="Visualizza storia"
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-2 ml-4">
+              <StoryImageIndicator storyId={row.storyId} />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const storyImage = getStoryImage(row.storyId);
+                  if (storyImage) {
+                    handleViewImage(row.storyId, row.storyTitle);
+                  }
+                }}
+                title="Visualizza immagine"
+                disabled={!getStoryImage(row.storyId)}
+              >
+                <Image className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/story/${row.storyId}`);
+                }}
+                title="Visualizza storia"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -344,6 +376,20 @@ const SuperuserArchive = () => {
                 <div className="flex justify-center gap-4 pt-4">
                   <Button
                     variant="outline"
+                    onClick={() => {
+                      const storyImage = getStoryImage(selectedStory.storyId);
+                      if (storyImage) {
+                        handleViewImage(selectedStory.storyId, selectedStory.storyTitle);
+                      }
+                    }}
+                    className="flex items-center gap-2"
+                    disabled={!getStoryImage(selectedStory.storyId)}
+                  >
+                    <Image className="w-4 h-4" />
+                    Immagine
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => navigate(`/story/${selectedStory.storyId}`)}
                     className="flex items-center gap-2"
                   >
@@ -391,16 +437,16 @@ const SuperuserArchive = () => {
 
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground mb-2">Immagini</h4>
-                  {selectedStory.imageUrl ? (
+                  {getStoryImage(selectedStory.storyId) ? (
                     <div className="space-y-2">
-                      <img 
-                        src={selectedStory.imageUrl} 
-                        alt="Anteprima" 
-                        className="w-full h-32 object-cover rounded border"
-                      />
-                      <Badge variant="outline" className="text-xs">
-                        {selectedStory.imageStyle}
-                      </Badge>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleViewImage(selectedStory.storyId, selectedStory.storyTitle)}
+                        className="w-full"
+                      >
+                        <Image className="w-4 h-4 mr-2" />
+                        Visualizza Immagine
+                      </Button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-muted-foreground">

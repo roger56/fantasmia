@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, Eye } from 'lucide-react';
+import { BookOpen, Eye, Image } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
-import { getStories, getStoriesForUser } from '@/utils/userStorage';
+import { getStories, getStoriesForUser, getStoryImage } from '@/utils/userStorage';
+import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
+import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import StoryLayout from '@/components/shared/StoryLayout';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
@@ -15,6 +17,8 @@ const UserArchive = () => {
   const [loading, setLoading] = useState(true);
   const [stories, setStories] = useState<any[]>([]);
   const [userName, setUserName] = useState('');
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [selectedImageData, setSelectedImageData] = useState<{url: string, title: string, style: string} | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -50,6 +54,18 @@ const UserArchive = () => {
 
     checkAuth();
   }, [navigate]);
+
+  const handleViewImage = (storyId: string, storyTitle: string) => {
+    const storyImage = getStoryImage(storyId);
+    if (storyImage) {
+      setSelectedImageData({
+        url: storyImage.imageUrl,
+        title: storyTitle,
+        style: storyImage.style
+      });
+      setShowImageViewer(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -103,35 +119,55 @@ const UserArchive = () => {
                 <ScrollArea className="h-96">
                   <div className="space-y-3">
                     {stories.map((story, index) => (
-                      <Card 
-                        key={story.id || index}
-                        className="hover:shadow-md transition-all duration-200 cursor-pointer border hover:border-slate-300"
-                        onClick={() => navigate(`/story/${story.id}`)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-slate-800 truncate">
-                                {story.title}
-                              </h4>
-                              <p className="text-sm text-slate-600 mt-1">
-                                {story.mode} • {new Date(story.lastModified).toLocaleDateString('it-IT')}
-                              </p>
+                        <Card 
+                          key={story.id || index}
+                          className="hover:shadow-md transition-all duration-200 cursor-pointer border hover:border-slate-300"
+                          onClick={() => navigate(`/story-viewer/${story.id}`)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <StoryImageIndicator storyId={story.id} />
+                                  <h4 className="font-semibold text-slate-800 truncate">
+                                    {story.title}
+                                  </h4>
+                                </div>
+                                <p className="text-sm text-slate-600 mt-1">
+                                  {story.mode} • {new Date(story.lastModified).toLocaleDateString('it-IT')}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2 ml-4">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const storyImage = getStoryImage(story.id);
+                                    if (storyImage) {
+                                      handleViewImage(story.id, story.title);
+                                    }
+                                  }}
+                                  title="Visualizza immagine"
+                                  disabled={!getStoryImage(story.id)}
+                                >
+                                  <Image className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/story-viewer/${story.id}`);
+                                  }}
+                                  className="ml-2"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/story/${story.id}`);
-                              }}
-                              className="ml-4"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
                     ))}
                   </div>
                 </ScrollArea>
@@ -140,6 +176,16 @@ const UserArchive = () => {
           )}
         </div>
       </StoryLayout>
+      
+      {selectedImageData && (
+        <ImageViewerDialog
+          open={showImageViewer}
+          onOpenChange={setShowImageViewer}
+          imageUrl={selectedImageData.url}
+          storyTitle={selectedImageData.title}
+          style={selectedImageData.style}
+        />
+      )}
     </>
   );
 };

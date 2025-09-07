@@ -434,6 +434,24 @@ export const deleteStory = (storyId: string): boolean => {
   return false;
 };
 
+// Delete specific story by title
+export const deleteStoryByTitle = (title: string): boolean => {
+  const stories = getStories();
+  const storyIndex = stories.findIndex(s => s.title === title);
+  
+  if (storyIndex >= 0) {
+    stories.splice(storyIndex, 1);
+    localStorage.setItem('fantasmia_stories', JSON.stringify(stories));
+    return true;
+  }
+  return false;
+};
+
+// Auto-delete the specific unwanted story
+(() => {
+  deleteStoryByTitle("RUSSIA : UN IDIOTA PATENTATO");
+})();
+
 // Initialize directory structure for existing users
 export const initializeDirectoryStructureForExistingUsers = () => {
   const users = getUsers();
