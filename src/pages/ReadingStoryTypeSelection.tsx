@@ -9,6 +9,7 @@ import ProfileIndicator from '@/components/shared/ProfileIndicator';
 const ReadingStoryTypeSelection = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isSuperuser, setIsSuperuser] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,6 +19,10 @@ const ReadingStoryTypeSelection = () => {
         navigate('/');
         return;
       }
+      
+      // Check if user is superuser
+      const userIsSuperuser = authStatus.userName === 'superuser' || authStatus.userName === 'Superuser';
+      setIsSuperuser(userIsSuperuser);
       
       setIsAuthenticated(true);
       setLoading(false);
@@ -61,7 +66,7 @@ const ReadingStoryTypeSelection = () => {
       <StoryLayout
         title="Lettura Storie"
         subtitle="Scegli il tipo di storia da leggere"
-        onBack={() => navigate('/dashboard')}
+        onBack={() => navigate(isSuperuser ? '/superuser-story-type-selection' : '/dashboard')}
         showHomeButton={true}
       >
         {/* Story Type Selection Grid */}
