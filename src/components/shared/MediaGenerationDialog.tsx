@@ -49,10 +49,11 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
 
     setIsGenerating(true);
     try {
-      // Combine story content with user comment
+      // Always include "no text" instruction by default, then add user comments
+      const baseInstruction = "nessun testo scritto interno al disegno";
       const prompt = userComment 
-        ? `${storyContent}\n\nNote aggiuntive: ${userComment}`
-        : storyContent;
+        ? `${storyContent}\n\nNote aggiuntive: ${baseInstruction}, ${userComment}`
+        : `${storyContent}\n\nNote aggiuntive: ${baseInstruction}`;
 
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
@@ -165,7 +166,7 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
               <Label htmlFor="comment">Commenti aggiuntivi (opzionale)</Label>
               <Textarea
                 id="comment"
-                placeholder="es: nessun testo nell'immagine, colori vivaci, stile specifico..."
+                placeholder="es: colori vivaci, stile specifico... (già incluso automaticamente: nessun testo nel disegno)"
                 value={userComment}
                 onChange={(e) => setUserComment(e.target.value)}
                 rows={3}
