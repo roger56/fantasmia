@@ -73,6 +73,7 @@ const App = () => (
           <Route path="/propp-editor" element={<ProppEditor />} />
           <Route path="/ghost-editor" element={<GhostEditor />} />
           <Route path="/story/:storyId" element={<StoryViewer />} />
+          <Route path="/story-viewer/:storyId" element={<StoryViewer />} />
           <Route path="/superuser-archive" element={<SuperuserArchive />} />
           <Route path="/superuser-users" element={<SuperuserUsers />} />
           <Route path="/superuser-settings" element={<SuperuserSettings />} />
