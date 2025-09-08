@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ArrowLeft, Volume2, Edit, Save, Globe, Share2, Copy, Mail } from 'lucide-react';
-import { getStories, saveStory, Story } from '@/utils/userStorage';
+import { getStories, getStoriesForUser, saveStory, Story } from '@/utils/userStorage';
+import { AuthBridge } from '@/utils/authBridge';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -31,13 +32,32 @@ const StoryViewer = () => {
   const { isTranslated, isTranslating, translateContent, getCurrentLanguage } = useTranslation();
 
   useEffect(() => {
-    const stories = getStories();
-    const foundStory = stories.find(s => s.id === storyId);
-    if (foundStory) {
-      setStory(foundStory);
-      setEditedContent(foundStory.content || '');
-      setEditedTitle(foundStory.title || '');
-    }
+    const findStory = async () => {
+      // First, try to find in main stories list
+      const stories = getStories();
+      let foundStory = stories.find(s => s.id === storyId);
+      
+      // If not found and user is authenticated, check personal archive
+      if (!foundStory) {
+        try {
+          const authStatus = await AuthBridge.isAuthenticated();
+          if (authStatus && authStatus.authenticated) {
+            const userStories = getStoriesForUser(authStatus.userId);
+            foundStory = userStories.find(s => s.id === storyId);
+          }
+        } catch (error) {
+          console.error('Error checking auth status:', error);
+        }
+      }
+      
+      if (foundStory) {
+        setStory(foundStory);
+        setEditedContent(foundStory.content || '');
+        setEditedTitle(foundStory.title || '');
+      }
+    };
+    
+    findStory();
   }, [storyId]);
 
   const handleTranslate = async () => {
