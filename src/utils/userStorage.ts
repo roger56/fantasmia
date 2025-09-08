@@ -279,17 +279,22 @@ const updateDirectoryStructure = (userId: string, category: string, fileName: st
 };
 
 const updateUserStoryArchive = (userId: string, story: Story) => {
+  console.log('DEBUG: updateUserStoryArchive called', { userId, storyTitle: story.title, storyId: story.id });
   const userArchiveKey = `fantasmia_user_archive_${userId}`;
   const userArchive = JSON.parse(localStorage.getItem(userArchiveKey) || '[]');
+  console.log('DEBUG: Current user archive length:', userArchive.length);
   
   const existingIndex = userArchive.findIndex((s: Story) => s.id === story.id);
   if (existingIndex >= 0) {
     userArchive[existingIndex] = story;
+    console.log('DEBUG: Updated existing story in archive');
   } else {
     userArchive.push(story);
+    console.log('DEBUG: Added new story to archive');
   }
   
   localStorage.setItem(userArchiveKey, JSON.stringify(userArchive));
+  console.log('DEBUG: Saved user archive, new length:', userArchive.length);
 };
 
 export const getStories = (): Story[] => {
@@ -300,7 +305,9 @@ export const getStories = (): Story[] => {
 export const getStoriesForUser = (userId: string, includePublic: boolean = false): Story[] => {
   // Get user's personal archive
   const userArchiveKey = `fantasmia_user_archive_${userId}`;
+  console.log('DEBUG getStoriesForUser: Looking for archive key:', userArchiveKey);
   const userArchive = JSON.parse(localStorage.getItem(userArchiveKey) || '[]');
+  console.log('DEBUG getStoriesForUser: Found stories in archive:', userArchive.length);
   
   // Sort by descending date
   return userArchive.sort((a: Story, b: Story) => 
