@@ -44,7 +44,9 @@ const MagicStoryEditor = () => {
         content: content.trim(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        category: 'magic' // Categorize as magic story
+        category: 'magic', // Categorize as magic story
+        authorId: 'superuser',
+        authorName: 'superuser'
       };
       
       saveReadingStory(newStory);

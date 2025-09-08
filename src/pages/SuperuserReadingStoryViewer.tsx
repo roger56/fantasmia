@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Save, Volume2, Palette, Camera, ImageIcon, Video, Film, Music, ChevronDown, Edit, PenTool, Wand2, Feather } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
-import { getReadingStories, updateReadingStory, ReadingStory } from '@/utils/userStorage';
+import { getAllReadingStoriesForSuperuser, updateReadingStory, ReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { useTTS } from '@/hooks/useTTS';
 import HomeButton from '@/components/HomeButton';
@@ -42,7 +42,7 @@ const SuperuserReadingStoryViewer = () => {
   const loadStory = () => {
     if (!id) return;
     
-    const stories = getReadingStories();
+    const stories = getAllReadingStoriesForSuperuser();
     const foundStory = stories.find(s => s.id === id);
     
     if (foundStory) {

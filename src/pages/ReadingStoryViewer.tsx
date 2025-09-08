@@ -171,6 +171,7 @@ const ReadingStoryViewer = () => {
               storyTitle={story.title}
               storyId={story.id}
               userRole={userRole}
+              readOnlyForUsers={!isSuperuser}
             />
           </div>
         }

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ArrowLeft, BookOpen, Edit, Trash2, Plus } from 'lucide-react';
-import { saveReadingStory, getReadingStories, updateReadingStory, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
+import { saveReadingStory, getAllReadingStoriesForSuperuser, updateReadingStory, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 
@@ -34,10 +34,8 @@ const SuperuserReadingStoriesManagement = () => {
   }, [navigate]);
 
   const loadStories = () => {
-    const readingStories = getReadingStories();
-    setStories(readingStories.sort((a, b) => 
-      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-    ));
+    const readingStories = getAllReadingStoriesForSuperuser();
+    setStories(readingStories);
   };
 
   const handleSave = () => {
@@ -93,7 +91,9 @@ const SuperuserReadingStoriesManagement = () => {
         title,
         content,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        authorId: 'superuser',
+        authorName: 'superuser'
       };
       saveReadingStory(newStory);
       toast({

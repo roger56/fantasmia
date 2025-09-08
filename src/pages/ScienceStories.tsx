@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Atom, Trash2 } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
-import { getReadingStories, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
+import { getReadingStories, getReadingStoriesForUser, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
@@ -43,8 +43,8 @@ const ScienceStories = () => {
   const loadScienceStories = async () => {
     setLoadingStories(true);
     try {
-      // Get stories from localStorage and filter for science stories
-      const readingStories = getReadingStories();
+      // Get stories from localStorage - only superuser created stories for normal users
+      const readingStories = isSuperuser ? getReadingStories() : getReadingStoriesForUser();
       // Filter for science stories based on category or content containing "scienza"
       const scienceStories = readingStories.filter(story => 
         story.category === 'science' ||

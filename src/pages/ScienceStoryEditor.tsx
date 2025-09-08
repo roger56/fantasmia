@@ -47,7 +47,9 @@ const ScienceStoryEditor = () => {
         content: scienceContent.trim(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        category: 'science' // Categorize as science story
+        category: 'science', // Categorize as science story
+        authorId: 'superuser',
+        authorName: 'superuser'
       };
       
       saveReadingStory(newStory);

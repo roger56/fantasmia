@@ -14,13 +14,15 @@ interface CreativeMediaMenuEnhancedProps {
   storyTitle: string;
   storyId?: string;
   userRole?: 'superuser' | 'user' | 'Superuser';
+  readOnlyForUsers?: boolean; // New prop to control read-only access
 }
 
 const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
   storyContent,
   storyTitle,
   storyId,
-  userRole = 'user'
+  userRole = 'user',
+  readOnlyForUsers = false
 }) => {
   const { toast } = useToast();
   const { isPlaying, speak, stop } = useTTS();
@@ -96,6 +98,11 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
   const handleMediaGeneration = () => {
     if ((userRole === 'superuser' || userRole === 'Superuser') && storyId) {
       setShowMediaDialog(true);
+    } else if (readOnlyForUsers && userRole === 'user') {
+      toast({
+        title: "Accesso limitato",
+        description: "Solo il Superuser può generare immagini per le storie dell'Archivio Generale"
+      });
     }
   };
 
@@ -147,7 +154,7 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Menu Media per entrambi i tipi di Superuser */}
+      {/* Menu Media - Superuser ha accesso completo, utenti normali solo visualizzazione */}
       {(userRole === 'Superuser' || userRole === 'superuser') && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -172,6 +179,19 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      )}
+
+      {/* Bottone Visualizza Immagine per utenti normali */}
+      {userRole === 'user' && existingImage && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleViewImage}
+          className="flex items-center gap-2"
+        >
+          <Image className="w-4 h-4" />
+          Vedi
+        </Button>
       )}
 
       {/* Menu Condividi */}
@@ -216,18 +236,6 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
         </>
       )}
 
-      {/* Visualizzazione per utenti normali */}
-      {userRole === 'user' && existingImage && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleViewImage}
-          className="flex items-center gap-2"
-        >
-          <Image className="w-4 h-4" />
-          Visualizza Immagine
-        </Button>
-      )}
 
       {/* Dialog visualizzazione per tutti i tipi di utente */}
       {existingImage && (

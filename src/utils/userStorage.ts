@@ -501,10 +501,13 @@ export const saveReadingStory = (story: ReadingStory) => {
   const index = existingStories.findIndex(s => s.id === story.id);
   
   // Add category based on story type for better categorization
+  // Ensure authorId and authorName are set for superuser stories
   const storyWithCategory = {
     ...story,
     category: story.category || 'general', // Default category
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    authorId: story.authorId || 'superuser',
+    authorName: story.authorName || 'superuser'
   };
   
   if (index >= 0) {
@@ -561,6 +564,24 @@ export const deleteStoryImage = (storyId: string) => {
 export const getReadingStories = (): ReadingStory[] => {
   const stored = localStorage.getItem('fantasmia_reading_stories');
   return stored ? JSON.parse(stored) : [];
+};
+
+// Get reading stories for normal users - only stories created by superuser
+export const getReadingStoriesForUser = (): ReadingStory[] => {
+  const stories = getReadingStories();
+  // Only return stories created by superuser (these are the "Archivio Generale" stories)
+  return stories.filter(story => 
+    story.authorId === 'superuser' || 
+    story.authorId === 'Superuser' ||
+    story.authorName === 'superuser' ||
+    story.authorName === 'Superuser'
+  ).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+};
+
+// Get all reading stories for superuser management
+export const getAllReadingStoriesForSuperuser = (): ReadingStory[] => {
+  const stories = getReadingStories();
+  return stories.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 };
 
 export const updateReadingStory = (id: string, updates: Partial<ReadingStory>) => {
