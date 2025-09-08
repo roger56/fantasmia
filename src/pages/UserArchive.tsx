@@ -48,7 +48,13 @@ const UserArchive = () => {
         }
       });
       
-      setStories(allUserStories);
+      // Filter out the unwanted stories definitively
+      const filteredStories = allUserStories.filter(story => 
+        story.title !== "RUSSIA : UN IDIOTA PATENTATO" && 
+        story.title !== "IL CAVALIERE DELLE BOLLE DI SAPONE"
+      );
+      
+      setStories(filteredStories);
       setLoading(false);
     };
 

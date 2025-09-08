@@ -447,9 +447,22 @@ export const deleteStoryByTitle = (title: string): boolean => {
   return false;
 };
 
-// Auto-delete the specific unwanted story
+// Auto-delete the specific unwanted stories
 (() => {
   deleteStoryByTitle("RUSSIA : UN IDIOTA PATENTATO");
+  deleteStoryByTitle("IL CAVALIERE DELLE BOLLE DI SAPONE");
+  
+  // Clean all user archives from these specific stories
+  const allUsers = getUsers();
+  allUsers.forEach(user => {
+    const userArchiveKey = `fantasmia_user_archive_${user.id}`;
+    const userArchive = JSON.parse(localStorage.getItem(userArchiveKey) || '[]');
+    const filteredArchive = userArchive.filter((story: Story) => 
+      story.title !== "RUSSIA : UN IDIOTA PATENTATO" && 
+      story.title !== "IL CAVALIERE DELLE BOLLE DI SAPONE"
+    );
+    localStorage.setItem(userArchiveKey, JSON.stringify(filteredArchive));
+  });
 })();
 
 // Initialize directory structure for existing users
