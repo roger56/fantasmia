@@ -32,16 +32,13 @@ const UserArchive = () => {
       setUserName(authStatus.userName);
       
       // Load user's stories from personal archive
-      console.log('DEBUG UserArchive: Loading stories for user', authStatus.userId, authStatus.userName);
       const userStories = getStoriesForUser(authStatus.userId);
-      console.log('DEBUG UserArchive: User personal stories:', userStories.length);
       
       // Also check main stories list for backward compatibility and recent stories
       const mainStories = getStories().filter(story => 
         story.authorName === authStatus.userName || 
         story.authorId === authStatus.userId
       );
-      console.log('DEBUG UserArchive: Main stories for user:', mainStories.length);
       
       // Merge stories and prioritize main stories list (which contains the most recent)
       const allUserStories = [...mainStories];
@@ -52,7 +49,6 @@ const UserArchive = () => {
           allUserStories.push(story);
         }
       });
-      console.log('DEBUG UserArchive: Total merged stories:', allUserStories.length);
       
       // Filter out the unwanted stories definitively
       const filteredStories = allUserStories.filter(story => 

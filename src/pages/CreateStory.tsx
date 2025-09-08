@@ -10,6 +10,8 @@ const CreateStory = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [profileId, setProfileId] = useState<string>('');
+  const [profileName, setProfileName] = useState<string>('');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -19,6 +21,8 @@ const CreateStory = () => {
         return;
       }
       setIsAuthenticated(true);
+      setProfileId(authStatus.userId);
+      setProfileName(authStatus.userName);
       setLoading(false);
     };
 
@@ -80,20 +84,22 @@ const CreateStory = () => {
     difficulty: 5
   }];
   const handleModeSelect = (mode: string) => {
+    const state = { profileId, profileName };
+    
     if (mode === 'PROPP') {
-      navigate('/propp-mode-selector');
+      navigate('/propp-mode-selector', { state });
     } else if (mode === 'GHOST') {
-      navigate('/ghost-editor');
+      navigate('/ghost-editor', { state });
     } else if (mode === 'PAROLE_CHIAMANO') {
-      navigate('/parole-chiamano');
+      navigate('/parole-chiamano', { state });
     } else if (mode === 'AIROTS') {
-      navigate('/airots-editor');
+      navigate('/airots-editor', { state });
     } else if (mode === 'CAMPBELL') {
-      navigate('/campbell-editor');
+      navigate('/campbell-editor', { state });
     } else if (mode === 'CSS') {
-      navigate('/css-editor');
+      navigate('/css-editor', { state });
     } else if (mode === 'PROFESSION') {
-      navigate('/profession-story');
+      navigate('/profession-story', { state });
     }
   };
   return (
