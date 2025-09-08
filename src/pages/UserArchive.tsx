@@ -34,15 +34,17 @@ const UserArchive = () => {
       // Load user's stories from personal archive
       const userStories = getStoriesForUser(authStatus.userId);
       
-      // Also check main stories list for backward compatibility
+      // Also check main stories list for backward compatibility and recent stories
       const mainStories = getStories().filter(story => 
         story.authorName === authStatus.userName || 
         story.authorId === authStatus.userId
       );
       
-      // Merge and deduplicate
-      const allUserStories = [...userStories];
-      mainStories.forEach(story => {
+      // Merge stories and prioritize main stories list (which contains the most recent)
+      const allUserStories = [...mainStories];
+      
+      // Add stories from personal archive that are not already in main list
+      userStories.forEach(story => {
         if (!allUserStories.find(existing => existing.id === story.id)) {
           allUserStories.push(story);
         }
