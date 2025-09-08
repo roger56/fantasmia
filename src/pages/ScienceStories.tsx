@@ -108,7 +108,7 @@ const ScienceStories = () => {
       <StoryLayout
         title="Magia della Scienza"
         subtitle="Storie che mescolano scienza e fantasia"
-        onBack={() => navigate('/reading-story-type-selection')}
+        onBack={() => navigate(isSuperuser ? '/superuser-story-type-selection' : '/reading-story-type-selection')}
         showHomeButton={true}
         headerContent={
           isSuperuser ? (
@@ -133,8 +133,16 @@ const ScienceStories = () => {
               <Atom className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-medium mb-2">Nessuna storia scientifica disponibile</h3>
               <p className="text-muted-foreground">
-                Il SuperUser non ha ancora caricato storie di "Magia della Scienza".
+                {isSuperuser ? 'Non hai ancora creato storie di "Magia della Scienza".' : 'Il SuperUser non ha ancora caricato storie di "Magia della Scienza".'}
               </p>
+              {isSuperuser && (
+                <Button 
+                  onClick={() => navigate('/science-story-editor')}
+                  className="mt-4"
+                >
+                  Crea la tua prima storia scientifica
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (

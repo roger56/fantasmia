@@ -108,7 +108,7 @@ const ReadingStories = () => {
       <StoryLayout
         title="Storie Magiche"
         subtitle="Storie magiche che si raccontano nel mondo"
-        onBack={() => navigate('/reading-story-type-selection')}
+        onBack={() => navigate(isSuperuser ? '/superuser-story-type-selection' : '/reading-story-type-selection')}
         showHomeButton={true}
         headerContent={
           isSuperuser ? (
@@ -133,8 +133,16 @@ const ReadingStories = () => {
               <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-medium mb-2">Nessuna storia magica disponibile</h3>
               <p className="text-muted-foreground">
-                Il SuperUser non ha ancora caricato storie magiche del mondo.
+                {isSuperuser ? 'Non hai ancora creato storie magiche del mondo.' : 'Il SuperUser non ha ancora caricato storie magiche del mondo.'}
               </p>
+              {isSuperuser && (
+                <Button 
+                  onClick={() => navigate('/magic-story-editor')}
+                  className="mt-4"
+                >
+                  Crea la tua prima storia magica
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (

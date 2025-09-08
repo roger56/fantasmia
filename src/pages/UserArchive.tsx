@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, Eye, Image } from 'lucide-react';
+import { BookOpen, Eye, Image, Trash2 } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
 import { getStories, getStoriesForUser, getStoryImage } from '@/utils/userStorage';
 import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
@@ -163,6 +163,26 @@ const UserArchive = () => {
                                   className="ml-2"
                                 >
                                   <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm('Sei sicuro di voler eliminare questa storia? Questa azione non può essere annullata.')) {
+                                      // Import deleteStory function and remove story
+                                      import('@/utils/userStorage').then(({ deleteStory }) => {
+                                        if (deleteStory(story.id)) {
+                                          // Reload stories
+                                          window.location.reload();
+                                        }
+                                      });
+                                    }
+                                  }}
+                                  className="ml-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  title="Elimina storia"
+                                >
+                                  <Trash2 className="w-4 h-4" />
                                 </Button>
                               </div>
                             </div>
