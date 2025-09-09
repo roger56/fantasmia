@@ -66,12 +66,19 @@ const DebugIndexedDB = () => {
 
   const getAllAMStories = async (): Promise<AMStory[]> => {
     try {
+      await fantasMiaDB.init(); // Ensure DB is initialized
       const transaction = fantasMiaDB['db']!.transaction(['am_stories'], 'readonly');
       const store = transaction.objectStore('am_stories');
       const request = store.getAll();
       return new Promise((resolve, reject) => {
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          console.log('am_stories:', request.result.length, 'records');
+          resolve(request.result);
+        };
+        request.onerror = () => {
+          console.error('Errore lettura am_stories:', request.error);
+          reject(request.error);
+        };
       });
     } catch (error) {
       console.error('Errore lettura am_stories:', error);
@@ -81,12 +88,19 @@ const DebugIndexedDB = () => {
 
   const getAllAGStories = async (): Promise<AGStory[]> => {
     try {
+      await fantasMiaDB.init(); // Ensure DB is initialized
       const transaction = fantasMiaDB['db']!.transaction(['ag_stories'], 'readonly');
       const store = transaction.objectStore('ag_stories');
       const request = store.getAll();
       return new Promise((resolve, reject) => {
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          console.log('ag_stories:', request.result.length, 'records');
+          resolve(request.result);
+        };
+        request.onerror = () => {
+          console.error('Errore lettura ag_stories:', request.error);
+          reject(request.error);
+        };
       });
     } catch (error) {
       console.error('Errore lettura ag_stories:', error);
@@ -209,7 +223,7 @@ const DebugIndexedDB = () => {
               ))}
               {(debugData?.amStories.count || 0) === 0 && currentProfileId && (
                 <div className="text-xs text-orange-600 mt-2">
-                  💡 Nessuna storia per questo profilo. Verifica ownerProfileId.
+                  💡 Nessuna storia per profilo {currentProfileId.slice(0, 8)} . Controlla ownerProfileId.
                 </div>
               )}
             </CardContent>
