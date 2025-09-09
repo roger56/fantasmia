@@ -94,7 +94,6 @@ const App = () => (
           <Route path="/reading-story-viewer/:id" element={<ReadingStoryViewer />} />
           <Route path="/science-story-viewer/:id" element={<ScienceStoryViewer />} />
           <Route path="/user-archive" element={<UserArchive />} />
-          <Route path="/superuser" element={<SuperUser />} />
           <Route path="/superuser-story-type-selection" element={<SuperuserStoryTypeSelection />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
           <Route path="/superuser-science-stories-view" element={<SuperuserScienceStoriesView />} />
