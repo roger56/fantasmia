@@ -2,7 +2,7 @@
 // Gestisce salvataggio e recupero storie AM tramite IndexedDB
 
 import { fantasMiaDB, AMStory } from './indexedDB';
-import { requireCurrentProfile } from './profileManager';
+import { requireCurrentProfile, getCurrentProfileId } from './profileManager';
 import { toast } from '@/hooks/use-toast';
 
 export interface StoryData {
@@ -101,7 +101,7 @@ export const runAutomaticTest = async (): Promise<boolean> => {
       mode: 'TEST'
     };
 
-    const currentProfileId = requireCurrentProfile();
+    const currentProfileId = getCurrentProfileId();
     if (!currentProfileId) {
       console.error('Test fallito: nessun profilo attivo');
       return false;

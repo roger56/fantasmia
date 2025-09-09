@@ -6,14 +6,21 @@ import { initializeDemoData } from './utils/demoData'
 // Initialize demo data
 initializeDemoData();
 
-// Run automatic test when in development
+// Run automatic test when in development (only if profile is available)
 if (import.meta.env.DEV) {
   import('./utils/storyManager').then(({ runAutomaticTest }) => {
-    setTimeout(() => {
-      runAutomaticTest().then(result => {
-        console.log('M1 Test automatico:', result ? 'PASSED' : 'FAILED');
-      });
-    }, 2000); // Wait for initialization
+    import('./utils/profileManager').then(({ getCurrentProfileId }) => {
+      setTimeout(() => {
+        const currentProfileId = getCurrentProfileId();
+        if (currentProfileId) {
+          runAutomaticTest().then(result => {
+            console.log('M1 Test automatico:', result ? 'PASSED' : 'FAILED');
+          });
+        } else {
+          console.log('M1 Test automatico: SKIPPED (nessun profilo selezionato)');
+        }
+      }, 2000); // Wait for initialization
+    });
   });
 }
 
