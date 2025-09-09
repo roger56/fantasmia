@@ -77,43 +77,129 @@ const Dashboard = () => {
   }
 
   return (
-    <>
-      <ProfileIndicator />
-      <StoryLayout
-      title="Fantas-Mia"
-      subtitle="Cosa vuoi fare oggi?"
+    <StoryLayout
+      title="Fantas-Mia V2"
+      subtitle="Dashboard unificata - AM/AG"
       onBack={() => navigate('/profiles')}
       showHomeButton={true}
+      backgroundColor="bg-gradient-to-br from-blue-50 via-purple-50 to-slate-50"
     >
-      {/* Dashboard Options Grid */}
-      <div className="grid grid-cols-1 gap-4 max-w-lg mx-auto">
-        {dashboardOptions.map(option => {
-          const IconComponent = option.icon;
-          return (
+      {/* Dashboard V2 - Archivi Separati */}
+      <div className="space-y-8">
+        
+        {/* Sezione Creazione Storie - Invariante */}
+        <section className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-slate-200">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            Creazione Storie (Invariante)
+          </h2>
+          <Card 
+            className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-primary/20" 
+            onClick={() => navigate('/create-story')}
+          >
+            <CardContent className="p-4 text-center">
+              <div className="mb-2 flex justify-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Plus className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-1">
+                Crea la tua storia
+              </h3>
+              <p className="text-slate-600 text-sm">
+                Inizia a creare una nuova storia interattiva (7 modalità disponibili)
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Sezione Archivi AM/AG */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* AM - Archivio Magico */}
+          <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-6 border border-purple-200">
+            <h2 className="text-lg font-semibold text-purple-800 mb-4 flex items-center gap-2">
+              <BookOpen className="w-5 h-5" />
+              AM - Archivio Magico
+            </h2>
+            <p className="text-purple-600 text-sm mb-4">Le tue storie personali</p>
             <Card 
-              key={option.id} 
+              className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-purple-300" 
+              onClick={() => navigate('/user-archive')}
+            >
+              <CardContent className="p-4 text-center">
+                <div className="mb-2 flex justify-center">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-purple-700" />
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-purple-800 mb-1">
+                  ARCHIVIO PERSONALE
+                </h3>
+                <p className="text-purple-600 text-xs">
+                  {isSuperuser ? 'Visualizza archivio utenti' : 'Visualizza le tue storie create'}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* AG - Archivio Generale */}
+          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200">
+            <h2 className="text-lg font-semibold text-blue-800 mb-4 flex items-center gap-2">
+              <BookText className="w-5 h-5" />
+              AG - Archivio Generale
+            </h2>
+            <p className="text-blue-600 text-sm mb-4">Storie condivise dal mondo</p>
+            <Card 
+              className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-blue-300" 
+              onClick={() => navigate('/reading-story-type-selection')}
+            >
+              <CardContent className="p-4 text-center">
+                <div className="mb-2 flex justify-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <BookText className="w-6 h-6 text-blue-700" />
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-blue-800 mb-1">
+                  LETTURA STORIE DEL MONDO
+                </h3>
+                <p className="text-blue-600 text-xs">
+                  Scopri storie e contenuti condivisi
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Gestione Sistema (Solo Superuser) */}
+        {isSuperuser && (
+          <section className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-6 border border-slate-200">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Gestione Sistema
+            </h2>
+            <Card 
               className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-slate-300" 
-              onClick={() => navigate(option.path)}
+              onClick={() => navigate('/superuser')}
             >
               <CardContent className="p-4 text-center">
                 <div className="mb-2 flex justify-center">
                   <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
-                    <IconComponent className="w-6 h-6 text-slate-700" />
+                    <Settings className="w-6 h-6 text-slate-700" />
                   </div>
                 </div>
                 <h3 className="text-lg font-semibold text-slate-800 mb-1">
-                  {option.title}
+                  Gestione Sistema
                 </h3>
                 <p className="text-slate-600 text-xs">
-                  {option.description}
+                  Accedi alle funzionalità di amministrazione
                 </p>
               </CardContent>
             </Card>
-          );
-        })}
+          </section>
+        )}
       </div>
     </StoryLayout>
-    </>
   );
 };
 
