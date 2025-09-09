@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Home, Mic, MicOff, Volume2, Check, RotateCcw, Globe, ArrowLeft } from 'lucide-react';
 import HomeButton from '@/components/HomeButton';
 import { useToast } from '@/hooks/use-toast';
-import { saveStory } from '@/utils/userStorage';
+import { saveStoryBridge } from '@/utils/storyBridge';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
@@ -320,7 +320,7 @@ const ParoleChiamanoEditor = () => {
       isPublic: false
     };
 
-    await saveStory(story);
+    await saveStoryBridge(story);
     
     toast({
       title: "Storia salvata!",

@@ -2,13 +2,15 @@
 // Gestisce salvataggio e recupero storie AM tramite IndexedDB
 
 import { fantasMiaDB, AMStory } from './indexedDB';
-import { getCurrentProfileId } from './profileManager';
+import { requireCurrentProfile } from './profileManager';
+import { toast } from '@/hooks/use-toast';
 
 export interface StoryData {
   id?: string;
   title: string;
   text: string;
   mode: string;
+  content?: string; // Support both text and content for compatibility
 }
 
 // Genera un UUID semplice
@@ -22,35 +24,72 @@ const generateUUID = (): string => {
 
 // Salva storia utente in IndexedDB am_stories
 export const saveUserStory = async (storyData: StoryData): Promise<string> => {
-  const currentProfileId = getCurrentProfileId();
-  
-  if (!currentProfileId) {
-    throw new Error('Nessun profilo attivo trovato');
+  try {
+    const currentProfileId = requireCurrentProfile();
+    
+    // Support both text and content fields for compatibility
+    const storyText = storyData.text || storyData.content || '';
+    
+    if (!storyText.trim()) {
+      toast({
+        title: "Errore",
+        description: "Il contenuto della storia non può essere vuoto",
+        variant: "destructive"
+      });
+      throw new Error('Contenuto vuoto');
+    }
+
+    const story: AMStory = {
+      id: storyData.id || generateUUID(),
+      ownerProfileId: currentProfileId,
+      title: storyData.title,
+      text: storyText,
+      mode: storyData.mode,
+      createdAt: new Date().toISOString(),
+      hasImage: false
+    };
+
+    // Validate required fields before saving
+    if (!story.ownerProfileId) {
+      console.error('❌ BLOCCO SALVATAGGIO: ownerProfileId mancante');
+      toast({
+        title: "Errore di salvataggio",
+        description: "Profilo utente non identificato",
+        variant: "destructive"
+      });
+      throw new Error('ownerProfileId mancante');
+    }
+
+    await fantasMiaDB.saveAMStory(story);
+    
+    // Log telemetry
+    console.log('✅ WRITE-AM:', { action: 'write-am', id: story.id, ownerProfileId: story.ownerProfileId });
+    
+    // Emit custom event for UI refresh
+    window.dispatchEvent(new CustomEvent('user-story-saved', { detail: { storyId: story.id } }));
+    
+    return story.id;
+  } catch (error) {
+    console.error('❌ Errore saveUserStory:', error);
+    throw error;
   }
-
-  const story: AMStory = {
-    id: storyData.id || generateUUID(),
-    ownerProfileId: currentProfileId,
-    title: storyData.title,
-    text: storyData.text,
-    mode: storyData.mode,
-    createdAt: new Date().toISOString(),
-    hasImage: false
-  };
-
-  await fantasMiaDB.saveAMStory(story);
-  return story.id;
 };
 
 // Recupera storie dell'utente corrente da IndexedDB
 export const getCurrentUserStories = async (): Promise<AMStory[]> => {
-  const currentProfileId = getCurrentProfileId();
-  
-  if (!currentProfileId) {
+  try {
+    const currentProfileId = requireCurrentProfile();
+    
+    const stories = await fantasMiaDB.getAMStoriesByUser(currentProfileId);
+    
+    // Log telemetry
+    console.log('📖 READ-AM:', { action: 'read-am', ownerProfileId: currentProfileId, results: stories.length });
+    
+    return stories;
+  } catch (error) {
+    console.error('❌ Errore getCurrentUserStories:', error);
     return [];
   }
-
-  return await fantasMiaDB.getAMStoriesByUser(currentProfileId);
 };
 
 // Test automatico - salva e verifica storia
@@ -62,7 +101,7 @@ export const runAutomaticTest = async (): Promise<boolean> => {
       mode: 'TEST'
     };
 
-    const currentProfileId = getCurrentProfileId();
+    const currentProfileId = requireCurrentProfile();
     if (!currentProfileId) {
       console.error('Test fallito: nessun profilo attivo');
       return false;

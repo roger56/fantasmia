@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { CampbellCard, CampbellGamePhase, CampbellStoryPhase } from '@/types/campbell';
 import { campbellCards } from '@/data/campbellCards';
-import { saveStory, updateStory } from '@/utils/userStorage';
+import { saveStoryBridge } from '@/utils/storyBridge';
+import { updateStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
 import CampbellWarningScreen from '@/components/campbell/CampbellWarningScreen';
@@ -106,7 +107,7 @@ const CampbellEditor = () => {
           description: `"${title}" è stata aggiornata con successo.`
         });
       } else {
-        await saveStory(storyData);
+        await saveStoryBridge(storyData);
         toast({
           title: "Storia salvata!",
           description: `"${title}" è stata salvata con successo.`

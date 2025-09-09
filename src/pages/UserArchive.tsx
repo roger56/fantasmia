@@ -16,12 +16,28 @@ const UserArchive = () => {
 
   useEffect(() => {
     loadUserStories();
+    
+    // Listen for user story saved events to refresh
+    const handleStoryUpdate = () => {
+      loadUserStories();
+    };
+    
+    window.addEventListener('user-story-saved', handleStoryUpdate);
+    return () => window.removeEventListener('user-story-saved', handleStoryUpdate);
   }, []);
 
   const loadUserStories = async () => {
     try {
       const userStories = await getCurrentUserStories();
       setStories(userStories);
+      
+      // Show hint if no stories but user has profile
+      if (userStories.length === 0) {
+        const profileId = getCurrentProfileId();
+        if (profileId) {
+          console.log('💡 HINT: Nessuna storia per profilo', profileId, '. Controlla ownerProfileId.');
+        }
+      }
     } catch (error) {
       console.error('Error loading user stories:', error);
     } finally {

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, ArrowRight, Home, Mic, Save, Volume2, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveStory } from '@/utils/userStorage';
+import { saveStoryBridge } from '@/utils/storyBridge';
 import SpeechToText from '@/components/SpeechToText';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
@@ -177,7 +177,7 @@ const GhostEditor = () => {
       language: (isTranslated ? 'english' : 'italian') as 'italian' | 'english'
     };
 
-    await saveStory(story);
+    await saveStoryBridge(story);
     toast({
       title: "Storia salvata!",
       description: `La storia è stata salvata nell'archivio${isTranslated ? ' in inglese' : ''}`,

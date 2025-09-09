@@ -47,6 +47,7 @@ import UserReadingSuperuserStories from "./pages/UserReadingSuperuserStories";
 import StoryTypeSelection from "./pages/StoryTypeSelection";
 import ScienceStoryViewer from "./pages/ScienceStoryViewer";
 import SuperuserScienceStoriesView from "./pages/SuperuserScienceStoriesView";
+import DebugIndexedDB from "./pages/DebugIndexedDB";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -97,6 +98,7 @@ const App = () => (
           <Route path="/superuser-story-type-selection" element={<SuperuserStoryTypeSelection />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
           <Route path="/superuser-science-stories-view" element={<SuperuserScienceStoriesView />} />
+          <Route path="/debug-indexeddb" element={<DebugIndexedDB />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

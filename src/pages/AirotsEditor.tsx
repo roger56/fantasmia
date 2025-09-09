@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, ArrowRight, Home, Save, Volume2, Share, Edit, Languages } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveStory } from '@/utils/userStorage';
+import { saveStoryBridge } from '@/utils/storyBridge';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
 import SpeechToText from '@/components/SpeechToText';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
@@ -226,7 +226,7 @@ const AirotsEditor = () => {
       language: language
     };
 
-    await saveStory(story);
+    await saveStoryBridge(story);
     toast({
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",

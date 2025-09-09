@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { saveStory } from '@/utils/userStorage';
+import { saveStoryBridge } from '@/utils/storyBridge';
 import { GamePhase, ProppCard, StoryPhase } from '@/types/propp';
 import ProppWarningScreen from '@/components/propp/ProppWarningScreen';
 import ProppCardSelectionScreen from '@/components/propp/ProppCardSelectionScreen';
@@ -115,7 +115,7 @@ const ProppEditor = () => {
       freeStoryText: mode === 'free' ? freeStoryText : undefined
     };
 
-    await saveStory(story);
+    await saveStoryBridge(story);
     toast({
       title: "Storia sospesa!",
       description: "La storia è stata salvata e può essere ripresa dall'archivio",
@@ -191,7 +191,7 @@ const ProppEditor = () => {
       language: 'italian' as const
     };
 
-    await saveStory(story);
+    await saveStoryBridge(story);
     toast({
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",
