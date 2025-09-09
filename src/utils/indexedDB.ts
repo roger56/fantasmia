@@ -15,13 +15,12 @@ interface Profile {
 
 interface AMStory {
   id: string;
-  user_id: string;
+  ownerProfileId: string;
   title: string;
-  content: string;
+  text: string;
   mode: string;
-  created_at: string;
-  updated_at: string;
-  has_image: boolean;
+  createdAt: string;
+  hasImage: boolean;
 }
 
 interface AGStory {
@@ -77,8 +76,8 @@ class FantasMiaDB {
         // AM Stories store (Archivio Magico - User Stories)
         if (!db.objectStoreNames.contains('am_stories')) {
           const amStore = db.createObjectStore('am_stories', { keyPath: 'id' });
-          amStore.createIndex('user_id', 'user_id', { unique: false });
-          amStore.createIndex('updated_at', 'updated_at', { unique: false });
+          amStore.createIndex('ownerProfileId', 'ownerProfileId', { unique: false });
+          amStore.createIndex('createdAt', 'createdAt', { unique: false });
         }
 
         // AG Stories store (Archivio Generale - SU Stories)
@@ -122,11 +121,11 @@ class FantasMiaDB {
     await store.put(story);
   }
 
-  async getAMStoriesByUser(userId: string): Promise<AMStory[]> {
+  async getAMStoriesByUser(ownerProfileId: string): Promise<AMStory[]> {
     const transaction = this.db!.transaction(['am_stories'], 'readonly');
     const store = transaction.objectStore('am_stories');
-    const index = store.index('user_id');
-    const request = index.getAll(userId);
+    const index = store.index('ownerProfileId');
+    const request = index.getAll(ownerProfileId);
     return new Promise((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);

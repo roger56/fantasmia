@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, User, Lock, Shield, Globe, Home } from 'lucide-react';
 import { getUsers, authenticateUser, markMessagesAsRead } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
+import { setCurrentProfileId } from '@/utils/profileManager';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
@@ -100,6 +101,9 @@ const Profiles = () => {
     if (selectedUser) {
       const user = authenticateUser(selectedUser.name, password);
       if (user) {
+        // Set as current profile for IndexedDB
+        setCurrentProfileId(user.id);
+        
         // Bridge the user to Supabase authentication
         AuthBridge.createLocalSupabaseSession(user);
         

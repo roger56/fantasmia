@@ -7,33 +7,30 @@ export const seedDemoData = async () => {
     const demoUserStories: AMStory[] = [
       {
         id: 'am-story-1',
-        user_id: 'demo-user',
+        ownerProfileId: 'demo-user',
         title: 'La Principessa e il Drago',
-        content: 'C\'era una volta una principessa coraggiosa che viveva in un regno lontano. Un giorno, un drago cattivo rapì tutti i bambini del villaggio...',
+        text: 'C\'era una volta una principessa coraggiosa che viveva in un regno lontano. Un giorno, un drago cattivo rapì tutti i bambini del villaggio...',
         mode: 'Campbell',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        has_image: true
+        createdAt: new Date().toISOString(),
+        hasImage: true
       },
       {
         id: 'am-story-2',
-        user_id: 'demo-user',
+        ownerProfileId: 'demo-user',
         title: 'Il Gatto Magico',
-        content: 'In una piccola casa vicino al bosco viveva un gatto molto speciale. Aveva il potere di parlare con gli animali e di far accadere cose incredibili...',
+        text: 'In una piccola casa vicino al bosco viveva un gatto molto speciale. Aveva il potere di parlare con gli animali e di far accadere cose incredibili...',
         mode: 'Propp',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        has_image: false
+        createdAt: new Date().toISOString(),
+        hasImage: false
       },
       {
         id: 'am-story-3',
-        user_id: 'demo-user',
+        ownerProfileId: 'demo-user',
         title: 'L\'Avventura nel Bosco Incantato',
-        content: 'Marco e Sara stavano esplorando il bosco quando trovarono un sentiero segreto che li portò in un mondo magico pieno di creature fantastiche...',
+        text: 'Marco e Sara stavano esplorando il bosco quando trovarono un sentiero segreto che li portò in un mondo magico pieno di creature fantastiche...',
         mode: 'CSS',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        has_image: true
+        createdAt: new Date().toISOString(),
+        hasImage: true
       }
     ];
 
@@ -90,8 +87,8 @@ export const seedDemoData = async () => {
       await fantasMiaDB.saveAGStory(story);
     }
 
-    // Set current user for demo
-    localStorage.setItem('current_user_id', 'demo-user');
+    // Set current profile for demo
+    localStorage.setItem('current_profile_id', 'demo-user');
 
     console.log('Demo data seeded successfully');
   } catch (error) {

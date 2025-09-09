@@ -5,7 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Archive, Eye, Trash2 } from 'lucide-react';
 import StoryLayout from '@/components/shared/StoryLayout';
 import StoryImageIcon from '@/components/shared/StoryImageIcon';
-import { fantasMiaDB, AMStory } from '@/utils/indexedDB';
+import { AMStory } from '@/utils/indexedDB';
+import { getCurrentUserStories } from '@/utils/storyManager';
+import { getCurrentProfileId } from '@/utils/profileManager';
 
 const UserArchive = () => {
   const navigate = useNavigate();
@@ -18,9 +20,7 @@ const UserArchive = () => {
 
   const loadUserStories = async () => {
     try {
-      // Get current user from localStorage (simulated for demo)
-      const currentUserId = localStorage.getItem('current_user_id') || 'demo-user';
-      const userStories = await fantasMiaDB.getAMStoriesByUser(currentUserId);
+      const userStories = await getCurrentUserStories();
       setStories(userStories);
     } catch (error) {
       console.error('Error loading user stories:', error);
@@ -32,6 +32,7 @@ const UserArchive = () => {
   const handleDeleteStory = async (storyId: string) => {
     if (window.confirm('Sei sicuro di voler eliminare questa storia?')) {
       try {
+        const { fantasMiaDB } = await import('@/utils/indexedDB');
         await fantasMiaDB.deleteAMStory(storyId);
         await loadUserStories(); // Reload stories
       } catch (error) {
@@ -83,15 +84,15 @@ const UserArchive = () => {
                   <CardTitle className="flex items-center gap-2">
                     <Archive className="w-5 h-5 text-green-600" />
                     <span className="truncate">{story.title}</span>
-                    <StoryImageIcon storyId={story.id} hasImage={story.has_image} />
+                    <StoryImageIcon storyId={story.id} hasImage={story.hasImage} />
                   </CardTitle>
                   <CardDescription>
-                    {story.mode} • {new Date(story.updated_at).toLocaleDateString('it-IT')}
+                    {story.mode} • {new Date(story.createdAt).toLocaleDateString('it-IT')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-slate-600 mb-4 line-clamp-3">
-                    {story.content.substring(0, 100)}...
+                    {story.text.substring(0, 100)}...
                   </p>
                   <div className="flex gap-2">
                     <Button 
