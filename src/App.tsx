@@ -98,7 +98,7 @@ const App = () => (
           <Route path="/superuser-story-type-selection" element={<SuperuserStoryTypeSelection />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
           <Route path="/superuser-science-stories-view" element={<SuperuserScienceStoriesView />} />
-          <Route path="/debug-indexeddb" element={<DebugIndexedDB />} />
+          <Route path="/debug-indexdb" element={<DebugIndexedDB />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
