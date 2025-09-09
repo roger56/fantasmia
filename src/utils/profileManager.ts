@@ -25,7 +25,7 @@ export const getCurrentProfile = () => {
   return users.find((user: any) => user.id === profileId) || null;
 };
 
-// Utility per richiedere profilo obbligatorio con redirect
+// Utility per richiedere profilo obbligatorio con redirect (NON usare in /debug-indexeddb)
 export const requireCurrentProfile = (): string => {
   const profileId = getCurrentProfileId();
   
@@ -45,4 +45,22 @@ export const requireCurrentProfile = (): string => {
   }
   
   return profileId;
+};
+
+// Utility per creare profilo demo (solo per debug)
+export const createDemoProfile = async (): Promise<string> => {
+  const { fantasMiaDB } = await import('./indexedDB');
+  await fantasMiaDB.init();
+  
+  const demoProfile = {
+    id: crypto.randomUUID(),
+    name: 'debug-user',
+    created_at: new Date().toISOString(),
+    last_access: new Date().toISOString()
+  };
+  
+  await fantasMiaDB.saveProfile(demoProfile);
+  setCurrentProfileId(demoProfile.id);
+  
+  return demoProfile.id;
 };

@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { RefreshCw, AlertTriangle, Database, User, FileText, Image } from 'lucide-react';
-import StoryLayout from '@/components/shared/StoryLayout';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RefreshCw, AlertTriangle, Database, User, FileText, Image, Home, ArrowLeft } from 'lucide-react';
 import { fantasMiaDB, Profile, AMStory, AGStory } from '@/utils/indexedDB';
-import { getCurrentProfileId } from '@/utils/profileManager';
+import { getCurrentProfileId, createDemoProfile } from '@/utils/profileManager';
 import { runAutomaticTest } from '@/utils/storyManager';
 import { toast } from '@/hooks/use-toast';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 interface DebugData {
   profiles: { count: number; items: Profile[] };
@@ -139,29 +139,102 @@ const DebugIndexedDB = () => {
     window.location.reload();
   };
 
+  const handleCreateDemoProfile = async () => {
+    try {
+      const newProfileId = await createDemoProfile();
+      setCurrentProfileId(newProfileId);
+      await loadDebugData();
+      toast({
+        title: "✅ Profilo Demo Creato",
+        description: `Nuovo profilo: ${newProfileId.slice(0, 8)}`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Errore creazione profilo demo:', error);
+      toast({
+        title: "❌ Errore",
+        description: "Impossibile creare profilo demo",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (!isDevelopment) {
     return null;
   }
 
   if (loading) {
     return (
-      <StoryLayout
-        title="Debug IndexedDB"
-        subtitle="Caricamento..."
-        onBack={() => navigate('/dashboard')}
-      >
-        <div className="text-center">Caricamento dati debug...</div>
-      </StoryLayout>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <div className="text-center pt-20">Caricamento dati debug...</div>
+      </div>
     );
   }
 
   return (
-    <StoryLayout
-      title="🔍 Debug IndexedDB"
-      subtitle="Diagnostica database locale (Solo sviluppo)"
-      onBack={() => navigate('/dashboard')}
-    >
-      <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <ProfileIndicator />
+      
+      {/* Fixed Top Navigation Bar */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-slate-200 p-4">
+        <div className="flex justify-between items-center max-w-6xl mx-auto">
+          {/* Back Button - Top Left */}
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Indietro
+          </Button>
+          
+          {/* Page Title - Center */}
+          <h1 className="text-xl font-bold text-slate-800">🔍 Debug IndexedDB</h1>
+          
+          {/* Home Button - Top Right */}
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/profiles')}
+            className="flex items-center gap-2"
+          >
+            <Home className="w-5 h-5" />
+            Home
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Content with top padding for fixed header */}
+      <div className="max-w-6xl mx-auto pt-20 space-y-6">
+        
+        {/* Banner se nessun profilo selezionato */}
+        {!currentProfileId && (
+          <Alert className="border-yellow-500 bg-yellow-50">
+            <AlertTriangle className="w-5 h-5 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              <div className="space-y-3">
+                <div><strong>Nessun profilo selezionato</strong></div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/profiles')}
+                    className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
+                  >
+                    Scegli profilo
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleCreateDemoProfile}
+                    className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
+                  >
+                    Crea profilo demo
+                  </Button>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
         
         {/* Info Ambiente */}
         <Card>
@@ -176,14 +249,12 @@ const DebugIndexedDB = () => {
             <div><strong>Current Profile ID:</strong> {currentProfileId || 'Nessuno'}</div>
             <div><strong>Service Worker:</strong> {hasServiceWorker ? 'Presente' : 'Assente'}</div>
             
-            {hasServiceWorker && (
-              <div className="mt-4">
-                <Button onClick={hardReload} variant="outline" size="sm">
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Hard Reload (consigliato)
-                </Button>
-              </div>
-            )}
+            <div className="mt-4">
+              <Button onClick={hardReload} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Hard Reload
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -304,7 +375,7 @@ const DebugIndexedDB = () => {
         )}
 
       </div>
-    </StoryLayout>
+    </div>
   );
 };
 
