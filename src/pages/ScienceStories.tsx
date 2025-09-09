@@ -1,217 +1,49 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Atom, Trash2 } from 'lucide-react';
-import { AuthBridge } from '@/utils/authBridge';
-import { getReadingStories, getReadingStoriesForUser, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FlaskConical } from 'lucide-react';
 import StoryLayout from '@/components/shared/StoryLayout';
-import { useToast } from '@/hooks/use-toast';
-import ProfileIndicator from '@/components/shared/ProfileIndicator';
-import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const ScienceStories = () => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [stories, setStories] = useState<ReadingStory[]>([]);
-  const [loadingStories, setLoadingStories] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [storyToDelete, setStoryToDelete] = useState<string>('');
-  const [isSuperuser, setIsSuperuser] = useState(false);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const authStatus = await AuthBridge.isAuthenticated();
-      if (!authStatus.authenticated) {
-        navigate('/');
-        return;
-      }
-      
-      setIsAuthenticated(true);
-      setIsSuperuser(authStatus.userName === 'superuser' || authStatus.userName === 'Superuser');
-      setLoading(false);
-      loadScienceStories();
-    };
-
-    checkAuth();
-  }, [navigate]);
-
-  const loadScienceStories = async () => {
-    setLoadingStories(true);
-    try {
-      // Get stories from localStorage - only superuser created stories for normal users
-      const readingStories = isSuperuser ? getReadingStories() : getReadingStoriesForUser();
-      // Filter for science stories based on category or content containing "scienza"
-      const scienceStories = readingStories.filter(story => 
-        story.category === 'science' ||
-        story.title.toLowerCase().includes('scienza') ||
-        story.content.toLowerCase().includes('scienza')
-      );
-      const sortedStories = scienceStories.sort((a, b) => 
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      );
-      setStories(sortedStories);
-    } catch (error) {
-      toast({
-        title: "Errore",
-        description: "Impossibile caricare le storie",
-        variant: "destructive"
-      });
-    } finally {
-      setLoadingStories(false);
-    }
-  };
-
-  const handleDeleteClick = (storyId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setStoryToDelete(storyId);
-    setShowDeleteDialog(true);
-  };
-
-  const confirmDelete = () => {
-    if (deleteReadingStory(storyToDelete)) {
-      toast({
-        title: "Successo",
-        description: "Storia eliminata con successo"
-      });
-      loadScienceStories();
-    } else {
-      toast({
-        title: "Errore",
-        description: "Impossibile eliminare la storia",
-        variant: "destructive"
-      });
-    }
-    setShowDeleteDialog(false);
-    setStoryToDelete('');
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-lg">Caricamento...</div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   return (
-    <>
-      <ProfileIndicator />
-      <StoryLayout
-        title="Magia della Scienza"
-        subtitle="Storie che mescolano scienza e fantasia"
-        onBack={() => navigate(isSuperuser ? '/superuser-story-type-selection' : '/reading-story-type-selection')}
-        showHomeButton={true}
-        headerContent={
-          isSuperuser ? (
-            <Button 
-              onClick={() => navigate('/science-story-editor')}
-              variant="default"
-              size="sm"
-            >
-              Aggiungi Storia
-            </Button>
-          ) : null
-        }
-      >
-      <div className="max-w-4xl mx-auto">
-        {loadingStories ? (
-          <div className="text-center text-muted-foreground">
-            Caricamento storie scientifiche...
-          </div>
-        ) : stories.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Atom className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">Nessuna storia scientifica disponibile</h3>
-              <p className="text-muted-foreground">
-                {isSuperuser ? 'Non hai ancora creato storie di "Magia della Scienza".' : 'Il SuperUser non ha ancora caricato storie di "Magia della Scienza".'}
-              </p>
-              {isSuperuser && (
+    <StoryLayout
+      title="Storie di Scienza"
+      subtitle="Archivio Generale (AG) - Storie Scientifiche"
+      onBack={() => navigate('/dashboard')}
+    >
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((id) => (
+            <Card key={id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FlaskConical className="w-5 h-5 text-primary" />
+                  Storia di Scienza {id}
+                </CardTitle>
+                <CardDescription>
+                  Categoria: Scientifica
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate-600 mb-4">
+                  Descrizione della storia scientifica numero {id}...
+                </p>
                 <Button 
-                  onClick={() => navigate('/science-story-editor')}
-                  className="mt-4"
+                  onClick={() => navigate(`/science-story-viewer/${id}`)}
+                  size="sm"
+                  className="w-full"
                 >
-                  Crea la tua prima storia scientifica
+                  Leggi Storia
                 </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Atom className="w-5 h-5" />
-                Storie di Magia della Scienza ({stories.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-60">
-                <div className="space-y-2">
-                  {stories.map((story) => (
-                    <div 
-                      key={story.id} 
-                      className="p-3 rounded-lg border cursor-pointer transition-colors bg-white border-slate-200 hover:bg-slate-50"
-                      onClick={() => navigate(`/reading-story-viewer/${story.id}`)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-slate-800 truncate">{story.title}</h3>
-                            <StoryImageIndicator storyId={story.id} />
-                          </div>
-                          <p className="text-xs text-slate-500 mt-1">
-                            Aggiornata il {new Date(story.updated_at).toLocaleDateString('it-IT')}
-                          </p>
-                        </div>
-                        {isSuperuser && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => handleDeleteClick(story.id, e)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
-                            title="Elimina storia"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
-            <AlertDialogDescription>
-              Sei sicuro di voler eliminare questa storia? Questa azione non può essere annullata.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              Elimina
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </StoryLayout>
-    </>
   );
 };
 

@@ -44,6 +44,9 @@ import SuperuserReadingStoryViewer from "./pages/SuperuserReadingStoryViewer";
 import ReadingStoryViewer from "./pages/ReadingStoryViewer";
 import UserArchive from "./pages/UserArchive";
 import UserReadingSuperuserStories from "./pages/UserReadingSuperuserStories";
+import StoryTypeSelection from "./pages/StoryTypeSelection";
+import ScienceStoryViewer from "./pages/ScienceStoryViewer";
+import SuperuserScienceStoriesView from "./pages/SuperuserScienceStoriesView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,19 +87,16 @@ const App = () => (
           <Route path="/airots-editor" element={<AirotsEditor />} />
           <Route path="/campbell-editor" element={<CampbellEditor />} />
           <Route path="/css-editor" element={<CSSEditor />} />
-          <Route path="/reading-story-type-selection" element={<ReadingStoryTypeSelection />} />
+          <Route path="/story-type-selection" element={<StoryTypeSelection />} />
           <Route path="/reading-stories" element={<ReadingStories />} />
-          <Route path="/reading-stories/science" element={<ScienceStories />} />
-          <Route path="/science-story-editor" element={<ScienceStoryEditor />} />
-          <Route path="/reading-stories/magic" element={<ReadingStories />} />
-          <Route path="/magic-story-editor" element={<MagicStoryEditor />} />
-          <Route path="/reading-story-viewer/:storyId" element={<ReadingStoryViewer />} />
-          <Route path="/superuser-story-type-selection" element={<SuperuserStoryTypeSelection />} />
-          <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
-          <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
-          <Route path="/superuser-reading-story-viewer/:id" element={<SuperuserReadingStoryViewer />} />
+          <Route path="/science-stories" element={<ScienceStories />} />
+          <Route path="/reading-story-viewer/:id" element={<ReadingStoryViewer />} />
+          <Route path="/science-story-viewer/:id" element={<ScienceStoryViewer />} />
           <Route path="/user-archive" element={<UserArchive />} />
-          <Route path="/user-reading-superuser-stories" element={<UserReadingSuperuserStories />} />
+          <Route path="/superuser" element={<SuperUser />} />
+          <Route path="/superuser-story-type-selection" element={<SuperuserStoryTypeSelection />} />
+          <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
+          <Route path="/superuser-science-stories-view" element={<SuperuserScienceStoriesView />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
