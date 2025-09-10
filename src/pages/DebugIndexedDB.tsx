@@ -28,14 +28,9 @@ const DebugIndexedDB = () => {
   const hasServiceWorker = 'serviceWorker' in navigator;
   
   useEffect(() => {
-    if (!isDevelopment) {
-      navigate('/dashboard');
-      return;
-    }
-    
     loadDebugData();
     setCurrentProfileId(getCurrentProfileId());
-  }, [isDevelopment, navigate]);
+  }, []);
 
   const loadDebugData = async () => {
     setLoading(true);
