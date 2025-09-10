@@ -154,9 +154,6 @@ const DebugIndexedDB = () => {
     }
   };
 
-  if (!isDevelopment) {
-    return null;
-  }
 
   if (loading) {
     return (
