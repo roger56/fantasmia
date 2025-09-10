@@ -114,7 +114,10 @@ const UserArchive = () => {
                     <Button 
                       size="sm"
                       className="flex-1"
-                      onClick={() => navigate(`/story-viewer/${story.id}`)}
+                      onClick={() => {
+                        console.log({ action: "open-user-viewer", id: story.id });
+                        navigate(`/user-story-viewer/${story.id}`);
+                      }}
                     >
                       <Eye className="w-4 h-4 mr-1" />
                       Visualizza
