@@ -24,7 +24,6 @@ const DebugIndexedDB = () => {
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
 
   // Verifiche ambiente
-  const isDevelopment = process.env.NODE_ENV !== 'production';
   const hasServiceWorker = 'serviceWorker' in navigator;
   
   useEffect(() => {
