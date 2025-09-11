@@ -40,6 +40,27 @@ const SuperUser = () => {
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-blue-600" />
+                Archivio Utenti (AM)
+              </CardTitle>
+              <CardDescription>
+                Visualizza e gestisci storie degli utenti
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => navigate('/superuser-am-archive')}
+                className="w-full"
+                variant="outline"
+              >
+                Visualizza Archivio AM
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-600" />
                 Gestione Utenti
               </CardTitle>

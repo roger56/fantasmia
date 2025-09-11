@@ -23,6 +23,8 @@ import ProppModeSelector from "./pages/ProppModeSelector";
 import GhostEditor from "./pages/GhostEditor";
 import StoryViewer from "./pages/StoryViewer";
 import UserStoryViewer from "./pages/UserStoryViewer";
+import SuperuserUserStoryViewer from "./pages/SuperuserUserStoryViewer";
+import SuperuserAMArchive from "./pages/SuperuserAMArchive";
 import SuperuserArchive from "./pages/SuperuserArchive";
 import SuperuserUsers from "./pages/SuperuserUsers";
 import SuperuserSettings from "./pages/SuperuserSettings";
@@ -96,6 +98,8 @@ const App = () => (
           <Route path="/science-story-viewer/:id" element={<ScienceStoryViewer />} />
           <Route path="/user-archive" element={<UserArchive />} />
           <Route path="/user-story-viewer/:id" element={<UserStoryViewer />} />
+          <Route path="/superuser-user-story-viewer/:id" element={<SuperuserUserStoryViewer />} />
+          <Route path="/superuser-am-archive" element={<SuperuserAMArchive />} />
           <Route path="/superuser-story-type-selection" element={<SuperuserStoryTypeSelection />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
           <Route path="/superuser-science-stories-view" element={<SuperuserScienceStoriesView />} />

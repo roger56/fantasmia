@@ -21,6 +21,7 @@ interface AMStory {
   mode: string;
   createdAt: string;
   hasImage: boolean;
+  poem?: string;
 }
 
 interface AGStory {

@@ -17,7 +17,7 @@ import EditTextDialog from '@/components/shared/EditTextDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 
-const UserStoryViewer = () => {
+const SuperuserUserStoryViewer = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [story, setStory] = useState<AMStory | null>(null);
@@ -44,8 +44,6 @@ const UserStoryViewer = () => {
       console.log({ action: "load-am-story", id, found: "loading" });
       
       await fantasMiaDB.init();
-
-      // Read from am_stories using direct IndexedDB access
       const transaction = fantasMiaDB['db']!.transaction(['am_stories'], 'readonly');
       const store = transaction.objectStore('am_stories');
       const request = store.get(id);
@@ -93,11 +91,11 @@ const UserStoryViewer = () => {
   };
 
   const handleBack = () => {
-    navigate('/user-archive');
+    navigate('/superuser-am-archive');
   };
 
   const handleHome = () => {
-    navigate('/profiles');
+    navigate('/superuser');
   };
 
   const handleReadStory = () => {
@@ -228,7 +226,7 @@ const UserStoryViewer = () => {
               Indietro
             </Button>
             
-            <h1 className="text-xl font-bold text-slate-800">Visualizza Storia</h1>
+            <h1 className="text-xl font-bold text-slate-800">Superuser - Storia AM</h1>
             
             <Button 
               variant="ghost" 
@@ -255,7 +253,7 @@ const UserStoryViewer = () => {
                   onClick={handleBack}
                   className="border-red-500 text-red-700 hover:bg-red-100"
                 >
-                  Torna a /user-archive
+                  Torna a /superuser-am-archive
                 </Button>
               </div>
             </AlertDescription>
@@ -281,7 +279,7 @@ const UserStoryViewer = () => {
             Indietro
           </Button>
           
-          <h1 className="text-xl font-bold text-slate-800">Visualizza Storia</h1>
+          <h1 className="text-xl font-bold text-slate-800">Superuser - Storia AM</h1>
           
           <Button 
             variant="ghost" 
@@ -326,7 +324,7 @@ const UserStoryViewer = () => {
             storyId={id!}
             storyTitle={storyTitle}
             storyContent={storyText}
-            isSuperuser={false}
+            isSuperuser={true}
             onMediaUpdate={handleMediaUpdate}
           />
 
@@ -398,6 +396,7 @@ const UserStoryViewer = () => {
               <div>Modalità: {story.mode}</div>
               <div>Creata: {new Date(story.createdAt).toLocaleString('it-IT')}</div>
               <div>ID: {story.id}</div>
+              <div>Proprietario: {story.ownerProfileId}</div>
             </div>
           </CardContent>
         </Card>
@@ -442,4 +441,4 @@ const UserStoryViewer = () => {
   );
 };
 
-export default UserStoryViewer;
+export default SuperuserUserStoryViewer;
