@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Search, Eye, Image as ImageIcon, ImageOff } from 'lucide-react';
+import { ArrowLeft, Search, Eye } from 'lucide-react';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import StoryImageIcon from '@/components/shared/StoryImageIcon';
 
 const SuperuserAMArchive = () => {
   const navigate = useNavigate();
@@ -181,15 +182,11 @@ const SuperuserAMArchive = () => {
                       {story.title || 'Storia senza titolo'}
                     </CardTitle>
                     <div className="flex items-center gap-2 ml-2">
-                      {imageStatuses[story.id] ? (
-                        <div title="Immagine associata">
-                          <ImageIcon className="w-4 h-4 text-green-600" />
-                        </div>
-                      ) : (
-                        <div title="Nessuna immagine associata">
-                          <ImageOff className="w-4 h-4 text-red-600" />
-                        </div>
-                      )}
+                      <StoryImageIcon 
+                        storyId={story.id} 
+                        hasImage={story.hasImage} 
+                        storyTitle={story.title}
+                      />
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

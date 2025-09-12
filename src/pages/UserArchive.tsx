@@ -121,7 +121,7 @@ const UserArchive = () => {
                   <CardTitle className="flex items-center gap-2">
                     <Archive className="w-5 h-5 text-green-600" />
                     <span className="truncate">{story.title}</span>
-                    <StoryImageIcon storyId={story.id} hasImage={story.hasImage} />
+                    <StoryImageIcon storyId={story.id} hasImage={story.hasImage} storyTitle={story.title} />
                   </CardTitle>
                   <CardDescription>
                     {story.mode} • {new Date(story.createdAt).toLocaleDateString('it-IT')}
