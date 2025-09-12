@@ -181,6 +181,11 @@ const UserStoryViewer = () => {
       await fantasMiaDB.saveAMStory(updatedStory);
       setStory(updatedStory);
       
+      // Emit update event for real-time UI updates
+      window.dispatchEvent(new CustomEvent('am-story-updated', { 
+        detail: { storyId: story.id, action: 'modified' } 
+      }));
+      
       toast({
         title: "Testo salvato",
         description: "Le modifiche sono state salvate con successo"

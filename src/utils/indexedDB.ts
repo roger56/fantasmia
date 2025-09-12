@@ -234,14 +234,31 @@ class FantasMiaDB {
     const transaction = this.db!.transaction([storeName], 'readwrite');
     const store = transaction.objectStore(storeName);
     
-    const getRequest = store.get(storyId);
-    getRequest.onsuccess = () => {
-      const story = getRequest.result;
-      if (story) {
-        story.has_image = hasImage;
-        store.put(story);
-      }
-    };
+    return new Promise((resolve, reject) => {
+      const getRequest = store.get(storyId);
+      getRequest.onsuccess = () => {
+        const story = getRequest.result;
+        if (story) {
+          if (storyType === 'am') {
+            story.hasImage = hasImage; // AM stories use hasImage
+          } else {
+            story.has_image = hasImage; // AG stories use has_image
+          }
+          const putRequest = store.put(story);
+          putRequest.onsuccess = () => {
+            // Emit update event for real-time UI updates
+            window.dispatchEvent(new CustomEvent('am-story-updated', { 
+              detail: { storyId, action: 'image-updated', hasImage } 
+            }));
+            resolve();
+          };
+          putRequest.onerror = () => reject(putRequest.error);
+        } else {
+          resolve();
+        }
+      };
+      getRequest.onerror = () => reject(getRequest.error);
+    });
   }
 }
 

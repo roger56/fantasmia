@@ -65,8 +65,9 @@ export const saveUserStory = async (storyData: StoryData): Promise<string> => {
     // Log telemetry
     console.log('✅ WRITE-AM:', { action: 'write-am', id: story.id, ownerProfileId: story.ownerProfileId });
     
-    // Emit custom event for UI refresh
+    // Emit custom events for UI refresh
     window.dispatchEvent(new CustomEvent('user-story-saved', { detail: { storyId: story.id } }));
+    window.dispatchEvent(new CustomEvent('am-story-updated', { detail: { storyId: story.id, action: 'created' } }));
     
     return story.id;
   } catch (error) {

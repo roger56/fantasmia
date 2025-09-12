@@ -20,6 +20,20 @@ const SuperuserAMArchive = () => {
 
   useEffect(() => {
     loadStories();
+    
+    // Listen for story changes to refresh superuser archive
+    const handleStoryUpdate = (event: CustomEvent) => {
+      console.log('🔄 SUPERUSER-AM-ARCHIVE: Rilevato aggiornamento storia', event.detail);
+      loadStories();
+    };
+    
+    window.addEventListener('user-story-saved', handleStoryUpdate);
+    window.addEventListener('am-story-updated', handleStoryUpdate);
+    
+    return () => {
+      window.removeEventListener('user-story-saved', handleStoryUpdate);
+      window.removeEventListener('am-story-updated', handleStoryUpdate);
+    };
   }, []);
 
   useEffect(() => {

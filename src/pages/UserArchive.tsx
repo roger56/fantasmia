@@ -18,12 +18,19 @@ const UserArchive = () => {
     loadUserStories();
     
     // Listen for user story saved events to refresh
-    const handleStoryUpdate = () => {
+    const handleStoryUpdate = (event: CustomEvent) => {
+      console.log('🔄 USER-ARCHIVE: Rilevato salvataggio storia', event.detail);
       loadUserStories();
     };
     
+    // Listen for multiple events that might indicate story changes
     window.addEventListener('user-story-saved', handleStoryUpdate);
-    return () => window.removeEventListener('user-story-saved', handleStoryUpdate);
+    window.addEventListener('am-story-updated', handleStoryUpdate);
+    
+    return () => {
+      window.removeEventListener('user-story-saved', handleStoryUpdate);
+      window.removeEventListener('am-story-updated', handleStoryUpdate);
+    };
   }, []);
 
   const loadUserStories = async () => {
@@ -49,7 +56,21 @@ const UserArchive = () => {
     if (window.confirm('Sei sicuro di voler eliminare questa storia?')) {
       try {
         const { fantasMiaDB } = await import('@/utils/indexedDB');
+        
+        // Delete media assets first
+        const mediaAsset = await fantasMiaDB.getMediaAssetByStoryId(storyId);
+        if (mediaAsset) {
+          await fantasMiaDB.deleteMediaAsset(mediaAsset.id);
+        }
+        
+        // Delete the story
         await fantasMiaDB.deleteAMStory(storyId);
+        
+        // Emit update event for real-time UI updates
+        window.dispatchEvent(new CustomEvent('am-story-updated', { 
+          detail: { storyId, action: 'deleted' } 
+        }));
+        
         await loadUserStories(); // Reload stories
       } catch (error) {
         console.error('Error deleting story:', error);
