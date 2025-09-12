@@ -52,8 +52,12 @@ import ScienceStoryViewer from "./pages/ScienceStoryViewer";
 import SuperuserScienceStoriesView from "./pages/SuperuserScienceStoriesView";
 import DebugIndexedDB from "./pages/DebugIndexedDB";
 import NotFound from "./pages/NotFound";
+import { initImageMigration } from "./utils/imageMigration";
 
 const queryClient = new QueryClient();
+
+// Initialize image migration on app startup
+initImageMigration();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

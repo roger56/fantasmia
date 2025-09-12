@@ -60,6 +60,11 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
       await fantasMiaDB.saveMediaAsset(mediaAsset);
       await fantasMiaDB.updateStoryImageStatus(storyId, 'am', true);
+      
+      // Emit event for UI synchronization
+      window.dispatchEvent(new CustomEvent('am-story-updated', { 
+        detail: { storyId, hasImage: true } 
+      }));
 
       toast({
         title: "Immagine caricata!",

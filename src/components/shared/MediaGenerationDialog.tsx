@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveStoryImage } from '@/utils/userStorage';
+import { fantasMiaDB } from '@/utils/indexedDB';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MediaGenerationDialogProps {
@@ -87,15 +87,54 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (generatedImage) {
-      saveStoryImage(storyId, generatedImage, selectedStyle);
-      toast({
-        title: "Immagine salvata!",
-        description: "L'immagine è stata associata alla storia"
-      });
-      onOpenChange(false);
-      resetDialog();
+      try {
+        // Convert base64 image to Blob
+        const response = await fetch(generatedImage);
+        const blob = await response.blob();
+        
+        // Save to IndexedDB
+        const mediaAsset = {
+          id: `${storyId}-generated-${Date.now()}`,
+          storyId,
+          story_id: storyId, // legacy field
+          type: 'image' as const,
+          source: 'ai_generated' as const,
+          data: blob,
+          metadata: { 
+            filename: `${storyTitle}-${selectedStyle}.png`,
+            content_type: blob.type || 'image/png',
+            size: blob.size,
+            style: selectedStyle,
+            ai_generated: true
+          },
+          createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString() // legacy field
+        };
+
+        await fantasMiaDB.saveMediaAsset(mediaAsset);
+        await fantasMiaDB.updateStoryImageStatus(storyId, 'am', true);
+        
+        // Emit event for UI synchronization
+        window.dispatchEvent(new CustomEvent('am-story-updated', { 
+          detail: { storyId, hasImage: true } 
+        }));
+        
+        toast({
+          title: "Immagine salvata!",
+          description: "L'immagine è stata associata alla storia"
+        });
+        onOpenChange(false);
+        resetDialog();
+      } catch (error) {
+        console.error('Error saving image:', error);
+        toast({
+          title: "Errore",
+          description: "Errore durante il salvataggio dell'immagine",
+          variant: "destructive"
+        });
+      }
     }
   };
 
