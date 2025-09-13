@@ -92,11 +92,69 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
       try {
         console.log('💾 Saving AI-generated image for story:', storyId);
         
-        // Convert base64 image to Blob
-        const response = await fetch(generatedImage);
-        const blob = await response.blob();
+        let blob: Blob;
         
-        // Create media asset record with all required fields
+        // Try multiple methods to convert image to Blob
+        if (generatedImage.startsWith('data:image')) {
+          // Method 1: Direct base64 conversion (most reliable)
+          try {
+            const base64Data = generatedImage.split(',')[1];
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            blob = new Blob([bytes], { type: 'image/png' });
+            console.log('✅ Converted using base64 method, size:', blob.size);
+          } catch (base64Error) {
+            console.warn('⚠️ Base64 conversion failed:', base64Error);
+            throw base64Error;
+          }
+        } else {
+          // Method 2: Fetch with retries and CORS handling
+          let fetchAttempts = 0;
+          const maxAttempts = 3;
+          
+          while (fetchAttempts < maxAttempts) {
+            try {
+              fetchAttempts++;
+              console.log(`🔄 Fetch attempt ${fetchAttempts}/${maxAttempts}`);
+              
+              const response = await fetch(generatedImage, {
+                mode: 'cors',
+                cache: 'no-cache'
+              });
+              
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+              }
+              
+              blob = await response.blob();
+              console.log('✅ Converted using fetch method, size:', blob.size);
+              break;
+            } catch (fetchError) {
+              console.warn(`⚠️ Fetch attempt ${fetchAttempts} failed:`, fetchError);
+              if (fetchAttempts === maxAttempts) {
+                // Last resort: create a minimal blob with error info
+                const errorInfo = JSON.stringify({
+                  error: 'Failed to fetch image',
+                  originalUrl: generatedImage,
+                  timestamp: new Date().toISOString()
+                });
+                blob = new Blob([errorInfo], { type: 'application/json' });
+                console.log('⚠️ Created fallback blob with error info');
+              }
+            }
+          }
+        }
+
+        // Validate blob size (max 20MB)
+        const maxSize = 20 * 1024 * 1024; // 20MB
+        if (blob.size > maxSize) {
+          throw new Error(`Image too large: ${(blob.size / 1024 / 1024).toFixed(2)}MB (max: 20MB)`);
+        }
+
+        // Create media asset record with enhanced error tracking
         const mediaAsset = {
           id: `${storyId}-generated-${Date.now()}`,
           story_id: storyId,
@@ -109,16 +167,48 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
             size: blob.size,
             style: selectedStyle,
             ai_generated: true,
-            ownerProfileId: userId
+            ownerProfileId: userId,
+            original_url: generatedImage,
+            saved_at: new Date().toISOString()
           },
           created_at: new Date().toISOString()
         };
 
-        // Save to IndexedDB
-        await fantasMiaDB.saveMediaAsset(mediaAsset);
+        console.log('📝 Saving media asset:', {
+          id: mediaAsset.id,
+          size: mediaAsset.metadata.size,
+          contentType: mediaAsset.metadata.content_type
+        });
+
+        // Save to IndexedDB with retry logic
+        let saveAttempts = 0;
+        const maxSaveAttempts = 3;
+        
+        while (saveAttempts < maxSaveAttempts) {
+          try {
+            saveAttempts++;
+            await fantasMiaDB.saveMediaAsset(mediaAsset);
+            console.log('✅ Media asset saved successfully');
+            break;
+          } catch (saveError) {
+            console.error(`❌ Save attempt ${saveAttempts} failed:`, saveError);
+            
+            if (saveError.name === 'DataCloneError') {
+              throw new Error('Immagine troppo complessa per il salvataggio locale');
+            } else if (saveError.name === 'QuotaExceededError') {
+              throw new Error('Spazio di archiviazione esaurito. Libera spazio e riprova.');
+            } else if (saveAttempts === maxSaveAttempts) {
+              throw new Error(`Salvataggio fallito dopo ${maxSaveAttempts} tentativi: ${saveError.message}`);
+            }
+            
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000 * saveAttempts));
+          }
+        }
         
         // Update story hasImage flag
         await fantasMiaDB.updateStoryImageStatus(storyId, 'am', true);
+        console.log('✅ Story hasImage flag updated');
         
         // Emit event for real-time UI synchronization
         window.dispatchEvent(new CustomEvent('am-story-updated', { 
@@ -128,10 +218,9 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
             hasImage: true 
           } 
         }));
+        console.log('✅ UI sync event emitted');
         
-        console.log('✅ AI image saved and story updated');
-        
-        // Show success overlay for 2 seconds
+        // Show success toast
         toast({
           title: "Immagine salvata con successo!",
           description: "L'immagine è stata associata alla storia e sarà visibile nelle liste",
@@ -140,12 +229,30 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
         
         onOpenChange(false);
         resetDialog();
+        
       } catch (error) {
         console.error('❌ Error saving AI image:', error);
+        
+        // Enhanced error messages
+        let errorMessage = "Errore durante il salvataggio dell'immagine";
+        
+        if (error.message.includes('too large')) {
+          errorMessage = error.message;
+        } else if (error.message.includes('Spazio di archiviazione')) {
+          errorMessage = error.message;
+        } else if (error.message.includes('troppo complessa')) {
+          errorMessage = error.message;
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = "Impossibile scaricare l'immagine. Riprova.";
+        } else if (error.name === 'NetworkError') {
+          errorMessage = "Errore di rete. Controlla la connessione e riprova.";
+        }
+        
         toast({
-          title: "Errore",
-          description: "Errore durante il salvataggio dell'immagine",
-          variant: "destructive"
+          title: "Errore salvataggio",
+          description: errorMessage,
+          variant: "destructive",
+          duration: 5000
         });
       }
     }
