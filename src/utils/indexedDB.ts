@@ -39,11 +39,16 @@ interface MediaAsset {
   id: string;
   story_id: string;
   type: 'image' | 'audio';
+  source?: 'openai' | 'user_upload' | 'ai_generated' | 'upload' | 'migrated';
   data: Blob;
   metadata: {
     filename: string;
     content_type: string;
     size: number;
+    ownerProfileId?: string;
+    style?: string;
+    ai_generated?: boolean;
+    [key: string]: any;
   };
   created_at: string;
 }

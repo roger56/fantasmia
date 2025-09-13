@@ -90,45 +90,58 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
   const handleConfirm = async () => {
     if (generatedImage) {
       try {
+        console.log('💾 Saving AI-generated image for story:', storyId);
+        
         // Convert base64 image to Blob
         const response = await fetch(generatedImage);
         const blob = await response.blob();
         
-        // Save to IndexedDB
+        // Create media asset record with all required fields
         const mediaAsset = {
           id: `${storyId}-generated-${Date.now()}`,
-          storyId,
-          story_id: storyId, // legacy field
+          story_id: storyId,
           type: 'image' as const,
-          source: 'ai_generated' as const,
+          source: 'openai' as const,
           data: blob,
           metadata: { 
             filename: `${storyTitle}-${selectedStyle}.png`,
             content_type: blob.type || 'image/png',
             size: blob.size,
             style: selectedStyle,
-            ai_generated: true
+            ai_generated: true,
+            ownerProfileId: userId
           },
-          createdAt: new Date().toISOString(),
-          created_at: new Date().toISOString() // legacy field
+          created_at: new Date().toISOString()
         };
 
+        // Save to IndexedDB
         await fantasMiaDB.saveMediaAsset(mediaAsset);
+        
+        // Update story hasImage flag
         await fantasMiaDB.updateStoryImageStatus(storyId, 'am', true);
         
-        // Emit event for UI synchronization
+        // Emit event for real-time UI synchronization
         window.dispatchEvent(new CustomEvent('am-story-updated', { 
-          detail: { storyId, hasImage: true } 
+          detail: { 
+            storyId, 
+            action: 'image-added',
+            hasImage: true 
+          } 
         }));
         
+        console.log('✅ AI image saved and story updated');
+        
+        // Show success overlay for 2 seconds
         toast({
-          title: "Immagine salvata!",
-          description: "L'immagine è stata associata alla storia"
+          title: "Immagine salvata con successo!",
+          description: "L'immagine è stata associata alla storia e sarà visibile nelle liste",
+          duration: 2000
         });
+        
         onOpenChange(false);
         resetDialog();
       } catch (error) {
-        console.error('Error saving image:', error);
+        console.error('❌ Error saving AI image:', error);
         toast({
           title: "Errore",
           description: "Errore durante il salvataggio dell'immagine",

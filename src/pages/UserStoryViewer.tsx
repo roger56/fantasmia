@@ -31,6 +31,26 @@ const UserStoryViewer = () => {
 
   useEffect(() => {
     loadStory();
+    
+    // Listen for story updates
+    const handleStoryUpdate = (event: CustomEvent) => {
+      const { storyId: updatedStoryId, action, story: updatedStory } = event.detail;
+      if (updatedStoryId === id) {
+        console.log('🔄 Story update received:', action);
+        if (action === 'text-updated' && updatedStory) {
+          setStory(updatedStory);
+        } else if (action === 'image-added') {
+          loadMediaAsset(id);
+          setStory(prev => prev ? { ...prev, hasImage: true } : null);
+        }
+      }
+    };
+    
+    window.addEventListener('am-story-updated', handleStoryUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('am-story-updated', handleStoryUpdate as EventListener);
+    };
   }, [id]);
 
   const loadStory = async () => {

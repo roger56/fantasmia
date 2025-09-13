@@ -7,6 +7,7 @@ import { Sparkles, Loader2, RefreshCw, X, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import CopyrightWarningDialog from './CopyrightWarningDialog';
 import { useToast } from '@/hooks/use-toast';
+import { fantasMiaDB } from '@/utils/indexedDB';
 
 interface TextImproverProps {
   storyContent: string;
@@ -92,25 +93,80 @@ const TextImprover: React.FC<TextImproverProps> = ({
   };
 
   const confirmReplace = async () => {
+    console.log('💾 Saving improved text for story:', storyId);
+    
+    // Update UI immediately
     onContentChange(improvedText);
     
-    // If we have a storyId, update the story in the database
+    // If we have a storyId, update the story in IndexedDB
     if (storyId) {
       try {
-        const { updateStory } = await import('@/utils/userStorage');
-        await updateStory(storyId, { 
-          content: improvedText,
-          lastModified: new Date().toISOString()
-        });
-        toast({
-          title: "Successo",
-          description: "Storia originale sostituita con successo nell'archivio globale",
-        });
+        // Load current story from IndexedDB
+        await fantasMiaDB.init();
+        const transaction = fantasMiaDB['db']!.transaction(['am_stories'], 'readwrite');
+        const store = transaction.objectStore('am_stories');
+        const getRequest = store.get(storyId);
+        
+        getRequest.onsuccess = () => {
+          const currentStory = getRequest.result;
+          if (currentStory) {
+            // Update content and title if modified
+            currentStory.text = improvedText;
+            
+            // Check if title was also improved (basic detection)
+            const lines = improvedText.split('\n');
+            const firstLine = lines[0]?.trim();
+            if (firstLine && firstLine.length < 100 && !firstLine.includes('.') && firstLine !== currentStory.title) {
+              currentStory.title = firstLine;
+              // Remove title from content
+              currentStory.text = lines.slice(1).join('\n').trim();
+            }
+            
+            // Save updated story
+            const putRequest = store.put(currentStory);
+            putRequest.onsuccess = () => {
+              console.log('✅ Story updated in IndexedDB');
+              
+              // Emit event for real-time UI updates
+              window.dispatchEvent(new CustomEvent('am-story-updated', { 
+                detail: { 
+                  storyId, 
+                  action: 'text-updated',
+                  story: currentStory
+                } 
+              }));
+              
+              toast({
+                title: "Successo",
+                description: "Storia sostituita con il testo migliorato e salvata nell'archivio",
+              });
+            };
+            
+            putRequest.onerror = () => {
+              console.error('❌ Error updating story:', putRequest.error);
+              toast({
+                title: "Errore",
+                description: "Errore nel salvare la storia nell'archivio",
+                variant: "destructive"
+              });
+            };
+          }
+        };
+        
+        getRequest.onerror = () => {
+          console.error('❌ Error loading story for update:', getRequest.error);
+          toast({
+            title: "Errore",
+            description: "Errore nel caricare la storia per l'aggiornamento",
+            variant: "destructive"
+          });
+        };
+        
       } catch (error) {
-        console.error('Errore nel salvataggio:', error);
+        console.error('❌ Error saving improved text:', error);
         toast({
           title: "Errore",
-          description: "Errore nel salvare la storia nell'archivio. Le modifiche sono visibili ma potrebbero non essere permanenti.",
+          description: "Errore nel salvare la storia nell'archivio",
           variant: "destructive"
         });
       }
