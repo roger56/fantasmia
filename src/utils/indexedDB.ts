@@ -37,27 +37,21 @@ interface AGStory {
 
 interface MediaAsset {
   id: string;
-  story_id: string;
-  type: 'image' | 'audio';
-  source?: 'openai' | 'user_upload' | 'ai_generated' | 'upload' | 'migrated';
+  storyId: string;
+  ownerProfileId: string;
+  type: 'image' | 'audio' | 'video';
+  source: 'openai' | 'upload';
+  mime: string;
+  size: number;
+  createdAt: string;
   data: Blob;
-  metadata: {
-    filename: string;
-    content_type: string;
-    size: number;
-    ownerProfileId?: string;
-    style?: string;
-    ai_generated?: boolean;
-    [key: string]: any;
-  };
-  created_at: string;
 }
 
 class FantasMiaDB {
   private db: IDBDatabase | null = null;
   private readonly dbConfig: DatabaseConfig = {
     name: 'FantasMiaV2',
-    version: 2 // Increased version to force schema recreation
+    version: 3 // Bump version for complete media assets schema
   };
 
   async init(): Promise<void> {
@@ -107,9 +101,12 @@ class FantasMiaDB {
 
         // Media Assets store
         const mediaStore = db.createObjectStore('media_assets', { keyPath: 'id' });
-        mediaStore.createIndex('story_id', 'story_id', { unique: false });
-        mediaStore.createIndex('type', 'type', { unique: false });
-        console.log('✅ Created media_assets store');
+        mediaStore.createIndex('by_storyId', 'storyId', { unique: false });
+        mediaStore.createIndex('by_ownerProfileId', 'ownerProfileId', { unique: false });
+        mediaStore.createIndex('by_createdAt', 'createdAt', { unique: false });
+        mediaStore.createIndex('by_type', 'type', { unique: false });
+        mediaStore.createIndex('by_source', 'source', { unique: false });
+        console.log('✅ Created media_assets store with all indices');
       };
     });
   }
@@ -206,32 +203,317 @@ class FantasMiaDB {
 
   // Media Assets Management
   async saveMediaAsset(asset: MediaAsset): Promise<void> {
+    if (!this.db) await this.init();
     const transaction = this.db!.transaction(['media_assets'], 'readwrite');
     const store = transaction.objectStore('media_assets');
-    await store.put(asset);
-  }
-
-  async getMediaAssetByStoryId(storyId: string): Promise<MediaAsset | null> {
-    const transaction = this.db!.transaction(['media_assets'], 'readonly');
-    const store = transaction.objectStore('media_assets');
-    const index = store.index('story_id');
-    const request = index.get(storyId);
     return new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result || null);
+      const request = store.put(asset);
+      request.onsuccess = () => {
+        console.log('💾 Media asset saved:', { id: asset.id, storyId: asset.storyId, size: asset.size });
+        resolve();
+      };
       request.onerror = () => reject(request.error);
     });
   }
 
+  async getMediaAssetsByStoryId(storyId: string): Promise<MediaAsset[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['media_assets'], 'readonly');
+    const store = transaction.objectStore('media_assets');
+    
+    try {
+      const index = store.index('by_storyId');
+      const request = index.getAll(storyId);
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => {
+          const results = request.result.sort((a: MediaAsset, b: MediaAsset) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          resolve(results);
+        };
+        request.onerror = () => reject(request.error);
+      });
+    } catch (error) {
+      console.warn('Index by_storyId not found, using fallback');
+      const request = store.getAll();
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => {
+          const filtered = request.result
+            .filter((asset: MediaAsset) => asset.storyId === storyId)
+            .sort((a: MediaAsset, b: MediaAsset) => 
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+          resolve(filtered);
+        };
+        request.onerror = () => reject(request.error);
+      });
+    }
+  }
+
+  async getLatestMediaAssetByStoryId(storyId: string): Promise<MediaAsset | null> {
+    const assets = await this.getMediaAssetsByStoryId(storyId);
+    return assets.length > 0 ? assets[0] : null;
+  }
+
+  // Alias for backwards compatibility
+  async getMediaAssetByStoryId(storyId: string): Promise<MediaAsset | null> {
+    return this.getLatestMediaAssetByStoryId(storyId);
+  }
+
+  async getAllMediaAssets(): Promise<MediaAsset[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['media_assets'], 'readonly');
+    const store = transaction.objectStore('media_assets');
+    const request = store.getAll();
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getMediaAssetCountByStoryId(storyId: string): Promise<number> {
+    const assets = await this.getMediaAssetsByStoryId(storyId);
+    return assets.length;
+  }
+
   async deleteMediaAsset(assetId: string): Promise<void> {
+    if (!this.db) await this.init();
     const transaction = this.db!.transaction(['media_assets'], 'readwrite');
     const store = transaction.objectStore('media_assets');
-    await store.delete(assetId);
+    return new Promise((resolve, reject) => {
+      const request = store.delete(assetId);
+      request.onsuccess = () => {
+        console.log('🗑️ Media asset deleted:', assetId);
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Pipeline comune per conversione e salvataggio media
+  async saveMediaFromPreview(params: {
+    storyId: string;
+    ownerProfileId: string;
+    previewUrl: string;
+    type: 'image' | 'audio' | 'video';
+    source: 'openai' | 'upload';
+    filename?: string;
+  }): Promise<string> {
+    console.log('🔄 Starting media save pipeline for story:', params.storyId);
+
+    // Converti preview a Blob
+    let blob: Blob;
+    let mime: string;
+
+    if (params.previewUrl.startsWith('data:')) {
+      // Base64 data URL
+      const [header, base64Data] = params.previewUrl.split(',');
+      const mimeMatch = header.match(/data:([^;]+)/);
+      mime = mimeMatch ? mimeMatch[1] : (params.type === 'image' ? 'image/webp' : 'application/octet-stream');
+      
+      const binaryString = atob(base64Data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      blob = new Blob([bytes], { type: mime });
+    } else {
+      // URL temporaneo - fetch
+      const response = await fetch(params.previewUrl, { mode: 'cors' });
+      if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+      
+      blob = await response.blob();
+      mime = blob.type || (params.type === 'image' ? 'image/webp' : 'application/octet-stream');
+    }
+
+    // Preferenza formato
+    if (params.type === 'image' && !mime.includes('webp') && !mime.includes('svg')) {
+      // Converti a WebP se possibile
+      if (blob.type.startsWith('image/')) {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const img = new Image();
+          
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = URL.createObjectURL(blob);
+          });
+
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx?.drawImage(img, 0, 0);
+          
+          const webpBlob = await new Promise<Blob>((resolve) => {
+            canvas.toBlob((result) => resolve(result!), 'image/webp', 0.85);
+          });
+          
+          URL.revokeObjectURL(img.src);
+          blob = webpBlob;
+          mime = 'image/webp';
+        } catch (conversionError) {
+          console.warn('WebP conversion failed, using original format:', conversionError);
+        }
+      }
+    }
+
+    // Validazione dimensioni (max 20MB)
+    const maxSize = 20 * 1024 * 1024;
+    if (blob.size > maxSize) {
+      throw new Error(`File too large: ${(blob.size / 1024 / 1024).toFixed(2)}MB (max: 20MB)`);
+    }
+
+    // Crea record media asset
+    const assetId = `${params.storyId}-${params.source}-${Date.now()}`;
+    const asset: MediaAsset = {
+      id: assetId,
+      storyId: params.storyId,
+      ownerProfileId: params.ownerProfileId,
+      type: params.type,
+      source: params.source,
+      mime,
+      size: blob.size,
+      createdAt: new Date().toISOString(),
+      data: blob
+    };
+
+    // Transazione atomica: salva media + aggiorna hasImage
+    const transaction = this.db!.transaction(['media_assets', 'am_stories'], 'readwrite');
+    
+    return new Promise((resolve, reject) => {
+      // Salva media asset
+      const mediaStore = transaction.objectStore('media_assets');
+      const mediaRequest = mediaStore.put(asset);
+      
+      mediaRequest.onsuccess = () => {
+        // Aggiorna hasImage nella storia
+        const storyStore = transaction.objectStore('am_stories');
+        const getStoryRequest = storyStore.get(params.storyId);
+        
+        getStoryRequest.onsuccess = () => {
+          const story = getStoryRequest.result;
+          if (story) {
+            story.hasImage = true;
+            storyStore.put(story);
+          }
+        };
+      };
+
+      transaction.oncomplete = () => {
+        console.log('✅ Media save pipeline completed successfully');
+        
+        // Emit evento per sync UI
+        window.dispatchEvent(new CustomEvent('am-story-updated', {
+          detail: { 
+            storyId: params.storyId, 
+            action: 'media-added',
+            hasImage: true 
+          }
+        }));
+        
+        resolve(assetId);
+      };
+
+      transaction.onerror = () => {
+        console.error('❌ Media save pipeline failed:', transaction.error);
+        reject(transaction.error);
+      };
+    });
   }
 
   // Utility Methods
   async hasImageForStory(storyId: string): Promise<boolean> {
-    const asset = await this.getMediaAssetByStoryId(storyId);
+    const asset = await this.getLatestMediaAssetByStoryId(storyId);
     return asset !== null && asset.type === 'image';
+  }
+
+  async createImagePreviewUrl(asset: MediaAsset): Promise<string> {
+    return URL.createObjectURL(asset.data);
+  }
+
+  async validateStoryImageAlignment(): Promise<void> {
+    console.log('🔍 Validating story-image alignment...');
+    
+    const allAMStories = await this.getAllAMStories();
+    let misalignments = 0;
+
+    for (const story of allAMStories) {
+      const mediaCount = await this.getMediaAssetCountByStoryId(story.id);
+      const hasMedia = mediaCount > 0;
+      
+      if (story.hasImage !== hasMedia) {
+        console.warn(`⚠️ Misalignment: Story ${story.id} hasImage=${story.hasImage} but media count=${mediaCount}`);
+        
+        // Auto-fix: update hasImage flag
+        story.hasImage = hasMedia;
+        await this.saveAMStory(story);
+        misalignments++;
+      }
+    }
+
+    if (misalignments > 0) {
+      console.log(`✅ Fixed ${misalignments} story-image misalignments`);
+    } else {
+      console.log('✅ All stories aligned with media assets');
+    }
+  }
+
+  private async getAllAMStories(): Promise<AMStory[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['am_stories'], 'readonly');
+    const store = transaction.objectStore('am_stories');
+    const request = store.getAll();
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Migrazione dati legacy
+  async migrateMediaAssetsFromLocalStorage(): Promise<number> {
+    console.log('🔄 Starting media assets migration from localStorage...');
+    
+    let migrated = 0;
+    const allStories = await this.getAllAMStories();
+
+    for (const story of allStories) {
+      // Check for legacy localStorage keys
+      const legacyKeys = [
+        `story-image-${story.id}`,
+        `am-story-image-${story.id}`,
+        `user-story-image-${story.id}`
+      ];
+
+      for (const key of legacyKeys) {
+        const legacyData = localStorage.getItem(key);
+        if (legacyData && legacyData.startsWith('data:image')) {
+          try {
+            console.log(`🔄 Migrating legacy image for story ${story.id}`);
+            
+            await this.saveMediaFromPreview({
+              storyId: story.id,
+              ownerProfileId: story.ownerProfileId,
+              previewUrl: legacyData,
+              type: 'image',
+              source: 'upload', // Assume legacy images are uploads
+              filename: `migrated-${story.title}.png`
+            });
+
+            // Remove legacy data
+            localStorage.removeItem(key);
+            migrated++;
+            
+            console.log(`✅ Migrated image for story: ${story.title}`);
+          } catch (error) {
+            console.error(`❌ Failed to migrate image for story ${story.id}:`, error);
+          }
+        }
+      }
+    }
+
+    console.log(`✅ Migration completed: ${migrated} images migrated from localStorage`);
+    return migrated;
   }
 
   async updateStoryImageStatus(storyId: string, storyType: 'am' | 'ag', hasImage: boolean): Promise<void> {
@@ -271,6 +553,16 @@ class FantasMiaDB {
 export const fantasMiaDB = new FantasMiaDB();
 
 // Initialize database on import
-fantasMiaDB.init().catch(console.error);
+fantasMiaDB.init()
+  .then(() => {
+    // Run automatic migration after database initialization
+    return fantasMiaDB.migrateMediaAssetsFromLocalStorage();
+  })
+  .then((migrated) => {
+    if (migrated > 0) {
+      console.log(`✅ Auto-migration completed: ${migrated} images migrated`);
+    }
+  })
+  .catch(console.error);
 
 export type { Profile, AMStory, AGStory, MediaAsset };

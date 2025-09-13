@@ -55,7 +55,7 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
   const handleClick = async () => {
     if (actualHasImage) {
       try {
-        const mediaAsset = await fantasMiaDB.getMediaAssetByStoryId(storyId);
+        const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(storyId);
         if (mediaAsset && mediaAsset.type === 'image') {
           const url = URL.createObjectURL(mediaAsset.data);
           setImageUrl(url);

@@ -77,7 +77,7 @@ const SuperuserUserStoryViewer = () => {
 
   const loadMediaAsset = async (storyId: string) => {
     try {
-      const asset = await fantasMiaDB.getMediaAssetByStoryId(storyId);
+      const asset = await fantasMiaDB.getLatestMediaAssetByStoryId(storyId);
       if (asset && asset.data) {
         const reader = new FileReader();
         reader.onload = () => {
@@ -150,7 +150,7 @@ const SuperuserUserStoryViewer = () => {
     try {
       await fantasMiaDB.deleteAMStory(id);
       // Also delete associated media
-      const mediaAsset = await fantasMiaDB.getMediaAssetByStoryId(id);
+      const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(id);
       if (mediaAsset) {
         await fantasMiaDB.deleteMediaAsset(mediaAsset.id);
       }

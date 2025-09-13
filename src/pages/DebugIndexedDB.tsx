@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RefreshCw, AlertTriangle, Database, User, FileText, Image, Home, ArrowLeft } from 'lucide-react';
-import { fantasMiaDB, Profile, AMStory, AGStory } from '@/utils/indexedDB';
+import { fantasMiaDB, Profile, AMStory, AGStory, MediaAsset } from '@/utils/indexedDB';
 import { getCurrentProfileId, createDemoProfile } from '@/utils/profileManager';
 import { runAutomaticTest } from '@/utils/storyManager';
 import { toast } from '@/hooks/use-toast';
@@ -12,9 +12,9 @@ import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 interface DebugData {
   profiles: { count: number; items: Profile[] };
-  amStories: { count: number; items: AMStory[] };
+  amStories: { count: number; items: AMStory[]; withMediaCounts: { storyId: string; title: string; mediaCount: number }[] };
   agStories: { count: number; items: AGStory[] };
-  mediaAssets: { count: number };
+  mediaAssets: { count: number; items: MediaAsset[] };
 }
 
 const DebugIndexedDB = () => {
@@ -22,6 +22,8 @@ const DebugIndexedDB = () => {
   const [debugData, setDebugData] = useState<DebugData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
+  const [selectedMediaAsset, setSelectedMediaAsset] = useState<MediaAsset | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
 
   // Verifiche ambiente
   const hasServiceWorker = 'serviceWorker' in navigator;
@@ -39,12 +41,22 @@ const DebugIndexedDB = () => {
       const profiles = await fantasMiaDB.getProfiles();
       const amStories = await getAllAMStories();
       const agStories = await getAllAGStories();
+      const mediaAssets = await fantasMiaDB.getAllMediaAssets();
+      
+      // Calculate media counts per story
+      const withMediaCounts = await Promise.all(
+        amStories.map(async (story) => ({
+          storyId: story.id,
+          title: story.title,
+          mediaCount: await fantasMiaDB.getMediaAssetCountByStoryId(story.id)
+        }))
+      );
       
       setDebugData({
         profiles: { count: profiles.length, items: profiles },
-        amStories: { count: amStories.length, items: amStories },
+        amStories: { count: amStories.length, items: amStories, withMediaCounts },
         agStories: { count: agStories.length, items: agStories },
-        mediaAssets: { count: 0 } // TODO: implementare conteggio media
+        mediaAssets: { count: mediaAssets.length, items: mediaAssets }
       });
     } catch (error) {
       console.error('Errore caricamento debug data:', error);
@@ -151,6 +163,86 @@ const DebugIndexedDB = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleMigrateMedia = async () => {
+    try {
+      const migrated = await fantasMiaDB.migrateMediaAssetsFromLocalStorage();
+      await loadDebugData();
+      toast({
+        title: "✅ Migrazione Completata",
+        description: `${migrated} immagini migrate da localStorage`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Errore migrazione:', error);
+      toast({
+        title: "❌ Errore Migrazione",
+        description: "Impossibile migrare i media assets",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleValidateAlignment = async () => {
+    try {
+      await fantasMiaDB.validateStoryImageAlignment();
+      await loadDebugData();
+      toast({
+        title: "✅ Validazione Completata",
+        description: "Allineamento story-media verificato e corretto",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Errore validazione:', error);
+      toast({
+        title: "❌ Errore Validazione",
+        description: "Impossibile validare l'allineamento",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handlePreviewMedia = async (asset: MediaAsset) => {
+    try {
+      const url = await fantasMiaDB.createImagePreviewUrl(asset);
+      setPreviewUrl(url);
+      setSelectedMediaAsset(asset);
+    } catch (error) {
+      console.error('Errore preview:', error);
+      toast({
+        title: "❌ Errore Preview",
+        description: "Impossibile creare anteprima",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteMedia = async (assetId: string) => {
+    try {
+      await fantasMiaDB.deleteMediaAsset(assetId);
+      await loadDebugData();
+      toast({
+        title: "✅ Media Eliminato",
+        description: "Asset rimosso con successo",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Errore eliminazione:', error);
+      toast({
+        title: "❌ Errore",
+        description: "Impossibile eliminare il media asset",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const closePreview = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl('');
+    }
+    setSelectedMediaAsset(null);
   };
 
 
@@ -317,7 +409,11 @@ const DebugIndexedDB = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{debugData?.mediaAssets.count || 0}</div>
-              <div className="text-xs text-gray-500">Non implementato</div>
+              {debugData?.mediaAssets.items.slice(0, 3).map(asset => (
+                <div key={asset.id} className="text-xs text-gray-600 truncate">
+                  {asset.storyId.slice(0, 8)} ({asset.type}, {(asset.size / 1024).toFixed(0)}KB)
+                </div>
+              ))}
             </CardContent>
           </Card>
 
@@ -340,29 +436,149 @@ const DebugIndexedDB = () => {
             <Button onClick={handleTestAM} variant="secondary">
               🧪 Test Rapido AM
             </Button>
+            
+            <Button onClick={handleMigrateMedia} variant="outline">
+              🔄 Migra Media da localStorage
+            </Button>
+            
+            <Button onClick={handleValidateAlignment} variant="outline">
+              ✅ Valida Allineamento Story-Media
+            </Button>
           </CardContent>
         </Card>
 
-        {/* Dettagli AM Stories */}
+        {/* Dettagli AM Stories con Media Count */}
         {debugData && debugData.amStories.count > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Dettagli AM Stories</CardTitle>
+              <CardTitle>Dettagli AM Stories (con Media Count)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {debugData.amStories.items.map(story => (
-                  <div key={story.id} className="p-2 bg-gray-50 rounded text-sm">
-                    <div><strong>ID:</strong> {story.id}</div>
-                    <div><strong>Title:</strong> {story.title}</div>
-                    <div><strong>Owner:</strong> {story.ownerProfileId}</div>
-                    <div><strong>Mode:</strong> {story.mode}</div>
-                    <div><strong>Created:</strong> {new Date(story.createdAt).toLocaleString()}</div>
-                  </div>
-                ))}
+                {debugData.amStories.withMediaCounts.map(storyInfo => {
+                  const story = debugData.amStories.items.find(s => s.id === storyInfo.storyId);
+                  return (
+                    <div key={storyInfo.storyId} className="p-2 bg-gray-50 rounded text-sm">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div><strong>Title:</strong> {storyInfo.title}</div>
+                          <div><strong>ID:</strong> {storyInfo.storyId}</div>
+                          <div><strong>Owner:</strong> {story?.ownerProfileId}</div>
+                          <div><strong>hasImage:</strong> {story?.hasImage ? '✅' : '❌'}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="bg-purple-100 px-2 py-1 rounded text-xs">
+                            📎 {storyInfo.mediaCount} media
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Pannello Media Assets */}
+        {debugData && debugData.mediaAssets.count > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Pannello Media Assets</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                <div className="grid grid-cols-1 gap-2">
+                  {debugData.mediaAssets.items.map(asset => (
+                    <div key={asset.id} className="p-3 bg-gray-50 rounded border">
+                      <div className="grid grid-cols-6 gap-2 text-xs">
+                        <div>
+                          <strong>ID:</strong> {asset.id.slice(0, 12)}...
+                        </div>
+                        <div>
+                          <strong>Story:</strong> {asset.storyId.slice(0, 8)}...
+                        </div>
+                        <div>
+                          <strong>Type:</strong> {asset.type}
+                        </div>
+                        <div>
+                          <strong>Source:</strong> {asset.source}
+                        </div>
+                        <div>
+                          <strong>Size:</strong> {(asset.size / 1024).toFixed(0)}KB
+                        </div>
+                        <div>
+                          <strong>Created:</strong> {new Date(asset.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handlePreviewMedia(asset)}
+                        >
+                          👁️ Anteprima
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteMedia(asset.id)}
+                        >
+                          🗑️ Elimina
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Dialog Anteprima Media */}
+        {selectedMediaAsset && previewUrl && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={closePreview}>
+            <div className="bg-white p-4 rounded-lg max-w-2xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold">Anteprima Media Asset</h3>
+                <Button variant="ghost" onClick={closePreview}>✕</Button>
+              </div>
+              
+              <div className="space-y-2 text-sm mb-4">
+                <div><strong>ID:</strong> {selectedMediaAsset.id}</div>
+                <div><strong>Story ID:</strong> {selectedMediaAsset.storyId}</div>
+                <div><strong>Tipo:</strong> {selectedMediaAsset.type}</div>
+                <div><strong>Sorgente:</strong> {selectedMediaAsset.source}</div>
+                <div><strong>MIME:</strong> {selectedMediaAsset.mime}</div>
+                <div><strong>Dimensione:</strong> {(selectedMediaAsset.size / 1024).toFixed(1)}KB</div>
+              </div>
+              
+              {selectedMediaAsset.type === 'image' && (
+                <img 
+                  src={previewUrl} 
+                  alt="Preview" 
+                  className="max-w-full h-auto rounded border"
+                />
+              )}
+              
+              <div className="mt-4 flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = previewUrl;
+                    link.download = `${selectedMediaAsset.storyId.slice(0, 8)}-${selectedMediaAsset.type}.${selectedMediaAsset.mime.split('/')[1]}`;
+                    link.click();
+                  }}
+                >
+                  💾 Scarica
+                </Button>
+                <Button variant="outline" onClick={closePreview}>
+                  Chiudi
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
       </div>

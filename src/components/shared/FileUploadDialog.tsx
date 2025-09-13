@@ -12,13 +12,15 @@ interface FileUploadDialogProps {
   onOpenChange: (open: boolean) => void;
   storyId: string;
   storyTitle: string;
+  userId: string;
 }
 
 const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   open,
   onOpenChange,
   storyId,
-  storyTitle
+  storyTitle,
+  userId
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
@@ -45,26 +47,17 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
     setIsUploading(true);
     try {
-      // Save to IndexedDB
-      const mediaAsset = {
-        id: `${storyId}-upload-${Date.now()}`,
+      // Use the common media pipeline
+      await fantasMiaDB.saveMediaFromPreview({
         storyId,
-        story_id: storyId, // legacy field
-        type: 'image' as const,
-        source: 'upload' as const,
-        data: selectedFile,
-        metadata: { filename: selectedFile.name, content_type: selectedFile.type, size: selectedFile.size },
-        createdAt: new Date().toISOString(),
-        created_at: new Date().toISOString() // legacy field
-      };
+        ownerProfileId: userId,
+        previewUrl: previewUrl,
+        type: 'image',
+        source: 'upload',
+        filename: selectedFile.name
+      });
 
-      await fantasMiaDB.saveMediaAsset(mediaAsset);
-      await fantasMiaDB.updateStoryImageStatus(storyId, 'am', true);
-      
-      // Emit event for UI synchronization
-      window.dispatchEvent(new CustomEvent('am-story-updated', { 
-        detail: { storyId, hasImage: true } 
-      }));
+      // Event is emitted automatically by saveMediaFromPreview
 
       toast({
         title: "Immagine caricata!",

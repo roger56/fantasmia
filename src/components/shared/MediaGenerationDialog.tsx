@@ -157,27 +157,20 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
         // Create media asset record with enhanced error tracking
         const mediaAsset = {
           id: `${storyId}-generated-${Date.now()}`,
-          story_id: storyId,
+          storyId: storyId,
+          ownerProfileId: userId,
           type: 'image' as const,
           source: 'openai' as const,
-          data: blob,
-          metadata: { 
-            filename: `${storyTitle}-${selectedStyle}.png`,
-            content_type: blob.type || 'image/png',
-            size: blob.size,
-            style: selectedStyle,
-            ai_generated: true,
-            ownerProfileId: userId,
-            original_url: generatedImage,
-            saved_at: new Date().toISOString()
-          },
-          created_at: new Date().toISOString()
+          mime: blob.type || 'image/png',
+          size: blob.size,
+          createdAt: new Date().toISOString(),
+          data: blob
         };
 
         console.log('📝 Saving media asset:', {
           id: mediaAsset.id,
-          size: mediaAsset.metadata.size,
-          contentType: mediaAsset.metadata.content_type
+          size: mediaAsset.size,
+          contentType: mediaAsset.mime
         });
 
         // Save to IndexedDB with retry logic

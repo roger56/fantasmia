@@ -85,6 +85,7 @@ const MediaMenu: React.FC<MediaMenuProps> = ({
           }}
           storyId={storyId}
           storyTitle={storyTitle}
+          userId={userId}
         />
       )}
     </div>

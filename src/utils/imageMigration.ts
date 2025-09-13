@@ -22,7 +22,7 @@ export const migrateStoryImagesToIndexedDB = async (): Promise<void> => {
     for (const image of localStorageImages) {
       try {
         // Check if image already exists in IndexedDB
-        const existingAsset = await fantasMiaDB.getMediaAssetByStoryId(image.storyId);
+        const existingAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(image.storyId);
         if (existingAsset) {
           console.log(`Image for story ${image.storyId} already exists in IndexedDB, skipping`);
           continue;
@@ -32,31 +32,17 @@ export const migrateStoryImagesToIndexedDB = async (): Promise<void> => {
         const response = await fetch(image.imageUrl);
         const blob = await response.blob();
         
-        // Create media asset for IndexedDB
-        const mediaAsset = {
-          id: `${image.storyId}-migrated-${Date.now()}`,
+        // Use the common media pipeline for migration
+        await fantasMiaDB.saveMediaFromPreview({
           storyId: image.storyId,
-          story_id: image.storyId, // legacy field
-          type: 'image' as const,
-          source: 'migrated' as const,
-          data: blob,
-          metadata: {
-            filename: `story-${image.storyId}-${image.style}.png`,
-            content_type: blob.type || 'image/png',
-            size: blob.size,
-            style: image.style,
-            migrated_from_localstorage: true,
-            original_created_at: image.created_at
-          },
-          createdAt: image.created_at,
-          created_at: image.created_at // legacy field
-        };
+          ownerProfileId: 'migrated-user', // Default value for migration
+          previewUrl: image.imageUrl,
+          type: 'image',
+          source: 'upload', // Treat migrated images as uploads
+          filename: `migrated-story-${image.storyId}-${image.style}.png`
+        });
         
-        // Save to IndexedDB
-        await fantasMiaDB.saveMediaAsset(mediaAsset);
-        
-        // Update story hasImage status
-        await fantasMiaDB.updateStoryImageStatus(image.storyId, 'am', true);
+        // Pipeline handles both saving and hasImage update automatically
         
         console.log(`Successfully migrated image for story ${image.storyId}`);
         

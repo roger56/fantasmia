@@ -58,7 +58,7 @@ const UserArchive = () => {
         const { fantasMiaDB } = await import('@/utils/indexedDB');
         
         // Delete media assets first
-        const mediaAsset = await fantasMiaDB.getMediaAssetByStoryId(storyId);
+        const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(storyId);
         if (mediaAsset) {
           await fantasMiaDB.deleteMediaAsset(mediaAsset.id);
         }
