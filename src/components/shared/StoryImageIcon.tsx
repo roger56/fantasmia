@@ -90,41 +90,31 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
           return;
         }
 
-        // Preparazione Blob
-        let imageBlob: Blob;
-        let mimeType = latestAsset.mime || 'image/webp';
-
-        if (latestAsset.data instanceof Blob) {
-          imageBlob = latestAsset.data;
-        } else {
-          // Fallback: converti da base64/string a Blob
-          try {
-            const dataStr = latestAsset.data as string;
-            if (dataStr.startsWith('data:')) {
-              // Data URL
-              const [header, base64Data] = dataStr.split(',');
-              const mimeMatch = header.match(/data:([^;]+)/);
-              if (mimeMatch) mimeType = mimeMatch[1];
-              
-              const binaryString = atob(base64Data);
-              const bytes = new Uint8Array(binaryString.length);
-              for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-              }
-              imageBlob = new Blob([bytes], { type: mimeType });
-            } else {
-              throw new Error('Unsupported data format');
-            }
-          } catch (conversionError) {
-            console.error('❌ Blob conversion failed:', conversionError);
-            toast({
-              title: "Errore conversione",
-              description: "Impossibile convertire l'immagine",
-              variant: "destructive"
-            });
-            return;
-          }
+        // SEMPRE usa Blob locale da IndexedDB (no fetch remoti)
+        if (!latestAsset.data || !(latestAsset.data instanceof Blob) || latestAsset.data.size === 0) {
+          console.error('❌ No valid Blob available:', { 
+            action: 'no-local-blob', 
+            storyId, 
+            mediaId: latestAsset.id,
+            hasData: !!latestAsset.data,
+            isBlob: latestAsset.data instanceof Blob,
+            size: latestAsset.data instanceof Blob ? latestAsset.data.size : 'N/A',
+            needsRefetch: latestAsset.needsRefetch
+          });
+          
+          const errorMsg = latestAsset.needsRefetch 
+            ? "Immagine da rigenerare (sorgente scaduta)"
+            : "Nessun Blob locale disponibile";
+            
+          toast({
+            title: "Immagine non disponibile",
+            description: errorMsg,
+            variant: "destructive"
+          });
+          return;
         }
+
+        const imageBlob = latestAsset.data;
 
         // Crea ObjectURL e apri viewer
         const url = URL.createObjectURL(imageBlob);
@@ -136,7 +126,7 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
           action: 'media-loaded', 
           storyId, 
           mediaId: latestAsset.id,
-          mime: mimeType,
+          mime: latestAsset.mime,
           size: imageBlob.size 
         });
 

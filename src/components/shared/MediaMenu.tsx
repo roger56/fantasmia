@@ -80,23 +80,21 @@ const MediaMenu: React.FC<MediaMenuProps> = ({
         return;
       }
 
-      let blob: Blob;
-      if (latestAsset.data instanceof Blob) {
-        blob = latestAsset.data;
-      } else {
-        // Convert from base64/string
-        const dataStr = latestAsset.data as string;
-        const [header, base64Data] = dataStr.split(',');
-        const mimeMatch = header.match(/data:([^;]+)/);
-        const mimeType = mimeMatch ? mimeMatch[1] : 'image/webp';
-        
-        const binaryString = atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        blob = new Blob([bytes], { type: mimeType });
+      // SEMPRE usa Blob locale da IndexedDB (no fetch remoti)
+      if (!latestAsset.data || !(latestAsset.data instanceof Blob) || latestAsset.data.size === 0) {
+        const errorMsg = latestAsset.needsRefetch 
+          ? "Immagine da rigenerare (sorgente scaduta)"
+          : "Nessun Blob locale disponibile";
+          
+        toast({
+          title: "Immagine non disponibile",
+          description: errorMsg,
+          variant: "destructive"
+        });
+        return;
       }
+
+      const blob = latestAsset.data;
 
       const url = URL.createObjectURL(blob);
       setImageUrl(url);

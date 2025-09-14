@@ -44,7 +44,9 @@ interface MediaAsset {
   mime: string;
   size: number;
   createdAt: string;
-  data: Blob;
+  data: Blob;                // OBBLIGATORIO per preview e download
+  originalUrl?: string;      // opzionale, solo storico/diagnostica
+  needsRefetch?: boolean;    // flag per indicare che il Blob è da ri-fetchare
 }
 
 class FantasMiaDB {
@@ -294,19 +296,25 @@ class FantasMiaDB {
   async saveMediaFromPreview(params: {
     storyId: string;
     ownerProfileId: string;
-    previewUrl: string;
+    previewUrl?: string;       // Può essere undefined se abbiamo originalUrl
+    originalUrl?: string;      // URL remoto (SAS) per fetch iniziale
+    previewBlob?: Blob;        // Blob già disponibile
     type: 'image' | 'audio' | 'video';
     source: 'openai' | 'upload';
     filename?: string;
   }): Promise<string> {
     console.log('🔄 Starting media save pipeline for story:', params.storyId);
 
-    // Converti preview a Blob
-    let blob: Blob;
+    // Determina Blob finale (OBBLIGATORIO)
+    let finalBlob: Blob;
     let mime: string;
 
-    if (params.previewUrl.startsWith('data:')) {
-      // Base64 data URL
+    if (params.previewBlob) {
+      // Blob già disponibile
+      finalBlob = params.previewBlob;
+      mime = finalBlob.type || (params.type === 'image' ? 'image/webp' : 'application/octet-stream');
+    } else if (params.previewUrl && params.previewUrl.startsWith('data:')) {
+      // Base64 data URL → Blob
       const [header, base64Data] = params.previewUrl.split(',');
       const mimeMatch = header.match(/data:([^;]+)/);
       mime = mimeMatch ? mimeMatch[1] : (params.type === 'image' ? 'image/webp' : 'application/octet-stream');
@@ -316,52 +324,92 @@ class FantasMiaDB {
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
-      blob = new Blob([bytes], { type: mime });
-    } else {
-      // URL temporaneo - fetch
+      finalBlob = new Blob([bytes], { type: mime });
+    } else if (params.originalUrl) {
+      // Fetch da URL remoto (SAS) per salvataggio iniziale
+      console.log('📥 Fetching from remote URL for initial save:', { 
+        originalUrl: params.originalUrl.substring(0, 100) + '...' 
+      });
+      
+      try {
+        const response = await fetch(params.originalUrl, { mode: 'cors' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        finalBlob = await response.blob();
+        mime = finalBlob.type || (params.type === 'image' ? 'image/webp' : 'application/octet-stream');
+        
+        // Correggi MIME se necessario
+        if (!mime || mime === 'application/octet-stream') {
+          if (params.originalUrl.includes('.webp')) mime = 'image/webp';
+          else if (params.originalUrl.includes('.png')) mime = 'image/png';
+          else if (params.originalUrl.includes('.jpg') || params.originalUrl.includes('.jpeg')) mime = 'image/jpeg';
+          else mime = 'image/webp';
+          
+          finalBlob = new Blob([finalBlob], { type: mime });
+        }
+      } catch (fetchError) {
+        console.error('❌ Failed to fetch remote URL:', fetchError);
+        throw new Error(`Cannot fetch remote image: ${fetchError.message}`);
+      }
+    } else if (params.previewUrl) {
+      // URL locale/temporaneo
       const response = await fetch(params.previewUrl, { mode: 'cors' });
       if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
       
-      blob = await response.blob();
-      mime = blob.type || (params.type === 'image' ? 'image/webp' : 'application/octet-stream');
+      finalBlob = await response.blob();
+      mime = finalBlob.type || (params.type === 'image' ? 'image/webp' : 'application/octet-stream');
+    } else {
+      throw new Error('No valid preview data provided (previewUrl, originalUrl, or previewBlob required)');
     }
 
-    // Preferenza formato
-    if (params.type === 'image' && !mime.includes('webp') && !mime.includes('svg')) {
-      // Converti a WebP se possibile
-      if (blob.type.startsWith('image/')) {
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          const img = new Image();
-          
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = URL.createObjectURL(blob);
-          });
+    // Validazione Blob OBBLIGATORIA
+    if (!finalBlob || finalBlob.size === 0) {
+      throw new Error('Invalid or empty Blob generated - cannot save');
+    }
 
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx?.drawImage(img, 0, 0);
-          
-          const webpBlob = await new Promise<Blob>((resolve) => {
-            canvas.toBlob((result) => resolve(result!), 'image/webp', 0.85);
+    // Conversione WebP opzionale (per ridurre dimensioni)
+    if (params.type === 'image' && !mime.includes('webp') && !mime.includes('svg') && finalBlob.size > 500000) {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = URL.createObjectURL(finalBlob);
+        });
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+        
+        const webpBlob = await new Promise<Blob>((resolve) => {
+          canvas.toBlob((result) => resolve(result!), 'image/webp', 0.85);
+        });
+        
+        URL.revokeObjectURL(img.src);
+        
+        if (webpBlob && webpBlob.size < finalBlob.size) {
+          console.log('✅ WebP conversion saved space:', { 
+            originalSize: finalBlob.size, 
+            newSize: webpBlob.size,
+            savings: ((1 - webpBlob.size / finalBlob.size) * 100).toFixed(1) + '%'
           });
-          
-          URL.revokeObjectURL(img.src);
-          blob = webpBlob;
+          finalBlob = webpBlob;
           mime = 'image/webp';
-        } catch (conversionError) {
-          console.warn('WebP conversion failed, using original format:', conversionError);
         }
+      } catch (conversionError) {
+        console.warn('⚠️ WebP conversion failed, keeping original:', conversionError);
       }
     }
 
     // Validazione dimensioni (max 20MB)
     const maxSize = 20 * 1024 * 1024;
-    if (blob.size > maxSize) {
-      throw new Error(`File too large: ${(blob.size / 1024 / 1024).toFixed(2)}MB (max: 20MB)`);
+    if (finalBlob.size > maxSize) {
+      throw new Error(`File too large: ${(finalBlob.size / 1024 / 1024).toFixed(2)}MB (max: 20MB)`);
     }
 
     // Crea record media asset
@@ -373,9 +421,11 @@ class FantasMiaDB {
       type: params.type,
       source: params.source,
       mime,
-      size: blob.size,
+      size: finalBlob.size,
       createdAt: new Date().toISOString(),
-      data: blob
+      data: finalBlob,                    // SEMPRE Blob, mai undefined
+      originalUrl: params.originalUrl,    // Solo storico/diagnostica
+      needsRefetch: false
     };
 
     // Transazione atomica: salva media + aggiorna hasImage
@@ -401,7 +451,14 @@ class FantasMiaDB {
       };
 
       transaction.oncomplete = () => {
-        console.log('✅ Media save pipeline completed successfully');
+        console.log('✅ Media save pipeline completed successfully:', {
+          assetId,
+          storyId: params.storyId,
+          size: finalBlob.size,
+          mime,
+          source: params.source,
+          hasOriginalUrl: !!params.originalUrl
+        });
         
         // Emit evento per sync UI
         window.dispatchEvent(new CustomEvent('am-story-updated', {
@@ -470,7 +527,68 @@ class FantasMiaDB {
     });
   }
 
-  // Migrazione dati legacy
+  // Migrazione record esistenti senza Blob
+  async migrateExistingMediaAssets(): Promise<number> {
+    console.log('🔄 Starting migration of existing media assets without Blob...');
+    
+    let migrated = 0;
+    const allAssets = await this.getAllMediaAssets();
+    
+    for (const asset of allAssets) {
+      // Skip se ha già un Blob valido
+      if (asset.data && asset.data instanceof Blob && asset.data.size > 0) {
+        continue;
+      }
+      
+      // Prova a ricostruire da originalUrl se disponibile
+      if (asset.originalUrl) {
+        try {
+          console.log(`🔄 Migrating asset ${asset.id} from originalUrl`);
+          
+          const response = await fetch(asset.originalUrl, { mode: 'cors' });
+          if (!response.ok) {
+            console.warn(`⚠️ Cannot fetch originalUrl for asset ${asset.id}: HTTP ${response.status}`);
+            
+            // Segna come "needs refetch"
+            const updatedAsset = { ...asset, needsRefetch: true };
+            await this.saveMediaAsset(updatedAsset);
+            continue;
+          }
+          
+          const blob = await response.blob();
+          if (blob.size > 0) {
+            // Aggiorna con Blob valido
+            const updatedAsset = { 
+              ...asset, 
+              data: blob, 
+              size: blob.size,
+              mime: blob.type || asset.mime,
+              needsRefetch: false
+            };
+            await this.saveMediaAsset(updatedAsset);
+            migrated++;
+            
+            console.log(`✅ Migrated asset ${asset.id}: ${blob.size} bytes`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ Migration failed for asset ${asset.id}:`, error);
+          
+          // Segna come "needs refetch"
+          const updatedAsset = { ...asset, needsRefetch: true };
+          await this.saveMediaAsset(updatedAsset);
+        }
+      } else {
+        console.warn(`⚠️ Asset ${asset.id} has no originalUrl and no valid Blob`);
+        const updatedAsset = { ...asset, needsRefetch: true };
+        await this.saveMediaAsset(updatedAsset);
+      }
+    }
+    
+    console.log(`✅ Migration completed: ${migrated} assets restored from originalUrl`);
+    return migrated;
+  }
+
+  // Migrazione dati legacy da localStorage
   async migrateMediaAssetsFromLocalStorage(): Promise<number> {
     console.log('🔄 Starting media assets migration from localStorage...');
     
@@ -496,23 +614,23 @@ class FantasMiaDB {
               ownerProfileId: story.ownerProfileId,
               previewUrl: legacyData,
               type: 'image',
-              source: 'upload', // Assume legacy images are uploads
-              filename: `migrated-${story.title}.png`
+              source: 'upload' // Legacy data treated as upload
             });
-
-            // Remove legacy data
+            
+            // Rimuovi da localStorage dopo migrazione
             localStorage.removeItem(key);
             migrated++;
             
-            console.log(`✅ Migrated image for story: ${story.title}`);
+            console.log(`✅ Migrated legacy image for story ${story.id}`);
+            break; // Una sola immagine per storia
           } catch (error) {
-            console.error(`❌ Failed to migrate image for story ${story.id}:`, error);
+            console.error(`❌ Failed to migrate legacy image for story ${story.id}:`, error);
           }
         }
       }
     }
-
-    console.log(`✅ Migration completed: ${migrated} images migrated from localStorage`);
+    
+    console.log(`✅ Migration completed: ${migrated} legacy images migrated`);
     return migrated;
   }
 
@@ -555,12 +673,19 @@ export const fantasMiaDB = new FantasMiaDB();
 // Initialize database on import
 fantasMiaDB.init()
   .then(() => {
-    // Run automatic migration after database initialization
+    // Run automatic migrations after database initialization
     return fantasMiaDB.migrateMediaAssetsFromLocalStorage();
   })
   .then((migrated) => {
     if (migrated > 0) {
-      console.log(`✅ Auto-migration completed: ${migrated} images migrated`);
+      console.log(`✅ Legacy migration completed: ${migrated} images migrated from localStorage`);
+    }
+    // Run existing media assets migration (for URL → Blob conversion)
+    return fantasMiaDB.migrateExistingMediaAssets();
+  })
+  .then((migrated) => {
+    if (migrated > 0) {
+      console.log(`✅ Media migration completed: ${migrated} assets converted to Blob`);
     }
   })
   .catch(console.error);
