@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Circle } from 'lucide-react';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import ImageViewerDialog from './ImageViewerDialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface StoryImageIconProps {
   storyId: string;
@@ -21,6 +22,8 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
   const [actualHasImage, setActualHasImage] = useState(hasImage);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [currentImageBlob, setCurrentImageBlob] = useState<Blob | undefined>();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check actual image status from IndexedDB
@@ -55,14 +58,95 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
   const handleClick = async () => {
     if (actualHasImage) {
       try {
-        const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(storyId);
-        if (mediaAsset && mediaAsset.type === 'image') {
-          const url = URL.createObjectURL(mediaAsset.data);
-          setImageUrl(url);
-          setImageViewerOpen(true);
+        // Recupera tutti i media assets per questa storia
+        const mediaAssets = await fantasMiaDB.getMediaAssetsByStoryId(storyId);
+        
+        if (mediaAssets.length === 0) {
+          console.warn('⚠️ No media assets found:', { action: 'media-empty', storyId });
+          toast({
+            title: "Immagine non trovata",
+            description: "Nessun media associato a questa storia",
+            variant: "destructive"
+          });
+          return;
         }
+
+        // Prendi il più recente (già ordinato per createdAt desc)
+        const latestAsset = mediaAssets[0];
+        
+        // Validazioni
+        if (!latestAsset.data || latestAsset.size === 0) {
+          console.warn('⚠️ Invalid media asset:', { 
+            action: 'media-empty', 
+            storyId, 
+            mediaId: latestAsset.id, 
+            size: latestAsset.size 
+          });
+          toast({
+            title: "Immagine non valida",
+            description: "L'immagine associata è vuota o corrotta",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Preparazione Blob
+        let imageBlob: Blob;
+        let mimeType = latestAsset.mime || 'image/webp';
+
+        if (latestAsset.data instanceof Blob) {
+          imageBlob = latestAsset.data;
+        } else {
+          // Fallback: converti da base64/string a Blob
+          try {
+            const dataStr = latestAsset.data as string;
+            if (dataStr.startsWith('data:')) {
+              // Data URL
+              const [header, base64Data] = dataStr.split(',');
+              const mimeMatch = header.match(/data:([^;]+)/);
+              if (mimeMatch) mimeType = mimeMatch[1];
+              
+              const binaryString = atob(base64Data);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              imageBlob = new Blob([bytes], { type: mimeType });
+            } else {
+              throw new Error('Unsupported data format');
+            }
+          } catch (conversionError) {
+            console.error('❌ Blob conversion failed:', conversionError);
+            toast({
+              title: "Errore conversione",
+              description: "Impossibile convertire l'immagine",
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+
+        // Crea ObjectURL e apri viewer
+        const url = URL.createObjectURL(imageBlob);
+        setImageUrl(url);
+        setCurrentImageBlob(imageBlob);
+        setImageViewerOpen(true);
+
+        console.log('✅ Image loaded successfully:', { 
+          action: 'media-loaded', 
+          storyId, 
+          mediaId: latestAsset.id,
+          mime: mimeType,
+          size: imageBlob.size 
+        });
+
       } catch (error) {
-        console.error('Error loading image:', error);
+        console.error('❌ Error loading image:', { action: 'media-load-error', storyId, error });
+        toast({
+          title: "Errore caricamento",
+          description: "Impossibile caricare l'immagine",
+          variant: "destructive"
+        });
       }
     }
   };
@@ -72,6 +156,7 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
     if (!open && imageUrl) {
       URL.revokeObjectURL(imageUrl);
       setImageUrl('');
+      setCurrentImageBlob(undefined);
     }
   };
 
@@ -95,6 +180,8 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
           imageUrl={imageUrl}
           storyTitle={storyTitle}
           style="Storia"
+          imageBlob={currentImageBlob}
+          storyId={storyId}
         />
       )}
     </>
