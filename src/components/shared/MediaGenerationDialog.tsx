@@ -130,19 +130,19 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
               }
               
               blob = await response.blob();
+              
+              // Validate it's actually an image
+              if (!blob.type.startsWith('image/')) {
+                throw new Error(`Invalid content type: ${blob.type}`);
+              }
+              
               console.log('✅ Converted using fetch method, size:', blob.size);
               break;
             } catch (fetchError) {
               console.warn(`⚠️ Fetch attempt ${fetchAttempts} failed:`, fetchError);
               if (fetchAttempts === maxAttempts) {
-                // Last resort: create a minimal blob with error info
-                const errorInfo = JSON.stringify({
-                  error: 'Failed to fetch image',
-                  originalUrl: generatedImage,
-                  timestamp: new Date().toISOString()
-                });
-                blob = new Blob([errorInfo], { type: 'application/json' });
-                console.log('⚠️ Created fallback blob with error info');
+                // NON creare fallback JSON - fallisci completamente
+                throw new Error(`Impossibile scaricare l'immagine dopo ${maxAttempts} tentativi: ${fetchError.message}`);
               }
             }
           }
@@ -154,10 +154,13 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
           throw new Error(`Image too large: ${(blob.size / 1024 / 1024).toFixed(2)}MB (max: 20MB)`);
         }
 
+        // Ensure storyId is always string for consistency
+        const storyIdString = String(storyId);
+        
         // Create media asset record with enhanced error tracking
         const mediaAsset = {
-          id: `${storyId}-generated-${Date.now()}`,
-          storyId: storyId,
+          id: `${storyIdString}-generated-${Date.now()}`,
+          storyId: storyIdString,
           ownerProfileId: userId,
           type: 'image' as const,
           source: 'openai' as const,
@@ -200,13 +203,13 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
         }
         
         // Update story hasImage flag
-        await fantasMiaDB.updateStoryImageStatus(storyId, 'am', true);
+        await fantasMiaDB.updateStoryImageStatus(storyIdString, 'am', true);
         console.log('✅ Story hasImage flag updated');
         
         // Emit event for real-time UI synchronization
         window.dispatchEvent(new CustomEvent('am-story-updated', { 
           detail: { 
-            storyId, 
+            storyId: storyIdString, 
             action: 'image-added',
             hasImage: true 
           } 

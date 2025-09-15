@@ -57,12 +57,15 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
 
   const handleClick = async () => {
     if (actualHasImage) {
+      // Ensure storyId is always string for consistency
+      const storyIdString = String(storyId);
+      
       try {
         // Recupera tutti i media assets per questa storia
-        const mediaAssets = await fantasMiaDB.getMediaAssetsByStoryId(storyId);
+        const mediaAssets = await fantasMiaDB.getMediaAssetsByStoryId(storyIdString);
         
         if (mediaAssets.length === 0) {
-          console.warn('⚠️ No media assets found:', { action: 'media-empty', storyId });
+          console.warn('⚠️ No media assets found:', { action: 'media-empty', storyId: storyIdString });
           toast({
             title: "Immagine non trovata",
             description: "Nessun media associato a questa storia",
@@ -78,7 +81,7 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
         if (!latestAsset.data || latestAsset.size === 0) {
           console.warn('⚠️ Invalid media asset:', { 
             action: 'media-empty', 
-            storyId, 
+            storyId: storyIdString, 
             mediaId: latestAsset.id, 
             size: latestAsset.size 
           });
@@ -93,8 +96,8 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
         // SEMPRE usa Blob locale da IndexedDB (no fetch remoti)
         if (!latestAsset.data || !(latestAsset.data instanceof Blob) || latestAsset.data.size === 0) {
           console.error('❌ No valid Blob available:', { 
-            action: 'no-local-blob', 
-            storyId, 
+            action: 'media-no-blob', 
+            storyId: storyIdString, 
             mediaId: latestAsset.id,
             hasData: !!latestAsset.data,
             isBlob: latestAsset.data instanceof Blob,
@@ -116,6 +119,22 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
 
         const imageBlob = latestAsset.data;
 
+        // Validazione aggiuntiva per MIME type immagine
+        if (!latestAsset.mime.startsWith('image/')) {
+          console.error('❌ Invalid media type:', { 
+            action: 'media-not-image', 
+            storyId: storyIdString, 
+            mediaId: latestAsset.id,
+            mime: latestAsset.mime
+          });
+          toast({
+            title: "Tipo media non valido",
+            description: `File di tipo ${latestAsset.mime} invece di immagine`,
+            variant: "destructive"
+          });
+          return;
+        }
+
         // Crea ObjectURL e apri viewer
         const url = URL.createObjectURL(imageBlob);
         setImageUrl(url);
@@ -124,14 +143,14 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
 
         console.log('✅ Image loaded successfully:', { 
           action: 'media-loaded', 
-          storyId, 
+          storyId: storyIdString, 
           mediaId: latestAsset.id,
           mime: latestAsset.mime,
           size: imageBlob.size 
         });
 
       } catch (error) {
-        console.error('❌ Error loading image:', { action: 'media-load-error', storyId, error });
+        console.error('❌ Error loading image:', { action: 'media-load-error', storyId: storyIdString, error });
         toast({
           title: "Errore caricamento",
           description: "Impossibile caricare l'immagine",

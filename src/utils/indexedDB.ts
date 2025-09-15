@@ -292,7 +292,7 @@ class FantasMiaDB {
     });
   }
 
-  // Pipeline comune per conversione e salvataggio media
+   // Pipeline comune per conversione e salvataggio media
   async saveMediaFromPreview(params: {
     storyId: string;
     ownerProfileId: string;
@@ -303,7 +303,9 @@ class FantasMiaDB {
     source: 'openai' | 'upload';
     filename?: string;
   }): Promise<string> {
-    console.log('🔄 Starting media save pipeline for story:', params.storyId);
+    // Ensure storyId is always string for consistency
+    const storyIdString = String(params.storyId);
+    console.log('🔄 Starting media save pipeline for story:', storyIdString);
 
     // Determina Blob finale (OBBLIGATORIO)
     let finalBlob: Blob;
@@ -413,10 +415,10 @@ class FantasMiaDB {
     }
 
     // Crea record media asset
-    const assetId = `${params.storyId}-${params.source}-${Date.now()}`;
+    const assetId = `${storyIdString}-${params.source}-${Date.now()}`;
     const asset: MediaAsset = {
       id: assetId,
-      storyId: params.storyId,
+      storyId: storyIdString,
       ownerProfileId: params.ownerProfileId,
       type: params.type,
       source: params.source,
@@ -439,7 +441,7 @@ class FantasMiaDB {
       mediaRequest.onsuccess = () => {
         // Aggiorna hasImage nella storia
         const storyStore = transaction.objectStore('am_stories');
-        const getStoryRequest = storyStore.get(params.storyId);
+        const getStoryRequest = storyStore.get(storyIdString);
         
         getStoryRequest.onsuccess = () => {
           const story = getStoryRequest.result;
@@ -453,7 +455,7 @@ class FantasMiaDB {
       transaction.oncomplete = () => {
         console.log('✅ Media save pipeline completed successfully:', {
           assetId,
-          storyId: params.storyId,
+          storyId: storyIdString,
           size: finalBlob.size,
           mime,
           source: params.source,
@@ -463,7 +465,7 @@ class FantasMiaDB {
         // Emit evento per sync UI
         window.dispatchEvent(new CustomEvent('am-story-updated', {
           detail: { 
-            storyId: params.storyId, 
+            storyId: storyIdString, 
             action: 'media-added',
             hasImage: true 
           }
