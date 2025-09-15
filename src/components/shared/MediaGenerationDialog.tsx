@@ -90,7 +90,11 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
   const handleConfirm = async () => {
     if (generatedImage) {
       try {
-        console.log('💾 Saving AI-generated image for story:', storyId);
+        // Normalize IDs to ensure consistency
+        const normalizedStoryId = String(storyId);
+        const normalizedOwnerId = String(userId);
+        
+        console.log('💾 Saving AI-generated image for story:', normalizedStoryId);
         
         let blob: Blob;
         
@@ -154,14 +158,11 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
           throw new Error(`Image too large: ${(blob.size / 1024 / 1024).toFixed(2)}MB (max: 20MB)`);
         }
 
-        // Ensure storyId is always string for consistency
-        const storyIdString = String(storyId);
-        
-        // Create media asset record with enhanced error tracking
+        // Create media asset record with normalized IDs
         const mediaAsset = {
-          id: `${storyIdString}-generated-${Date.now()}`,
-          storyId: storyIdString,
-          ownerProfileId: userId,
+          id: `${normalizedStoryId}-generated-${Date.now()}`,
+          storyId: normalizedStoryId,
+          ownerProfileId: normalizedOwnerId,
           type: 'image' as const,
           source: 'openai' as const,
           mime: blob.type || 'image/png',
@@ -173,48 +174,32 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
         console.log('📝 Saving media asset:', {
           id: mediaAsset.id,
           size: mediaAsset.size,
-          contentType: mediaAsset.mime
+          contentType: mediaAsset.mime,
+          normalizedStoryId,
+          normalizedOwnerId
         });
 
-        // Save to IndexedDB with retry logic
-        let saveAttempts = 0;
-        const maxSaveAttempts = 3;
+        // Atomic transaction: save media asset and update story flag
+        await fantasMiaDB.saveMediaAssetWithStoryUpdate(mediaAsset, normalizedStoryId, 'am');
+        console.log('✅ Atomic save completed');
         
-        while (saveAttempts < maxSaveAttempts) {
-          try {
-            saveAttempts++;
-            await fantasMiaDB.saveMediaAsset(mediaAsset);
-            console.log('✅ Media asset saved successfully');
-            break;
-          } catch (saveError) {
-            console.error(`❌ Save attempt ${saveAttempts} failed:`, saveError);
-            
-            if (saveError.name === 'DataCloneError') {
-              throw new Error('Immagine troppo complessa per il salvataggio locale');
-            } else if (saveError.name === 'QuotaExceededError') {
-              throw new Error('Spazio di archiviazione esaurito. Libera spazio e riprova.');
-            } else if (saveAttempts === maxSaveAttempts) {
-              throw new Error(`Salvataggio fallito dopo ${maxSaveAttempts} tentativi: ${saveError.message}`);
-            }
-            
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 1000 * saveAttempts));
-          }
+        // Post-write verification and UI update
+        const mediaCount = await fantasMiaDB.getMediaCountByStoryId(normalizedStoryId);
+        console.log('📊 Media count verification:', { normalizedStoryId, mediaCount });
+        
+        if (mediaCount >= 1) {
+          // Emit event for real-time UI synchronization
+          window.dispatchEvent(new CustomEvent('media:updated', { 
+            detail: { 
+              storyId: normalizedStoryId, 
+              count: mediaCount,
+              action: 'image-added'
+            } 
+          }));
+          console.log('✅ UI sync event emitted with count:', mediaCount);
+        } else {
+          throw new Error('Post-save verification failed: media count is 0');
         }
-        
-        // Update story hasImage flag
-        await fantasMiaDB.updateStoryImageStatus(storyIdString, 'am', true);
-        console.log('✅ Story hasImage flag updated');
-        
-        // Emit event for real-time UI synchronization
-        window.dispatchEvent(new CustomEvent('am-story-updated', { 
-          detail: { 
-            storyId: storyIdString, 
-            action: 'image-added',
-            hasImage: true 
-          } 
-        }));
-        console.log('✅ UI sync event emitted');
         
         // Show success toast
         toast({
@@ -227,7 +212,21 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
         resetDialog();
         
       } catch (error) {
-        console.error('❌ Error saving AI image:', error);
+        // Robust diagnostics
+        const normalizedStoryId = String(storyId);
+        const normalizedOwnerId = String(userId);
+        
+        console.error({
+          action: 'media-save',
+          storyIdRaw: storyId,
+          normalizedStoryId,
+          ownerProfileId: normalizedOwnerId,
+          mime: 'unknown',
+          size: 0,
+          errorName: error?.name,
+          errorMessage: error?.message,
+          fullError: error
+        });
         
         // Enhanced error messages
         let errorMessage = "Errore durante il salvataggio dell'immagine";
@@ -240,6 +239,8 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
           errorMessage = error.message;
         } else if (error.message.includes('Failed to fetch')) {
           errorMessage = "Impossibile scaricare l'immagine. Riprova.";
+        } else if (error.message.includes('Post-save verification failed')) {
+          errorMessage = "Salvataggio immagine non riuscito - verifica fallita";
         } else if (error.name === 'NetworkError') {
           errorMessage = "Errore di rete. Controlla la connessione e riprova.";
         }

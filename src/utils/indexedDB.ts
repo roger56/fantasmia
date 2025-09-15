@@ -636,6 +636,48 @@ class FantasMiaDB {
     return migrated;
   }
 
+  // Atomic save: media asset + story update
+  async saveMediaAssetWithStoryUpdate(asset: MediaAsset, storyId: string, storyType: 'am' | 'ag'): Promise<void> {
+    if (!this.db) await this.init();
+    const storeName = storyType === 'am' ? 'am_stories' : 'ag_stories';
+    
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction(['media_assets', storeName], 'readwrite');
+      
+      // Save media asset
+      const mediaStore = tx.objectStore('media_assets');
+      mediaStore.put(asset);
+      
+      // Update story hasImage flag
+      const storyStore = tx.objectStore(storeName);
+      const getRequest = storyStore.get(storyId);
+      getRequest.onsuccess = () => {
+        const story = getRequest.result;
+        if (story) {
+          story.hasImage = true;
+          storyStore.put(story);
+        }
+      };
+      
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  // Get media count by story ID
+  async getMediaCountByStoryId(storyId: string): Promise<number> {
+    if (!this.db) await this.init();
+    const tx = this.db!.transaction(['media_assets'], 'readonly');
+    const store = tx.objectStore('media_assets');
+    const index = store.index('by_storyId');
+    
+    return new Promise((resolve, reject) => {
+      const countRequest = index.count(storyId);
+      countRequest.onsuccess = () => resolve(countRequest.result);
+      countRequest.onerror = () => reject(countRequest.error);
+    });
+  }
+
   async updateStoryImageStatus(storyId: string, storyType: 'am' | 'ag', hasImage: boolean): Promise<void> {
     const storeName = storyType === 'am' ? 'am_stories' : 'ag_stories';
     const transaction = this.db!.transaction([storeName], 'readwrite');
