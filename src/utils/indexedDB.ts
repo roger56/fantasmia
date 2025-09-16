@@ -40,7 +40,7 @@ interface MediaAsset {
   storyId: string;
   ownerProfileId: string;
   type: 'image' | 'audio' | 'video';
-  source: 'openai' | 'upload';
+  source: 'openai' | 'upload' | 'canvas-fallback';
   mime: string;
   size: number;
   createdAt: string;
