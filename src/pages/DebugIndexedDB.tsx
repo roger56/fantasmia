@@ -8,6 +8,7 @@ import { fantasMiaDB, Profile, AMStory, AGStory, MediaAsset } from '@/utils/inde
 import { getCurrentProfileId, createDemoProfile } from '@/utils/profileManager';
 import { runAutomaticTest } from '@/utils/storyManager';
 import { toast } from '@/hooks/use-toast';
+import { testBase64Conversion } from '@/utils/base64Utils';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 interface DebugData {
@@ -24,6 +25,7 @@ const DebugIndexedDB = () => {
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
   const [selectedMediaAsset, setSelectedMediaAsset] = useState<MediaAsset | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [filterStoryId, setFilterStoryId] = useState<string>('');
 
   // Verifiche ambiente
   const hasServiceWorker = 'serviceWorker' in navigator;
@@ -245,6 +247,17 @@ const DebugIndexedDB = () => {
     setSelectedMediaAsset(null);
   };
 
+  const handleTestBase64 = () => {
+    const result = testBase64Conversion();
+    toast({
+      title: result.success ? "✅ Test Base64 Superato" : "❌ Test Base64 Fallito",
+      description: result.success 
+        ? `Conversione riuscita: ${result.size} bytes`
+        : `Errore: ${result.error}`,
+      variant: result.success ? "default" : "destructive"
+    });
+  };
+
 
   if (loading) {
     return (
@@ -444,6 +457,10 @@ const DebugIndexedDB = () => {
             <Button onClick={handleValidateAlignment} variant="outline">
               ✅ Valida Allineamento Story-Media
             </Button>
+            
+            <Button onClick={handleTestBase64} variant="outline">
+              🧪 Test Conversione Base64
+            </Button>
           </CardContent>
         </Card>
 
@@ -484,19 +501,39 @@ const DebugIndexedDB = () => {
         {debugData && debugData.mediaAssets.count > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Pannello Media Assets</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                Pannello Media Assets
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    placeholder="Filtra per storyId..."
+                    value={filterStoryId}
+                    onChange={(e) => setFilterStoryId(e.target.value)}
+                    className="px-2 py-1 border rounded text-sm"
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setFilterStoryId('')}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 <div className="grid grid-cols-1 gap-2">
-                  {debugData.mediaAssets.items.map(asset => (
+                  {debugData.mediaAssets.items
+                    .filter(asset => !filterStoryId || asset.storyId.includes(filterStoryId))
+                    .map(asset => (
                     <div key={asset.id} className="p-3 bg-gray-50 rounded border">
-                      <div className="grid grid-cols-6 gap-2 text-xs">
+                      <div className="grid grid-cols-7 gap-2 text-xs">
                         <div>
                           <strong>ID:</strong> {asset.id.slice(0, 12)}...
                         </div>
                         <div>
-                          <strong>Story:</strong> {asset.storyId.slice(0, 8)}...
+                          <strong>storyId:</strong> {asset.storyId}
                         </div>
                         <div>
                           <strong>Type:</strong> {asset.type}
@@ -505,7 +542,10 @@ const DebugIndexedDB = () => {
                           <strong>Source:</strong> {asset.source}
                         </div>
                         <div>
-                          <strong>Size:</strong> {(asset.size / 1024).toFixed(0)}KB
+                          <strong>sizeKB:</strong> {(asset.size / 1024).toFixed(0)}
+                        </div>
+                        <div>
+                          <strong>hasBlob:</strong> {asset.data instanceof Blob ? '✅' : '❌'}
                         </div>
                         <div>
                           <strong>Created:</strong> {new Date(asset.createdAt).toLocaleDateString()}

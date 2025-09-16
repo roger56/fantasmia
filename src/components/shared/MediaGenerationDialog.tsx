@@ -8,6 +8,7 @@ import { Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import { supabase } from '@/integrations/supabase/client';
+import { base64ToBlobSafe, convertImageToBlob } from '@/utils/base64Utils';
 
 interface MediaGenerationDialogProps {
   open: boolean;
@@ -135,37 +136,6 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
     }
   };
 
-  const convertCanvasToBlob = (img: HTMLImageElement): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Cannot create canvas context'));
-        return;
-      }
-
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
-      
-      ctx.drawImage(img, 0, 0);
-      
-      // Try WebP first, fallback to PNG
-      canvas.toBlob((blob) => {
-        if (blob && blob.size >= 10240) { // 10KB minimum
-          resolve(blob);
-        } else {
-          // Fallback to PNG
-          canvas.toBlob((pngBlob) => {
-            if (pngBlob && pngBlob.size >= 10240) {
-              resolve(pngBlob);
-            } else {
-              reject(new Error('Canvas conversion resulted in invalid blob'));
-            }
-          }, 'image/png', 0.92);
-        }
-      }, 'image/webp', 0.92);
-    });
-  };
 
   const handleConfirm = async () => {
     if (!previewSource) {
@@ -183,39 +153,41 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
       const normalizedStoryId = String(storyId);
       const normalizedOwnerId = String(userId);
       
-      console.info({ step: 'saving-from', kind: previewSource.kind, storyId: normalizedStoryId });
+      // Detailed telemetry
+      console.info({ 
+        step: 'preview-kind', 
+        kind: previewSource.kind, 
+        hasBlob: !!previewSource.blob, 
+        dataURLlen: previewSource.dataURL?.length 
+      });
       
       let blob: Blob;
       let source: string;
       
       // Convert preview source to blob - NO NETWORK CALLS
       if (previewSource.kind === 'blob' && previewSource.blob) {
+        console.info({ step: 'convert-start', path: 'blob' });
         blob = previewSource.blob;
         source = 'openai';
-        console.info({ step: 'blob-direct', size: blob.size, mime: blob.type });
       } else if (previewSource.kind === 'dataURL' && previewSource.dataURL) {
-        // Convert dataURL to blob
-        const base64Data = previewSource.dataURL.split(',')[1];
-        const binaryString = atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        blob = new Blob([bytes], { type: previewSource.mime || 'image/png' });
+        console.info({ step: 'convert-start', path: 'dataURL' });
+        // Use safe base64 converter
+        blob = base64ToBlobSafe(previewSource.dataURL);
         source = 'openai';
-        console.info({ step: 'dataurl-converted', size: blob.size, mime: blob.type });
       } else if (previewSource.kind === 'objectURL' && imgRef.current) {
+        console.info({ step: 'convert-start', path: 'objectURL' });
         // Canvas fallback - extract from displayed image
         try {
-          blob = await convertCanvasToBlob(imgRef.current);
+          blob = await convertImageToBlob(imgRef.current);
           source = 'canvas-fallback';
-          console.info({ step: 'canvas-fallback', size: blob.size, mime: blob.type });
         } catch (canvasError) {
           throw new Error(`Canvas fallback failed: ${canvasError.message}`);
         }
       } else {
         throw new Error('No valid preview source available for saving');
       }
+      
+      console.info({ step: 'convert-done', mime: blob.type, size: blob.size });
 
       // Validate blob size (minimum 10KB, max 20MB)
       const minSize = 10 * 1024; // 10KB
@@ -277,7 +249,7 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
     } catch (error) {
       // Detailed telemetry
       console.error({ 
-        step: 'confirm-save-error', 
+        step: 'convert-error', 
         storyId: String(storyId), 
         errorName: error?.name, 
         errorMessage: error?.message,
@@ -316,16 +288,10 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
       if (previewSource.kind === 'blob' && previewSource.blob) {
         blob = previewSource.blob;
       } else if (previewSource.kind === 'dataURL' && previewSource.dataURL) {
-        // Convert dataURL to blob
-        const base64Data = previewSource.dataURL.split(',')[1];
-        const binaryString = atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        blob = new Blob([bytes], { type: previewSource.mime || 'image/png' });
+        // Use safe base64 converter
+        blob = base64ToBlobSafe(previewSource.dataURL);
       } else if (previewSource.kind === 'objectURL' && imgRef.current) {
-        blob = await convertCanvasToBlob(imgRef.current);
+        blob = await convertImageToBlob(imgRef.current);
       } else {
         throw new Error('No valid source for download');
       }
