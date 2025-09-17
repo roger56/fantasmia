@@ -20,10 +20,10 @@ interface MediaGenerationDialogProps {
 }
 
 interface PreviewSource {
-  kind: 'blob' | 'dataURL' | 'objectURL';
+  kind: 'blob' | 'dataURL';
   blob?: Blob;
   dataURL?: string;
-  objectURL?: string;
+  objectURL?: string; // only for preview display, never used for saving
   mime?: string;
 }
 
@@ -78,11 +78,11 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
       if (error) throw error;
 
       if (data?.imageUrl) {
-        // Determine the preview source type and prepare unified source
+        // FORCE LOCAL-ONLY: Only support blob and dataURL, no remote fetching
         let previewSourceData: PreviewSource;
         
         if (data.imageUrl.startsWith('data:image')) {
-          // DataURL from API
+          // DataURL from API - keep as dataURL
           previewSourceData = {
             kind: 'dataURL',
             dataURL: data.imageUrl,
@@ -90,7 +90,7 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
           };
           console.info({ step: 'preview-kind', kind: 'dataURL', dataURLlen: data.imageUrl.length });
         } else {
-          // External URL - convert to objectURL for preview
+          // External URL - fetch ONCE for preview and store as blob
           try {
             const response = await fetch(data.imageUrl, { mode: 'cors', cache: 'no-cache' });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -98,22 +98,21 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
             const blob = await response.blob();
             if (!blob.type.startsWith('image/')) throw new Error(`Invalid content type: ${blob.type}`);
             
-            const objectURL = URL.createObjectURL(blob);
             previewSourceData = {
               kind: 'blob',
               blob,
-              objectURL,
+              objectURL: URL.createObjectURL(blob), // for preview only
               mime: blob.type
             };
             console.info({ step: 'preview-kind', kind: 'blob', blobSize: blob.size });
           } catch (fetchError) {
-            console.warn('Failed to fetch for preview, using URL directly:', fetchError);
-            previewSourceData = {
-              kind: 'objectURL',
-              objectURL: data.imageUrl,
-              mime: 'image/png' // fallback
-            };
-            console.info({ step: 'preview-kind', kind: 'objectURL-fallback' });
+            console.error('Failed to fetch image for preview:', fetchError);
+            toast({
+              title: "Errore",
+              description: "Impossibile caricare l'immagine per l'anteprima",
+              variant: "destructive"
+            });
+            return;
           }
         }
         
@@ -164,35 +163,18 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
       let blob: Blob;
       let source: string;
       
-      // Convert preview source to blob - NO NETWORK CALLS
+      // Convert preview source to blob - LOCAL DATA ONLY
       if (previewSource.kind === 'blob' && previewSource.blob) {
         console.info({ step: 'convert-start', path: 'blob' });
         blob = previewSource.blob;
         source = 'openai';
       } else if (previewSource.kind === 'dataURL' && previewSource.dataURL) {
         console.info({ step: 'convert-start', path: 'dataURL' });
-        // Use safe base64 converter
+        // Use safe base64 converter for robust conversion
         blob = base64ToBlobSafe(previewSource.dataURL);
         source = 'openai';
-      } else if (previewSource.kind === 'objectURL') {
-        console.info({ step: 'convert-start', path: 'objectURL' });
-        // Try to use original blob first if available
-        if (previewSource.blob) {
-          blob = previewSource.blob;
-          source = 'openai';
-        } else if (imgRef.current) {
-          // Canvas fallback - extract from displayed image
-          try {
-            blob = await convertImageToBlob(imgRef.current);
-            source = 'canvas-fallback';
-          } catch (canvasError) {
-            throw new Error(`Canvas fallback failed: ${canvasError.message}`);
-          }
-        } else {
-          throw new Error('No valid image reference for canvas fallback');
-        }
       } else {
-        throw new Error('No valid preview source available for saving');
+        throw new Error('Only blob and dataURL preview sources are supported for saving. No remote fetching allowed.');
       }
       
       console.info({ step: 'convert-done', mime: blob.type, size: blob.size });
@@ -304,14 +286,6 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
       } else if (previewSource.kind === 'dataURL' && previewSource.dataURL) {
         // Use safe base64 converter
         blob = base64ToBlobSafe(previewSource.dataURL);
-      } else if (previewSource.kind === 'objectURL') {
-        if (previewSource.blob) {
-          blob = previewSource.blob;
-        } else if (imgRef.current) {
-          blob = await convertImageToBlob(imgRef.current);
-        } else {
-          throw new Error('No valid source for download');
-        }
       } else {
         throw new Error('No valid source for download');
       }
@@ -414,7 +388,7 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
             <div className="text-center">
               <img 
                 ref={imgRef}
-                src={previewSource?.kind === 'dataURL' ? previewSource.dataURL : previewSource?.objectURL} 
+                src={previewSource?.kind === 'dataURL' ? previewSource.dataURL : previewSource?.objectURL}
                 alt="Immagine generata" 
                 className="max-w-full h-auto rounded-lg border"
               />
