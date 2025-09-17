@@ -38,8 +38,8 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
   const [selectedStyle, setSelectedStyle] = useState<string>('');
   const [userComment, setUserComment] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [previewSource, setPreviewSource] = useState<PreviewSource | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const previewRef = useRef<PreviewSource | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const { toast } = useToast();
 
@@ -117,7 +117,7 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
           }
         }
         
-        setPreviewSource(previewSourceData);
+        previewRef.current = previewSourceData;
         setShowPreview(true);
         toast({
           title: "Immagine generata!",
@@ -136,8 +136,8 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
     }
   };
 
-
   const handleConfirm = async () => {
+    const previewSource = previewRef.current;
     if (!previewSource) {
       console.error({ step: 'confirm-save-error', error: 'No preview source available' });
       toast({
@@ -174,14 +174,22 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
         // Use safe base64 converter
         blob = base64ToBlobSafe(previewSource.dataURL);
         source = 'openai';
-      } else if (previewSource.kind === 'objectURL' && imgRef.current) {
+      } else if (previewSource.kind === 'objectURL') {
         console.info({ step: 'convert-start', path: 'objectURL' });
-        // Canvas fallback - extract from displayed image
-        try {
-          blob = await convertImageToBlob(imgRef.current);
-          source = 'canvas-fallback';
-        } catch (canvasError) {
-          throw new Error(`Canvas fallback failed: ${canvasError.message}`);
+        // Try to use original blob first if available
+        if (previewSource.blob) {
+          blob = previewSource.blob;
+          source = 'openai';
+        } else if (imgRef.current) {
+          // Canvas fallback - extract from displayed image
+          try {
+            blob = await convertImageToBlob(imgRef.current);
+            source = 'canvas-fallback';
+          } catch (canvasError) {
+            throw new Error(`Canvas fallback failed: ${canvasError.message}`);
+          }
+        } else {
+          throw new Error('No valid image reference for canvas fallback');
         }
       } else {
         throw new Error('No valid preview source available for saving');
@@ -243,6 +251,11 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
         duration: 2000
       });
       
+      // ONLY NOW (after commit) revoke objectURL if exists
+      if (previewSource.objectURL) {
+        URL.revokeObjectURL(previewSource.objectURL);
+      }
+      
       onOpenChange(false);
       resetDialog();
         
@@ -279,6 +292,7 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
   };
 
   const handleDownload = async () => {
+    const previewSource = previewRef.current;
     if (!previewSource) return;
     
     try {
@@ -290,8 +304,14 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
       } else if (previewSource.kind === 'dataURL' && previewSource.dataURL) {
         // Use safe base64 converter
         blob = base64ToBlobSafe(previewSource.dataURL);
-      } else if (previewSource.kind === 'objectURL' && imgRef.current) {
-        blob = await convertImageToBlob(imgRef.current);
+      } else if (previewSource.kind === 'objectURL') {
+        if (previewSource.blob) {
+          blob = previewSource.blob;
+        } else if (imgRef.current) {
+          blob = await convertImageToBlob(imgRef.current);
+        } else {
+          throw new Error('No valid source for download');
+        }
       } else {
         throw new Error('No valid source for download');
       }
@@ -321,16 +341,19 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
   const resetDialog = () => {
     setSelectedStyle('');
     setUserComment('');
-    if (previewSource?.objectURL) {
-      URL.revokeObjectURL(previewSource.objectURL);
-    }
-    setPreviewSource(null);
+    // Don't revoke objectURL here - only after successful save
+    previewRef.current = null;
     setShowPreview(false);
     setIsGenerating(false);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
+      // Only revoke on close if we haven't saved
+      const previewSource = previewRef.current;
+      if (previewSource?.objectURL) {
+        URL.revokeObjectURL(previewSource.objectURL);
+      }
       resetDialog();
     }
     onOpenChange(newOpen);
@@ -344,6 +367,8 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
     { value: 'acquarello', label: '🖌️ Acquarello', description: 'Pittura ad acquarello' },
     { value: 'carboncino', label: '✏️ Carboncino', description: 'Disegno a carboncino' }
   ];
+
+  const previewSource = previewRef.current;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

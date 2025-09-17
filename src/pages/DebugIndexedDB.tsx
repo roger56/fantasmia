@@ -258,6 +258,82 @@ const DebugIndexedDB = () => {
     });
   };
 
+  const saveTestCanvas = async () => {
+    try {
+      // Create a test canvas (640x480)
+      const canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 480;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        throw new Error('Cannot create canvas context');
+      }
+      
+      // Draw test pattern
+      ctx.fillStyle = '#4f46e5'; // Primary color
+      ctx.fillRect(0, 0, 640, 480);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '32px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Test Canvas', 320, 240);
+      
+      // Convert to blob using the same pipeline as MediaGenerationDialog
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((result) => {
+          if (result && result.size >= 10240) { // 10KB minimum
+            resolve(result);
+          } else {
+            canvas.toBlob((pngResult) => {
+              if (pngResult && pngResult.size >= 10240) {
+                resolve(pngResult);
+              } else {
+                reject(new Error('Canvas conversion resulted in invalid blob'));
+              }
+            }, 'image/png', 0.92);
+          }
+        }, 'image/webp', 0.92);
+      });
+      
+      // Use the same save pipeline as MediaGenerationDialog
+      const testStoryId = 'test-canvas-story';
+      const normalizedOwnerId = currentProfileId || 'test-profile';
+      
+      const mediaAsset = {
+        id: `${testStoryId}-test-${Date.now()}`,
+        storyId: testStoryId,
+        ownerProfileId: normalizedOwnerId,
+        type: 'image' as const,
+        source: 'canvas-fallback' as const,
+        mime: blob.type || 'image/png',
+        size: blob.size,
+        createdAt: new Date().toISOString(),
+        data: blob
+      };
+      
+      console.info({ step: 'test-canvas-save', mime: mediaAsset.mime, size: blob.size });
+      
+      // Save using the same atomic transaction
+      await fantasMiaDB.saveMediaAssetWithStoryUpdate(mediaAsset, testStoryId, 'am');
+      
+      // Refresh debug data
+      await loadDebugData();
+      
+      toast({
+        title: "✅ Test Canvas Salvato",
+        description: `Canvas salvato con successo: ${(blob.size / 1024).toFixed(1)}KB`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Errore salvataggio test canvas:', error);
+      toast({
+        title: "❌ Errore Test Canvas",
+        description: `Impossibile salvare il canvas: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  };
+
 
   if (loading) {
     return (
@@ -460,6 +536,10 @@ const DebugIndexedDB = () => {
             
             <Button onClick={handleTestBase64} variant="outline">
               🧪 Test Conversione Base64
+            </Button>
+            
+            <Button onClick={saveTestCanvas} variant="outline">
+              🎨 Salva Canvas di Test
             </Button>
           </CardContent>
         </Card>
