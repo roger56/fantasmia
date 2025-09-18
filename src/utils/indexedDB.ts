@@ -529,65 +529,13 @@ class FantasMiaDB {
     });
   }
 
-  // Migrazione record esistenti senza Blob
+  // Migrazione record esistenti senza Blob - DISABILITATA (evita fetch remoti CORS/403)
   async migrateExistingMediaAssets(): Promise<number> {
     console.log('🔄 Starting migration of existing media assets without Blob...');
     
-    let migrated = 0;
-    const allAssets = await this.getAllMediaAssets();
-    
-    for (const asset of allAssets) {
-      // Skip se ha già un Blob valido
-      if (asset.data && asset.data instanceof Blob && asset.data.size > 0) {
-        continue;
-      }
-      
-      // Prova a ricostruire da originalUrl se disponibile
-      if (asset.originalUrl) {
-        try {
-          console.log(`🔄 Migrating asset ${asset.id} from originalUrl`);
-          
-          const response = await fetch(asset.originalUrl, { mode: 'cors' });
-          if (!response.ok) {
-            console.warn(`⚠️ Cannot fetch originalUrl for asset ${asset.id}: HTTP ${response.status}`);
-            
-            // Segna come "needs refetch"
-            const updatedAsset = { ...asset, needsRefetch: true };
-            await this.saveMediaAsset(updatedAsset);
-            continue;
-          }
-          
-          const blob = await response.blob();
-          if (blob.size > 0) {
-            // Aggiorna con Blob valido
-            const updatedAsset = { 
-              ...asset, 
-              data: blob, 
-              size: blob.size,
-              mime: blob.type || asset.mime,
-              needsRefetch: false
-            };
-            await this.saveMediaAsset(updatedAsset);
-            migrated++;
-            
-            console.log(`✅ Migrated asset ${asset.id}: ${blob.size} bytes`);
-          }
-        } catch (error) {
-          console.warn(`⚠️ Migration failed for asset ${asset.id}:`, error);
-          
-          // Segna come "needs refetch"
-          const updatedAsset = { ...asset, needsRefetch: true };
-          await this.saveMediaAsset(updatedAsset);
-        }
-      } else {
-        console.warn(`⚠️ Asset ${asset.id} has no originalUrl and no valid Blob`);
-        const updatedAsset = { ...asset, needsRefetch: true };
-        await this.saveMediaAsset(updatedAsset);
-      }
-    }
-    
-    console.log(`✅ Migration completed: ${migrated} assets restored from originalUrl`);
-    return migrated;
+    // Migration disabled to prevent CORS/403 errors from remote URLs
+    console.log('✅ Migration completed: 0 assets restored from originalUrl (remote fetch disabled)');
+    return 0;
   }
 
   // Migrazione dati legacy da localStorage
@@ -724,13 +672,9 @@ fantasMiaDB.init()
     if (migrated > 0) {
       console.log(`✅ Legacy migration completed: ${migrated} images migrated from localStorage`);
     }
-    // Run existing media assets migration (for URL → Blob conversion)
-    return fantasMiaDB.migrateExistingMediaAssets();
-  })
-  .then((migrated) => {
-    if (migrated > 0) {
-      console.log(`✅ Media migration completed: ${migrated} assets converted to Blob`);
-    }
+    // Skip existing media assets migration (disabled to prevent CORS/403 errors)
+    console.log('🔄 Starting migration of existing media assets without Blob...');
+    console.log('✅ Migration completed: 0 assets restored from originalUrl (remote fetch disabled)');
   })
   .catch(console.error);
 

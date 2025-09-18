@@ -67,11 +67,9 @@ export const migrateStoryImagesToIndexedDB = async (): Promise<void> => {
 };
 
 /**
- * Auto-run migration on app startup
+ * Auto-run migration on app startup - DISABLED (prevents CORS/403 errors)
  */
 export const initImageMigration = () => {
-  // Run migration after a short delay to ensure everything is loaded
-  setTimeout(() => {
-    migrateStoryImagesToIndexedDB();
-  }, 1000);
+  // Migration disabled to prevent remote fetch CORS/403 errors
+  console.log('Image migration from localStorage disabled (prevents CORS errors)');
 };
