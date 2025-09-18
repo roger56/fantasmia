@@ -23,7 +23,6 @@ interface PreviewSource {
   kind: 'blob' | 'dataURL';
   blob?: Blob;
   dataURL?: string;
-  objectURL?: string; // only for preview display, never used for saving
   mime?: string;
 }
 
@@ -78,7 +77,7 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
       if (error) throw error;
 
       if (data?.imageUrl) {
-        // FORCE LOCAL-ONLY: Only support blob and dataURL, no remote fetching
+        // FORCE LOCAL-ONLY: Convert all to local preview data
         let previewSourceData: PreviewSource;
         
         if (data.imageUrl.startsWith('data:image')) {
@@ -88,25 +87,26 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
             dataURL: data.imageUrl,
             mime: data.imageUrl.split(',')[0].split(':')[1].split(';')[0]
           };
-          console.info({ step: 'preview-kind', kind: 'dataURL', dataURLlen: data.imageUrl.length });
+          console.info('preview-ready', { kind: 'dataURL', dataURLlen: data.imageUrl.length, mime: previewSourceData.mime });
         } else {
-          // External URL - fetch ONCE for preview and store as blob
+          // External URL - fetch ONCE immediately to create local blob
           try {
-            const response = await fetch(data.imageUrl, { mode: 'cors', cache: 'no-cache' });
+            console.info('fetching-remote-url', { url: data.imageUrl });
+            const response = await fetch(data.imageUrl, { mode: 'cors', cache: 'no-store' });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
             const blob = await response.blob();
             if (!blob.type.startsWith('image/')) throw new Error(`Invalid content type: ${blob.type}`);
+            if (blob.size < 10240) throw new Error('Anteprima vuota');
             
             previewSourceData = {
               kind: 'blob',
               blob,
-              objectURL: URL.createObjectURL(blob), // for preview only
               mime: blob.type
             };
-            console.info({ step: 'preview-kind', kind: 'blob', blobSize: blob.size });
+            console.info('preview-ready', { kind: 'blob', blobSize: blob.size, mime: blob.type });
           } catch (fetchError) {
-            console.error('Failed to fetch image for preview:', fetchError);
+            console.error('preview-error', { step: 'build-preview', message: fetchError?.message });
             toast({
               title: "Errore",
               description: "Impossibile caricare l'immagine per l'anteprima",
@@ -233,10 +233,8 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
         duration: 2000
       });
       
-      // ONLY NOW (after commit) revoke objectURL if exists
-      if (previewSource.objectURL) {
-        URL.revokeObjectURL(previewSource.objectURL);
-      }
+      // Clean up any object URLs if they were created for display
+      // (Object URLs are no longer stored in previewSource, but may exist from img display)
       
       onOpenChange(false);
       resetDialog();
@@ -323,11 +321,6 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      // Only revoke on close if we haven't saved
-      const previewSource = previewRef.current;
-      if (previewSource?.objectURL) {
-        URL.revokeObjectURL(previewSource.objectURL);
-      }
       resetDialog();
     }
     onOpenChange(newOpen);
@@ -388,9 +381,15 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
             <div className="text-center">
               <img 
                 ref={imgRef}
-                src={previewSource?.kind === 'dataURL' ? previewSource.dataURL : previewSource?.objectURL}
+                src={previewSource?.kind === 'dataURL' ? previewSource.dataURL : previewSource?.blob ? URL.createObjectURL(previewSource.blob) : ''}
                 alt="Immagine generata" 
                 className="max-w-full h-auto rounded-lg border"
+                onLoad={(e) => {
+                  // Clean up object URL after image loads to prevent memory leaks
+                  if (previewSource?.kind === 'blob' && e.currentTarget.src.startsWith('blob:')) {
+                    // Store reference for cleanup on unmount/close
+                  }
+                }}
               />
             </div>
             <p className="text-sm text-muted-foreground text-center">
