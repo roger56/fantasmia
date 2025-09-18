@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, style, storyId, storyTitle, userId } = await req.json()
+    const { prompt, style, storyId, storyTitle, userId, response_format = 'b64_json' } = await req.json()
 
     if (!prompt) {
       throw new Error('Prompt is required')
@@ -99,7 +99,8 @@ serve(async (req) => {
             prompt: promptToUse,
             n: 1,
             size: '1024x1024',
-            quality: 'hd'
+            quality: 'hd',
+            response_format: response_format === 'b64_json' ? 'b64_json' : 'url'
           }
 
       console.log('Request body:', JSON.stringify(requestBody, null, 2))

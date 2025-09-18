@@ -70,7 +70,8 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
           style: selectedStyle,
           storyId,
           storyTitle,
-          userId
+          userId,
+          response_format: 'b64_json' // Force base64 response to avoid remote URLs
         }
       });
 
@@ -81,17 +82,17 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
         let previewSourceData: PreviewSource;
         
         if (data.imageUrl.startsWith('data:image')) {
-          // DataURL from API - keep as dataURL
+          // Base64 from API - convert to dataURL
           previewSourceData = {
             kind: 'dataURL',
             dataURL: data.imageUrl,
             mime: data.imageUrl.split(',')[0].split(':')[1].split(';')[0]
           };
-          console.info('preview-ready', { kind: 'dataURL', dataURLlen: data.imageUrl.length, mime: previewSourceData.mime });
+          console.info('preview-ready', { kind: 'dataURL', dataLen: data.imageUrl.length, mime: previewSourceData.mime });
         } else {
-          // External URL - fetch ONCE immediately to create local blob
+          // Remote URL fallback - fetch ONCE immediately to create local blob
           try {
-            console.info('fetching-remote-url', { url: data.imageUrl });
+            console.warn('Remote URL received, fetching once for local preview:', data.imageUrl);
             const response = await fetch(data.imageUrl, { mode: 'cors', cache: 'no-store' });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
@@ -108,8 +109,8 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
           } catch (fetchError) {
             console.error('preview-error', { step: 'build-preview', message: fetchError?.message });
             toast({
-              title: "Errore",
-              description: "Impossibile caricare l'immagine per l'anteprima",
+              title: "Errore", 
+              description: "Rigenera immagine (formato base64) - impossibile caricare anteprima",
               variant: "destructive"
             });
             return;
