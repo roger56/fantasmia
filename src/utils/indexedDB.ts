@@ -584,10 +584,56 @@ class FantasMiaDB {
     return migrated;
   }
 
-  // Atomic save: media asset + story update
-  async saveMediaAssetWithStoryUpdate(asset: MediaAsset, storyId: string, storyType: 'am' | 'ag'): Promise<void> {
+  // Auto-detect story type if not provided
+  async detectStoryType(storyId: string): Promise<'am' | 'ag' | null> {
     if (!this.db) await this.init();
-    const storeName = storyType === 'am' ? 'am_stories' : 'ag_stories';
+    
+    // Check AM stories first
+    const amTx = this.db!.transaction(['am_stories'], 'readonly');
+    const amStore = amTx.objectStore('am_stories');
+    const amRequest = amStore.get(storyId);
+    
+    return new Promise((resolve) => {
+      amRequest.onsuccess = () => {
+        if (amRequest.result) {
+          resolve('am');
+          return;
+        }
+        
+        // Check AG stories
+        const agTx = this.db!.transaction(['ag_stories'], 'readonly');
+        const agStore = agTx.objectStore('ag_stories');
+        const agRequest = agStore.get(storyId);
+        
+        agRequest.onsuccess = () => {
+          if (agRequest.result) {
+            resolve('ag');
+          } else {
+            resolve(null);
+          }
+        };
+        
+        agRequest.onerror = () => resolve(null);
+      };
+      
+      amRequest.onerror = () => resolve(null);
+    });
+  }
+
+  // Atomic save: media asset + story update with correct flag names
+  async saveMediaAssetWithStoryUpdate(asset: MediaAsset, storyId: string, storyType?: 'am' | 'ag'): Promise<void> {
+    if (!this.db) await this.init();
+    
+    // Auto-detect story type if not provided
+    let detectedType = storyType;
+    if (!detectedType) {
+      detectedType = await this.detectStoryType(storyId);
+      if (!detectedType) {
+        throw new Error(`Story ${storyId} not found in any store`);
+      }
+    }
+    
+    const storeName = detectedType === 'am' ? 'am_stories' : 'ag_stories';
     
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction(['media_assets', storeName], 'readwrite');
@@ -596,18 +642,33 @@ class FantasMiaDB {
       const mediaStore = tx.objectStore('media_assets');
       mediaStore.put(asset);
       
-      // Update story hasImage flag
+      // Update story with correct flag name
       const storyStore = tx.objectStore(storeName);
       const getRequest = storyStore.get(storyId);
       getRequest.onsuccess = () => {
         const story = getRequest.result;
         if (story) {
-          story.hasImage = true;
+          // Use correct flag name based on story type
+          if (detectedType === 'am') {
+            story.hasImage = true;  // AM stories use hasImage
+          } else {
+            story.has_image = true; // AG stories use has_image
+          }
           storyStore.put(story);
         }
       };
       
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        // Emit standardized event
+        window.dispatchEvent(new CustomEvent('media:updated', { 
+          detail: { 
+            storyId: String(storyId),
+            storyType: detectedType,
+            action: 'image-added'
+          } 
+        }));
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
     });
   }

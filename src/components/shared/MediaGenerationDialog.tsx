@@ -207,8 +207,8 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
 
       console.info({ step: 'saving-from', kind: previewSource.kind, finalMime: mediaAsset.mime, finalSize: blob.size });
 
-      // Atomic transaction: save media asset and update story flag
-      await fantasMiaDB.saveMediaAssetWithStoryUpdate(mediaAsset, normalizedStoryId, 'am');
+      // Atomic transaction: save media asset and update story flag (auto-detect type)
+      await fantasMiaDB.saveMediaAssetWithStoryUpdate(mediaAsset, normalizedStoryId);
       console.info({ step: 'idb-write-done', storyId: normalizedStoryId });
       
       // Post-write verification and UI update
