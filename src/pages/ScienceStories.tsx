@@ -14,6 +14,17 @@ const ScienceStories = () => {
 
   useEffect(() => {
     loadScienceStories();
+    
+    // Listen for media updates to refresh the list
+    const handleMediaUpdate = () => {
+      loadScienceStories();
+    };
+    
+    window.addEventListener('media:updated', handleMediaUpdate);
+    
+    return () => {
+      window.removeEventListener('media:updated', handleMediaUpdate);
+    };
   }, []);
 
   const loadScienceStories = async () => {

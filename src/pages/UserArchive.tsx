@@ -26,10 +26,12 @@ const UserArchive = () => {
     // Listen for multiple events that might indicate story changes
     window.addEventListener('user-story-saved', handleStoryUpdate);
     window.addEventListener('am-story-updated', handleStoryUpdate);
+    window.addEventListener('media:updated', handleStoryUpdate);
     
     return () => {
       window.removeEventListener('user-story-saved', handleStoryUpdate);
       window.removeEventListener('am-story-updated', handleStoryUpdate);
+      window.removeEventListener('media:updated', handleStoryUpdate);
     };
   }, []);
 

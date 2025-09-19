@@ -14,6 +14,17 @@ const ReadingStories = () => {
 
   useEffect(() => {
     loadReadingStories();
+    
+    // Listen for media updates to refresh the list
+    const handleMediaUpdate = () => {
+      loadReadingStories();
+    };
+    
+    window.addEventListener('media:updated', handleMediaUpdate);
+    
+    return () => {
+      window.removeEventListener('media:updated', handleMediaUpdate);
+    };
   }, []);
 
   const loadReadingStories = async () => {

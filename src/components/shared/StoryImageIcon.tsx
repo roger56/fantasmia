@@ -38,17 +38,28 @@ const StoryImageIcon: React.FC<StoryImageIconProps> = ({
 
     window.addEventListener('am-story-updated', handleImageUpdate);
     window.addEventListener('ag-story-updated', handleImageUpdate);
+    window.addEventListener('media:updated', handleImageUpdate);
     
     return () => {
       window.removeEventListener('am-story-updated', handleImageUpdate);
       window.removeEventListener('ag-story-updated', handleImageUpdate);
+      window.removeEventListener('media:updated', handleImageUpdate);
     };
   }, [storyId]);
 
   const checkImageStatus = async () => {
     try {
-      const hasImageInDB = await fantasMiaDB.hasImageForStory(storyId);
-      setActualHasImage(hasImageInDB);
+      // Multi-criteria check: story flag OR actual media count
+      const mediaCount = await fantasMiaDB.getMediaCountByStoryId(String(storyId));
+      const hasImageInDB = mediaCount > 0;
+      
+      // Also check if the hasImage flag is set (covers both hasImage and has_image)
+      const flagCheck = hasImage === true;
+      
+      // Green icon if: story.hasImage || story.has_image || media count > 0
+      const shouldShowImage = flagCheck || hasImageInDB;
+      
+      setActualHasImage(shouldShowImage);
     } catch (error) {
       console.error('Error checking image status:', error);
       setActualHasImage(hasImage);
