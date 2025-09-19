@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -96,10 +96,13 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" aria-describedby="dlg-desc-file-upload">
         <DialogHeader>
           <DialogTitle>Carica Immagine da PC</DialogTitle>
         </DialogHeader>
+        <DialogDescription id="dlg-desc-file-upload">
+          Seleziona e carica un'immagine dal tuo dispositivo per associarla alla storia.
+        </DialogDescription>
 
         <div className="space-y-4">
           <div>

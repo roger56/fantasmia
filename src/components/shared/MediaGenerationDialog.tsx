@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -340,10 +340,13 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" aria-describedby="dlg-desc-media-generation">
         <DialogHeader>
           <DialogTitle>Genera Disegno per la Storia</DialogTitle>
         </DialogHeader>
+        <DialogDescription id="dlg-desc-media-generation">
+          Seleziona uno stile artistico e genera un'immagine per accompagnare la tua storia.
+        </DialogDescription>
 
         {!showPreview ? (
           <div className="space-y-4">

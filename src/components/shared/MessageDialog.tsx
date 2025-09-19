@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
 
@@ -33,13 +33,16 @@ const MessageDialog: React.FC<MessageDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-white max-w-md">
+      <DialogContent className="bg-white max-w-md" aria-describedby="dlg-desc-message">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <MessageSquare className="w-5 h-5 mr-2" />
             Messaggio dal Superuser
           </DialogTitle>
         </DialogHeader>
+        <DialogDescription id="dlg-desc-message">
+          Hai ricevuto uno o più messaggi dal Superuser. Leggi il contenuto e conferma la lettura.
+        </DialogDescription>
         <div className="space-y-4">
           {messages.map((message) => (
             <div key={message.id} className="bg-blue-50 p-4 rounded-lg border border-blue-200">

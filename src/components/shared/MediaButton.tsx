@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Palette, Loader2, Download, Bug, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -400,10 +400,13 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
       {/* Image Display Dialog */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto" aria-describedby="dlg-desc-image-generated">
           <DialogHeader>
             <DialogTitle>Immagine Generata - {storyTitle}</DialogTitle>
           </DialogHeader>
+          <DialogDescription id="dlg-desc-image-generated">
+            Visualizza l'immagine generata per la storia. Puoi scaricarla sul tuo dispositivo.
+          </DialogDescription>
           {generatedImage ? (
             <div className="flex flex-col items-center space-y-4">
               <img
@@ -465,10 +468,13 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
       {/* Comment Dialog */}
       <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby="dlg-desc-comment">
           <DialogHeader>
             <DialogTitle>Aggiungi un commento (opzionale)</DialogTitle>
           </DialogHeader>
+          <DialogDescription id="dlg-desc-comment">
+            Personalizza l'immagine aggiungendo specifiche o dettagli desiderati.
+          </DialogDescription>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Aggiungi delle specifiche per personalizzare l'immagine:
@@ -496,13 +502,16 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
       {/* Authentication Warning Dialog */}
       <Dialog open={showAuthWarning} onOpenChange={setShowAuthWarning}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby="dlg-desc-auth-warning">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-orange-500" />
               Accesso Richiesto
             </DialogTitle>
           </DialogHeader>
+          <DialogDescription id="dlg-desc-auth-warning">
+            I servizi media richiedono l'autenticazione utente per funzionare.
+          </DialogDescription>
           <div className="space-y-4">
             <Alert>
               <AlertTriangle className="h-4 w-4" />

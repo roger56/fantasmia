@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { ArrowLeft, User, Mail, Key, BookOpen, Edit, Trash2 } from 'lucide-react';
 import { getUsers, getStories, updateUser, getAllStoriesForSuperuser } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
@@ -212,10 +212,13 @@ const SuperuserUsers = () => {
 
         {/* Password Change Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="bg-white">
+          <DialogContent className="bg-white" aria-describedby="dlg-desc-password-change">
             <DialogHeader>
               <DialogTitle>Modifica Password - {selectedUser?.name}</DialogTitle>
             </DialogHeader>
+            <DialogDescription id="dlg-desc-password-change">
+              Inserisci una nuova password per questo utente.
+            </DialogDescription>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -260,10 +263,13 @@ const SuperuserUsers = () => {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="bg-white">
+          <DialogContent className="bg-white" aria-describedby="dlg-desc-delete-user">
             <DialogHeader>
               <DialogTitle>Conferma Eliminazione</DialogTitle>
             </DialogHeader>
+            <DialogDescription id="dlg-desc-delete-user">
+              Conferma l'eliminazione definitiva di questo utente dal sistema.
+            </DialogDescription>
             <div className="space-y-4">
               <p className="text-slate-700">
                 Sei sicuro di voler eliminare l'utente <strong>{userToDelete?.name}</strong>?

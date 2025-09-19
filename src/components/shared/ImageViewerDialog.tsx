@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -128,8 +128,8 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader className="flex flex-row items-center justify-between">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden" aria-describedby="dlg-desc-image-viewer">
+         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle>Immagine della Storia</DialogTitle>
           <Button
             variant="ghost"
@@ -140,6 +140,9 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
             <X className="h-4 w-4" />
           </Button>
         </DialogHeader>
+        <DialogDescription id="dlg-desc-image-viewer">
+          Visualizza l'immagine associata alla storia. Puoi scaricarla o eliminarla da qui.
+        </DialogDescription>
         
         <div className="space-y-4">
           <div className="relative">

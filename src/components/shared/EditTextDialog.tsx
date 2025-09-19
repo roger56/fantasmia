@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -36,10 +36,13 @@ const EditTextDialog: React.FC<EditTextDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" aria-describedby="dlg-desc-edit-text">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
+        <DialogDescription id="dlg-desc-edit-text">
+          Modifica il contenuto del testo della storia.
+        </DialogDescription>
 
         <div className="space-y-4">
           <div>
