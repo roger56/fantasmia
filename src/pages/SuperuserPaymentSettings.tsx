@@ -41,10 +41,13 @@ const SuperuserPaymentSettings = () => {
 
     fetchTotalCost();
     
-    // Set up auto-refresh every 30 seconds to update costs
-    const interval = setInterval(fetchTotalCost, 30000);
-    
-    return () => clearInterval(interval);
+    // Disable polling in development to avoid CORS/504 errors
+    if (!import.meta.env.DEV) {
+      // Set up auto-refresh every 30 seconds to update costs
+      const interval = setInterval(fetchTotalCost, 30000);
+      
+      return () => clearInterval(interval);
+    }
   }, [toast]);
 
   return (
