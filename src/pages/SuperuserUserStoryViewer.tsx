@@ -413,6 +413,7 @@ const SuperuserUserStoryViewer = () => {
           isEditing={false}
           onEditToggle={() => setShowEditDialog(true)}
           onContentChange={handleContentChange}
+          storyId={id}
         />
 
         {/* Media Status */}

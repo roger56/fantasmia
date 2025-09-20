@@ -12,6 +12,7 @@ interface ModifyMenuProps {
   onEditToggle: () => void;
   onContentChange?: (content: string) => void;
   storyTitle?: string;
+  storyId?: string;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   onEditToggle,
   onContentChange,
   storyTitle = '',
+  storyId,
   className = ""
 }) => {
   const [showTextImprover, setShowTextImprover] = useState(false);
@@ -87,6 +89,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
             storyContent={storyContent}
             onContentChange={onContentChange}
             storyTitle={storyTitle}
+            storyId={storyId}
           />
         </div>
       )}

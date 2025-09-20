@@ -27,11 +27,13 @@ const UserArchive = () => {
     window.addEventListener('user-story-saved', handleStoryUpdate);
     window.addEventListener('am-story-updated', handleStoryUpdate);
     window.addEventListener('media:updated', handleStoryUpdate);
+    window.addEventListener('story:updated', handleStoryUpdate); // AI improvement updates
     
     return () => {
       window.removeEventListener('user-story-saved', handleStoryUpdate);
       window.removeEventListener('am-story-updated', handleStoryUpdate);
       window.removeEventListener('media:updated', handleStoryUpdate);
+      window.removeEventListener('story:updated', handleStoryUpdate);
     };
   }, []);
 

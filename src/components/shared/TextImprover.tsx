@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,7 +24,7 @@ const TextImprover: React.FC<TextImproverProps> = ({
   onContentChange,
   storyTitle = '',
   onSave,
-  storyId,
+  storyId: propStoryId,
   className = ''
 }) => {
   const [isImproving, setIsImproving] = useState(false);
@@ -33,6 +34,26 @@ const TextImprover: React.FC<TextImproverProps> = ({
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { toast } = useToast();
+  const { id: routeId } = useParams<{ id: string }>();
+
+  // Reliable storyId getter following the requirements
+  const getReliableStoryId = (): string | null => {
+    // a) dal param del route (/story/[id])
+    if (routeId) {
+      const SID = String(routeId).trim();
+      if (SID) return SID;
+    }
+    
+    // b) dal prop storyId (props.story?.id)
+    if (propStoryId) {
+      const SID = String(propStoryId).trim();
+      if (SID) return SID;
+    }
+    
+    // c) dallo stato globale (currentStoryId) - TODO: implement if needed
+    // For now, return null if neither route nor prop provided
+    return null;
+  };
 
   const styleOptions = [
     { value: 'ironico' as const, label: 'Ironico', description: 'Tono ironico e divertente' },
@@ -93,93 +114,132 @@ const TextImprover: React.FC<TextImproverProps> = ({
   };
 
   const confirmReplace = async () => {
-    console.log('💾 Saving improved text for story:', storyId);
+    const SID = getReliableStoryId();
     
-    // Update UI immediately
-    onContentChange(improvedText);
+    // Requirement 1: Validate storyId
+    if (!SID) {
+      toast({
+        title: "Errore: storia non selezionata",
+        description: "Impossibile salvare il testo migliorato senza un ID storia valido",
+        variant: "destructive"
+      });
+      return; // ABORT
+    }
     
-    // If we have a storyId, update the story in IndexedDB
-    if (storyId) {
-      try {
-        // Load current story from IndexedDB
-        await fantasMiaDB.init();
-        const transaction = fantasMiaDB['db']!.transaction(['am_stories'], 'readwrite');
-        const store = transaction.objectStore('am_stories');
-        const getRequest = store.get(storyId);
+    // Requirement 4: Telemetry before save
+    console.info('AI-IMPROVE: save-start', { 
+      storyId: SID, 
+      titleLen: storyTitle?.length, 
+      contentLen: improvedText?.length 
+    });
+    
+    try {
+      // Requirement 2: Atomic update in IndexedDB
+      await fantasMiaDB.init();
+      
+      return new Promise<void>((resolve, reject) => {
+        const tx = fantasMiaDB['db']!.transaction(['am_stories'], 'readwrite');
+        const store = tx.objectStore('am_stories');
+        const getRequest = store.get(SID);
         
         getRequest.onsuccess = () => {
           const currentStory = getRequest.result;
-          if (currentStory) {
-            // Update content and title if modified
-            currentStory.text = improvedText;
-            
-            // Check if title was also improved (basic detection)
-            const lines = improvedText.split('\n');
-            const firstLine = lines[0]?.trim();
-            if (firstLine && firstLine.length < 100 && !firstLine.includes('.') && firstLine !== currentStory.title) {
-              currentStory.title = firstLine;
-              // Remove title from content
-              currentStory.text = lines.slice(1).join('\n').trim();
-            }
-            
-            // Save updated story
-            const putRequest = store.put(currentStory);
-            putRequest.onsuccess = () => {
-              console.log('✅ Story updated in IndexedDB');
-              
-              // Emit event for real-time UI updates
-              window.dispatchEvent(new CustomEvent('am-story-updated', { 
-                detail: { 
-                  storyId, 
-                  action: 'text-updated',
-                  story: currentStory
-                } 
-              }));
-              
-              toast({
-                title: "Successo",
-                description: "Storia sostituita con il testo migliorato e salvata nell'archivio",
-              });
-            };
-            
-            putRequest.onerror = () => {
-              console.error('❌ Error updating story:', putRequest.error);
-              toast({
-                title: "Errore",
-                description: "Errore nel salvare la storia nell'archivio",
-                variant: "destructive"
-              });
-            };
+          
+          if (!currentStory) {
+            // Story not found in AM
+            toast({
+              title: "Storia non trovata (AM)",
+              description: "La storia non è stata trovata nell'archivio utente",
+              variant: "destructive"
+            });
+            reject(new Error('Story not found in AM store'));
+            return; // ABORT
           }
+          
+          // Extract title if it was improved (first line detection)
+          const lines = improvedText.split('\n');
+          const firstLine = lines[0]?.trim();
+          let newTitle = currentStory.title;
+          let newContent = improvedText;
+          
+          // Check if first line looks like a title
+          if (firstLine && firstLine.length < 100 && !firstLine.includes('.') && firstLine !== currentStory.title) {
+            newTitle = firstLine;
+            newContent = lines.slice(1).join('\n').trim(); // Remove title from content
+          }
+          
+          // Update story fields (keeping invariant fields)
+          const updatedStory = {
+            ...currentStory,
+            title: newTitle,
+            text: newContent,
+            content: newContent, // Fallback field name
+            updatedAt: new Date().toISOString()
+            // Keep invariant: id, ownerProfileId, createdAt, media fields
+          };
+          
+          // Atomic put operation
+          const putRequest = store.put(updatedStory);
+          
+          putRequest.onsuccess = () => {
+            // Requirement 4: Telemetry after save
+            console.info('AI-IMPROVE: save-done', { storyId: SID });
+            
+            // Requirement 3: UI refresh event
+            window.dispatchEvent(new CustomEvent('story:updated', { 
+              detail: { storyId: SID } 
+            }));
+            
+            // Update local UI immediately
+            onContentChange(newContent);
+            
+            toast({
+              title: "Successo",
+              description: "Storia sostituita con il testo migliorato e salvata nell'archivio",
+            });
+            
+            setImprovedText('');
+            setSelectedStyle(null);
+            setShowReplaceConfirm(false);
+            
+            resolve();
+          };
+          
+          putRequest.onerror = () => {
+            console.error('❌ AI-IMPROVE: IndexedDB put failed:', putRequest.error);
+            toast({
+              title: "Errore",
+              description: "Errore nel salvare la storia nell'archivio",
+              variant: "destructive"
+            });
+            reject(putRequest.error);
+          };
         };
         
         getRequest.onerror = () => {
-          console.error('❌ Error loading story for update:', getRequest.error);
+          console.error('❌ AI-IMPROVE: IndexedDB get failed:', getRequest.error);
           toast({
             title: "Errore",
             description: "Errore nel caricare la storia per l'aggiornamento",
             variant: "destructive"
           });
+          reject(getRequest.error);
         };
         
-      } catch (error) {
-        console.error('❌ Error saving improved text:', error);
-        toast({
-          title: "Errore",
-          description: "Errore nel salvare la storia nell'archivio",
-          variant: "destructive"
-        });
-      }
-    } else {
+        tx.onerror = () => {
+          console.error('❌ AI-IMPROVE: Transaction failed:', tx.error);
+          reject(tx.error);
+        };
+      });
+      
+    } catch (error) {
+      console.error('❌ AI-IMPROVE: General error:', error);
       toast({
-        title: "Successo",
-        description: "Storia sostituita con il testo migliorato",
+        title: "Errore",
+        description: "Errore nel salvare la storia nell'archivio",
+        variant: "destructive"
       });
     }
-    
-    setImprovedText('');
-    setSelectedStyle(null);
-    setShowReplaceConfirm(false);
   };
 
   const handleSave = () => {
