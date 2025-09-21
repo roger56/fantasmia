@@ -70,11 +70,11 @@ const SuperUser = () => {
             </CardHeader>
             <CardContent>
               <Button 
-                variant="outline"
+                onClick={() => navigate('/superuser-users')}
                 className="w-full"
-                disabled
+                variant="outline"
               >
-                Prossimamente
+                Gestione Utenti
               </Button>
             </CardContent>
           </Card>

@@ -11,6 +11,10 @@ interface Profile {
   name: string;
   created_at: string;
   last_access: string;
+  email?: string;
+  user_type?: string;
+  password_hash?: string;
+  updated_at?: string;
 }
 
 interface AMStory {
@@ -130,11 +134,25 @@ class FantasMiaDB {
     });
   }
 
+  async getAllProfiles(): Promise<Profile[]> {
+    return this.getProfiles();
+  }
+
+  async deleteProfile(profileId: string): Promise<void> {
+    const transaction = this.db!.transaction(['profiles'], 'readwrite');
+    const store = transaction.objectStore('profiles');
+    await store.delete(profileId);
+  }
+
   // AM Stories Management (User Stories)
   async saveAMStory(story: AMStory): Promise<void> {
     const transaction = this.db!.transaction(['am_stories'], 'readwrite');
     const store = transaction.objectStore('am_stories');
     await store.put(story);
+  }
+
+  async getAMStoriesByOwner(ownerProfileId: string): Promise<AMStory[]> {
+    return this.getAMStoriesByUser(ownerProfileId);
   }
 
   async getAMStoriesByUser(ownerProfileId: string): Promise<AMStory[]> {
@@ -300,6 +318,33 @@ class FantasMiaDB {
         resolve();
       };
       request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteMediaAssetsByStoryId(storyId: string): Promise<void> {
+    if (!this.db) await this.init();
+    const assets = await this.getMediaAssetsByStoryId(storyId);
+    
+    if (assets.length === 0) return;
+    
+    const transaction = this.db!.transaction(['media_assets'], 'readwrite');
+    const store = transaction.objectStore('media_assets');
+    
+    return new Promise((resolve, reject) => {
+      let deletedCount = 0;
+      const totalAssets = assets.length;
+      
+      assets.forEach(asset => {
+        const request = store.delete(asset.id);
+        request.onsuccess = () => {
+          deletedCount++;
+          if (deletedCount === totalAssets) {
+            console.log('🗑️ All media assets deleted for story:', storyId, '(count:', totalAssets, ')');
+            resolve();
+          }
+        };
+        request.onerror = () => reject(request.error);
+      });
     });
   }
 

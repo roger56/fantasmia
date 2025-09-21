@@ -1,303 +1,488 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { ArrowLeft, User, Mail, Key, BookOpen, Edit, Trash2 } from 'lucide-react';
-import { getUsers, getStories, updateUser, getAllStoriesForSuperuser } from '@/utils/userStorage';
-import { useToast } from '@/hooks/use-toast';
-import HomeButton from '@/components/HomeButton';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Copy, Eye, Key, Trash2, ChevronDown, Users } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import StoryLayout from '@/components/shared/StoryLayout';
+import { hashPassword, generateSecurePassword, isPasswordStrong } from '@/utils/authSecurity';
+
+interface UserProfile {
+  id: string;
+  name: string;
+  email?: string;
+  user_type: string;
+  created_at: string;
+  storyCount: number;
+  stories: Array<{ id: string; title: string }>;
+}
+
+interface PasswordResetData {
+  password: string;
+  confirmPassword: string;
+  isGenerated: boolean;
+}
 
 const SuperuserUsers = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [users, setUsers] = useState<any[]>([]);
-  const [userStats, setUserStats] = useState<{[key: string]: number}>({});
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Modal states
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [passwordData, setPasswordData] = useState<PasswordResetData>({
+    password: '',
+    confirmPassword: '',
+    isGenerated: false
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const allUsers = getUsers();
-      const allStories = await getAllStoriesForSuperuser();
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const { fantasMiaDB } = await import('@/utils/indexedDB');
+      await fantasMiaDB.init();
       
-      setUsers(allUsers);
+      // Carica tutti i profili
+      const profiles = await fantasMiaDB.getAllProfiles();
       
-      // Calculate story count for each user correctly using authorId
-      const stats: {[key: string]: number} = {};
-      allUsers.forEach(user => {
-        const userStories = allStories.filter(story => story.authorId === user.id);
-        stats[user.id] = userStories.length;
+      // Per ogni profilo, conta le storie e carica i titoli
+      const usersWithStats = await Promise.all(
+        profiles.map(async (profile: any) => {
+          const stories = await fantasMiaDB.getAMStoriesByOwner(profile.id);
+          const storyTitles = stories
+            .slice(0, 20) // Max 20 titoli
+            .map((story: any) => ({ id: story.id, title: story.title || 'Senza titolo' }));
+          
+          return {
+            id: profile.id,
+            name: profile.name || 'Utente senza nome',
+            email: profile.email || '',
+            user_type: profile.user_type || 'user',
+            created_at: profile.created_at || new Date().toISOString(),
+            storyCount: stories.length,
+            stories: storyTitles
+          };
+        })
+      );
+
+      setUsers(usersWithStats);
+      console.log('👥 SUPERUSER-USERS: Caricati', usersWithStats.length, 'utenti');
+    } catch (error) {
+      console.error('❌ SUPERUSER-USERS: Errore caricamento utenti:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare gli utenti",
+        variant: "destructive"
       });
-      setUserStats(stats);
-    };
-    
-    fetchData();
-  }, []);
-
-  const handlePasswordChange = (user: any) => {
-    setSelectedUser(user);
-    setNewPassword('');
-    setConfirmPassword('');
-    setIsDialogOpen(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePasswordUpdate = () => {
-    if (!newPassword.trim()) {
-      toast({
-        title: "Errore",
-        description: "Inserisci una nuova password",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Errore",
-        description: "Le password non corrispondono",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Update user password
-    const updatedUser = { ...selectedUser, password: newPassword };
-    updateUser(updatedUser);
-    
-    // Update local state
-    setUsers(prev => prev.map(u => u.id === selectedUser.id ? updatedUser : u));
-    
-    toast({
-      title: "Password aggiornata",
-      description: `Password di ${selectedUser.name} aggiornata con successo`,
+  const generateTempPassword = () => {
+    const tempPassword = generateSecurePassword(12);
+    setPasswordData({
+      password: tempPassword,
+      confirmPassword: tempPassword,
+      isGenerated: true
     });
-
-    setIsDialogOpen(false);
-    setSelectedUser(null);
-    setNewPassword('');
-    setConfirmPassword('');
   };
 
-  const handleDeleteUser = (user: any) => {
-    setUserToDelete(user);
-    setIsDeleteDialogOpen(true);
-  };
+  const handlePasswordReset = async () => {
+    if (!selectedUser) return;
 
-  const confirmDeleteUser = async () => {
-    if (userToDelete) {
-      // Get all users and remove the selected one
-      const allUsers = getUsers();
-      const updatedUsers = allUsers.filter(u => u.id !== userToDelete.id);
-      localStorage.setItem('fantasmia_users', JSON.stringify(updatedUsers));
-      
-      // Update local state
-      setUsers(updatedUsers);
-      
-      // Recalculate stats
-      const allStories = await getAllStoriesForSuperuser();
-      const stats: {[key: string]: number} = {};
-      updatedUsers.forEach(user => {
-        const userStories = allStories.filter(story => story.authorId === user.id);
-        stats[user.id] = userStories.length;
+    // Validazione
+    if (passwordData.password.length < 8) {
+      toast({
+        title: "Password troppo corta",
+        description: "La password deve essere di almeno 8 caratteri",
+        variant: "destructive"
       });
-      setUserStats(stats);
+      return;
+    }
+
+    if (!isPasswordStrong(passwordData.password)) {
+      toast({
+        title: "Password non sicura",
+        description: "La password deve contenere almeno 1 lettera maiuscola, 1 minuscola, 1 numero e 1 carattere speciale",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!passwordData.isGenerated && passwordData.password !== passwordData.confirmPassword) {
+      toast({
+        title: "Password non corrispondenti",
+        description: "La password e la conferma devono essere identiche",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { fantasMiaDB } = await import('@/utils/indexedDB');
+      const hashedPassword = await hashPassword(passwordData.password);
+      
+      // Aggiorna il profilo con la nuova password hash
+      const updatedProfile = {
+        id: selectedUser.id,
+        name: selectedUser.name,
+        created_at: selectedUser.created_at,
+        last_access: new Date().toISOString(),
+        email: selectedUser.email,
+        user_type: selectedUser.user_type,
+        password_hash: hashedPassword,
+        updated_at: new Date().toISOString()
+      };
+      
+      await fantasMiaDB.saveProfile(updatedProfile);
+      
+      toast({
+        title: "Password aggiornata",
+        description: `Password aggiornata per ${selectedUser.name}`,
+        variant: "default"
+      });
+
+      // Reset modal
+      setShowPasswordModal(false);
+      setPasswordData({ password: '', confirmPassword: '', isGenerated: false });
+      setSelectedUser(null);
+      
+      // Emit event
+      window.dispatchEvent(new CustomEvent('users:changed'));
+      
+    } catch (error) {
+      console.error('❌ SUPERUSER-USERS: Errore reset password:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile aggiornare la password",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    // Impedire eliminazione superuser
+    if (selectedUser.user_type === 'superuser') {
+      toast({
+        title: "Operazione non consentita",
+        description: "Non è possibile eliminare un utente superuser",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { fantasMiaDB } = await import('@/utils/indexedDB');
+      
+      // Elimina tutte le storie dell'utente
+      const userStories = await fantasMiaDB.getAMStoriesByOwner(selectedUser.id);
+      for (const story of userStories) {
+        await fantasMiaDB.deleteAMStory(story.id);
+        // Elimina anche i media associati
+        await fantasMiaDB.deleteMediaAssetsByStoryId(story.id);
+      }
+      
+      // Elimina il profilo
+      await fantasMiaDB.deleteProfile(selectedUser.id);
       
       toast({
         title: "Utente eliminato",
-        description: `${userToDelete.name} è stato eliminato con successo`,
+        description: `${selectedUser.name} e tutte le sue ${selectedUser.storyCount} storie sono stati eliminati`,
+        variant: "default"
       });
+
+      // Aggiorna la lista rimuovendo l'utente
+      setUsers(prev => prev.filter(user => user.id !== selectedUser.id));
       
-      setIsDeleteDialogOpen(false);
-      setUserToDelete(null);
+      // Reset modal
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+      
+      // Emit event
+      window.dispatchEvent(new CustomEvent('users:changed'));
+      
+    } catch (error) {
+      console.error('❌ SUPERUSER-USERS: Errore eliminazione utente:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile eliminare l'utente",
+        variant: "destructive"
+      });
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <HomeButton />
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6 pt-4">
-          <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/superuser')}
-              className="mr-4"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800">Gestione Utenti</h1>
-              <p className="text-slate-600">Visualizza tutti i profili utente</p>
-            </div>
-          </div>
+  const copyPasswordToClipboard = () => {
+    navigator.clipboard.writeText(passwordData.password);
+    toast({
+      title: "Password copiata",
+      description: "Password temporanea copiata negli appunti",
+    });
+  };
+
+  useEffect(() => {
+    loadUsers();
+
+    // Listen for user changes
+    const handleUsersChanged = () => {
+      loadUsers();
+    };
+
+    window.addEventListener('users:changed', handleUsersChanged);
+    return () => window.removeEventListener('users:changed', handleUsersChanged);
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <StoryLayout
+        title="Gestione Utenti"
+        subtitle="Caricamento utenti..."
+        onBack={() => navigate('/superuser')}
+      >
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
+      </StoryLayout>
+    );
+  }
 
-        {users.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <User className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                Nessun utente trovato
-              </h3>
-              <p className="text-slate-600">
-                Non ci sono ancora utenti registrati
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="overflow-x-auto">
-            <div className="min-w-full">
-              <div className="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">
+  return (
+    <StoryLayout
+      title="Gestione Utenti"
+      subtitle={`${users.length} utenti registrati`}
+      onBack={() => navigate('/superuser')}
+    >
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Lista Utenti
+            </CardTitle>
+            <CardDescription>
+              Gestisci password, visualizza storie ed elimina utenti
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Ruolo</TableHead>
+                  <TableHead>Creato il</TableHead>
+                  <TableHead>Storie</TableHead>
+                  <TableHead>Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {users.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg bg-white">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 text-slate-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-800 truncate">{user.name}</p>
-                        <p className="text-xs text-slate-500">ID: {user.id.slice(0, 8)}...</p>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm flex-shrink-0">
-                        <Key className="w-3 h-3 text-slate-500" />
-                        <span className="text-slate-600">{user.password || 'N/A'}</span>
-                      </div>
-                      {user.email && (
-                        <div className="flex items-center gap-2 text-sm flex-shrink-0">
-                          <Mail className="w-3 h-3 text-slate-500" />
-                          <span className="text-slate-600 truncate max-w-32">{user.email}</span>
-                        </div>
-                      )}
-                       <div className="flex items-center gap-2 text-sm flex-shrink-0">
-                         <BookOpen className="w-3 h-3 text-slate-500" />
-                         <span className="font-semibold text-slate-800">{userStats[user.id] || 0}</span>
-                       </div>
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell>{user.email || 'Non specificata'}</TableCell>
+                    <TableCell>
+                      <Badge variant={user.user_type === 'superuser' ? 'default' : 'secondary'}>
+                        {user.user_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{formatDate(user.created_at)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{user.storyCount}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePasswordChange(user);
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowPasswordModal(true);
                           }}
-                          className="ml-2"
                         >
-                          <Edit className="w-3 h-3 mr-1" />
-                          Password
+                          <Key className="w-4 h-4" />
                         </Button>
+                        
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteUser(user);
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowDeleteModal(true);
                           }}
-                          className="ml-1 text-red-600 hover:text-red-700"
+                          disabled={user.user_type === 'superuser'}
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
-                     </div>
-                   </div>
+
+                        {user.stories.length > 0 && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Eye className="w-4 h-4" />
+                                <ChevronDown className="w-3 h-3 ml-1" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="max-w-xs">
+                              {user.stories.map((story) => (
+                                <DropdownMenuItem
+                                  key={story.id}
+                                  onClick={() => navigate(`/superuser-user-story-viewer/${story.id}`)}
+                                  className="cursor-pointer"
+                                >
+                                  <span className="truncate">{story.title}</span>
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </div>
-            </div>
-          </div>
-        )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
-        {/* Password Change Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="bg-white" aria-describedby="dlg-desc-password-change">
+        {/* Password Reset Modal */}
+        <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>Modifica Password - {selectedUser?.name}</DialogTitle>
+              <DialogTitle>Reset Password - {selectedUser?.name}</DialogTitle>
+              <DialogDescription>
+                Scegli come impostare la nuova password per l'utente
+              </DialogDescription>
             </DialogHeader>
-            <DialogDescription id="dlg-desc-password-change">
-              Inserisci una nuova password per questo utente.
-            </DialogDescription>
+
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Nuova Password
-                </label>
-                <Input
-                  type="password"
-                  placeholder="Inserisci nuova password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Conferma Password
-                </label>
-                <Input
-                  type="password"
-                  placeholder="Conferma nuova password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={generateTempPassword}
                   className="flex-1"
                 >
-                  Annulla
-                </Button>
-                <Button 
-                  onClick={handlePasswordUpdate}
-                  className="flex-1"
-                >
-                  Aggiorna Password
+                  Genera Password Temporanea
                 </Button>
               </div>
+
+              {passwordData.isGenerated && (
+                <div className="p-4 bg-muted rounded-lg">
+                  <Label>Password generata:</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      value={passwordData.password}
+                      readOnly
+                      className="font-mono"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={copyPasswordToClipboard}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Copia questa password per fornirla all'utente
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="manual-password">Oppure imposta manualmente:</Label>
+                <Input
+                  id="manual-password"
+                  type="password"
+                  placeholder="Nuova password (min 8 caratteri)"
+                  value={passwordData.isGenerated ? '' : passwordData.password}
+                  onChange={(e) => setPasswordData(prev => ({
+                    password: e.target.value,
+                    confirmPassword: prev.confirmPassword,
+                    isGenerated: false
+                  }))}
+                />
+              </div>
+
+              {!passwordData.isGenerated && passwordData.password && (
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Conferma password:</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    placeholder="Ripeti la password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData(prev => ({
+                      ...prev,
+                      confirmPassword: e.target.value
+                    }))}
+                  />
+                </div>
+              )}
             </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowPasswordModal(false)}>
+                Annulla
+              </Button>
+              <Button 
+                onClick={handlePasswordReset}
+                disabled={!passwordData.password}
+              >
+                Aggiorna Password
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="bg-white" aria-describedby="dlg-desc-delete-user">
-            <DialogHeader>
-              <DialogTitle>Conferma Eliminazione</DialogTitle>
-            </DialogHeader>
-            <DialogDescription id="dlg-desc-delete-user">
-              Conferma l'eliminazione definitiva di questo utente dal sistema.
-            </DialogDescription>
-            <div className="space-y-4">
-              <p className="text-slate-700">
-                Sei sicuro di voler eliminare l'utente <strong>{userToDelete?.name}</strong>?
-              </p>
-              <p className="text-sm text-red-600">
-                Questa azione non può essere annullata.
-              </p>
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsDeleteDialogOpen(false)}
-                  className="flex-1"
-                >
-                  Annulla
-                </Button>
-                <Button 
-                  onClick={confirmDeleteUser}
-                  variant="destructive"
-                  className="flex-1"
-                >
-                  Elimina
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Delete Confirmation Modal */}
+        <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+              <AlertDialogDescription>
+                L'utente <strong>{selectedUser?.name}</strong> ha{' '}
+                <strong>{selectedUser?.storyCount} storie</strong> associate.
+                <br /><br />
+                Eliminando l'utente verranno rimossi:
+                <br />• Il profilo utente
+                <br />• Tutte le {selectedUser?.storyCount} storie
+                <br />• Tutti i media associati
+                <br /><br />
+                <strong>Questa operazione è irreversibile.</strong>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteUser}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Elimina tutto
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-    </div>
+    </StoryLayout>
   );
 };
 
