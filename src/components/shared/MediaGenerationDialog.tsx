@@ -223,6 +223,7 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
             action: 'image-added'
           } 
         }));
+        window.dispatchEvent(new CustomEvent('am:changed')); // REQUISITO: Lista reattiva
       } else {
         throw new Error('Post-save verification failed: media count is 0');
       }

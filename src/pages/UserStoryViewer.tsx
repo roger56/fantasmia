@@ -8,6 +8,7 @@ import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle } from 'lucide-re
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useTTS } from '@/hooks/useTTS';
 import { useTranslation } from '@/hooks/useTranslation';
+import { canAccessStory, getCurrentProfileId } from '@/utils/profileManager';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import ShareMenu from '@/components/shared/ShareMenu';
@@ -22,6 +23,7 @@ const UserStoryViewer = () => {
   const navigate = useNavigate();
   const [story, setStory] = useState<AMStory | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [mediaAsset, setMediaAsset] = useState<string | null>(null);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -73,6 +75,19 @@ const UserStoryViewer = () => {
       request.onsuccess = () => {
         const result = request.result;
         if (result) {
+          // SECURITY CHECK: Verifica proprietà storia
+          if (!canAccessStory(result)) {
+            console.warn('🚫 ACCESSO NEGATO: Tentativo accesso storia non di proprietà', {
+              storyId: id,
+              storyOwner: result.ownerProfileId,
+              currentProfile: getCurrentProfileId()
+            });
+            setAccessDenied(true);
+            setStory(null);
+            setLoading(false);
+            return;
+          }
+          
           console.log({ action: "load-am-story", id, found: true, story: result });
           setStory(result);
           loadMediaAsset(id);
@@ -205,6 +220,7 @@ const UserStoryViewer = () => {
       window.dispatchEvent(new CustomEvent('am-story-updated', { 
         detail: { storyId: story.id, action: 'modified' } 
       }));
+      window.dispatchEvent(new CustomEvent('am:changed')); // REQUISITO: Lista reattiva
       
       toast({
         title: "Testo salvato",
@@ -268,17 +284,29 @@ const UserStoryViewer = () => {
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto pt-20 space-y-6">
-          <Alert className="border-red-500 bg-red-50">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
-            <AlertDescription className="text-red-800">
+          <Alert className={accessDenied ? "border-red-500 bg-red-50" : "border-yellow-500 bg-yellow-50"}>
+            <AlertTriangle className={`w-5 h-5 ${accessDenied ? "text-red-600" : "text-yellow-600"}`} />
+            <AlertDescription className={accessDenied ? "text-red-800" : "text-yellow-800"}>
               <div className="space-y-3">
-                <div><strong>Storia non trovata in AM</strong></div>
-                <div>ID: {id || 'non specificato'}</div>
+                {accessDenied ? (
+                  <>
+                    <div><strong>Accesso negato</strong></div>
+                    <div>Non hai i permessi per visualizzare questa storia</div>
+                  </>
+                ) : (
+                  <>
+                    <div><strong>Storia non trovata in AM</strong></div>
+                    <div>ID: {id || 'non specificato'}</div>
+                  </>
+                )}
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={handleBack}
-                  className="border-red-500 text-red-700 hover:bg-red-100"
+                  className={accessDenied 
+                    ? "border-red-500 text-red-700 hover:bg-red-100"
+                    : "border-yellow-500 text-yellow-700 hover:bg-yellow-100"
+                  }
                 >
                   Torna a /user-archive
                 </Button>

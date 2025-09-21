@@ -26,18 +26,26 @@ const UserArchive = () => {
         loadUserStories(); // Fallback to full reload
       }
     };
+
+    // REQUISITO: Listener per eventi am:changed
+    const handleAMChanged = () => {
+      console.log('🔄 USER-ARCHIVE: Rilevato am:changed');
+      loadUserStories();
+    };
     
     // Listen for multiple events that might indicate story changes
     window.addEventListener('user-story-saved', handleStoryUpdate);
     window.addEventListener('am-story-updated', handleStoryUpdate);
     window.addEventListener('media:updated', handleStoryUpdate);
     window.addEventListener('story:updated', handleStoryUpdate); // AI improvement updates
+    window.addEventListener('am:changed', handleAMChanged); // REQUISITO: Lista reattiva
     
     return () => {
       window.removeEventListener('user-story-saved', handleStoryUpdate);
       window.removeEventListener('am-story-updated', handleStoryUpdate);
       window.removeEventListener('media:updated', handleStoryUpdate);
       window.removeEventListener('story:updated', handleStoryUpdate);
+      window.removeEventListener('am:changed', handleAMChanged);
     };
   }, []);
 
@@ -99,6 +107,7 @@ const UserArchive = () => {
         window.dispatchEvent(new CustomEvent('am-story-updated', { 
           detail: { storyId, action: 'deleted' } 
         }));
+        window.dispatchEvent(new CustomEvent('am:changed')); // REQUISITO: Lista reattiva
         
         await loadUserStories(); // Reload stories
       } catch (error) {
@@ -130,7 +139,7 @@ const UserArchive = () => {
           <Card>
             <CardContent className="p-8 text-center">
               <Archive className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">Nessuna storia trovata</h3>
+              <h3 className="text-lg font-semibold mb-2">Non hai ancora creato storie</h3>
               <p className="text-gray-600">
                 Non hai ancora creato nessuna storia nel tuo Archivio Magico.
               </p>

@@ -68,6 +68,7 @@ export const saveUserStory = async (storyData: StoryData): Promise<string> => {
     // Emit custom events for UI refresh
     window.dispatchEvent(new CustomEvent('user-story-saved', { detail: { storyId: story.id } }));
     window.dispatchEvent(new CustomEvent('am-story-updated', { detail: { storyId: story.id, action: 'created' } }));
+    window.dispatchEvent(new CustomEvent('am:changed')); // Richiesto per liste reattive
     
     return story.id;
   } catch (error) {
@@ -76,17 +77,26 @@ export const saveUserStory = async (storyData: StoryData): Promise<string> => {
   }
 };
 
-// Recupera storie dell'utente corrente da IndexedDB
+// Recupera storie dell'utente corrente da IndexedDB (FILTRATE per sicurezza)
 export const getCurrentUserStories = async (): Promise<AMStory[]> => {
   try {
     const currentProfileId = requireCurrentProfile();
     
+    // SICUREZZA: Query filtrata per ownerProfileId - VIETATO usare query non filtrate
     const stories = await fantasMiaDB.getAMStoriesByUser(currentProfileId);
     
-    // Log telemetry
-    console.log('📖 READ-AM:', { action: 'read-am', ownerProfileId: currentProfileId, results: stories.length });
+    // Double check security filter (ridondante ma necessario)
+    const filteredStories = stories.filter(story => story.ownerProfileId === currentProfileId);
     
-    return stories;
+    // Log telemetry
+    console.log('📖 READ-AM:', { 
+      action: 'read-am', 
+      ownerProfileId: currentProfileId, 
+      results: filteredStories.length,
+      filtered: stories.length - filteredStories.length // storie scartate dal filtro di sicurezza
+    });
+    
+    return filteredStories;
   } catch (error) {
     console.error('❌ Errore getCurrentUserStories:', error);
     return [];

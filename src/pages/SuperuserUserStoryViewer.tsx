@@ -183,6 +183,7 @@ const SuperuserUserStoryViewer = () => {
       window.dispatchEvent(new CustomEvent('am-story-updated', { 
         detail: { storyId: story.id, action: 'modified' } 
       }));
+      window.dispatchEvent(new CustomEvent('am:changed')); // REQUISITO: Lista reattiva
       
       toast({
         title: "Testo salvato",

@@ -25,6 +25,20 @@ export const getCurrentProfile = () => {
   return users.find((user: any) => user.id === profileId) || null;
 };
 
+// Verifica se l'utente corrente è Superuser
+export const isSuperUser = (): boolean => {
+  const profile = getCurrentProfile();
+  return profile?.userType === 'superuser' || false;
+};
+
+// Verifica proprietà storia con controllo per Superuser
+export const canAccessStory = (story: { ownerProfileId: string }): boolean => {
+  if (isSuperUser()) return true; // SU può accedere a tutto
+  
+  const currentProfileId = getCurrentProfileId();
+  return currentProfileId === story.ownerProfileId;
+};
+
 // Utility per richiedere profilo obbligatorio con redirect (NON usare in /debug-indexeddb)
 export const requireCurrentProfile = (): string => {
   const profileId = getCurrentProfileId();
