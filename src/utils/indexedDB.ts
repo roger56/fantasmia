@@ -173,6 +173,17 @@ class FantasMiaDB {
     }
   }
 
+  async getAMStoryById(storyId: string): Promise<AMStory | null> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['am_stories'], 'readonly');
+    const store = transaction.objectStore('am_stories');
+    const request = store.get(storyId);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   async deleteAMStory(storyId: string): Promise<void> {
     const transaction = this.db!.transaction(['am_stories'], 'readwrite');
     const store = transaction.objectStore('am_stories');

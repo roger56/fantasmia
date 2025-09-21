@@ -20,7 +20,11 @@ const UserArchive = () => {
     // Listen for user story saved events to refresh
     const handleStoryUpdate = (event: CustomEvent) => {
       console.log('🔄 USER-ARCHIVE: Rilevato salvataggio storia', event.detail);
-      loadUserStories();
+      if (event.detail?.storyId) {
+        reloadRow(event.detail.storyId);
+      } else {
+        loadUserStories(); // Fallback to full reload
+      }
     };
     
     // Listen for multiple events that might indicate story changes
@@ -53,6 +57,27 @@ const UserArchive = () => {
       console.error('Error loading user stories:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const reloadRow = async (storyId: string) => {
+    try {
+      console.log('🔄 USER-ARCHIVE: Ricarico riga specifica', storyId);
+      const { fantasMiaDB } = await import('@/utils/indexedDB');
+      const updatedStory = await fantasMiaDB.getAMStoryById(storyId);
+      
+      if (updatedStory) {
+        setStories(prev => prev.map(story => 
+          story.id === storyId ? updatedStory : story
+        ));
+      } else {
+        // Story was deleted, remove from list
+        setStories(prev => prev.filter(story => story.id !== storyId));
+      }
+    } catch (error) {
+      console.error('Error reloading story row:', error);
+      // Fallback to full reload on error
+      loadUserStories();
     }
   };
 
