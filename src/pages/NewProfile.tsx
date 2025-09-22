@@ -24,7 +24,7 @@ const NewProfile = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validate name with security checks
     const nameError = validateUserName(formData.name);
     if (nameError) {
@@ -70,6 +70,33 @@ const NewProfile = () => {
     };
 
     saveUser(newUser);
+
+    // Save to IndexedDB profiles as well
+    try {
+      const { fantasMiaDB } = await import('@/utils/indexedDB');
+      await fantasMiaDB.init();
+      
+      const profileData = {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        user_type: 'user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_access: new Date().toISOString()
+      };
+      
+      await fantasMiaDB.saveProfile(profileData);
+      
+      // Emit event for real-time updates
+      window.dispatchEvent(new CustomEvent('profiles:changed', { 
+        detail: { id: newUser.id, username: newUser.name, role: 'user' } 
+      }));
+      
+      console.info('profiles-write', { id: newUser.id, username: newUser.name, role: 'user' });
+    } catch (error) {
+      console.error('Error saving profile to IndexedDB:', error);
+    }
 
     // Bridge new user to Supabase authentication
     AuthBridge.createLocalSupabaseSession(newUser);

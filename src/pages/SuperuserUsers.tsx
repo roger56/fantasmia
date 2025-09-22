@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Copy, Eye, Key, Trash2, ChevronDown, Users } from 'lucide-react';
+import { Copy, Eye, Key, Trash2, ChevronDown, Users, Search, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { hashPassword, generateSecurePassword, isPasswordStrong } from '@/utils/authSecurity';
@@ -44,19 +44,29 @@ const SuperuserUsers = () => {
     confirmPassword: '',
     isGenerated: false
   });
+  
+  // Search and pagination state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
 
   const loadUsers = async () => {
     try {
       setLoading(true);
+      console.info('profiles-load:start');
+      
       const { fantasMiaDB } = await import('@/utils/indexedDB');
       await fantasMiaDB.init();
       
-      // Carica tutti i profili
+      // Carica tutti i profili ordinati per data creazione (desc)
       const profiles = await fantasMiaDB.getAllProfiles();
+      const sortedProfiles = profiles.sort((a: any, b: any) => 
+        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      );
       
-      // Per ogni profilo, conta le storie e carica i titoli
+      // Per ogni profilo, conta le storie e carica i titoli usando Promise.all per efficienza
       const usersWithStats = await Promise.all(
-        profiles.map(async (profile: any) => {
+        sortedProfiles.map(async (profile: any) => {
           const stories = await fantasMiaDB.getAMStoriesByOwner(profile.id);
           const storyTitles = stories
             .slice(0, 20) // Max 20 titoli
@@ -75,7 +85,7 @@ const SuperuserUsers = () => {
       );
 
       setUsers(usersWithStats);
-      console.log('👥 SUPERUSER-USERS: Caricati', usersWithStats.length, 'utenti');
+      console.info('profiles-load:done', { count: usersWithStats.length });
     } catch (error) {
       console.error('❌ SUPERUSER-USERS: Errore caricamento utenti:', error);
       toast({
@@ -234,13 +244,21 @@ const SuperuserUsers = () => {
   useEffect(() => {
     loadUsers();
 
-    // Listen for user changes
-    const handleUsersChanged = () => {
+    // Listen for user and profile changes
+    const handleProfilesChanged = (event?: CustomEvent) => {
+      if (event?.detail) {
+        console.info('profiles:changed:event', event.detail);
+      }
       loadUsers();
     };
 
-    window.addEventListener('users:changed', handleUsersChanged);
-    return () => window.removeEventListener('users:changed', handleUsersChanged);
+    window.addEventListener('profiles:changed', handleProfilesChanged);
+    window.addEventListener('users:changed', handleProfilesChanged);
+    
+    return () => {
+      window.removeEventListener('profiles:changed', handleProfilesChanged);
+      window.removeEventListener('users:changed', handleProfilesChanged);
+    };
   }, []);
 
   const formatDate = (dateString: string) => {
@@ -250,6 +268,21 @@ const SuperuserUsers = () => {
       year: 'numeric'
     });
   };
+
+  // Filter and paginate users
+  const filteredUsers = users.filter(user => 
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   if (loading) {
     return (
@@ -281,6 +314,27 @@ const SuperuserUsers = () => {
             <CardDescription>
               Gestisci password, visualizza storie ed elimina utenti
             </CardDescription>
+            
+            {/* Search and controls */}
+            <div className="flex gap-2 mt-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Cerca per nome o email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={loadUsers}
+                title="Ricarica elenco"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -295,71 +349,109 @@ const SuperuserUsers = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email || 'Non specificata'}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.user_type === 'superuser' ? 'default' : 'secondary'}>
-                        {user.user_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(user.created_at)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{user.storyCount}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowPasswordModal(true);
-                          }}
-                        >
-                          <Key className="w-4 h-4" />
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowDeleteModal(true);
-                          }}
-                          disabled={user.user_type === 'superuser'}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-
-                        {user.stories.length > 0 && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Eye className="w-4 h-4" />
-                                <ChevronDown className="w-3 h-3 ml-1" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="max-w-xs">
-                              {user.stories.map((story) => (
-                                <DropdownMenuItem
-                                  key={story.id}
-                                  onClick={() => navigate(`/superuser-user-story-viewer/${story.id}`)}
-                                  className="cursor-pointer"
-                                >
-                                  <span className="truncate">{story.title}</span>
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
+                {paginatedUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {searchTerm ? `Nessun utente trovato per "${searchTerm}"` : 'Nessun utente registrato'}
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  paginatedUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell>{user.email || 'Non specificata'}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.user_type === 'superuser' ? 'default' : 'secondary'}>
+                          {user.user_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatDate(user.created_at)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{user.storyCount}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowPasswordModal(true);
+                            }}
+                          >
+                            <Key className="w-4 h-4" />
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowDeleteModal(true);
+                            }}
+                            disabled={user.user_type === 'superuser'}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+
+                          {user.stories.length > 0 && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Eye className="w-4 h-4" />
+                                  <ChevronDown className="w-3 h-3 ml-1" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="max-w-xs">
+                                {user.stories.map((story) => (
+                                  <DropdownMenuItem
+                                    key={story.id}
+                                    onClick={() => navigate(`/superuser-user-story-viewer/${story.id}`)}
+                                    className="cursor-pointer"
+                                  >
+                                    <span className="truncate">{story.title}</span>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Mostrando {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} di {filteredUsers.length} utenti
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm">
+                    Pagina {currentPage} di {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
