@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle } from 'lucide-react';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useTTS } from '@/hooks/useTTS';
-import { useTranslation } from '@/hooks/useTranslation';
+import { usePermanentTranslation } from '@/hooks/usePermanentTranslation';
 import { canAccessStory, getCurrentProfileId } from '@/utils/profileManager';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
@@ -15,6 +15,7 @@ import ShareMenu from '@/components/shared/ShareMenu';
 import MediaMenu from '@/components/shared/MediaMenu';
 import ModifyMenu from '@/components/shared/ModifyMenu';
 import EditTextDialog from '@/components/shared/EditTextDialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,8 +28,9 @@ const UserStoryViewer = () => {
   const [mediaAsset, setMediaAsset] = useState<string | null>(null);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showModifyMenu, setShowModifyMenu] = useState(false);
   const { speak, stop, isPlaying, getButtonText } = useTTS();
-  const { translateContent, getButtonText: getTranslationButtonText, getCurrentLanguage, isTranslating } = useTranslation();
+  const translation = usePermanentTranslation(story, setStory);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -143,23 +145,12 @@ const UserStoryViewer = () => {
     if (isPlaying) {
       stop();
     } else {
-      speak(textToRead, getCurrentLanguage());
+      speak(textToRead, translation.getCurrentLanguage());
     }
   };
 
-  const handleTranslate = async () => {
-    if (!story) return;
-    
-    await translateContent(
-      story.text || '',
-      story.title || '',
-      (newContent) => {
-        setStory(prev => prev ? { ...prev, text: newContent } : null);
-      },
-      (newTitle) => {
-        setStory(prev => prev ? { ...prev, title: newTitle } : null);
-      }
-    );
+  const handleTranslate = () => {
+    translation.initiateTranslation();
   };
 
   const handleMediaClick = () => {
@@ -364,10 +355,10 @@ const UserStoryViewer = () => {
           <Button
             variant="outline"
             onClick={handleTranslate}
-            disabled={isTranslating}
+            disabled={translation.isTranslating}
             className="flex items-center gap-2"
           >
-            {getTranslationButtonText()}
+            {translation.getButtonText()}
           </Button>
           
           <ShareMenu 
@@ -383,14 +374,25 @@ const UserStoryViewer = () => {
             onMediaUpdate={handleMediaUpdate}
           />
 
-          <Button
-            variant="outline"
-            onClick={() => setShowEditDialog(true)}
-            className="flex items-center gap-2"
-          >
-            <Edit className="w-4 h-4" />
-            Modifica
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                MODIFICA
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                Modifica testo
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowModifyMenu(true)}>
+                Migliora con AI
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -455,15 +457,19 @@ const UserStoryViewer = () => {
           </CardContent>
         </Card>
 
+
         {/* Modify Menu */}
-        <ModifyMenu
-          storyContent={storyText}
-          storyTitle={storyTitle}
-          isEditing={false}
-          onEditToggle={() => setShowEditDialog(true)}
-          onContentChange={handleContentChange}
-          storyId={id}
-        />
+        {showModifyMenu && (
+          <ModifyMenu
+            storyContent={storyText}
+            storyTitle={storyTitle}
+            isEditing={false}
+            onEditToggle={() => setShowEditDialog(true)}
+            onContentChange={handleContentChange}
+            storyId={id}
+            className="mt-6"
+          />
+        )}
 
         {/* Media Status */}
         {!mediaAsset && (
@@ -492,6 +498,35 @@ const UserStoryViewer = () => {
         onSave={handleSaveText}
         title="Modifica Testo Storia"
       />
+
+      {/* Translation Confirmation Dialog */}
+      <AlertDialog open={translation.showConfirmDialog} onOpenChange={translation.cancelTranslation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma traduzione permanente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Salvare la traduzione in {translation.getCurrentLanguage() === 'italian' ? 'inglese' : 'italiano'} sostituendo la versione corrente? 
+              <br /><br />
+              <strong>Operazione permanente e irreversibile.</strong>
+              {translation.pendingTranslation && (
+                <div className="mt-4 p-3 bg-slate-50 rounded border">
+                  <div className="font-semibold mb-2">Anteprima traduzione:</div>
+                  <div className="text-sm">
+                    <div><strong>Titolo:</strong> {translation.pendingTranslation.title}</div>
+                    <div className="mt-2"><strong>Testo:</strong> {translation.pendingTranslation.content.substring(0, 150)}...</div>
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={translation.cancelTranslation}>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={translation.confirmTranslation}>
+              Salva traduzione
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

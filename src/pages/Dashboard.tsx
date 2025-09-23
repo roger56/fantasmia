@@ -54,7 +54,7 @@ const Dashboard = () => {
       title: 'LETTURA STORIE DEL MONDO',
       icon: BookText,
       description: 'quante cose si dicono e si scoprono nel mondo',
-      path: '/reading-story-type-selection'
+      path: '/story-type-selection'
     },
     {
       id: 'archive-complete',
@@ -165,7 +165,7 @@ const Dashboard = () => {
             <p className="text-blue-600 text-sm mb-4">Storie condivise dal mondo</p>
             <Card 
               className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-blue-300" 
-              onClick={() => navigate('/reading-story-type-selection')}
+              onClick={() => navigate('/story-type-selection')}
             >
               <CardContent className="p-4 text-center">
                 <div className="mb-2 flex justify-center">
