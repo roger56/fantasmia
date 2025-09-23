@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Archive, Eye, Trash2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Archive, Eye, Trash2, Image, ImageOff } from 'lucide-react';
 import StoryLayout from '@/components/shared/StoryLayout';
-import StoryImageIcon from '@/components/shared/StoryImageIcon';
+import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import { AMStory } from '@/utils/indexedDB';
 import { getCurrentUserStories } from '@/utils/storyManager';
-import { getCurrentProfileId } from '@/utils/profileManager';
+import { getCurrentProfileId, getCurrentProfile } from '@/utils/profileManager';
 
 const UserArchive = () => {
   const navigate = useNavigate();
   const [stories, setStories] = useState<AMStory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [currentImageBlob, setCurrentImageBlob] = useState<Blob | null>(null);
+  const [selectedStoryTitle, setSelectedStoryTitle] = useState('');
 
   useEffect(() => {
     loadUserStories();
@@ -89,7 +93,8 @@ const UserArchive = () => {
     }
   };
 
-  const handleDeleteStory = async (storyId: string) => {
+  const handleDeleteStory = async (storyId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (window.confirm('Sei sicuro di voler eliminare questa storia?')) {
       try {
         const { fantasMiaDB } = await import('@/utils/indexedDB');
@@ -109,11 +114,41 @@ const UserArchive = () => {
         }));
         window.dispatchEvent(new CustomEvent('am:changed')); // REQUISITO: Lista reattiva
         
-        await loadUserStories(); // Reload stories
+        // Update local state immediately
+        setStories(prev => prev.filter(story => story.id !== storyId));
       } catch (error) {
         console.error('Error deleting story:', error);
       }
     }
+  };
+
+  const handleImageClick = async (storyId: string, storyTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { fantasMiaDB } = await import('@/utils/indexedDB');
+      const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(storyId);
+      
+      if (mediaAsset && mediaAsset.data) {
+        const imageBlob = new Blob([mediaAsset.data], { type: 'image/webp' });
+        const url = URL.createObjectURL(imageBlob);
+        setImageUrl(url);
+        setCurrentImageBlob(imageBlob);
+        setSelectedStoryTitle(storyTitle);
+        setImageViewerOpen(true);
+      }
+    } catch (error) {
+      console.error('Error loading image:', error);
+    }
+  };
+
+  const handleViewerClose = () => {
+    setImageViewerOpen(false);
+    if (imageUrl) {
+      URL.revokeObjectURL(imageUrl);
+      setImageUrl('');
+    }
+    setCurrentImageBlob(null);
+    setSelectedStoryTitle('');
   };
 
   if (loading) {
@@ -128,75 +163,136 @@ const UserArchive = () => {
     );
   }
 
+  const currentProfile = getCurrentProfile();
+  const profileName = currentProfile?.name || 'Utente';
+
   return (
-    <StoryLayout
-      title="Archivio Magico (AM)"
-      subtitle="Le tue storie personali"
-      onBack={() => navigate('/dashboard')}
-    >
-      <div className="space-y-6">
-        {stories.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Archive className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">Non hai ancora creato storie</h3>
-              <p className="text-gray-600">
-                Non hai ancora creato nessuna storia nel tuo Archivio Magico.
-              </p>
-              <Button 
-                onClick={() => navigate('/create-story')}
-                className="mt-4"
-              >
-                Crea la tua prima storia
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {stories.map((story) => (
-              <Card key={story.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Archive className="w-5 h-5 text-green-600" />
-                    <span className="truncate">{story.title}</span>
-                    <StoryImageIcon storyId={story.id} hasImage={story.hasImage} storyTitle={story.title} />
-                  </CardTitle>
-                  <CardDescription>
-                    {story.mode} • {new Date(story.createdAt).toLocaleDateString('it-IT')}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-slate-600 mb-4 line-clamp-3">
-                    {story.text.substring(0, 100)}...
-                  </p>
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        console.log({ action: "open-user-viewer", id: story.id });
-                        navigate(`/user-story-viewer/${story.id}`);
-                      }}
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      Visualizza
-                    </Button>
-                    <Button 
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteStory(story.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+    <>
+      <StoryLayout
+        title="Archivio Magico (AM)"
+        subtitle="Le tue storie personali"
+        onBack={() => navigate('/dashboard')}
+      >
+        <div className="space-y-4">
+          {stories.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Archive className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">Non hai ancora creato storie</h3>
+                <p className="text-muted-foreground">
+                  Non hai ancora creato nessuna storia nel tuo Archivio Magico.
+                </p>
+                <Button 
+                  onClick={() => navigate('/create-story')}
+                  className="mt-4"
+                >
+                  Crea la tua prima storia
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <div className="max-h-[600px] overflow-y-auto">
+                  <div className="divide-y divide-border">
+                    {stories.map((story) => (
+                      <div
+                        key={story.id}
+                        className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          console.log({ action: "open-user-viewer", id: story.id });
+                          navigate(`/user-story-viewer/${story.id}`);
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          {/* Title */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-foreground truncate">
+                              {story.title}
+                            </h3>
+                          </div>
+
+                          {/* Created by */}
+                          <div className="text-sm text-muted-foreground min-w-0 max-w-[120px]">
+                            <span className="truncate block">{profileName}</span>
+                          </div>
+
+                          {/* Creation date */}
+                          <div className="text-sm text-muted-foreground min-w-[130px]">
+                            {new Date(story.createdAt).toLocaleString('it-IT', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+
+                          {/* Image icon */}
+                          <div className="flex items-center">
+                            {story.hasImage ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => handleImageClick(story.id, story.title, e)}
+                              >
+                                <Image className="w-4 h-4 text-green-600" />
+                              </Button>
+                            ) : (
+                              <div className="h-8 w-8 flex items-center justify-center">
+                                <ImageOff className="w-4 h-4 text-red-600" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Delete button */}
+                          <div className="flex items-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              onClick={(e) => handleDeleteStory(story.id, e)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          {/* View button */}
+                          <div className="flex items-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log({ action: "open-user-viewer", id: story.id });
+                                navigate(`/user-story-viewer/${story.id}`);
+                              }}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </StoryLayout>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </StoryLayout>
+
+      <ImageViewerDialog
+        open={imageViewerOpen}
+        onOpenChange={handleViewerClose}
+        imageUrl={imageUrl}
+        imageBlob={currentImageBlob}
+        storyTitle={selectedStoryTitle}
+        style=""
+      />
+    </>
   );
 };
 

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Search, Eye } from 'lucide-react';
+import { ArrowLeft, Search, Eye, Trash2, Image, ImageOff } from 'lucide-react';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
-import StoryImageIcon from '@/components/shared/StoryImageIcon';
+import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
+import StoryLayout from '@/components/shared/StoryLayout';
 
 const SuperuserAMArchive = () => {
   const navigate = useNavigate();
@@ -16,7 +16,11 @@ const SuperuserAMArchive = () => {
   const [filteredStories, setFilteredStories] = useState<AMStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [imageStatuses, setImageStatuses] = useState<Record<string, boolean>>({});
+  const [profileNames, setProfileNames] = useState<Record<string, string>>({});
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [currentImageBlob, setCurrentImageBlob] = useState<Blob | null>(null);
+  const [selectedStoryTitle, setSelectedStoryTitle] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,33 +65,42 @@ const SuperuserAMArchive = () => {
       await fantasMiaDB.init();
       
       // Get all AM stories
-      const transaction = fantasMiaDB['db']!.transaction(['am_stories'], 'readonly');
-      const store = transaction.objectStore('am_stories');
-      const request = store.getAll();
+      const transaction = fantasMiaDB['db']!.transaction(['am_stories', 'profiles'], 'readonly');
+      const storyStore = transaction.objectStore('am_stories');
+      const profileStore = transaction.objectStore('profiles');
+      
+      const storyRequest = storyStore.getAll();
+      const profileRequest = profileStore.getAll();
 
-      request.onsuccess = async () => {
-        const allStories = request.result || [];
+      Promise.all([
+        new Promise<AMStory[]>((resolve, reject) => {
+          storyRequest.onsuccess = () => resolve(storyRequest.result || []);
+          storyRequest.onerror = () => reject(storyRequest.error);
+        }),
+        new Promise<any[]>((resolve, reject) => {
+          profileRequest.onsuccess = () => resolve(profileRequest.result || []);
+          profileRequest.onerror = () => reject(profileRequest.error);
+        })
+      ]).then(([allStories, allProfiles]) => {
         setStories(allStories);
         
-        // Check image status for each story
-        const statuses: Record<string, boolean> = {};
-        for (const story of allStories) {
-          const hasImage = await fantasMiaDB.hasImageForStory(story.id);
-          statuses[story.id] = hasImage;
-        }
-        setImageStatuses(statuses);
+        // Create profile name mapping
+        const nameMap: Record<string, string> = {};
+        allProfiles.forEach(profile => {
+          nameMap[profile.id] = profile.name || profile.id;
+        });
+        setProfileNames(nameMap);
+        
         setLoading(false);
-      };
-
-      request.onerror = () => {
-        console.error('Error loading stories:', request.error);
+      }).catch(error => {
+        console.error('Error loading data:', error);
         toast({
           title: "Errore",
           description: "Errore durante il caricamento delle storie",
           variant: "destructive"
         });
         setLoading(false);
-      };
+      });
     } catch (error) {
       console.error('Error accessing IndexedDB:', error);
       toast({
@@ -99,134 +112,220 @@ const SuperuserAMArchive = () => {
     }
   };
 
-  const handleBack = () => {
-    navigate('/superuser');
-  };
-
-  const handleViewStory = (storyId: string) => {
-    console.log({ action: "open-superuser-viewer", id: storyId });
-    navigate(`/superuser-user-story-viewer/${storyId}`);
-  };
-
-  const getModeBadgeVariant = (mode: string) => {
-    switch (mode) {
-      case 'PROPP': return 'default';
-      case 'GHOST': return 'secondary';
-      case 'CAMPBELL': return 'outline';
-      default: return 'secondary';
+  const handleDeleteStory = async (storyId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Sei sicuro di voler eliminare questa storia?')) {
+      try {
+        // Delete media assets first
+        const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(storyId);
+        if (mediaAsset) {
+          await fantasMiaDB.deleteMediaAsset(mediaAsset.id);
+        }
+        
+        // Delete the story
+        await fantasMiaDB.deleteAMStory(storyId);
+        
+        // Emit update event for real-time UI updates
+        window.dispatchEvent(new CustomEvent('am-story-updated', { 
+          detail: { storyId, action: 'deleted' } 
+        }));
+        window.dispatchEvent(new CustomEvent('am:changed'));
+        
+        // Update local state immediately
+        setStories(prev => prev.filter(story => story.id !== storyId));
+        
+        toast({
+          title: "Storia eliminata",
+          description: "La storia è stata eliminata con successo"
+        });
+      } catch (error) {
+        console.error('Error deleting story:', error);
+        toast({
+          title: "Errore",
+          description: "Errore durante l'eliminazione della storia",
+          variant: "destructive"
+        });
+      }
     }
+  };
+
+  const handleImageClick = async (storyId: string, storyTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(storyId);
+      
+      if (mediaAsset && mediaAsset.data) {
+        const imageBlob = new Blob([mediaAsset.data], { type: 'image/webp' });
+        const url = URL.createObjectURL(imageBlob);
+        setImageUrl(url);
+        setCurrentImageBlob(imageBlob);
+        setSelectedStoryTitle(storyTitle);
+        setImageViewerOpen(true);
+      }
+    } catch (error) {
+      console.error('Error loading image:', error);
+    }
+  };
+
+  const handleViewerClose = () => {
+    setImageViewerOpen(false);
+    if (imageUrl) {
+      URL.revokeObjectURL(imageUrl);
+      setImageUrl('');
+    }
+    setCurrentImageBlob(null);
+    setSelectedStoryTitle('');
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-        <div className="text-center pt-20">Caricamento archivio AM...</div>
-      </div>
+      <StoryLayout
+        title="Archivio Utenti (AM)"
+        subtitle="Caricamento..."
+        onBack={() => navigate('/superuser')}
+      >
+        <div className="text-center">Caricamento archivio AM...</div>
+      </StoryLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <ProfileIndicator />
-      
-      {/* Fixed Top Navigation Bar */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-slate-200 p-4">
-        <div className="flex justify-between items-center max-w-6xl mx-auto">
-          <Button 
-            variant="ghost" 
-            onClick={handleBack}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Indietro
-          </Button>
-          
-          <h1 className="text-xl font-bold text-slate-800">Archivio Utenti (AM)</h1>
-          
-          <div className="text-sm text-slate-600">
-            {filteredStories.length} storie
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto pt-20 space-y-6">
-        
-        {/* Search Bar */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-              <Input
-                placeholder="Cerca per titolo, contenuto, utente o modalità..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stories Grid */}
-        {filteredStories.length === 0 ? (
+    <>
+      <StoryLayout
+        title="Archivio Utenti (AM)"
+        subtitle={`${filteredStories.length} storie totali`}
+        onBack={() => navigate('/superuser')}
+      >
+        <div className="space-y-4">
+          {/* Search Bar */}
           <Card>
-            <CardContent className="p-8 text-center">
-              <div className="text-slate-500">
-                {stories.length === 0 ? 'Nessuna storia trovata nell\'archivio AM' : 'Nessuna storia corrisponde ai criteri di ricerca'}
+            <CardContent className="p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Cerca per titolo, contenuto, utente o modalità..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredStories.map((story) => (
-              <Card key={story.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg line-clamp-2">
-                      {story.title || 'Storia senza titolo'}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 ml-2">
-                      <StoryImageIcon 
-                        storyId={story.id} 
-                        hasImage={story.hasImage} 
-                        storyTitle={story.title}
-                      />
-                    </div>
+
+          {/* Stories List */}
+          {filteredStories.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <div className="text-muted-foreground">
+                  {stories.length === 0 ? 'Nessuna storia trovata nell\'archivio AM' : 'Nessuna storia corrisponde ai criteri di ricerca'}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <div className="max-h-[600px] overflow-y-auto">
+                  <div className="divide-y divide-border">
+                    {filteredStories.map((story) => (
+                      <div
+                        key={story.id}
+                        className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          console.log({ action: "open-superuser-viewer", id: story.id });
+                          navigate(`/superuser-user-story-viewer/${story.id}`);
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          {/* Title */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-foreground truncate">
+                              {story.title || 'Storia senza titolo'}
+                            </h3>
+                          </div>
+
+                          {/* Created by */}
+                          <div className="text-sm text-muted-foreground min-w-0 max-w-[120px]">
+                            <span className="truncate block">
+                              {profileNames[story.ownerProfileId] || story.ownerProfileId}
+                            </span>
+                          </div>
+
+                          {/* Creation date */}
+                          <div className="text-sm text-muted-foreground min-w-[130px]">
+                            {new Date(story.createdAt).toLocaleString('it-IT', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+
+                          {/* Image icon */}
+                          <div className="flex items-center">
+                            {story.hasImage ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => handleImageClick(story.id, story.title, e)}
+                              >
+                                <Image className="w-4 h-4 text-green-600" />
+                              </Button>
+                            ) : (
+                              <div className="h-8 w-8 flex items-center justify-center">
+                                <ImageOff className="w-4 h-4 text-red-600" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Delete button */}
+                          <div className="flex items-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              onClick={(e) => handleDeleteStory(story.id, e)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          {/* View button */}
+                          <div className="flex items-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log({ action: "open-superuser-viewer", id: story.id });
+                                navigate(`/superuser-user-story-viewer/${story.id}`);
+                              }}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={getModeBadgeVariant(story.mode)}>
-                      {story.mode}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-sm text-slate-600 line-clamp-3 mb-4">
-                    {story.text || 'Nessun contenuto disponibile'}
-                  </p>
-                  
-                  <div className="space-y-2 text-xs text-slate-500">
-                    <div>Utente: {story.ownerProfileId}</div>
-                    <div>Creata: {new Date(story.createdAt).toLocaleDateString('it-IT')}</div>
-                  </div>
-                  
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewStory(story.id)}
-                      className="flex items-center gap-2 flex-1"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Visualizza
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </StoryLayout>
+
+      <ImageViewerDialog
+        open={imageViewerOpen}
+        onOpenChange={handleViewerClose}
+        imageUrl={imageUrl}
+        imageBlob={currentImageBlob}
+        storyTitle={selectedStoryTitle}
+        style=""
+      />
+    </>
   );
 };
 
