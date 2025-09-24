@@ -29,7 +29,7 @@ const ReadingStories = () => {
 
   const loadReadingStories = async () => {
     try {
-      const readingStories = await fantasMiaDB.getAGStoriesByCategory('reading');
+      const readingStories = await fantasMiaDB.getAGStoriesByCategory('world');
       setStories(readingStories);
     } catch (error) {
       console.error('Error loading reading stories:', error);

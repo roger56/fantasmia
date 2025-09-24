@@ -41,6 +41,8 @@ import ScienceStories from "./pages/ScienceStories";
 import ScienceStoryEditor from "./pages/ScienceStoryEditor";
 import MagicStoryEditor from "./pages/MagicStoryEditor";
 import SuperuserReadingStoriesManagement from "./pages/SuperuserReadingStoriesManagement";
+import SuperuserScienceStoriesManagement from "./pages/SuperuserScienceStoriesManagement";
+import SuperuserGreekMythsManagement from "./pages/SuperuserGreekMythsManagement";
 import SuperuserStoryTypeSelection from "./pages/SuperuserStoryTypeSelection";
 import SuperuserReadingStoriesView from "./pages/SuperuserReadingStoriesView";
 import SuperuserReadingStoryViewer from "./pages/SuperuserReadingStoryViewer";
@@ -49,7 +51,7 @@ import UserArchive from "./pages/UserArchive";
 import UserReadingSuperuserStories from "./pages/UserReadingSuperuserStories";
 import StoryTypeSelection from "./pages/StoryTypeSelection";
 import ScienceStoryViewer from "./pages/ScienceStoryViewer";
-import SuperuserScienceStoriesView from "./pages/SuperuserScienceStoriesView";
+
 import DebugIndexedDB from "./pages/DebugIndexedDB";
 import NotFound from "./pages/NotFound";
 import { initImageMigration } from "./utils/imageMigration";
@@ -106,7 +108,10 @@ const App = () => (
           <Route path="/superuser-am-archive" element={<SuperuserAMArchive />} />
           <Route path="/superuser-story-type-selection" element={<SuperuserStoryTypeSelection />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
-          <Route path="/superuser-science-stories-view" element={<SuperuserScienceStoriesView />} />
+          <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
+          
+          <Route path="/superuser-science-stories-management" element={<SuperuserScienceStoriesManagement />} />
+          <Route path="/superuser-greek-myths-management" element={<SuperuserGreekMythsManagement />} />
           <Route path="/debug-indexdb" element={<DebugIndexedDB />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

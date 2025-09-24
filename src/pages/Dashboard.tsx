@@ -65,6 +65,17 @@ const Dashboard = () => {
     }
   ];
 
+  // Add the "strange fact" option for non-superusers
+  if (!isSuperuser) {
+    dashboardOptions.splice(1, 0, {
+      id: 'strange-fact',
+      title: 'Crea la storia di un fatto strano che ti è capitato',
+      icon: Plus,
+      description: 'Racconta un fatto reale in modo semplice e coinvolgente',
+      path: '/create-story?mode=strange-fact'
+    });
+  }
+
   // Add superuser management option for superuser
   if (isSuperuser) {
     dashboardOptions.push({
@@ -87,30 +98,56 @@ const Dashboard = () => {
       {/* Dashboard V2 - Archivi Separati */}
       <div className="space-y-8">
         
-        {/* Sezione Creazione Storie - Invariante */}
+        {/* Sezione Creazione Storie */}
         <section className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-slate-200">
           <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <Plus className="w-5 h-5" />
-            Creazione Storie (Invariante)
+            Creazione Storie
           </h2>
-          <Card 
-            className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-primary/20" 
-            onClick={() => navigate('/create-story')}
-          >
-            <CardContent className="p-4 text-center">
-              <div className="mb-2 flex justify-center">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Plus className="w-6 h-6 text-primary" />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Standard Story Creation */}
+            <Card 
+              className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-primary/20" 
+              onClick={() => navigate('/create-story')}
+            >
+              <CardContent className="p-4 text-center">
+                <div className="mb-2 flex justify-center">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Plus className="w-6 h-6 text-primary" />
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-1">
-                Crea la tua storia
-              </h3>
-              <p className="text-slate-600 text-sm">
-                Inizia a creare una nuova storia interattiva (7 modalità disponibili)
-              </p>
-            </CardContent>
-          </Card>
+                <h3 className="text-lg font-semibold text-slate-800 mb-1">
+                  Crea la tua storia
+                </h3>
+                <p className="text-slate-600 text-sm">
+                  Inizia a creare una nuova storia interattiva (7 modalità disponibili)
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Strange Fact Story - Only for non-superusers */}
+            {!isSuperuser && (
+              <Card 
+                className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100" 
+                onClick={() => navigate('/create-story?mode=strange-fact')}
+              >
+                <CardContent className="p-4 text-center">
+                  <div className="mb-2 flex justify-center">
+                    <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
+                      <Plus className="w-6 h-6 text-blue-700" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold text-blue-800 mb-1">
+                    Fatto strano che ti è capitato
+                  </h3>
+                  <p className="text-blue-600 text-sm">
+                    Racconta un fatto reale in modo semplice e coinvolgente
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </section>
 
         {/* Sezione Archivi AM/AG */}

@@ -32,7 +32,7 @@ interface AGStory {
   id: string;
   title: string;
   content: string;
-  category: 'reading' | 'science';
+  category: 'world' | 'science' | 'greek_myths';
   created_by: 'superuser';
   created_at: string;
   updated_at: string;
@@ -215,11 +215,21 @@ class FantasMiaDB {
     await store.put(story);
   }
 
-  async getAGStoriesByCategory(category: 'reading' | 'science'): Promise<AGStory[]> {
+  async getAGStoriesByCategory(category: 'world' | 'science' | 'greek_myths'): Promise<AGStory[]> {
     const transaction = this.db!.transaction(['ag_stories'], 'readonly');
     const store = transaction.objectStore('ag_stories');
     const index = store.index('category');
     const request = index.getAll(category);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAllAGStories(): Promise<AGStory[]> {
+    const transaction = this.db!.transaction(['ag_stories'], 'readonly');
+    const store = transaction.objectStore('ag_stories');
+    const request = store.getAll();
     return new Promise((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
