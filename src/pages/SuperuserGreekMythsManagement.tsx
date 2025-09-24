@@ -132,7 +132,7 @@ const SuperuserGreekMythsManagement = () => {
     <StoryLayout
       title="Aggiungi Mito Greco"
       subtitle="Area Superuser - Crea nuovo mito greco"
-      onBack={() => navigate('/superuser-reading-stories-view')}
+      onBack={() => navigate('/superuser-story-type-selection')}
     >
       <div className="space-y-6">
         <Card>
@@ -218,7 +218,7 @@ const SuperuserGreekMythsManagement = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => navigate('/superuser-reading-stories-view')}
+                  onClick={() => navigate('/superuser-story-type-selection')}
                 >
                   Annulla
                 </Button>

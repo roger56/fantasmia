@@ -132,7 +132,7 @@ const SuperuserScienceStoriesManagement = () => {
     <StoryLayout
       title="Aggiungi Storia Scientifica"
       subtitle="Area Superuser - Crea nuova storia scientifica"
-      onBack={() => navigate('/superuser-reading-stories-view')}
+      onBack={() => navigate('/superuser-story-type-selection')}
     >
       <div className="space-y-6">
         <Card>
@@ -218,7 +218,7 @@ const SuperuserScienceStoriesManagement = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => navigate('/superuser-reading-stories-view')}
+                  onClick={() => navigate('/superuser-story-type-selection')}
                 >
                   Annulla
                 </Button>

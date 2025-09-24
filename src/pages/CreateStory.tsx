@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Ghost, Sparkles, Wand2, MessageCircle, Briefcase, Star } from 'lucide-react';
+import { ArrowLeft, Ghost, Sparkles, Wand2, MessageCircle, Briefcase, Star, Lightbulb } from 'lucide-react';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import HomeButton from '@/components/HomeButton';
 import { AuthBridge } from '@/utils/authBridge';
@@ -82,6 +82,12 @@ const CreateStory = () => {
     subtitle: 'L\'eroe affronta difficoltà e vince.',
     icon: Sparkles,
     difficulty: 5
+  }, {
+    id: 'STRANGE_FACT',
+    title: 'Crea la storia di un fatto strano che ti è capitato',
+    subtitle: 'Trasforma un evento reale in racconto fantastico',
+    icon: Lightbulb,
+    difficulty: 1
   }];
   const handleModeSelect = (mode: string) => {
     const state = { profileId, profileName };
@@ -100,6 +106,8 @@ const CreateStory = () => {
       navigate('/css-editor', { state });
     } else if (mode === 'PROFESSION') {
       navigate('/profession-story', { state });
+    } else if (mode === 'STRANGE_FACT') {
+      navigate('/magic-story-editor', { state });
     }
   };
   return (
@@ -130,13 +138,13 @@ const CreateStory = () => {
            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
              {creationModes.map(mode => {
              const IconComponent = mode.icon;
-             return <Card key={mode.id} className="cursor-pointer transition-all duration-200 border-2 hover:border-slate-300 hover:shadow-md h-32 relative" onClick={() => handleModeSelect(mode.id)}>
+             return <Card key={mode.id} className={`cursor-pointer transition-all duration-200 border-2 hover:border-slate-300 hover:shadow-md h-32 relative ${mode.id === 'STRANGE_FACT' ? 'border-blue-400 bg-blue-50 hover:border-blue-500' : ''}`} onClick={() => handleModeSelect(mode.id)}>
                    <CardHeader className="p-3">
-                     <div className="flex items-center justify-center mb-1">
-                       <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                         <IconComponent className="w-4 h-4 text-slate-600" />
-                       </div>
-                     </div>
+                      <div className="flex items-center justify-center mb-1">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${mode.id === 'STRANGE_FACT' ? 'bg-blue-200' : 'bg-slate-100'}`}>
+                          <IconComponent className={`w-4 h-4 ${mode.id === 'STRANGE_FACT' ? 'text-blue-700' : 'text-slate-600'}`} />
+                        </div>
+                      </div>
                      <CardTitle className="text-sm text-center">{mode.title}</CardTitle>
                      {mode.subtitle && <p className="text-xs text-center text-slate-600 mt-1 leading-tight">
                          {mode.subtitle}

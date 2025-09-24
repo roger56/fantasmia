@@ -126,27 +126,6 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Strange Fact Story - Only for non-superusers */}
-            {!isSuperuser && (
-              <Card 
-                className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100" 
-                onClick={() => navigate('/create-story?mode=strange-fact')}
-              >
-                <CardContent className="p-4 text-center">
-                  <div className="mb-2 flex justify-center">
-                    <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
-                      <Plus className="w-6 h-6 text-blue-700" />
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-semibold text-blue-800 mb-1">
-                    Fatto strano che ti è capitato
-                  </h3>
-                  <p className="text-blue-600 text-sm">
-                    Racconta un fatto reale in modo semplice e coinvolgente
-                  </p>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </section>
 
