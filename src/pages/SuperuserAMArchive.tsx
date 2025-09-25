@@ -88,6 +88,12 @@ const SuperuserAMArchive = () => {
           profileRequest.onerror = () => reject(profileRequest.error);
         })
       ]).then(([allStories, allProfiles]) => {
+        console.log('=== DEBUG SuperuserAMArchive ===');
+        console.log('Stories loaded:', allStories.length);
+        console.log('First few stories:', allStories.slice(0, 3).map(s => ({ id: s.id, title: s.title, ownerProfileId: s.ownerProfileId })));
+        console.log('Profiles loaded:', allProfiles.length);
+        console.log('All profiles:', allProfiles.map(p => ({ id: p.id, name: p.name })));
+        
         setStories(allStories);
         
         // Create profile name mapping
@@ -96,12 +102,19 @@ const SuperuserAMArchive = () => {
           nameMap[profile.id] = profile.name || profile.id;
         });
         
-        console.log('Stories loaded:', allStories.length);
-        console.log('Profiles loaded:', allProfiles.length);
-        console.log('Profile mapping:', nameMap);
+        console.log('Profile mapping created:', nameMap);
+        
+        // Check which stories have missing profile mappings
+        const missingProfiles = allStories.filter(story => !nameMap[story.ownerProfileId]);
+        if (missingProfiles.length > 0) {
+          console.warn('Stories with missing profile mappings:', missingProfiles.map(s => ({ 
+            storyId: s.id, 
+            title: s.title, 
+            ownerProfileId: s.ownerProfileId 
+          })));
+        }
         
         setProfileNames(nameMap);
-        
         setLoading(false);
       }).catch(error => {
         console.error('Error loading data:', error);
@@ -257,7 +270,7 @@ const SuperuserAMArchive = () => {
                           {/* Created by */}
                           <div className="text-sm text-muted-foreground min-w-0 max-w-[120px]">
                             <span className="truncate block">
-                              {profileNames[story.ownerProfileId] || story.ownerProfileId}
+                              {profileNames[story.ownerProfileId] || `Utente ${story.ownerProfileId.slice(0, 8)}...`}
                             </span>
                           </div>
 
