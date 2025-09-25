@@ -50,16 +50,21 @@ const SuperuserAMArchive = () => {
     if (searchTerm.trim() === '') {
       setFilteredStories(stories);
     } else {
-      const filtered = stories.filter(story => 
-        story.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        story.text?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        story.ownerProfileId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        story.mode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        profileNames[story.ownerProfileId]?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const filtered = stories.filter(story => {
+        const searchLower = searchTerm.toLowerCase();
+        const profileName = profileNames[story.ownerProfileId] || story.ownerProfileId;
+        
+        return (
+          story.title?.toLowerCase().includes(searchLower) ||
+          story.text?.toLowerCase().includes(searchLower) ||
+          story.ownerProfileId?.toLowerCase().includes(searchLower) ||
+          story.mode?.toLowerCase().includes(searchLower) ||
+          profileName.toLowerCase().includes(searchLower)
+        );
+      });
       setFilteredStories(filtered);
     }
-  }, [searchTerm, stories]);
+  }, [searchTerm, stories, profileNames]);
 
   const loadStories = async () => {
     try {
@@ -90,6 +95,11 @@ const SuperuserAMArchive = () => {
         allProfiles.forEach(profile => {
           nameMap[profile.id] = profile.name || profile.id;
         });
+        
+        console.log('Stories loaded:', allStories.length);
+        console.log('Profiles loaded:', allProfiles.length);
+        console.log('Profile mapping:', nameMap);
+        
         setProfileNames(nameMap);
         
         setLoading(false);

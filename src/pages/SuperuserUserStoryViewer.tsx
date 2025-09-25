@@ -100,15 +100,17 @@ const SuperuserUserStoryViewer = () => {
       
       profileRequest.onsuccess = () => {
         const profile = profileRequest.result;
-        setOwnerProfileName(profile?.name || profileId);
+        console.log('Loading owner profile for ID:', profileId);
+        console.log('Found profile:', profile);
+        setOwnerProfileName(profile?.name || `ID: ${profileId}`);
       };
       
       profileRequest.onerror = () => {
-        setOwnerProfileName(profileId);
+        setOwnerProfileName(`ID: ${profileId}`);
       };
     } catch (error) {
       console.error('Error loading profile:', error);
-      setOwnerProfileName(profileId);
+      setOwnerProfileName(`ID: ${profileId}`);
     }
   };
 

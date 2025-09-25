@@ -3,11 +3,22 @@ import { fantasMiaDB, AMStory, AGStory, MediaAsset } from './indexedDB';
 
 export const seedDemoData = async () => {
   try {
+    // Create demo profile first
+    const demoProfileId = crypto.randomUUID();
+    const demoProfile = {
+      id: demoProfileId,
+      name: 'Utente Demo',
+      created_at: new Date().toISOString(),
+      last_access: new Date().toISOString()
+    };
+    
+    await fantasMiaDB.saveProfile(demoProfile);
+    
     // Demo user stories for AM (Archivio Magico)
     const demoUserStories: AMStory[] = [
       {
         id: 'am-story-1',
-        ownerProfileId: 'demo-user',
+        ownerProfileId: demoProfileId,
         title: 'La Principessa e il Drago',
         text: 'C\'era una volta una principessa coraggiosa che viveva in un regno lontano. Un giorno, un drago cattivo rapì tutti i bambini del villaggio...',
         mode: 'Campbell',
@@ -16,7 +27,7 @@ export const seedDemoData = async () => {
       },
       {
         id: 'am-story-2',
-        ownerProfileId: 'demo-user',
+        ownerProfileId: demoProfileId,
         title: 'Il Gatto Magico',
         text: 'In una piccola casa vicino al bosco viveva un gatto molto speciale. Aveva il potere di parlare con gli animali e di far accadere cose incredibili...',
         mode: 'Propp',
@@ -25,7 +36,7 @@ export const seedDemoData = async () => {
       },
       {
         id: 'am-story-3',
-        ownerProfileId: 'demo-user',
+        ownerProfileId: demoProfileId,
         title: 'L\'Avventura nel Bosco Incantato',
         text: 'Marco e Sara stavano esplorando il bosco quando trovarono un sentiero segreto che li portò in un mondo magico pieno di creature fantastiche...',
         mode: 'CSS',
@@ -88,7 +99,7 @@ export const seedDemoData = async () => {
     }
 
     // Set current profile for demo
-    localStorage.setItem('current_profile_id', 'demo-user');
+    localStorage.setItem('current_profile_id', demoProfileId);
 
     console.log('Demo data seeded successfully');
   } catch (error) {
