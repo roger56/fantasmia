@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Home, Sparkles } from 'lucide-react';
-import { saveReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
+import { fantasMiaDB } from '@/utils/indexedDB';
+import { getCurrentProfileId } from '@/utils/profileManager';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ActionButtonGroup from '@/components/shared/ActionButtonGroup';
 import ModifyMenu from '@/components/shared/ModifyMenu';
@@ -18,7 +19,7 @@ const MagicStoryEditor = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim()) {
       toast({
         title: "Errore",
@@ -38,26 +39,45 @@ const MagicStoryEditor = () => {
     }
 
     try {
+      const profileId = getCurrentProfileId();
+      if (!profileId) {
+        toast({
+          title: "Errore",
+          description: "Profilo non trovato",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      await fantasMiaDB.init();
+      
       const newStory = {
         id: crypto.randomUUID(),
         title: title.trim(),
-        content: content.trim(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        category: 'magic', // Categorize as magic story
-        authorId: 'superuser',
-        authorName: 'superuser'
+        text: content.trim(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        mode: 'STRANGE_FACT',
+        ownerProfileId: profileId,
+        hasImage: false
       };
       
-      saveReadingStory(newStory);
+      await fantasMiaDB.saveAMStory(newStory);
+
+      // Emit events for UI updates
+      window.dispatchEvent(new CustomEvent('am-story-updated', { 
+        detail: { storyId: newStory.id, action: 'created' } 
+      }));
+      window.dispatchEvent(new CustomEvent('am:changed'));
 
       toast({
         title: "Successo",
-        description: "Storia del mondo salvata con successo"
+        description: "Storia salvata nell'archivio AM"
       });
 
-      navigate('/reading-stories/magic');
+      navigate('/user-archive');
     } catch (error) {
+      console.error('Error saving story:', error);
       toast({
         title: "Errore",
         description: "Impossibile salvare la storia",
@@ -84,7 +104,7 @@ const MagicStoryEditor = () => {
           {/* Back Button - Top Left */}
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/reading-stories/magic')}
+            onClick={() => navigate('/create-story')}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -94,13 +114,13 @@ const MagicStoryEditor = () => {
           {/* Page Title - Center */}
           <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
             <Sparkles className="w-5 h-5" />
-            Nuova Storia del Mondo
+            Fatto Strano che Ti È Capitato
           </h1>
           
           {/* Home Button - Top Right */}
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/profiles')}
             className="flex items-center gap-2"
           >
             <Home className="w-5 h-5" />
@@ -116,13 +136,13 @@ const MagicStoryEditor = () => {
           {/* Title Input */}
           <Card>
             <CardHeader>
-              <CardTitle>Titolo della Storia</CardTitle>
+              <CardTitle>Titolo del Fatto Strano</CardTitle>
             </CardHeader>
             <CardContent>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Inserisci il titolo della storia del mondo..."
+                placeholder="Inserisci il titolo del tuo fatto strano..."
                 className="text-lg"
               />
             </CardContent>
@@ -131,14 +151,14 @@ const MagicStoryEditor = () => {
           {/* Content Input */}
           <Card>
             <CardHeader>
-              <CardTitle>Contenuto della Storia</CardTitle>
+              <CardTitle>Racconta il Fatto Strano</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {isEditing ? (
                 <Textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Scrivi qui la tua storia del mondo..."
+                  placeholder="Racconta qui il fatto strano che ti è capitato..."
                   className="min-h-[300px] text-base leading-relaxed"
                 />
               ) : (
@@ -146,7 +166,7 @@ const MagicStoryEditor = () => {
                   className="min-h-[300px] p-3 rounded-md border bg-background text-base leading-relaxed cursor-pointer hover:bg-slate-50"
                   onClick={() => setIsEditing(true)}
                 >
-                  {content || "Clicca qui per iniziare a scrivere la tua storia del mondo..."}
+                  {content || "Clicca qui per raccontare il tuo fatto strano..."}
                 </div>
               )}
               
@@ -186,7 +206,7 @@ const MagicStoryEditor = () => {
               className="px-8"
               disabled={!title.trim() || !content.trim()}
             >
-              Salva Storia del Mondo
+              Salva Fatto Strano
             </Button>
           </div>
         </div>

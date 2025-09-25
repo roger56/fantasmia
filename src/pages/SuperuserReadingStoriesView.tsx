@@ -10,6 +10,7 @@ import { fantasMiaDB } from '@/utils/indexedDB';
 import { useToast } from '@/hooks/use-toast';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import { usePermanentTranslation } from '@/hooks/usePermanentTranslation';
+import { useTTS } from '@/hooks/useTTS';
 import ModifyMenu from '@/components/shared/ModifyMenu';
 
 interface AGStory {
@@ -37,6 +38,7 @@ const SuperuserReadingStoriesView = () => {
   const [selectedStory, setSelectedStory] = useState<AGStory | null>(null);
   
   const { isTranslating } = usePermanentTranslation(null, () => {});
+  const { speak, stop, isPlaying } = useTTS();
 
   const loadStories = async () => {
     try {
@@ -186,11 +188,22 @@ const SuperuserReadingStoriesView = () => {
     }
   };
 
-  const StoryRow = ({ story, onImageClick, onDelete, onTranslate }: {
+  const handleReadStory = (story: AGStory) => {
+    const textToRead = `${story.title}. ${story.content}`;
+    
+    if (isPlaying) {
+      stop();
+    } else {
+      speak(textToRead, 'italian');
+    }
+  };
+
+  const StoryRow = ({ story, onImageClick, onDelete, onTranslate, onRead }: {
     story: AGStory;
     onImageClick: (id: string, title: string) => void;
     onDelete: (id: string) => void;
     onTranslate: (story: AGStory, toEnglish: boolean) => void;
+    onRead: (story: AGStory) => void;
   }) => (
     <div className="flex items-center justify-between p-3 border-b border-gray-200 hover:bg-gray-50">
       <div className="flex-1 min-w-0">
@@ -217,7 +230,17 @@ const SuperuserReadingStoriesView = () => {
           <ImageIcon className="w-4 h-4" />
         </Button>
 
-        {/* Read Button */}
+        {/* TTS Read Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="p-1 h-8 w-8 text-green-600 hover:text-green-700"
+          onClick={() => onRead(story)}
+        >
+          <PlayCircle className="w-4 h-4" />
+        </Button>
+
+        {/* View Button */}
         <Button
           variant="ghost"
           size="sm"
@@ -326,6 +349,7 @@ const SuperuserReadingStoriesView = () => {
                 onImageClick={handleImageClick}
                 onDelete={handleDeleteStory}
                 onTranslate={handleTranslateStory}
+                onRead={handleReadStory}
               />
             ))}
           </div>

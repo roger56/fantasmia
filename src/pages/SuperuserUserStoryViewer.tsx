@@ -25,6 +25,7 @@ const SuperuserUserStoryViewer = () => {
   const [mediaAsset, setMediaAsset] = useState<string | null>(null);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [ownerProfileName, setOwnerProfileName] = useState<string>('');
   const { speak, stop, isPlaying, getButtonText } = useTTS();
   const { translateContent, getButtonText: getTranslationButtonText, getCurrentLanguage, isTranslating } = useTranslation();
   const { toast } = useToast();
@@ -54,6 +55,7 @@ const SuperuserUserStoryViewer = () => {
           console.log({ action: "load-am-story", id, found: true, story: result });
           setStory(result);
           loadMediaAsset(id);
+          loadOwnerProfile(result.ownerProfileId);
         } else {
           console.log({ action: "load-am-story", id, found: false });
           setStory(null);
@@ -87,6 +89,26 @@ const SuperuserUserStoryViewer = () => {
       }
     } catch (error) {
       console.error('Error loading media asset:', error);
+    }
+  };
+
+  const loadOwnerProfile = async (profileId: string) => {
+    try {
+      const transaction = fantasMiaDB['db']!.transaction(['profiles'], 'readonly');
+      const profileStore = transaction.objectStore('profiles');
+      const profileRequest = profileStore.get(profileId);
+      
+      profileRequest.onsuccess = () => {
+        const profile = profileRequest.result;
+        setOwnerProfileName(profile?.name || profileId);
+      };
+      
+      profileRequest.onerror = () => {
+        setOwnerProfileName(profileId);
+      };
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      setOwnerProfileName(profileId);
     }
   };
 
@@ -402,7 +424,7 @@ const SuperuserUserStoryViewer = () => {
               <div>Modalità: {story.mode}</div>
               <div>Creata: {new Date(story.createdAt).toLocaleString('it-IT')}</div>
               <div>ID: {story.id}</div>
-              <div>Proprietario: {story.ownerProfileId}</div>
+              <div>Proprietario: {ownerProfileName}</div>
             </div>
           </CardContent>
         </Card>

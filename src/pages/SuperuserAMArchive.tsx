@@ -54,7 +54,8 @@ const SuperuserAMArchive = () => {
         story.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         story.text?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         story.ownerProfileId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        story.mode?.toLowerCase().includes(searchTerm.toLowerCase())
+        story.mode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        profileNames[story.ownerProfileId]?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredStories(filtered);
     }
