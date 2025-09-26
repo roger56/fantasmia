@@ -52,11 +52,13 @@ export const usePermanentTranslation = (story: AMStory | null, onStoryUpdate: (u
         translatedTitle = await translateToItalian(story.title || '');
       }
       
+      // Show preview immediately while translation is in progress
+      setState(prev => ({ ...prev, showPreview: true }));
+      
       setState(prev => ({
         ...prev,
         isTranslating: false,
-        pendingTranslation: { content: translatedContent, title: translatedTitle },
-        showPreview: true
+        pendingTranslation: { content: translatedContent, title: translatedTitle }
       }));
       
     } catch (error) {

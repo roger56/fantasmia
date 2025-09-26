@@ -49,7 +49,10 @@ const TranslationPreview: React.FC<TranslationPreviewProps> = ({
           <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg">
             <AlertTriangle className="w-5 h-5" />
             <span className="text-sm font-medium">
-              Operazione permanente e irreversibile. La versione corrente sarà sostituita.
+              {targetLanguage === 'italian' 
+                ? 'Permanent and irreversible operation. The current version will be replaced.'
+                : 'Operazione permanente e irreversibile. La versione corrente sarà sostituita.'
+              }
             </span>
           </div>
         </CardHeader>
@@ -105,9 +108,9 @@ const TranslationPreview: React.FC<TranslationPreviewProps> = ({
                     
                     <div>
                       <label className="text-sm font-medium text-slate-600">Contenuto:</label>
-                      <ScrollArea className="mt-1 h-48 p-3 bg-primary/5 rounded border-primary/20 border">
-                        <div className="text-sm whitespace-pre-wrap">
-                          {translatedContent}
+                      <ScrollArea className="mt-1 h-48 w-full border border-primary/20 rounded bg-primary/5">
+                        <div className="p-3 text-sm whitespace-pre-wrap">
+                          {translatedContent || 'Traduzione in corso...'}
                         </div>
                       </ScrollArea>
                     </div>
