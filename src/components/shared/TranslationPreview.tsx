@@ -46,15 +46,6 @@ const TranslationPreview: React.FC<TranslationPreviewProps> = ({
               <X className="w-4 h-4" />
             </Button>
           </div>
-          <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg">
-            <AlertTriangle className="w-5 h-5" />
-            <span className="text-sm font-medium">
-              {targetLanguage === 'italian' 
-                ? 'Permanent and irreversible operation. The current version will be replaced.'
-                : 'Operazione permanente e irreversibile. La versione corrente sarà sostituita.'
-              }
-            </span>
-          </div>
         </CardHeader>
         
         <CardContent className="space-y-6">
@@ -118,6 +109,17 @@ const TranslationPreview: React.FC<TranslationPreviewProps> = ({
                 </div>
               </div>
               
+              {/* Warning Message */}
+              <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="text-sm font-medium">
+                  {targetLanguage === 'italian' 
+                    ? 'Permanent and irreversible operation. The current version will be replaced.'
+                    : 'Operazione permanente e irreversibile. La versione corrente sarà sostituita.'
+                  }
+                </span>
+              </div>
+
               {/* Action Buttons */}
               <div className="flex gap-3 justify-end pt-4 border-t">
                 <Button 
