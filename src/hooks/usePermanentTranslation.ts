@@ -6,14 +6,14 @@ import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 interface PermanentTranslationState {
   isTranslating: boolean;
   pendingTranslation: { content: string; title: string; } | null;
-  showConfirmDialog: boolean;
+  showPreview: boolean;
 }
 
 export const usePermanentTranslation = (story: AMStory | null, onStoryUpdate: (updatedStory: AMStory) => void) => {
   const [state, setState] = useState<PermanentTranslationState>({
     isTranslating: false,
     pendingTranslation: null,
-    showConfirmDialog: false
+    showPreview: false
   });
   const { toast } = useToast();
 
@@ -56,7 +56,7 @@ export const usePermanentTranslation = (story: AMStory | null, onStoryUpdate: (u
         ...prev,
         isTranslating: false,
         pendingTranslation: { content: translatedContent, title: translatedTitle },
-        showConfirmDialog: true
+        showPreview: true
       }));
       
     } catch (error) {
@@ -93,7 +93,7 @@ export const usePermanentTranslation = (story: AMStory | null, onStoryUpdate: (u
       setState({
         isTranslating: false,
         pendingTranslation: null,
-        showConfirmDialog: false
+        showPreview: false
       });
       
       const targetLang = getCurrentLanguage() === 'italian' ? 'inglese' : 'italiano';
@@ -116,13 +116,13 @@ export const usePermanentTranslation = (story: AMStory | null, onStoryUpdate: (u
     setState({
       isTranslating: false,
       pendingTranslation: null,
-      showConfirmDialog: false
+      showPreview: false
     });
   }, []);
 
   return {
     isTranslating: state.isTranslating,
-    showConfirmDialog: state.showConfirmDialog,
+    showPreview: state.showPreview,
     pendingTranslation: state.pendingTranslation,
     getButtonText,
     getCurrentLanguage,

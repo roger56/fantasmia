@@ -15,6 +15,7 @@ import ShareMenu from '@/components/shared/ShareMenu';
 import MediaMenu from '@/components/shared/MediaMenu';
 import ModifyMenu from '@/components/shared/ModifyMenu';
 import EditTextDialog from '@/components/shared/EditTextDialog';
+import TranslationPreview from '@/components/shared/TranslationPreview';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -499,34 +500,18 @@ const UserStoryViewer = () => {
         title="Modifica Testo Storia"
       />
 
-      {/* Translation Confirmation Dialog */}
-      <AlertDialog open={translation.showConfirmDialog} onOpenChange={translation.cancelTranslation}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Conferma traduzione permanente</AlertDialogTitle>
-            <AlertDialogDescription>
-              Salvare la traduzione in {translation.getCurrentLanguage() === 'italian' ? 'inglese' : 'italiano'} sostituendo la versione corrente? 
-              <br /><br />
-              <strong>Operazione permanente e irreversibile.</strong>
-              {translation.pendingTranslation && (
-                <div className="mt-4 p-3 bg-slate-50 rounded border">
-                  <div className="font-semibold mb-2">Anteprima traduzione:</div>
-                  <div className="text-sm">
-                    <div><strong>Titolo:</strong> {translation.pendingTranslation.title}</div>
-                    <div className="mt-2"><strong>Testo:</strong> {translation.pendingTranslation.content.substring(0, 150)}...</div>
-                  </div>
-                </div>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={translation.cancelTranslation}>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={translation.confirmTranslation}>
-              Salva traduzione
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Translation Preview */}
+      <TranslationPreview
+        isVisible={translation.showPreview || translation.isTranslating}
+        isTranslating={translation.isTranslating}
+        originalTitle={storyTitle}
+        originalContent={storyText}
+        translatedTitle={translation.pendingTranslation?.title || ''}
+        translatedContent={translation.pendingTranslation?.content || ''}
+        targetLanguage={translation.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
+        onConfirm={translation.confirmTranslation}
+        onCancel={translation.cancelTranslation}
+      />
     </div>
   );
 };
