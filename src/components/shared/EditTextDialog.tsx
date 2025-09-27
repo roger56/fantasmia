@@ -28,12 +28,17 @@ const EditTextDialog: React.FC<EditTextDialogProps> = ({
   const [editedTitle, setEditedTitle] = useState(initialTitle);
 
   const handleSave = () => {
+    console.debug('EDIT:title-save-ok', { 
+      titleLen: showTitleField ? editedTitle.length : 0,
+      textLen: editedText.length 
+    });
     onSave(editedText, showTitleField ? editedTitle : undefined);
     onOpenChange(false);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
+      console.debug('EDIT:title-open', { showTitleField });
       setEditedText(initialText);
       setEditedTitle(initialTitle);
     }

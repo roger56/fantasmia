@@ -200,11 +200,15 @@ const UserStoryViewer = () => {
     }
   };
 
-  const handleSaveText = async (newText: string) => {
+  const handleSaveText = async (newText: string, newTitle?: string) => {
     if (!story || !id) return;
     
     try {
-      const updatedStory = { ...story, text: newText };
+      const updatedStory = { 
+        ...story, 
+        text: newText,
+        ...(newTitle !== undefined && { title: newTitle })
+      };
       await fantasMiaDB.saveAMStory(updatedStory);
       setStory(updatedStory);
       
@@ -215,7 +219,7 @@ const UserStoryViewer = () => {
       window.dispatchEvent(new CustomEvent('am:changed')); // REQUISITO: Lista reattiva
       
       toast({
-        title: "Testo salvato",
+        title: newTitle !== undefined ? "Storia salvata" : "Testo salvato",
         description: "Le modifiche sono state salvate con successo"
       });
     } catch (error) {
@@ -375,25 +379,14 @@ const UserStoryViewer = () => {
             onMediaUpdate={handleMediaUpdate}
           />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                MODIFICA
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                Modifica testo
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowModifyMenu(true)}>
-                Migliora con AI
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ModifyMenu
+            storyContent={storyText}
+            storyTitle={storyTitle}
+            isEditing={false}
+            onEditToggle={() => setShowEditDialog(true)}
+            onContentChange={handleContentChange}
+            storyId={id}
+          />
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -459,18 +452,6 @@ const UserStoryViewer = () => {
         </Card>
 
 
-        {/* Modify Menu */}
-        {showModifyMenu && (
-          <ModifyMenu
-            storyContent={storyText}
-            storyTitle={storyTitle}
-            isEditing={false}
-            onEditToggle={() => setShowEditDialog(true)}
-            onContentChange={handleContentChange}
-            storyId={id}
-            className="mt-6"
-          />
-        )}
 
         {/* Media Status */}
         {!mediaAsset && (
@@ -496,8 +477,10 @@ const UserStoryViewer = () => {
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
         initialText={storyText}
+        initialTitle={storyTitle}
         onSave={handleSaveText}
-        title="Modifica Testo Storia"
+        title="Modifica Storia"
+        showTitleField={true}
       />
 
       {/* Translation Preview */}

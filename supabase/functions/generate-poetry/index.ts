@@ -9,13 +9,21 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('📝 Poetry generation request received');
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { storyContent, storyTitle, language = 'it', maxLines = 10 } = await req.json();
+    const { storyContent, storyTitle, language = 'it', maxLines = 15 } = await req.json();
+    
+    console.debug('POEM:request', { 
+      storyTitle, 
+      lang: language,
+      contentLength: storyContent.length 
+    });
 
     if (!storyContent) {
       throw new Error('Story content is required');
@@ -25,19 +33,34 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const systemPrompt = `Scrivi una poesia in rima, divertente, adatta a bambini, ispirata al tema fornito dall'utente.
+    const isItalian = language === 'it';
+    const systemPrompt = isItalian 
+      ? `Scrivi una poesia in rima, divertente, adatta a bambini, ispirata al tema fornito dall'utente.
 La poesia deve:
 - Essere in lingua italiana
-- Avere tra 5 e 15 righe
+- Avere massimo ${maxLines} righe
 - Essere allegra e creativa
 - Essere in rima (se possibile)
 - Usare un ritmo semplice e comprensibile anche per i più piccoli
 
-Rispondi SOLO con la poesia, senza introduzioni o spiegazioni.`;
+Rispondi SOLO con la poesia, senza introduzioni o spiegazioni.`
+      : `Write a rhyming poem, fun and suitable for children, inspired by the theme provided by the user.
+The poem must:
+- Be in English language
+- Have maximum ${maxLines} lines
+- Be cheerful and creative
+- Be rhyming (if possible)
+- Use a simple rhythm understandable for young children
 
-    const userPrompt = `Storia: "${storyTitle ? storyTitle + ' - ' : ''}${storyContent}"
+Respond ONLY with the poem, without introductions or explanations.`;
 
-Crea una poesia in rima, divertente e adatta ai bambini, ispirata a questa storia.`;
+    const userPrompt = isItalian
+      ? `Storia: "${storyTitle ? storyTitle + ' - ' : ''}${storyContent}"
+
+Crea una poesia in rima, divertente e adatta ai bambini, ispirata a questa storia.`
+      : `Story: "${storyTitle ? storyTitle + ' - ' : ''}${storyContent}"
+
+Create a rhyming poem, fun and suitable for children, inspired by this story.`;
 
     console.log('Generating poetry with OpenAI...');
 
@@ -65,15 +88,30 @@ Crea una poesia in rima, divertente e adatta ai bambini, ispirata a questa stori
     }
 
     const data = await response.json();
-    const poetry = data.choices[0].message.content.trim();
+    let poetry = data.choices[0].message.content.trim();
 
-    console.log('Poetry generated successfully');
+    // Remove any leading/trailing quotes or extra formatting
+    poetry = poetry.replace(/^["']|["']$/g, '').trim();
 
-    return new Response(JSON.stringify({ poetry }), {
+    // Ensure max lines
+    const lines = poetry.split('\n').filter(line => line.trim().length > 0);
+    if (lines.length > maxLines) {
+      poetry = lines.slice(0, maxLines).join('\n');
+    }
+
+    console.debug('POEM:success', { 
+      lines: poetry.split('\n').filter(line => line.trim().length > 0).length 
+    });
+
+    return new Response(JSON.stringify({ 
+      poetry,
+      language,
+      lineCount: poetry.split('\n').filter(line => line.trim().length > 0).length
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in generate-poetry function:', error);
+    console.warn('POEM:error', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
