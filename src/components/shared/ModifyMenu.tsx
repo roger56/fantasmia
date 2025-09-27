@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Edit, ChevronDown, PenTool, Wand2, Feather } from 'lucide-react';
 import TextImprover from '@/components/shared/TextImprover';
 import PoetryGenerator from '@/components/shared/PoetryGenerator';
+import PoetryOverlay from '@/components/shared/PoetryOverlay';
 
 interface ModifyMenuProps {
   storyContent: string;
@@ -27,6 +28,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
 }) => {
   const [showTextImprover, setShowTextImprover] = useState(false);
   const [showPoetryGenerator, setShowPoetryGenerator] = useState(false);
+  const [showPoetryOverlay, setShowPoetryOverlay] = useState(false);
 
   const handleEditClick = () => {
     setShowTextImprover(false);
@@ -40,7 +42,8 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   };
 
   const handlePoetryClick = () => {
-    setShowPoetryGenerator(true);
+    setShowPoetryOverlay(true);
+    setShowPoetryGenerator(false);
     setShowTextImprover(false);
   };
 
@@ -103,6 +106,14 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
           />
         </div>
       )}
+
+      {/* Poetry Overlay */}
+      <PoetryOverlay
+        open={showPoetryOverlay}
+        onOpenChange={setShowPoetryOverlay}
+        storyContent={storyContent}
+        storyTitle={storyTitle}
+      />
     </div>
   );
 };

@@ -9,27 +9,33 @@ interface EditTextDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialText: string;
-  onSave: (newText: string) => void;
+  initialTitle?: string;
+  onSave: (newText: string, newTitle?: string) => void;
   title?: string;
+  showTitleField?: boolean;
 }
 
 const EditTextDialog: React.FC<EditTextDialogProps> = ({
   open,
   onOpenChange,
   initialText,
+  initialTitle = "",
   onSave,
-  title = "Modifica Testo"
+  title = "Modifica Testo",
+  showTitleField = false
 }) => {
   const [editedText, setEditedText] = useState(initialText);
+  const [editedTitle, setEditedTitle] = useState(initialTitle);
 
   const handleSave = () => {
-    onSave(editedText);
+    onSave(editedText, showTitleField ? editedTitle : undefined);
     onOpenChange(false);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       setEditedText(initialText);
+      setEditedTitle(initialTitle);
     }
     onOpenChange(newOpen);
   };
@@ -45,13 +51,26 @@ const EditTextDialog: React.FC<EditTextDialogProps> = ({
         </DialogDescription>
 
         <div className="space-y-4">
+          {showTitleField && (
+            <div>
+              <Label htmlFor="story-title">Titolo della storia</Label>
+              <input
+                id="story-title"
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="mt-2 w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Inserisci il titolo della storia..."
+              />
+            </div>
+          )}
           <div>
             <Label htmlFor="story-text">Testo della storia</Label>
             <Textarea
               id="story-text"
               value={editedText}
               onChange={(e) => setEditedText(e.target.value)}
-              rows={12}
+              rows={showTitleField ? 10 : 12}
               className="mt-2"
               placeholder="Scrivi qui il testo della storia..."
             />

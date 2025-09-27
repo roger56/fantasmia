@@ -8,6 +8,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ArrowLeft, BookOpen, Edit, Trash2, Plus } from 'lucide-react';
 import { saveReadingStory, getAllReadingStoriesForSuperuser, updateReadingStory, deleteReadingStory, ReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
+import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
+import PoetryOverlay from '@/components/shared/PoetryOverlay';
+import EditTextDialog from '@/components/shared/EditTextDialog';
 import HomeButton from '@/components/HomeButton';
 
 const SuperuserReadingStoriesManagement = () => {

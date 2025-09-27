@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle, BookOpen } from 'lucide-react';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useTTS } from '@/hooks/useTTS';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -14,6 +14,8 @@ import ShareMenu from '@/components/shared/ShareMenu';
 import MediaMenu from '@/components/shared/MediaMenu';
 import ModifyMenu from '@/components/shared/ModifyMenu';
 import EditTextDialog from '@/components/shared/EditTextDialog';
+import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
+import PoetryOverlay from '@/components/shared/PoetryOverlay';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,6 +27,8 @@ const SuperuserUserStoryViewer = () => {
   const [mediaAsset, setMediaAsset] = useState<string | null>(null);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showBooks, setShowBooks] = useState(false);
+  const [showPoetry, setShowPoetry] = useState(false);
   const [ownerProfileName, setOwnerProfileName] = useState<string>('');
   const { speak, stop, isPlaying, getButtonText } = useTTS();
   const { translateContent, getButtonText: getTranslationButtonText, getCurrentLanguage, isTranslating } = useTranslation();
@@ -329,6 +333,15 @@ const SuperuserUserStoryViewer = () => {
         <div className="flex gap-2 justify-center flex-wrap">
           <Button
             variant="outline"
+            onClick={() => setShowBooks(true)}
+            className="flex items-center gap-2"
+            title="Libri consigliati"
+          >
+            <BookOpen className="w-4 h-4" />
+            Libri
+          </Button>
+          <Button
+            variant="outline"
             onClick={handleReadStory}
             className="flex items-center gap-2"
           >
@@ -365,6 +378,14 @@ const SuperuserUserStoryViewer = () => {
           >
             <Edit className="w-4 h-4" />
             Modifica
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => setShowPoetry(true)}
+            className="flex items-center gap-2"
+          >
+            📝 Poesia
           </Button>
 
           <AlertDialog>
@@ -465,8 +486,32 @@ const SuperuserUserStoryViewer = () => {
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
         initialText={storyText}
-        onSave={handleSaveText}
+        initialTitle={storyTitle}
+        onSave={(newText, newTitle) => {
+          if (newTitle && story) {
+            setStory(prev => prev ? { ...prev, title: newTitle } : null);
+          }
+          handleSaveText(newText);
+        }}
         title="Modifica Testo Storia"
+        showTitleField={true}
+      />
+
+      {/* Recommended Books Dialog */}
+      <RecommendedBooksDialog
+        open={showBooks}
+        onOpenChange={setShowBooks}
+        storyId={id || ''}
+        storyTitle={storyTitle}
+        isSuperuser={true}
+      />
+
+      {/* Poetry Overlay */}
+      <PoetryOverlay
+        open={showPoetry}
+        onOpenChange={setShowPoetry}
+        storyContent={storyText}
+        storyTitle={storyTitle}
       />
     </div>
   );
