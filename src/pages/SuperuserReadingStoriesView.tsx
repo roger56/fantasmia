@@ -17,11 +17,12 @@ interface AGStory {
   id: string;
   title: string;
   content: string;
-  category: 'world' | 'science' | 'greek_myths';
+  category: 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers';
   created_by: 'superuser';
   created_at: string;
   updated_at: string;
   has_image: boolean;
+  language?: string;
 }
 
 const SuperuserReadingStoriesView = () => {

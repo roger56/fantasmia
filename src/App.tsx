@@ -48,6 +48,8 @@ import SuperuserExplorersManagement from "./pages/SuperuserExplorersManagement";
 import SuperuserStoryTypeSelection from "./pages/SuperuserStoryTypeSelection";
 import SuperuserReadingStoriesView from "./pages/SuperuserReadingStoriesView";
 import SuperuserReadingStoryViewer from "./pages/SuperuserReadingStoryViewer";
+import UserNordicMyths from "./pages/UserNordicMyths";
+import UserExplorers from "./pages/UserExplorers";
 import ReadingStoryViewer from "./pages/ReadingStoryViewer";
 import UserArchive from "./pages/UserArchive";
 import UserReadingSuperuserStories from "./pages/UserReadingSuperuserStories";
@@ -114,8 +116,10 @@ const App = () => (
           
           <Route path="/superuser-science-stories-management" element={<SuperuserScienceStoriesManagement />} />
           <Route path="/superuser-greek-myths-management" element={<SuperuserGreekMythsManagement />} />
-          <Route path="/superuser-nordic-myths-management" element={<SuperuserNordicMythsManagement />} />
-          <Route path="/superuser-explorers-management" element={<SuperuserExplorersManagement />} />
+        <Route path="/superuser-nordic-myths-management" element={<SuperuserNordicMythsManagement />} />
+        <Route path="/superuser-explorers-management" element={<SuperuserExplorersManagement />} />
+        <Route path="/user-nordic-myths" element={<UserNordicMyths />} />
+        <Route path="/user-explorers" element={<UserExplorers />} />
           <Route path="/debug-indexdb" element={<DebugIndexedDB />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

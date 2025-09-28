@@ -49,41 +49,29 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
 
   return (
     <div className={className}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Edit className="w-5 h-5" />
-            📝 MODIFICA
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                <span className="flex items-center gap-2">
-                  <Edit className="w-4 h-4" />
-                  Scegli modalità di modifica
-                </span>
-                <ChevronDown className="w-4 h-4" />
+              <Button variant="outline" size="sm" className="h-8">
+                <Edit className="w-4 h-4 mr-1" />
+                Modifica
+                <ChevronDown className="w-3 h-3 ml-1" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+            <DropdownMenuContent className="min-w-[180px]" align="start">
               <DropdownMenuItem onClick={handleEditClick} className="cursor-pointer">
                 <PenTool className="w-4 h-4 mr-2" />
-                📝 Modifica testo
+                Modifica testo
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleImproveTextClick} className="cursor-pointer">
                 <Wand2 className="w-4 h-4 mr-2" />
-                🤖 Migliora testo (AI)
+                Migliora testo (AI)
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePoetryClick} className="cursor-pointer">
                 <Feather className="w-4 h-4 mr-2" />
-                📝 Poesia
+                Poesia
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </CardContent>
-      </Card>
 
       {/* Text Improver Component */}
       {showTextImprover && (
