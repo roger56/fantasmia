@@ -9,15 +9,15 @@ const SuperuserStoryTypeSelection = () => {
 
   return (
     <StoryLayout
-      title="Gestione Storie SU"
-      subtitle="Area Superuser - Seleziona tipo di storia da gestire"
+      title="GESTIONE STORIE PUBBLICHE"
+      subtitle="Seleziona tipologia di storia da gestire"
       onBack={() => navigate('/superuser')}
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <Card 
             className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-slate-300" 
-            onClick={() => navigate('/superuser-reading-stories-management')}
+            onClick={() => navigate('/ag-reading-stories')}
           >
             <CardContent className="p-6 text-center">
               <div className="mb-4 flex justify-center">
@@ -36,7 +36,7 @@ const SuperuserStoryTypeSelection = () => {
 
           <Card 
             className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-slate-300" 
-            onClick={() => navigate('/superuser-science-stories-management')}
+            onClick={() => navigate('/ag-science-stories')}
           >
             <CardContent className="p-6 text-center">
               <div className="mb-4 flex justify-center">
@@ -55,7 +55,7 @@ const SuperuserStoryTypeSelection = () => {
 
           <Card 
             className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-slate-300" 
-            onClick={() => navigate('/superuser-greek-myths-management')}
+            onClick={() => navigate('/ag-greek-myths')}
           >
             <CardContent className="p-6 text-center">
               <div className="mb-4 flex justify-center">
@@ -74,7 +74,7 @@ const SuperuserStoryTypeSelection = () => {
 
           <Card 
             className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-slate-300" 
-            onClick={() => navigate('/superuser-nordic-myths-management')}
+            onClick={() => navigate('/ag-nordic-myths')}
           >
             <CardContent className="p-6 text-center">
               <div className="mb-4 flex justify-center">
@@ -93,7 +93,7 @@ const SuperuserStoryTypeSelection = () => {
 
           <Card 
             className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-slate-300" 
-            onClick={() => navigate('/superuser-explorers-management')}
+            onClick={() => navigate('/ag-explorers')}
           >
             <CardContent className="p-6 text-center">
               <div className="mb-4 flex justify-center">

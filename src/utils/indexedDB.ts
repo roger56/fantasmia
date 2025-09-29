@@ -216,7 +216,7 @@ class FantasMiaDB {
     await store.put(story);
   }
 
-  async getAGStoriesByCategory(category: 'world' | 'science' | 'greek_myths'): Promise<AGStory[]> {
+  async getAGStoriesByCategory(category: 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers'): Promise<AGStory[]> {
     const transaction = this.db!.transaction(['ag_stories'], 'readonly');
     const store = transaction.objectStore('ag_stories');
     const index = store.index('category');
@@ -224,6 +224,72 @@ class FantasMiaDB {
     return new Promise((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAGStoryById(storyId: string): Promise<AGStory | null> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['ag_stories'], 'readonly');
+    const store = transaction.objectStore('ag_stories');
+    const request = store.get(storyId);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Reset functions for redesign
+  async clearAllAGStories(): Promise<void> {
+    console.log('🧹 Clearing all AG stories for redesign...');
+    const transaction = this.db!.transaction(['ag_stories'], 'readwrite');
+    const store = transaction.objectStore('ag_stories');
+    return new Promise((resolve, reject) => {
+      const request = store.clear();
+      request.onsuccess = () => {
+        console.log('✅ All AG stories cleared');
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async clearNonSuperuserProfiles(): Promise<void> {
+    console.log('🧹 Clearing non-superuser profiles...');
+    const profiles = await this.getProfiles();
+    const nonSuperuserProfiles = profiles.filter(p => p.id !== 'superuser' && p.user_type !== 'superuser');
+    
+    if (nonSuperuserProfiles.length === 0) {
+      console.log('✅ No non-superuser profiles to clear');
+      return;
+    }
+
+    const transaction = this.db!.transaction(['profiles', 'am_stories'], 'readwrite');
+    const profileStore = transaction.objectStore('profiles');
+    const storyStore = transaction.objectStore('am_stories');
+
+    return new Promise((resolve, reject) => {
+      let deletedCount = 0;
+      const totalToDelete = nonSuperuserProfiles.length;
+
+      nonSuperuserProfiles.forEach(async (profile) => {
+        // Delete profile's stories first
+        const userStories = await this.getAMStoriesByUser(profile.id);
+        userStories.forEach(story => {
+          storyStore.delete(story.id);
+        });
+
+        // Delete profile
+        const request = profileStore.delete(profile.id);
+        request.onsuccess = () => {
+          deletedCount++;
+          console.log('🗑️ Deleted profile and stories:', profile.name);
+          if (deletedCount === totalToDelete) {
+            console.log('✅ All non-superuser profiles cleared');
+            resolve();
+          }
+        };
+        request.onerror = () => reject(request.error);
+      });
     });
   }
 

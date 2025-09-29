@@ -2,9 +2,15 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { initializeDemoData } from './utils/demoData'
+import { AGDataReset } from './utils/agDataReset'
 
 // Initialize demo data
 initializeDemoData();
+
+// Execute AG data reset for redesign (one-time)
+AGDataReset.performCompleteReset().catch(error => {
+  console.warn('AG Reset warning:', error);
+});
 
 // Filter external contentScript errors to reduce console noise
 window.addEventListener('error', (event) => {
