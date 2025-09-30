@@ -62,12 +62,5 @@ export class AGDataReset {
   }
 }
 
-// Auto-execute reset on module load if flag is set
-if (typeof window !== 'undefined' && window.localStorage.getItem('ag-auto-reset') === 'true') {
-  window.localStorage.removeItem('ag-auto-reset');
-  AGDataReset.performCompleteReset().then(() => {
-    console.log('🎯 Auto-reset completed');
-  }).catch(error => {
-    console.error('🚨 Auto-reset failed:', error);
-  });
-}
+// Auto-execution removed to reduce CPU usage
+// Use AGDataReset.performCompleteReset() manually when needed

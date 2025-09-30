@@ -7,10 +7,7 @@ import { AGDataReset } from './utils/agDataReset'
 // Initialize demo data
 initializeDemoData();
 
-// Execute AG data reset for redesign (one-time)
-AGDataReset.performCompleteReset().catch(error => {
-  console.warn('AG Reset warning:', error);
-});
+// AG data reset is now manual - no automatic reset on every page load
 
 // Filter external contentScript errors to reduce console noise
 window.addEventListener('error', (event) => {
@@ -30,22 +27,7 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
-// Run automatic test when in development (only if profile is available)
-if (import.meta.env.DEV) {
-  import('./utils/storyManager').then(({ runAutomaticTest }) => {
-    import('./utils/profileManager').then(({ getCurrentProfileId }) => {
-      setTimeout(() => {
-        const currentProfileId = getCurrentProfileId();
-        if (currentProfileId) {
-          runAutomaticTest().then(result => {
-            console.log('M1 Test automatico:', result ? 'PASSED' : 'FAILED');
-          });
-        } else {
-          console.log('M1 Test automatico: SKIPPED (nessun profilo selezionato)');
-        }
-      }, 2000); // Wait for initialization
-    });
-  });
-}
+// Automatic test disabled to reduce CPU usage in development
+// Run manually via console: runAutomaticTest() if needed
 
 createRoot(document.getElementById("root")!).render(<App />);

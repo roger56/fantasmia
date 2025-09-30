@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
@@ -108,12 +108,15 @@ const PoetryOverlay: React.FC<PoetryOverlayProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="max-w-2xl max-h-[80vh]" aria-describedby="poetry-overlay-desc">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="w-5 h-5" />
             Poesia AI - {storyTitle || 'Storia'}
           </DialogTitle>
+          <DialogDescription id="poetry-overlay-desc">
+            Genera una poesia ispirata alla tua storia
+          </DialogDescription>
         </DialogHeader>
 
         {!poetry ? (

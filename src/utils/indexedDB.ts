@@ -62,6 +62,10 @@ class FantasMiaDB {
   };
 
   async init(): Promise<void> {
+    if (this.db) {
+      return Promise.resolve(); // Already initialized
+    }
+    
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbConfig.name, this.dbConfig.version);
 
@@ -72,6 +76,12 @@ class FantasMiaDB {
       
       request.onsuccess = () => {
         this.db = request.result;
+        
+        // Add error handler for the database connection
+        this.db.onerror = (event) => {
+          console.error('❌ IndexedDB connection error:', event);
+        };
+        
         console.log('✅ IndexedDB initialized:', this.dbConfig.name, 'v' + this.dbConfig.version);
         resolve();
       };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Plus, ExternalLink, Book } from 'lucide-react';
@@ -102,12 +102,15 @@ const RecommendedBooksDialog: React.FC<RecommendedBooksDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
+        <DialogContent className="max-w-2xl max-h-[80vh]" aria-describedby="books-dialog-desc">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Book className="w-5 h-5" />
               Libri Consigliati - {storyTitle}
             </DialogTitle>
+            <DialogDescription id="books-dialog-desc">
+              Lista di libri consigliati correlati alla storia
+            </DialogDescription>
           </DialogHeader>
 
           {isSuperuser && (
@@ -193,9 +196,12 @@ const RecommendedBooksDialog: React.FC<RecommendedBooksDialogProps> = ({
 
       {/* Add Book Form Dialog */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent>
+        <DialogContent aria-describedby="book-edit-desc">
           <DialogHeader>
             <DialogTitle>Aggiungi Libro Consigliato</DialogTitle>
+            <DialogDescription id="book-edit-desc">
+              Inserisci le informazioni del nuovo libro
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
