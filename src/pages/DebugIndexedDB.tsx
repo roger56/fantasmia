@@ -9,6 +9,7 @@ import { getCurrentProfileId, createDemoProfile } from '@/utils/profileManager';
 import { runAutomaticTest } from '@/utils/storyManager';
 import { toast } from '@/hooks/use-toast';
 import { testBase64Conversion } from '@/utils/base64Utils';
+import { AGDataReset } from '@/utils/agDataReset';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 interface DebugData {
@@ -540,6 +541,27 @@ const DebugIndexedDB = () => {
             
             <Button onClick={saveTestCanvas} variant="outline">
               🎨 Salva Canvas di Test
+            </Button>
+            
+            <Button onClick={async () => {
+              try {
+                await AGDataReset.performCompleteReset();
+                await loadDebugData();
+                toast({
+                  title: "✅ Reset Completato",
+                  description: "Tutti i dati AG/AM sono stati resettati",
+                  variant: "default"
+                });
+              } catch (error) {
+                console.error('Errore durante reset AG/AM:', error);
+                toast({
+                  title: "❌ Errore Reset",
+                  description: `Impossibile completare il reset: ${error.message}`,
+                  variant: "destructive"
+                });
+              }
+            }} variant="destructive">
+              🔄 Esegui Reset AG/AM
             </Button>
           </CardContent>
         </Card>

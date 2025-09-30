@@ -605,14 +605,14 @@ class FantasMiaDB {
           hasOriginalUrl: !!params.originalUrl
         });
         
-        // Emit evento per sync UI
-        window.dispatchEvent(new CustomEvent('am-story-updated', {
-          detail: { 
+        // Emit evento per sync UI (lazy imported to avoid circular deps)
+        import('./eventDebounce').then(({ dispatchDebouncedEvent }) => {
+          dispatchDebouncedEvent('am-story-updated', { 
             storyId: storyIdString, 
             action: 'media-added',
             hasImage: true 
-          }
-        }));
+          });
+        });
         
         resolve(assetId);
       };
@@ -802,14 +802,14 @@ class FantasMiaDB {
       };
       
       tx.oncomplete = () => {
-        // Emit standardized event
-        window.dispatchEvent(new CustomEvent('media:updated', { 
-          detail: { 
+        // Emit standardized event with debounce
+        import('./eventDebounce').then(({ dispatchDebouncedEvent }) => {
+          dispatchDebouncedEvent('media:updated', { 
             storyId: String(storyId),
             storyType: detectedType,
             action: 'image-added'
-          } 
-        }));
+          });
+        });
         resolve();
       };
       tx.onerror = () => reject(tx.error);
@@ -847,10 +847,12 @@ class FantasMiaDB {
           }
           const putRequest = store.put(story);
           putRequest.onsuccess = () => {
-            // Emit update event for real-time UI updates
-            window.dispatchEvent(new CustomEvent('am-story-updated', { 
-              detail: { storyId, action: 'image-updated', hasImage } 
-            }));
+            // Emit update event for real-time UI updates with debounce
+            import('../utils/eventDebounce').then(({ dispatchDebouncedEvent }) => {
+              dispatchDebouncedEvent('am-story-updated', { 
+                storyId, action: 'image-updated', hasImage 
+              });
+            });
             resolve();
           };
           putRequest.onerror = () => reject(putRequest.error);

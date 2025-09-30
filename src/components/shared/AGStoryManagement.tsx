@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen, Volume2, VolumeX, Globe, Edit, Image, Trash2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -200,10 +200,13 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
                 Aggiungi storia
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl" aria-describedby="dlg-desc-add-story">
               <DialogHeader>
                 <DialogTitle>Nuova Storia</DialogTitle>
               </DialogHeader>
+              <DialogDescription id="dlg-desc-add-story">
+                Crea una nuova storia per la categoria {title}.
+              </DialogDescription>
               <div className="space-y-4">
                 <Input
                   placeholder="Titolo storia"
@@ -325,10 +328,13 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl" aria-describedby="dlg-desc-edit-story">
             <DialogHeader>
               <DialogTitle>Modifica Storia</DialogTitle>
             </DialogHeader>
+            <DialogDescription id="dlg-desc-edit-story">
+              Modifica il titolo e il contenuto della storia esistente.
+            </DialogDescription>
             {editingStory && (
               <div className="space-y-4">
                 <Input

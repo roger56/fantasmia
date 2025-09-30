@@ -9,6 +9,13 @@ initializeDemoData();
 
 // AG data reset is now manual - no automatic reset on every page load
 
+// Development diagnostics (light logging)
+if (import.meta.env.DEV) {
+  console.debug('[dev-init] HMR active, CPU optimizations enabled');
+  console.debug('[dev-init] AGDataReset: manual only (use /debug-indexeddb)');
+  console.debug('[dev-init] Event debounce: 150ms for UI sync events');
+}
+
 // Filter external contentScript errors to reduce console noise
 window.addEventListener('error', (event) => {
   const errorSource = event.filename || event.error?.stack || '';
