@@ -1,52 +1,55 @@
 import React from 'react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 
 interface CopyrightWarningDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onModify: () => void;
-  onProceed: () => void;
+  onConfirm: () => void;
 }
 
 const CopyrightWarningDialog: React.FC<CopyrightWarningDialogProps> = ({
   open,
   onOpenChange,
-  onModify,
-  onProceed
+  onConfirm
 }) => {
+  const handleConfirm = () => {
+    onConfirm();
+    onOpenChange(false);
+  };
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-md">
-        <AlertDialogHeader>
-          <div className="flex items-center gap-2">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md" aria-describedby="copyright-warning-desc">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
-            <AlertDialogTitle>Attenzione ai diritti d'autore</AlertDialogTitle>
-          </div>
-          <AlertDialogDescription className="text-left space-y-2">
+            Attenzione Copyright
+          </DialogTitle>
+        </DialogHeader>
+        <DialogDescription id="copyright-warning-desc">
+          <div className="space-y-3 text-sm">
             <p>
-              Alcuni nomi di personaggi famosi (es. Cenerentola, Biancaneve, Pollicino) sono 
-              soggetti a diritti d'autore.
-            </p>
-            <p>
-              Se presenti nella tua storia, i disegni potrebbero non essere generati correttamente. 
-              È consigliato modificare i nomi (es. Caterina, Nevebianca, Indicino).
+              I disegni di storie contenenti personaggi soggetti a diritto d'autore 
+              (es. Cenerentola, Pinocchio, Biancaneve, ecc.) non saranno effettuati.
             </p>
             <p className="font-medium">
-              Vuoi procedere o modificare il testo?
+              Confermi di aver preso visione di questa informazione e di voler procedere?
             </p>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter className="flex gap-2">
-          <AlertDialogCancel onClick={onModify}>
-            Modifica
-          </AlertDialogCancel>
-          <AlertDialogAction onClick={onProceed}>
-            Prosegui
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </div>
+        </DialogDescription>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Annulla
+          </Button>
+          <Button onClick={handleConfirm}>
+            Confermo e Procedo
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

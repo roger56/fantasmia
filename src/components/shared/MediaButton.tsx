@@ -544,8 +544,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       <CopyrightWarningDialog
         open={showCopyrightWarning}
         onOpenChange={setShowCopyrightWarning}
-        onModify={handleCopyrightModify}
-        onProceed={handleCopyrightProceed}
+        onConfirm={handleCopyrightProceed}
       />
     </>
   );

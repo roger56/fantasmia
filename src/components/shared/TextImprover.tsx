@@ -363,8 +363,7 @@ const TextImprover: React.FC<TextImproverProps> = ({
       <CopyrightWarningDialog
         open={showCopyrightWarning}
         onOpenChange={setShowCopyrightWarning}
-        onModify={() => setShowCopyrightWarning(false)}
-        onProceed={handleProceedWithImprovement}
+        onConfirm={handleProceedWithImprovement}
       />
 
       <AlertDialog open={showReplaceConfirm} onOpenChange={setShowReplaceConfirm}>

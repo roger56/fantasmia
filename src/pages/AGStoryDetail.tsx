@@ -11,6 +11,13 @@ import { Palette, Globe, Volume2, VolumeX, Trash2, Upload, Wand2, Video } from '
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import StoryLayout from '@/components/shared/StoryLayout';
+import FileUploadDialog from '@/components/shared/FileUploadDialog';
+import MediaGenerationDialog from '@/components/shared/MediaGenerationDialog';
+import CopyrightWarningDialog from '@/components/shared/CopyrightWarningDialog';
+import TranslationPreview from '@/components/shared/TranslationPreview';
+import { useTTS } from '@/hooks/useTTS';
+import { useTranslation } from '@/hooks/useTranslation';
+import { translateToEnglish, translateToItalian } from '@/utils/translation';
 
 interface AGStory {
   id: string;
@@ -31,7 +38,21 @@ const AGStoryDetail = () => {
   const [story, setStory] = useState<AGStory | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedStory, setEditedStory] = useState<{ title: string; content: string }>({ title: '', content: '' });
-  const [isPlaying, setIsPlaying] = useState(false);
+  
+  // Media dialogs
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showAIDialog, setShowAIDialog] = useState(false);
+  const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
+  
+  // Translation
+  const [showTranslationPreview, setShowTranslationPreview] = useState(false);
+  const [translatedTitle, setTranslatedTitle] = useState('');
+  const [translatedContent, setTranslatedContent] = useState('');
+  const [currentLanguage, setCurrentLanguage] = useState<'italian' | 'english'>('italian');
+  
+  // Hooks
+  const { isPlaying, isPaused, speak, stop, getButtonText } = useTTS();
+  const { isTranslating } = useTranslation();
 
   useEffect(() => {
     if (id) {
@@ -127,18 +148,79 @@ const AGStoryDetail = () => {
 
   const handleTTSToggle = () => {
     if (!story) return;
-
-    if (isPlaying) {
-      window.speechSynthesis.cancel();
-      setIsPlaying(false);
+    
+    if (isPlaying && !isPaused) {
+      stop();
     } else {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(story.content);
-      utterance.lang = 'it-IT';
-      utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => setIsPlaying(false);
-      window.speechSynthesis.speak(utterance);
-      setIsPlaying(true);
+      const language = currentLanguage === 'english' ? 'english' : 'italian';
+      speak(story.content, language);
+    }
+  };
+
+  const handleTranslate = async () => {
+    if (!story) return;
+    
+    try {
+      if (currentLanguage === 'italian') {
+        // Translate to English
+        const newTranslatedTitle = await translateToEnglish(story.title);
+        const newTranslatedContent = await translateToEnglish(story.content);
+        
+        setTranslatedTitle(newTranslatedTitle);
+        setTranslatedContent(newTranslatedContent);
+        setShowTranslationPreview(true);
+      } else {
+        // Translate back to Italian
+        const newTranslatedTitle = await translateToItalian(story.title);
+        const newTranslatedContent = await translateToItalian(story.content);
+        
+        setTranslatedTitle(newTranslatedTitle);
+        setTranslatedContent(newTranslatedContent);
+        setShowTranslationPreview(true);
+      }
+    } catch (error) {
+      toast({
+        title: "Errore traduzione",
+        description: "Non è stato possibile tradurre il contenuto",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleConfirmTranslation = async () => {
+    if (!story) return;
+    
+    const updatedStory = {
+      ...story,
+      title: translatedTitle,
+      content: translatedContent,
+      language: currentLanguage === 'italian' ? 'english' : 'italian',
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      await fantasMiaDB.saveAGStory(updatedStory);
+      setStory(updatedStory);
+      setEditedStory({ title: translatedTitle, content: translatedContent });
+      setCurrentLanguage(currentLanguage === 'italian' ? 'english' : 'italian');
+      setShowTranslationPreview(false);
+      
+      toast({
+        title: "Traduzione salvata",
+        description: `La storia è stata tradotta in ${currentLanguage === 'italian' ? 'inglese' : 'italiano'}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Errore durante il salvataggio della traduzione",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMediaUpdate = () => {
+    if (story) {
+      loadStory(story.id);
     }
   };
 
@@ -182,11 +264,11 @@ const AGStoryDetail = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowUploadDialog(true)}>
                   <Upload className="w-4 h-4 mr-2" />
                   Carica da PC
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowCopyrightWarning(true)}>
                   <Wand2 className="w-4 h-4 mr-2" />
                   Disegno AI
                 </DropdownMenuItem>
@@ -198,22 +280,26 @@ const AGStoryDetail = () => {
             </DropdownMenu>
 
             {/* Translation */}
-            <Button variant="outline" disabled title="Traduzione (in sviluppo)">
+            <Button 
+              variant="outline" 
+              onClick={handleTranslate}
+              disabled={isTranslating}
+            >
               <Globe className="w-4 h-4 mr-2" />
-              Traduzione
+              {isTranslating ? 'Traduzione...' : (currentLanguage === 'italian' ? 'Inglese' : 'Italiano')}
             </Button>
 
             {/* TTS */}
             <Button variant="outline" onClick={handleTTSToggle}>
-              {isPlaying ? (
+              {isPlaying && !isPaused ? (
                 <>
                   <VolumeX className="w-4 h-4 mr-2" />
-                  Ferma
+                  {getButtonText()}
                 </>
               ) : (
                 <>
                   <Volume2 className="w-4 h-4 mr-2" />
-                  Leggi
+                  {getButtonText()}
                 </>
               )}
             </Button>
@@ -273,6 +359,49 @@ const AGStoryDetail = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Upload Dialog */}
+        {story && (
+          <FileUploadDialog
+            open={showUploadDialog}
+            onOpenChange={setShowUploadDialog}
+            storyId={story.id}
+            storyTitle={story.title}
+            userId="superuser"
+          />
+        )}
+
+        {/* AI Generation Dialog */}
+        {story && (
+          <MediaGenerationDialog
+            open={showAIDialog}
+            onOpenChange={setShowAIDialog}
+            storyContent={story.content}
+            storyTitle={story.title}
+            storyId={story.id}
+            userId="superuser"
+          />
+        )}
+
+        {/* Copyright Warning Dialog */}
+        <CopyrightWarningDialog
+          open={showCopyrightWarning}
+          onOpenChange={setShowCopyrightWarning}
+          onConfirm={() => setShowAIDialog(true)}
+        />
+
+        {/* Translation Preview Dialog */}
+        <TranslationPreview
+          open={showTranslationPreview}
+          onOpenChange={setShowTranslationPreview}
+          originalTitle={story?.title || ''}
+          originalContent={story?.content || ''}
+          translatedTitle={translatedTitle}
+          translatedContent={translatedContent}
+          language={currentLanguage === 'italian' ? 'english' : 'italian'}
+          onConfirm={handleConfirmTranslation}
+          onCancel={() => setShowTranslationPreview(false)}
+        />
       </div>
     </StoryLayout>
   );

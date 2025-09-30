@@ -485,13 +485,13 @@ const UserStoryViewer = () => {
 
       {/* Translation Preview */}
       <TranslationPreview
-        isVisible={translation.showPreview || translation.isTranslating}
-        isTranslating={translation.isTranslating}
+        open={translation.showPreview || translation.isTranslating}
+        onOpenChange={() => {}}
         originalTitle={storyTitle}
         originalContent={storyText}
         translatedTitle={translation.pendingTranslation?.title || ''}
         translatedContent={translation.pendingTranslation?.content || ''}
-        targetLanguage={translation.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
+        language={translation.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
         onConfirm={translation.confirmTranslation}
         onCancel={translation.cancelTranslation}
       />
