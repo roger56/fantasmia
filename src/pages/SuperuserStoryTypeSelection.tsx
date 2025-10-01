@@ -26,10 +26,10 @@ const SuperuserStoryTypeSelection = () => {
                 </div>
               </div>
               <h3 className="text-xl font-semibold text-slate-800 mb-2">
-                Gestisci Storie di Lettura
+                Storie di Lettura
               </h3>
               <p className="text-slate-600 text-sm">
-                Crea e gestisci storie del mondo
+                Gestione storie del mondo
               </p>
             </CardContent>
           </Card>
@@ -45,10 +45,10 @@ const SuperuserStoryTypeSelection = () => {
                 </div>
               </div>
               <h3 className="text-xl font-semibold text-slate-800 mb-2">
-                Gestisci Storie di Scienza
+                Storie di Scienza
               </h3>
               <p className="text-slate-600 text-sm">
-                Crea e gestisci storie scientifiche
+                Gestione storie scientifiche
               </p>
             </CardContent>
           </Card>
@@ -64,10 +64,10 @@ const SuperuserStoryTypeSelection = () => {
                 </div>
               </div>
               <h3 className="text-xl font-semibold text-slate-800 mb-2">
-                Gestisci Storie dei Miti Greci
+                I Miti Greci
               </h3>
               <p className="text-slate-600 text-sm">
-                Crea e gestisci miti greci
+                Gestione miti greci
               </p>
             </CardContent>
           </Card>
@@ -86,7 +86,7 @@ const SuperuserStoryTypeSelection = () => {
                 I Miti del Nord
               </h3>
               <p className="text-slate-600 text-sm">
-                Crea e gestisci miti nordici
+                Gestione miti nordici
               </p>
             </CardContent>
           </Card>
@@ -105,7 +105,7 @@ const SuperuserStoryTypeSelection = () => {
                 I Grandi Esploratori
               </h3>
               <p className="text-slate-600 text-sm">
-                Crea e gestisci storie di esploratori
+                Gestione storie di esploratori
               </p>
             </CardContent>
           </Card>

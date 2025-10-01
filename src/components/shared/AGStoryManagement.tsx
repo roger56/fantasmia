@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, Volume2, VolumeX, Globe, Edit, Image, Trash2, Plus } from 'lucide-react';
+import { BookOpen, Volume2, VolumeX, Globe, Edit, ImageIcon, Trash2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import RecommendedBooksDialog from './RecommendedBooksDialog';
 import StoryLayout from './StoryLayout';
+import { useTTS } from '@/hooks/useTTS';
 
 interface AGStoryManagementProps {
   category: 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers';
@@ -38,8 +39,9 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
   const [editingStory, setEditingStory] = useState<AGStory | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newStory, setNewStory] = useState({ title: '', content: '' });
-  const [isPlaying, setIsPlaying] = useState<string | null>(null);
   const [booksDialogStory, setBooksDialogStory] = useState<AGStory | null>(null);
+  
+  const { isPlaying, speak, stop, currentStoryId } = useTTS();
 
   useEffect(() => {
     loadStories();
@@ -160,22 +162,13 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
   };
 
   const handleTTSToggle = (storyId: string) => {
-    if (isPlaying === storyId) {
-      // Stop TTS
-      window.speechSynthesis.cancel();
-      setIsPlaying(null);
+    const story = stories.find(s => s.id === storyId);
+    if (!story) return;
+    
+    if (isPlaying && currentStoryId === storyId) {
+      stop();
     } else {
-      // Start TTS
-      const story = stories.find(s => s.id === storyId);
-      if (story) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(story.content);
-        utterance.lang = 'it-IT';
-        utterance.onend = () => setIsPlaying(null);
-        utterance.onerror = () => setIsPlaying(null);
-        window.speechSynthesis.speak(utterance);
-        setIsPlaying(storyId);
-      }
+      speak(story.content, 'italian', storyId);
     }
   };
 
@@ -192,11 +185,11 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
     >
       <div className="space-y-6">
         {/* Add Story Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-start">
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
+              <Button className="flex items-center gap-2" size="lg">
+                <Plus className="w-5 h-5" />
                 Aggiungi storia
               </Button>
             </DialogTrigger>
@@ -236,86 +229,87 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
         <Card>
           <CardContent className="p-6">
             <ScrollArea className="h-[500px]">
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {stories.length === 0 ? (
-                  <p className="text-center text-slate-500 py-8">
+                  <p className="text-center text-muted-foreground py-8">
                     Nessuna storia presente. Clicca "Aggiungi storia" per iniziare.
                   </p>
                 ) : (
                   stories.map((story) => (
-                    <div key={story.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
-                      <div className="flex-1">
+                    <div key={story.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                      <div className="flex-1 min-w-0">
                         <button
                           onClick={() => navigate(`/ag-story-detail/${story.id}`)}
-                          className="text-left hover:text-blue-600 font-medium"
+                          className="text-left hover:underline font-semibold text-foreground truncate block w-full"
                         >
                           {story.title}
                         </button>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 ml-4">
                         {/* Books Icon */}
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => setBooksDialogStory(story)}
                           title="Libri consigliati"
                         >
-                          <BookOpen className="w-4 h-4 text-blue-600" />
+                          <BookOpen className="w-5 h-5 text-blue-600" />
                         </Button>
 
                         {/* TTS Icon */}
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleTTSToggle(story.id)}
-                          title={isPlaying === story.id ? "Ferma lettura" : "Leggi"}
+                          title={isPlaying && currentStoryId === story.id ? "Ferma lettura" : "Leggi"}
                         >
-                          {isPlaying === story.id ? (
-                            <VolumeX className="w-4 h-4 text-red-600" />
+                          {isPlaying && currentStoryId === story.id ? (
+                            <VolumeX className="w-5 h-5 text-red-600" />
                           ) : (
-                            <Volume2 className="w-4 h-4 text-green-600" />
+                            <Volume2 className="w-5 h-5 text-green-600" />
                           )}
                         </Button>
 
                         {/* Translation Icon */}
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           title="Traduzione (in sviluppo)"
                           disabled
                         >
-                          <Globe className="w-4 h-4 text-gray-400" />
+                          <Globe className="w-5 h-5 text-muted" />
                         </Button>
 
                         {/* Edit Icon */}
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => openEditDialog(story)}
                           title="Modifica"
                         >
-                          <Edit className="w-4 h-4 text-blue-600" />
+                          <Edit className="w-5 h-5 text-blue-600" />
                         </Button>
 
                         {/* Image Icon */}
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           title={story.has_image ? "Immagine presente" : "Nessuna immagine"}
-                          disabled
+                          onClick={() => story.has_image && navigate(`/ag-story-detail/${story.id}`)}
+                          disabled={!story.has_image}
                         >
-                          <Image className={`w-4 h-4 ${story.has_image ? 'text-green-600' : 'text-red-600'}`} />
+                          <ImageIcon className={`w-5 h-5 ${story.has_image ? 'text-green-600' : 'text-red-600'}`} />
                         </Button>
 
                         {/* Delete Icon */}
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleDeleteStory(story.id)}
                           title="Elimina"
                         >
-                          <Trash2 className="w-4 h-4 text-red-600" />
+                          <Trash2 className="w-5 h-5 text-red-600" />
                         </Button>
                       </div>
                     </div>

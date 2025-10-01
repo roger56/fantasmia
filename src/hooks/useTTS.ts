@@ -5,6 +5,7 @@ interface TTSState {
   isPlaying: boolean;
   isPaused: boolean;
   utterance?: SpeechSynthesisUtterance;
+  storyId?: string;
 }
 
 export const useTTS = () => {
@@ -12,7 +13,7 @@ export const useTTS = () => {
   const [currentText, setCurrentText] = useState<string>('');
   const { toast } = useToast();
 
-  const speak = useCallback((text: string, language: 'italian' | 'english' = 'italian') => {
+  const speak = useCallback((text: string, language: 'italian' | 'english' = 'italian', storyId?: string) => {
     if (!('speechSynthesis' in window)) {
       toast({
         title: "Funzione non disponibile",
@@ -22,11 +23,12 @@ export const useTTS = () => {
       return;
     }
 
-    // If playing the same text, pause/resume
-    if (state.isPlaying && !state.isPaused && currentText === text) {
+    // If playing the same text/story, pause/resume
+    const isSameStory = storyId && state.storyId === storyId;
+    if (state.isPlaying && !state.isPaused && isSameStory) {
       speechSynthesis.pause();
       setState(prev => ({ ...prev, isPaused: true }));
-    } else if (state.isPaused && state.utterance && currentText === text) {
+    } else if (state.isPaused && state.utterance && isSameStory) {
       speechSynthesis.resume();
       setState(prev => ({ ...prev, isPaused: false }));
     } else {
@@ -37,7 +39,7 @@ export const useTTS = () => {
       utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
       
       utterance.onstart = () => {
-        setState(prev => ({ ...prev, isPlaying: true, isPaused: false, utterance }));
+        setState(prev => ({ ...prev, isPlaying: true, isPaused: false, utterance, storyId }));
       };
       
       utterance.onend = () => {
@@ -83,6 +85,7 @@ export const useTTS = () => {
   return {
     isPlaying: state.isPlaying,
     isPaused: state.isPaused,
+    currentStoryId: state.storyId,
     speak,
     stop,
     getButtonText

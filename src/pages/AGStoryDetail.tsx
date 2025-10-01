@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Palette, Globe, Volume2, VolumeX, Trash2, Upload, Wand2, Video } from 'lucide-react';
+import { Palette, Globe, Volume2, VolumeX, Trash2, Upload, Wand2, Video, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import StoryLayout from '@/components/shared/StoryLayout';
@@ -252,9 +252,9 @@ const AGStoryDetail = () => {
       onBack={() => navigate('/superuser-story-type-selection')}
     >
       <div className="space-y-6">
-        {/* Action Menu */}
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2">
+        {/* Action Menu - Top Bar */}
+        <div className="flex flex-wrap justify-between items-center gap-3 p-4 bg-accent/30 rounded-lg border">
+          <div className="flex flex-wrap gap-2">
             {/* Media Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -279,14 +279,15 @@ const AGStoryDetail = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Translation */}
+            {/* Translation - In sviluppo */}
             <Button 
               variant="outline" 
               onClick={handleTranslate}
               disabled={isTranslating}
+              title="Traduzione (in sviluppo)"
             >
               <Globe className="w-4 h-4 mr-2" />
-              {isTranslating ? 'Traduzione...' : (currentLanguage === 'italian' ? 'Inglese' : 'Italiano')}
+              {isTranslating ? 'Traduzione...' : 'Traduzione'}
             </Button>
 
             {/* TTS */}
@@ -294,35 +295,36 @@ const AGStoryDetail = () => {
               {isPlaying && !isPaused ? (
                 <>
                   <VolumeX className="w-4 h-4 mr-2" />
-                  {getButtonText()}
+                  Ferma
                 </>
               ) : (
                 <>
                   <Volume2 className="w-4 h-4 mr-2" />
-                  {getButtonText()}
+                  Leggi
                 </>
               )}
             </Button>
           </div>
 
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={openEditDialog}>
-              Modifica
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              <Trash2 className="w-4 h-4 mr-2" />
-              Elimina
-            </Button>
-          </div>
+          <Button variant="destructive" onClick={handleDelete} className="flex items-center gap-2">
+            <Trash2 className="w-4 h-4" />
+            Elimina
+          </Button>
         </div>
 
-        {/* Story Content */}
+        {/* Story Content with Edit Capability */}
         <Card>
           <CardContent className="p-6">
-            <ScrollArea className="h-[600px]">
-              <div className="prose max-w-none">
-                <h2 className="text-2xl font-bold mb-4">{story.title}</h2>
-                <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-2xl font-bold text-foreground">{story.title}</h2>
+              <Button variant="outline" size="sm" onClick={openEditDialog}>
+                <Edit className="w-4 h-4 mr-2" />
+                Modifica
+              </Button>
+            </div>
+            <ScrollArea className="h-[550px]">
+              <div className="prose prose-slate max-w-none dark:prose-invert">
+                <div className="whitespace-pre-wrap text-foreground leading-relaxed">
                   {story.content}
                 </div>
               </div>
