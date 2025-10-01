@@ -279,15 +279,15 @@ const AGStoryDetail = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Translation - In sviluppo */}
+            {/* Translation */}
             <Button 
               variant="outline" 
               onClick={handleTranslate}
               disabled={isTranslating}
-              title="Traduzione (in sviluppo)"
+              className="flex items-center gap-2"
             >
-              <Globe className="w-4 h-4 mr-2" />
-              {isTranslating ? 'Traduzione...' : 'Traduzione'}
+              <Globe className="w-4 h-4" />
+              {isTranslating ? 'Traduzione...' : currentLanguage === 'italian' ? 'Traduci in Inglese' : 'Traduci in Italiano'}
             </Button>
 
             {/* TTS */}

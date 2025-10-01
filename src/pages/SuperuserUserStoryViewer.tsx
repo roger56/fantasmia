@@ -7,13 +7,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle, BookOpen } from 'lucide-react';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useTTS } from '@/hooks/useTTS';
-import { useTranslation } from '@/hooks/useTranslation';
+import { usePermanentTranslation } from '@/hooks/usePermanentTranslation';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import ShareMenu from '@/components/shared/ShareMenu';
 import MediaMenu from '@/components/shared/MediaMenu';
 import ModifyMenu from '@/components/shared/ModifyMenu';
 import EditTextDialog from '@/components/shared/EditTextDialog';
+import TranslationPreview from '@/components/shared/TranslationPreview';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
 import PoetryOverlay from '@/components/shared/PoetryOverlay';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -31,7 +32,7 @@ const SuperuserUserStoryViewer = () => {
   const [showPoetry, setShowPoetry] = useState(false);
   const [ownerProfileName, setOwnerProfileName] = useState<string>('');
   const { speak, stop, isPlaying, getButtonText } = useTTS();
-  const { translateContent, getButtonText: getTranslationButtonText, getCurrentLanguage, isTranslating } = useTranslation();
+  const translation = usePermanentTranslation(story, setStory);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -134,23 +135,12 @@ const SuperuserUserStoryViewer = () => {
     if (isPlaying) {
       stop();
     } else {
-      speak(textToRead, getCurrentLanguage());
+      speak(textToRead, translation.getCurrentLanguage());
     }
   };
 
-  const handleTranslate = async () => {
-    if (!story) return;
-    
-    await translateContent(
-      story.text || '',
-      story.title || '',
-      (newContent) => {
-        setStory(prev => prev ? { ...prev, text: newContent } : null);
-      },
-      (newTitle) => {
-        setStory(prev => prev ? { ...prev, title: newTitle } : null);
-      }
-    );
+  const handleTranslate = () => {
+    translation.initiateTranslation();
   };
 
   const handleMediaClick = () => {
@@ -352,10 +342,10 @@ const SuperuserUserStoryViewer = () => {
           <Button
             variant="outline"
             onClick={handleTranslate}
-            disabled={isTranslating}
+            disabled={translation.isTranslating}
             className="flex items-center gap-2"
           >
-            {getTranslationButtonText()}
+            {translation.getButtonText()}
           </Button>
           
           <ShareMenu 
@@ -512,6 +502,19 @@ const SuperuserUserStoryViewer = () => {
         onOpenChange={setShowPoetry}
         storyContent={storyText}
         storyTitle={storyTitle}
+      />
+
+      {/* Translation Preview */}
+      <TranslationPreview
+        open={translation.showPreview || translation.isTranslating}
+        onOpenChange={() => {}}
+        originalTitle={storyTitle}
+        originalContent={storyText}
+        translatedTitle={translation.pendingTranslation?.title || ''}
+        translatedContent={translation.pendingTranslation?.content || ''}
+        language={translation.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
+        onConfirm={translation.confirmTranslation}
+        onCancel={translation.cancelTranslation}
       />
     </div>
   );
