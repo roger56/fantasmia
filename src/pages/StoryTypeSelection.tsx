@@ -15,25 +15,25 @@ const StoryTypeSelection = () => {
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Button
-            onClick={() => navigate('/reading-stories')}
+            onClick={() => navigate('/user-reading-stories')}
             className="h-24 text-lg"
             variant="outline"
           >
             Storie di Lettura
           </Button>
           <Button
-            onClick={() => navigate('/science-stories')}
+            onClick={() => navigate('/user-science-stories')}
             className="h-24 text-lg"
             variant="outline"
           >
             Storie di Scienza
           </Button>
           <Button
-            onClick={() => navigate('/user-reading-superuser-stories')}
+            onClick={() => navigate('/user-greek-myths')}
             className="h-24 text-lg"
             variant="outline"
           >
-            Storie dei Miti Greci
+            I Miti Greci
           </Button>
           <Button
             onClick={() => navigate('/user-nordic-myths')}

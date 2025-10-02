@@ -61,6 +61,10 @@ import AGGreekMyths from "./pages/AGGreekMyths";
 import AGNordicMyths from "./pages/AGNordicMyths";
 import AGExplorers from "./pages/AGExplorers";
 import AGStoryDetail from "./pages/AGStoryDetail";
+import UserGreekMyths from "./pages/UserGreekMyths";
+import UserScienceStories from "./pages/UserScienceStories";
+import UserReadingStories from "./pages/UserReadingStories";
+import AGUserStoryDetail from "./components/shared/AGUserStoryDetail";
 
 import DebugIndexedDB from "./pages/DebugIndexedDB";
 import NotFound from "./pages/NotFound";
@@ -126,14 +130,20 @@ const App = () => (
         <Route path="/superuser-explorers-management" element={<SuperuserExplorersManagement />} />
         <Route path="/user-nordic-myths" element={<UserNordicMyths />} />
         <Route path="/user-explorers" element={<UserExplorers />} />
+        <Route path="/user-greek-myths" element={<UserGreekMyths />} />
+        <Route path="/user-science-stories" element={<UserScienceStories />} />
+        <Route path="/user-reading-stories" element={<UserReadingStories />} />
         
-        {/* New AG (Public Stories) Routes */}
+        {/* New AG (Public Stories) Routes for NSU */}
+        <Route path="/ag-story-detail/:id" element={<AGUserStoryDetail />} />
+        
+        {/* AG Routes for Superuser */}
         <Route path="/ag-reading-stories" element={<AGReadingStories />} />
         <Route path="/ag-science-stories" element={<AGScienceStories />} />
         <Route path="/ag-greek-myths" element={<AGGreekMyths />} />
         <Route path="/ag-nordic-myths" element={<AGNordicMyths />} />
         <Route path="/ag-explorers" element={<AGExplorers />} />
-        <Route path="/ag-story-detail/:id" element={<AGStoryDetail />} />
+        <Route path="/ag-story-detail-su/:id" element={<AGStoryDetail />} />
           <Route path="/debug-indexdb" element={<DebugIndexedDB />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
