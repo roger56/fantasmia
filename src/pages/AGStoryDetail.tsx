@@ -10,14 +10,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Palette, Globe, Volume2, VolumeX, Trash2, Upload, Wand2, Video, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
+import { useStoryReading } from '@/hooks/useStoryReading';
 import StoryLayout from '@/components/shared/StoryLayout';
 import FileUploadDialog from '@/components/shared/FileUploadDialog';
 import MediaGenerationDialog from '@/components/shared/MediaGenerationDialog';
 import CopyrightWarningDialog from '@/components/shared/CopyrightWarningDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
-import { useTTS } from '@/hooks/useTTS';
-import { useTranslation } from '@/hooks/useTranslation';
-import { translateToEnglish, translateToItalian } from '@/utils/translation';
+import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
 
 interface AGStory {
   id: string;
@@ -43,16 +42,14 @@ const AGStoryDetail = () => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
+  const [showBooksDialog, setShowBooksDialog] = useState(false);
   
-  // Translation
-  const [showTranslationPreview, setShowTranslationPreview] = useState(false);
-  const [translatedTitle, setTranslatedTitle] = useState('');
-  const [translatedContent, setTranslatedContent] = useState('');
-  const [currentLanguage, setCurrentLanguage] = useState<'italian' | 'english'>('italian');
-  
-  // Hooks
-  const { isPlaying, isPaused, speak, stop, getButtonText } = useTTS();
-  const { isTranslating } = useTranslation();
+  // Unified reading service
+  const reading = useStoryReading({
+    story: story ? { ...story, content: story.content || '' } : null,
+    onStoryUpdate: (updated) => setStory(updated),
+    storyType: 'ag'
+  });
 
   useEffect(() => {
     if (id) {
@@ -147,75 +144,7 @@ const AGStoryDetail = () => {
   };
 
   const handleTTSToggle = () => {
-    if (!story) return;
-    
-    if (isPlaying && !isPaused) {
-      stop();
-    } else {
-      const language = currentLanguage === 'english' ? 'english' : 'italian';
-      speak(story.content, language);
-    }
-  };
-
-  const handleTranslate = async () => {
-    if (!story) return;
-    
-    try {
-      if (currentLanguage === 'italian') {
-        // Translate to English
-        const newTranslatedTitle = await translateToEnglish(story.title);
-        const newTranslatedContent = await translateToEnglish(story.content);
-        
-        setTranslatedTitle(newTranslatedTitle);
-        setTranslatedContent(newTranslatedContent);
-        setShowTranslationPreview(true);
-      } else {
-        // Translate back to Italian
-        const newTranslatedTitle = await translateToItalian(story.title);
-        const newTranslatedContent = await translateToItalian(story.content);
-        
-        setTranslatedTitle(newTranslatedTitle);
-        setTranslatedContent(newTranslatedContent);
-        setShowTranslationPreview(true);
-      }
-    } catch (error) {
-      toast({
-        title: "Errore traduzione",
-        description: "Non è stato possibile tradurre il contenuto",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleConfirmTranslation = async () => {
-    if (!story) return;
-    
-    const updatedStory = {
-      ...story,
-      title: translatedTitle,
-      content: translatedContent,
-      language: currentLanguage === 'italian' ? 'english' : 'italian',
-      updated_at: new Date().toISOString()
-    };
-
-    try {
-      await fantasMiaDB.saveAGStory(updatedStory);
-      setStory(updatedStory);
-      setEditedStory({ title: translatedTitle, content: translatedContent });
-      setCurrentLanguage(currentLanguage === 'italian' ? 'english' : 'italian');
-      setShowTranslationPreview(false);
-      
-      toast({
-        title: "Traduzione salvata",
-        description: `La storia è stata tradotta in ${currentLanguage === 'italian' ? 'inglese' : 'italiano'}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Errore",
-        description: "Errore durante il salvataggio della traduzione",
-        variant: "destructive",
-      });
-    }
+    reading.toggleTTS();
   };
 
   const handleMediaUpdate = () => {
@@ -282,20 +211,20 @@ const AGStoryDetail = () => {
             {/* Translation */}
             <Button 
               variant="outline" 
-              onClick={handleTranslate}
-              disabled={isTranslating}
+              onClick={() => reading.initiateTranslation()}
+              disabled={reading.isTranslating}
               className="flex items-center gap-2"
             >
               <Globe className="w-4 h-4" />
-              {isTranslating ? 'Traduzione...' : currentLanguage === 'italian' ? 'Traduci in Inglese' : 'Traduci in Italiano'}
+              {reading.getTranslationButtonText()}
             </Button>
 
             {/* TTS */}
             <Button variant="outline" onClick={handleTTSToggle}>
-              {isPlaying && !isPaused ? (
+              {reading.isPlaying ? (
                 <>
                   <VolumeX className="w-4 h-4 mr-2" />
-                  Ferma
+                  {reading.getTTSButtonText()}
                 </>
               ) : (
                 <>
@@ -394,15 +323,24 @@ const AGStoryDetail = () => {
 
         {/* Translation Preview Dialog */}
         <TranslationPreview
-          open={showTranslationPreview}
-          onOpenChange={setShowTranslationPreview}
+          open={reading.showPreview || reading.isTranslating}
+          onOpenChange={() => {}}
           originalTitle={story?.title || ''}
           originalContent={story?.content || ''}
-          translatedTitle={translatedTitle}
-          translatedContent={translatedContent}
-          language={currentLanguage === 'italian' ? 'english' : 'italian'}
-          onConfirm={handleConfirmTranslation}
-          onCancel={() => setShowTranslationPreview(false)}
+          translatedTitle={reading.pendingTranslation?.title || ''}
+          translatedContent={reading.pendingTranslation?.content || ''}
+          language={reading.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
+          onConfirm={reading.confirmTranslation}
+          onCancel={reading.cancelTranslation}
+        />
+
+        {/* Books Dialog */}
+        <RecommendedBooksDialog
+          open={showBooksDialog}
+          onOpenChange={setShowBooksDialog}
+          storyId={story?.id || ''}
+          storyTitle={story?.title || ''}
+          isSuperuser={true}
         />
       </div>
     </StoryLayout>

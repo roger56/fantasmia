@@ -6,8 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle, BookOpen } from 'lucide-react';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
-import { useTTS } from '@/hooks/useTTS';
-import { usePermanentTranslation } from '@/hooks/usePermanentTranslation';
+import { useStoryReading } from '@/hooks/useStoryReading';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import ShareMenu from '@/components/shared/ShareMenu';
@@ -31,8 +30,11 @@ const SuperuserUserStoryViewer = () => {
   const [showBooks, setShowBooks] = useState(false);
   const [showPoetry, setShowPoetry] = useState(false);
   const [ownerProfileName, setOwnerProfileName] = useState<string>('');
-  const { speak, stop, isPlaying, getButtonText } = useTTS();
-  const translation = usePermanentTranslation(story, setStory);
+  const reading = useStoryReading({
+    story,
+    onStoryUpdate: setStory,
+    storyType: 'am'
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -128,19 +130,11 @@ const SuperuserUserStoryViewer = () => {
   };
 
   const handleReadStory = () => {
-    if (!story) return;
-    
-    const textToRead = `${story.title || 'Storia senza titolo'}. ${story.text || 'Contenuto non disponibile'}`;
-    
-    if (isPlaying) {
-      stop();
-    } else {
-      speak(textToRead, translation.getCurrentLanguage());
-    }
+    reading.toggleTTS();
   };
 
   const handleTranslate = () => {
-    translation.initiateTranslation();
+    reading.initiateTranslation();
   };
 
   const handleMediaClick = () => {
@@ -336,16 +330,16 @@ const SuperuserUserStoryViewer = () => {
             className="flex items-center gap-2"
           >
             <Volume2 className="w-4 h-4" />
-            {getButtonText()}
+            {reading.getTTSButtonText()}
           </Button>
           
           <Button
             variant="outline"
             onClick={handleTranslate}
-            disabled={translation.isTranslating}
+            disabled={reading.isTranslating}
             className="flex items-center gap-2"
           >
-            {translation.getButtonText()}
+            {reading.getTranslationButtonText()}
           </Button>
           
           <ShareMenu 
@@ -506,15 +500,15 @@ const SuperuserUserStoryViewer = () => {
 
       {/* Translation Preview */}
       <TranslationPreview
-        open={translation.showPreview || translation.isTranslating}
+        open={reading.showPreview || reading.isTranslating}
         onOpenChange={() => {}}
         originalTitle={storyTitle}
         originalContent={storyText}
-        translatedTitle={translation.pendingTranslation?.title || ''}
-        translatedContent={translation.pendingTranslation?.content || ''}
-        language={translation.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
-        onConfirm={translation.confirmTranslation}
-        onCancel={translation.cancelTranslation}
+        translatedTitle={reading.pendingTranslation?.title || ''}
+        translatedContent={reading.pendingTranslation?.content || ''}
+        language={reading.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
+        onConfirm={reading.confirmTranslation}
+        onCancel={reading.cancelTranslation}
       />
     </div>
   );

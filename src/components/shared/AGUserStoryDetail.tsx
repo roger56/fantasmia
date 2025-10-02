@@ -5,10 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Volume2, VolumeX, Globe, Image, BookOpen } from 'lucide-react';
-import { useTTS } from '@/hooks/useTTS';
-import { usePermanentTranslation } from '@/hooks/usePermanentTranslation';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
+import { useStoryReading } from '@/hooks/useStoryReading';
 import TranslationPreview from '@/components/shared/TranslationPreview';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
@@ -32,8 +31,11 @@ const AGUserStoryDetail: React.FC = () => {
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [showBooksDialog, setShowBooksDialog] = useState(false);
   
-  const { speak, stop, isPlaying, currentStoryId } = useTTS();
-  const translation = usePermanentTranslation(story as any, (updated: any) => setStory(updated));
+  const reading = useStoryReading({
+    story,
+    onStoryUpdate: setStory,
+    storyType: 'ag'
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -91,15 +93,7 @@ const AGUserStoryDetail: React.FC = () => {
   };
 
   const handleRead = () => {
-    if (!story) return;
-    
-    const fullText = `${story.title}. ${story.content}`;
-    
-    if (isPlaying && currentStoryId === story.id) {
-      stop();
-    } else {
-      speak(fullText, translation.getCurrentLanguage(), story.id);
-    }
+    reading.toggleTTS();
   };
 
   const handleImageClick = () => {
@@ -150,10 +144,10 @@ const AGUserStoryDetail: React.FC = () => {
             onClick={handleRead}
             className="flex items-center gap-2"
           >
-            {isPlaying && currentStoryId === story.id ? (
+            {reading.isPlaying ? (
               <>
                 <VolumeX className="h-4 w-4" />
-                Ferma
+                {reading.isPaused ? 'Riprendi' : 'Pausa'}
               </>
             ) : (
               <>
@@ -167,12 +161,12 @@ const AGUserStoryDetail: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => translation.initiateTranslation()}
-            disabled={translation.isTranslating}
+            onClick={() => reading.initiateTranslation()}
+            disabled={reading.isTranslating}
             className="flex items-center gap-2"
           >
             <Globe className="h-4 w-4" />
-            {translation.getButtonText()}
+            {reading.getTranslationButtonText()}
           </Button>
 
           {/* Image Button */}
@@ -231,15 +225,15 @@ const AGUserStoryDetail: React.FC = () => {
 
       {/* Translation Preview */}
       <TranslationPreview
-        open={translation.showPreview || translation.isTranslating}
+        open={reading.showPreview || reading.isTranslating}
         onOpenChange={() => {}}
         originalTitle={story.title}
         originalContent={story.content}
-        translatedTitle={translation.pendingTranslation?.title || ''}
-        translatedContent={translation.pendingTranslation?.content || ''}
-        language={translation.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
-        onConfirm={translation.confirmTranslation}
-        onCancel={translation.cancelTranslation}
+        translatedTitle={reading.pendingTranslation?.title || ''}
+        translatedContent={reading.pendingTranslation?.content || ''}
+        language={reading.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
+        onConfirm={reading.confirmTranslation}
+        onCancel={reading.cancelTranslation}
       />
     </StoryLayout>
   );
