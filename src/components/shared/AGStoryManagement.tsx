@@ -243,7 +243,7 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
                     <div key={story.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                       <div className="flex-1 min-w-0">
                         <button
-                          onClick={() => navigate(`/ag-story-detail/${story.id}`)}
+                          onClick={() => navigate(`/ag-story-detail-su/${story.id}`)}
                           className="text-left hover:underline font-semibold text-foreground truncate block w-full"
                         >
                           {story.title}
@@ -300,7 +300,7 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
                           variant="ghost"
                           size="icon"
                           title={story.has_image ? "Immagine presente" : "Nessuna immagine"}
-                          onClick={() => story.has_image && navigate(`/ag-story-detail/${story.id}`)}
+                          onClick={() => story.has_image && navigate(`/ag-story-detail-su/${story.id}`)}
                           disabled={!story.has_image}
                         >
                           <ImageIcon className={`w-5 h-5 ${story.has_image ? 'text-green-600' : 'text-red-600'}`} />
