@@ -14,6 +14,7 @@ interface TranslationPreviewProps {
   language: 'italian' | 'english';
   onConfirm: () => void;
   onCancel: () => void;
+  isSuperuser?: boolean;
 }
 
 const TranslationPreview: React.FC<TranslationPreviewProps> = ({
@@ -25,7 +26,8 @@ const TranslationPreview: React.FC<TranslationPreviewProps> = ({
   translatedContent,
   language,
   onConfirm,
-  onCancel
+  onCancel,
+  isSuperuser = true
 }) => {
   const isToEnglish = language === 'english';
 
@@ -87,15 +89,23 @@ const TranslationPreview: React.FC<TranslationPreviewProps> = ({
         </div>
 
         <DialogFooter className="flex-shrink-0">
-          <Button variant="outline" onClick={onCancel}>
-            Mantieni Originale
-          </Button>
-          <Button 
-            onClick={onConfirm}
-            disabled={!translatedTitle || !translatedContent}
-          >
-            Salva Traduzione
-          </Button>
+          {isSuperuser ? (
+            <>
+              <Button variant="outline" onClick={onCancel}>
+                Mantieni Originale
+              </Button>
+              <Button 
+                onClick={onConfirm}
+                disabled={!translatedTitle || !translatedContent}
+              >
+                Salva Traduzione
+              </Button>
+            </>
+          ) : (
+            <Button onClick={onCancel}>
+              Chiudi
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

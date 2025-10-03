@@ -328,6 +328,7 @@ const AGStoryDetail = () => {
           language={reading.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
           onConfirm={reading.confirmTranslation}
           onCancel={reading.cancelTranslation}
+          isSuperuser={true}
         />
 
         {/* Books Dialog */}

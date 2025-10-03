@@ -157,6 +157,18 @@ const AGUserStoryDetail: React.FC = () => {
             )}
           </Button>
 
+          {/* Translation Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => reading.initiateTranslation()}
+            disabled={reading.isTranslating}
+            className="flex items-center gap-2"
+          >
+            <Globe className="h-4 w-4" />
+            {reading.getTranslationButtonText()}
+          </Button>
+
           {/* Image Button */}
           <Button
             variant="ghost"
@@ -201,6 +213,20 @@ const AGUserStoryDetail: React.FC = () => {
           style="ai-generated"
         />
       )}
+
+      {/* Translation Preview Dialog - NSU cannot save */}
+      <TranslationPreview
+        open={reading.showPreview || reading.isTranslating}
+        onOpenChange={() => {}}
+        originalTitle={story?.title || ''}
+        originalContent={story?.content || ''}
+        translatedTitle={reading.pendingTranslation?.title || ''}
+        translatedContent={reading.pendingTranslation?.content || ''}
+        language={reading.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
+        onConfirm={reading.cancelTranslation}
+        onCancel={reading.cancelTranslation}
+        isSuperuser={false}
+      />
 
       {/* Books Dialog */}
       <RecommendedBooksDialog
