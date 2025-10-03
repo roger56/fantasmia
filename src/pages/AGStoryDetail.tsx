@@ -160,6 +160,17 @@ const AGStoryDetail = () => {
     }
   };
 
+  const getCategoryRoute = (category: string) => {
+    const categoryRoutes: Record<string, string> = {
+      'explorers': '/ag-explorers',
+      'greek_myths': '/ag-greek-myths',
+      'nordic_myths': '/ag-nordic-myths',
+      'world': '/ag-reading-stories',
+      'science': '/ag-science-stories'
+    };
+    return categoryRoutes[category] || '/superuser-story-type-selection';
+  };
+
   if (!story) {
     return (
       <StoryLayout
@@ -178,7 +189,7 @@ const AGStoryDetail = () => {
     <StoryLayout
       title={story.title}
       subtitle="Dettaglio storia pubblica"
-      onBack={() => navigate('/superuser-story-type-selection')}
+      onBack={() => navigate(getCategoryRoute(story.category))}
     >
       <div className="space-y-6">
         {/* Action Menu - Top Bar */}
