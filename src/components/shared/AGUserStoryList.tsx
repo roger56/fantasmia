@@ -143,26 +143,26 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
                           </Tooltip>
                         </TooltipProvider>
 
-                        {/* Image indicator */}
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => handleImageClick(story, e)}
-                                className="h-9 w-9 p-0"
-                              >
-                                <Image 
-                                  className={`h-4 w-4 ${story.has_image ? 'text-green-600' : 'text-red-600'}`} 
-                                />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{story.has_image ? 'Immagine disponibile' : 'Nessuna immagine'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        {/* Image indicator - only show if has_image */}
+                        {story.has_image && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => handleImageClick(story, e)}
+                                  className="h-9 w-9 p-0"
+                                >
+                                  <Image className="h-4 w-4 text-green-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Immagine disponibile</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
 
                         {/* Books button */}
                         <TooltipProvider>

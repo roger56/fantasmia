@@ -184,12 +184,12 @@ const AGStoryDetail = () => {
         {/* Action Menu - Top Bar */}
         <div className="flex flex-wrap justify-between items-center gap-3 p-4 bg-accent/30 rounded-lg border">
           <div className="flex flex-wrap gap-2">
-            {/* Media Menu */}
+            {/* Disegno Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
                   <Palette className="w-4 h-4" />
-                  Media
+                  Disegno
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -200,10 +200,6 @@ const AGStoryDetail = () => {
                 <DropdownMenuItem onClick={() => setShowCopyrightWarning(true)}>
                   <Wand2 className="w-4 h-4 mr-2" />
                   Disegno AI
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                  <Video className="w-4 h-4 mr-2" />
-                  Filmato AI (placeholder)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

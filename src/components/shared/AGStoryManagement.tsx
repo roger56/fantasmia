@@ -177,11 +177,15 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
     setIsEditDialogOpen(true);
   };
 
+  const handleBack = () => {
+    navigate('/superuser-story-type-selection');
+  };
+
   return (
     <StoryLayout
       title={title}
       subtitle={subtitle}
-      onBack={() => navigate('/superuser-story-type-selection')}
+      onBack={handleBack}
     >
       <div className="space-y-6">
         {/* Add Story Button */}

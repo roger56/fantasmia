@@ -136,7 +136,7 @@ const AGUserStoryDetail: React.FC = () => {
       title={story.title}
       onBack={handleBack}
       headerContent={
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
           {/* Read Button */}
           <Button
             variant="ghost"
@@ -155,18 +155,6 @@ const AGUserStoryDetail: React.FC = () => {
                 Leggi
               </>
             )}
-          </Button>
-
-          {/* Translation Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => reading.initiateTranslation()}
-            disabled={reading.isTranslating}
-            className="flex items-center gap-2"
-          >
-            <Globe className="h-4 w-4" />
-            {reading.getTranslationButtonText()}
           </Button>
 
           {/* Image Button */}
@@ -223,18 +211,6 @@ const AGUserStoryDetail: React.FC = () => {
         isSuperuser={false}
       />
 
-      {/* Translation Preview */}
-      <TranslationPreview
-        open={reading.showPreview || reading.isTranslating}
-        onOpenChange={() => {}}
-        originalTitle={story.title}
-        originalContent={story.content}
-        translatedTitle={reading.pendingTranslation?.title || ''}
-        translatedContent={reading.pendingTranslation?.content || ''}
-        language={reading.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
-        onConfirm={reading.confirmTranslation}
-        onCancel={reading.cancelTranslation}
-      />
     </StoryLayout>
   );
 };
