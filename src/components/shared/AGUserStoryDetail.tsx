@@ -177,7 +177,7 @@ const AGUserStoryDetail: React.FC = () => {
             className="flex items-center gap-2"
           >
             <Image className={`h-4 w-4 ${story.has_image ? 'text-green-600' : 'text-muted-foreground'}`} />
-            Immagine
+            Disegno
           </Button>
 
           {/* Books Button */}
