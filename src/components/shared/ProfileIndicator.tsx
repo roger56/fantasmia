@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { User, Move } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
 
+const MOBILE_BREAKPOINT = 992;
+
 const ProfileIndicator: React.FC = () => {
   const [userName, setUserName] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < MOBILE_BREAKPOINT);
   const [position, setPosition] = useState(() => {
     const saved = localStorage.getItem('profile-indicator-position');
     return saved ? JSON.parse(saved) : { x: 0, y: 0 };
@@ -20,9 +23,19 @@ const ProfileIndicator: React.FC = () => {
     };
 
     checkUser();
+
+    // Responsive handler
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isMobile) return; // Disable drag on mobile
+    
     setIsDragging(true);
     setDragStart({
       x: e.clientX,
@@ -33,13 +46,20 @@ const ProfileIndicator: React.FC = () => {
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
+    if (isDragging && !isMobile) {
       const deltaX = e.clientX - dragStart.x;
       const deltaY = e.clientY - dragStart.y;
-      setPosition({
-        x: dragStart.elementX + deltaX,
-        y: dragStart.elementY + deltaY
-      });
+      
+      // Constrain to viewport bounds
+      const maxX = window.innerWidth - 200; // Approximate element width
+      const maxY = window.innerHeight - 50; // Approximate element height
+      const minX = -window.innerWidth + 200;
+      const minY = -window.innerHeight + 50;
+      
+      const newX = Math.max(minX, Math.min(maxX, dragStart.elementX + deltaX));
+      const newY = Math.max(minY, Math.min(maxY, dragStart.elementY + deltaY));
+      
+      setPosition({ x: newX, y: newY });
     }
   };
 
@@ -61,6 +81,22 @@ const ProfileIndicator: React.FC = () => {
 
   if (!userName) return null;
 
+  // Mobile: fixed bottom-right, no drag
+  if (isMobile) {
+    return (
+      <div 
+        className="fixed bottom-3 right-3 bg-black/60 backdrop-blur-sm border border-white/20 rounded-lg px-2 py-1.5 shadow-lg select-none"
+        style={{ zIndex: 9999 }}
+      >
+        <div className="flex items-center gap-1.5 text-xs text-white">
+          <User className="w-3.5 h-3.5" />
+          <span className="font-medium">{userName}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop: draggable with saved position
   const style = position.x === 0 && position.y === 0 
     ? {} 
     : { 
