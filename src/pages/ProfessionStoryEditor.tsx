@@ -120,14 +120,33 @@ const ProfessionStoryEditor = () => {
     setShowSaveDialog(true);
   };
 
-  const handleSaveComplete = (title: string) => {
+  const handleSaveComplete = async (title: string) => {
     setStoryTitle(title);
     setShowSaveDialog(false);
-    toast({
-      title: "Storia salvata!",
-      description: "La tua storia è stata salvata con successo"
-    });
-    navigate('/create-story');
+    
+    try {
+      const { saveUserStory } = await import('@/utils/storyManager');
+      const storyId = await saveUserStory({
+        title,
+        text: storyText,
+        mode: `PROFESSION_${selectedProfession || 'UNKNOWN'}`
+      });
+      
+      toast({
+        title: "Storia salvata!",
+        description: "La tua storia è stata salvata con successo"
+      });
+      
+      // Navigate direttamente alla pagina di dettaglio
+      navigate(`/user-story-viewer/${storyId}`);
+    } catch (error) {
+      console.error('Errore salvataggio:', error);
+      toast({
+        title: "Errore",
+        description: "Non è stato possibile salvare la storia",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

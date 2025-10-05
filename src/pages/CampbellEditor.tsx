@@ -107,21 +107,17 @@ const CampbellEditor = () => {
           description: `"${title}" è stata aggiornata con successo.`
         });
       } else {
-        await saveStoryBridge(storyData);
+        const savedId = await saveStoryBridge(storyData);
         toast({
           title: "Storia salvata!",
           description: `"${title}" è stata salvata con successo.`
         });
+        
+        // Navigate direttamente alla pagina di dettaglio
+        setTimeout(() => {
+          navigate(`/user-story-viewer/${savedId}`);
+        }, 500);
       }
-      
-      // POST-SAVE: Isolato per implementazione futura
-      setTimeout(() => {
-        toast({
-          title: "✅ Storia creata!",
-          description: "Archivio e condivisione saranno disponibili presto",
-        });
-        navigate('/create-story', { state: { profileId, profileName } });
-      }, 1500);
     } catch (error) {
       toast({
         title: "Errore",

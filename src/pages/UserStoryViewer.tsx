@@ -32,6 +32,15 @@ const UserStoryViewer = () => {
   const [showModifyMenu, setShowModifyMenu] = useState(false);
   const { speak, stop, isPlaying, getButtonText } = useTTS();
   const translation = usePermanentTranslation(story, setStory);
+  
+  // Stop TTS quando si esce dalla pagina
+  useEffect(() => {
+    return () => {
+      if (isPlaying) {
+        stop();
+      }
+    };
+  }, [isPlaying, stop]);
   const { toast } = useToast();
 
   useEffect(() => {

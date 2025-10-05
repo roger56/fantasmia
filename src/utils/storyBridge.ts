@@ -18,8 +18,8 @@ export interface LegacyStory {
   lastModified?: string;
 }
 
-// Bridge function che sostituisce saveStory da userStorage
-export const saveStoryBridge = async (legacyStory: LegacyStory): Promise<void> => {
+// Bridge function che sostituisce saveStory da userStorage - Ritorna l'ID salvato
+export const saveStoryBridge = async (legacyStory: LegacyStory): Promise<string> => {
   console.log('🌉 BRIDGE: Convertendo storia legacy in IndexedDB format', {
     id: legacyStory.id,
     title: legacyStory.title,
@@ -45,6 +45,8 @@ export const saveStoryBridge = async (legacyStory: LegacyStory): Promise<void> =
         detail: { storyId: savedId, action: 'bridge-created' } 
       }));
     }, 100);
+    
+    return savedId;
     
   } catch (error) {
     console.error('❌ BRIDGE: Errore salvataggio:', error);

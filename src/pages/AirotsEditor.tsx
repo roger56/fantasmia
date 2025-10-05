@@ -226,19 +226,16 @@ const AirotsEditor = () => {
       language: language
     };
 
-    await saveStoryBridge(story);
+    const savedId = await saveStoryBridge(story);
     toast({
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",
     });
-    // POST-SAVE: Isolato per implementazione futura
+    
+    // Navigate direttamente alla pagina di dettaglio
     setTimeout(() => {
-      toast({
-        title: "✅ Storia creata!",
-        description: "Archivio e condivisione saranno disponibili presto",
-      });
-      navigate('/create-story', { state: { profileId, profileName } });
-    }, 1500);
+      navigate(`/user-story-viewer/${savedId}`);
+    }, 500);
   };
 
   const handleShare = () => {

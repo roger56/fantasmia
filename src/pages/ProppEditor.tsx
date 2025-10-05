@@ -191,19 +191,16 @@ const ProppEditor = () => {
       language: 'italian' as const
     };
 
-    await saveStoryBridge(story);
+    const savedId = await saveStoryBridge(story);
     toast({
       title: "Storia salvata!",
       description: "La storia è stata salvata nell'archivio",
     });
-    // POST-SAVE: Isolato per implementazione futura
+    
+    // Navigate direttamente alla pagina di dettaglio
     setTimeout(() => {
-      toast({
-        title: "✅ Storia creata!",
-        description: "Archivio e condivisione saranno disponibili presto",
-      });
-      navigate('/propp-mode-selector', { state: { profileId, profileName } });
-    }, 1500);
+      navigate(`/user-story-viewer/${savedId}`);
+    }, 500);
   };
 
   // Render appropriate screen based on game phase

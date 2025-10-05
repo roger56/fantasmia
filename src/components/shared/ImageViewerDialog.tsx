@@ -103,21 +103,29 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
   };
 
   const handleImageLoad = () => {
+    console.log('✅ Immagine caricata con successo', { 
+      action: 'image-loaded',
+      storyId,
+      urlPrefix: imageUrl.substring(0, 50)
+    });
     setImageLoaded(true);
     setImageError(false);
   };
 
-  const handleImageError = () => {
+  const handleImageError = (e: any) => {
     setImageError(true);
     setImageLoaded(false);
-    console.error('❌ Image render error:', { 
+    console.error('❌ Errore caricamento immagine:', { 
       action: 'media-render-error', 
       storyId, 
-      imageUrl: imageUrl.substring(0, 100) 
+      error: e?.type || 'unknown',
+      imageUrl: imageUrl.substring(0, 100),
+      isDataUrl: imageUrl.startsWith('data:'),
+      isBlobUrl: imageUrl.startsWith('blob:')
     });
     toast({
       title: "Errore Visualizzazione",
-      description: "Impossibile visualizzare l'immagine",
+      description: "Impossibile visualizzare l'immagine. Verifica la connessione o riprova.",
       variant: "destructive"
     });
   };
@@ -162,12 +170,17 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
               <img 
                 src={imageUrl} 
                 alt={`Immagine per ${storyTitle}`}
-                className={`max-w-full max-h-[60vh] h-auto rounded-lg border transition-opacity duration-300 ${
+                className={`max-w-full max-h-[60vh] w-auto h-auto mx-auto rounded-lg border transition-opacity duration-300 ${
                   imageLoaded ? 'opacity-100' : 'opacity-0'
                 }`}
                 onLoad={handleImageLoad}
                 onError={handleImageError}
-                style={{ display: imageError ? 'none' : 'block' }}
+                style={{ 
+                  display: imageError ? 'none' : 'block',
+                  objectFit: 'contain',
+                  touchAction: 'pinch-zoom' // Enable pinch-to-zoom on mobile/tablet
+                }}
+                loading="eager"
               />
             </div>
           </div>

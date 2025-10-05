@@ -9,6 +9,8 @@ interface ReadingState {
   currentStoryId: string | null;
   currentLanguage: 'italian' | 'english';
   utterance: SpeechSynthesisUtterance | null;
+  savedText: string | null; // Testo completo per resume
+  currentCharIndex: number; // Posizione corrente per resume
 }
 
 class ReadingService {
@@ -18,6 +20,8 @@ class ReadingService {
     currentStoryId: null,
     currentLanguage: 'italian',
     utterance: null,
+    savedText: null,
+    currentCharIndex: 0,
   };
 
   private listeners: Set<() => void> = new Set();
@@ -47,16 +51,16 @@ class ReadingService {
   }
 
   /**
-   * Play or resume text
+   * Play or resume text with offset tracking for proper resume
    */
   play(text: string, storyId: string, language: 'italian' | 'english' = 'italian') {
     if (!('speechSynthesis' in window)) {
       throw new Error('Speech synthesis not supported');
     }
 
-    const isSameStory = storyId === this.state.currentStoryId;
+    const isSameStory = storyId === this.state.currentStoryId && this.state.savedText === text;
 
-    // If same story and paused, just resume
+    // If same story and paused, resume from saved position
     if (isSameStory && this.state.isPaused && this.state.utterance) {
       speechSynthesis.resume();
       this.state.isPaused = false;
@@ -72,11 +76,25 @@ class ReadingService {
       return;
     }
 
+    // Different story or first play - determine text to speak
+    let textToSpeak = text;
+    let startFromBeginning = true;
+
+    if (isSameStory && this.state.currentCharIndex > 0 && this.state.savedText) {
+      // Resume from saved position
+      textToSpeak = text.substring(this.state.currentCharIndex);
+      startFromBeginning = false;
+    } else {
+      // New story or restart
+      this.state.currentCharIndex = 0;
+      this.state.savedText = text;
+    }
+
     // Stop any current speech
-    this.stop();
+    speechSynthesis.cancel();
 
     // Create new utterance
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = language === 'italian' ? 'it-IT' : 'en-US';
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
@@ -87,6 +105,9 @@ class ReadingService {
       this.state.isPaused = false;
       this.state.currentStoryId = storyId;
       this.state.currentLanguage = language;
+      if (startFromBeginning) {
+        this.state.savedText = text;
+      }
       this.notify();
     };
 
@@ -94,6 +115,8 @@ class ReadingService {
       this.state.isPlaying = false;
       this.state.isPaused = false;
       this.state.utterance = null;
+      this.state.currentCharIndex = 0;
+      this.state.savedText = null;
       this.notify();
     };
 
@@ -113,6 +136,18 @@ class ReadingService {
     utterance.onresume = () => {
       this.state.isPaused = false;
       this.notify();
+    };
+
+    // Track character progress for resume
+    utterance.onboundary = (event) => {
+      if (event.name === 'word' || event.name === 'sentence') {
+        // Update current position (relative to full text)
+        if (startFromBeginning) {
+          this.state.currentCharIndex = event.charIndex;
+        } else {
+          this.state.currentCharIndex = this.state.currentCharIndex + event.charIndex;
+        }
+      }
     };
 
     this.state.utterance = utterance;
@@ -137,6 +172,8 @@ class ReadingService {
     this.state.isPaused = false;
     this.state.utterance = null;
     this.state.currentStoryId = null;
+    this.state.currentCharIndex = 0;
+    this.state.savedText = null;
     this.notify();
   }
 
