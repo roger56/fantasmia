@@ -40,6 +40,7 @@ import ReadingStoryTypeSelection from "./pages/ReadingStoryTypeSelection";
 import ScienceStories from "./pages/ScienceStories";
 import ScienceStoryEditor from "./pages/ScienceStoryEditor";
 import MagicStoryEditor from "./pages/MagicStoryEditor";
+import StrangeFactEditor from "./pages/StrangeFactEditor";
 import SuperuserReadingStoriesManagement from "./pages/SuperuserReadingStoriesManagement";
 import SuperuserScienceStoriesManagement from "./pages/SuperuserScienceStoriesManagement";
 import SuperuserGreekMythsManagement from "./pages/SuperuserGreekMythsManagement";
@@ -111,6 +112,7 @@ const App = () => (
           <Route path="/airots-editor" element={<AirotsEditor />} />
           <Route path="/campbell-editor" element={<CampbellEditor />} />
           <Route path="/css-editor" element={<CSSEditor />} />
+          <Route path="/strange-fact-editor" element={<StrangeFactEditor />} />
           <Route path="/story-type-selection" element={<StoryTypeSelection />} />
           <Route path="/reading-stories" element={<ReadingStories />} />
           <Route path="/science-stories" element={<ScienceStories />} />

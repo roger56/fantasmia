@@ -107,7 +107,7 @@ const CreateStory = () => {
     } else if (mode === 'PROFESSION') {
       navigate('/profession-story', { state });
     } else if (mode === 'STRANGE_FACT') {
-      navigate('/magic-story-editor', { state });
+      navigate('/strange-fact-editor', { state });
     }
   };
   return (
