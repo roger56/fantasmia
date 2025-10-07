@@ -43,7 +43,7 @@ const ProfessionStoryEditor = () => {
             // Reset to top when reaching bottom
             element.scrollTop = 0;
           } else {
-            element.scrollTop += 1; // 30px/sec approximation
+            element.scrollTop += 3; // Velocità aumentata x3 per scelta casuale
           }
         }
       }, 33); // ~30fps for smooth scrolling

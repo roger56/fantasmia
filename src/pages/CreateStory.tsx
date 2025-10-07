@@ -126,12 +126,15 @@ const CreateStory = () => {
         </div>
 
         {/* Mode Selection */}
-        <div className="space-y-6">
+         <div className="space-y-6">
           <Card>
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-2 text-red-600 text-center">
                 SCEGLI LA CATEGORIA CHE VUOI USARE PER LA TUA STORIA
               </h2>
+              <p className="text-base text-slate-600 text-center mt-3">
+                Nei box di scelta, ogni stella rossa in più aumenta l'impegno nel creare una storia.
+              </p>
             </CardContent>
           </Card>
 

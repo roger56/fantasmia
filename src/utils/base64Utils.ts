@@ -61,10 +61,19 @@ export function base64ToBlobSafe(input: string): Blob {
     bytes.push(buffer);
   }
   
+  // Merge all chunks into a single Uint8Array
+  const totalLength = bytes.reduce((acc, arr) => acc + arr.length, 0);
+  const mergedBytes = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of bytes) {
+    mergedBytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  
   // Validate MIME type for security
   const validMimeType = ['image/jpeg', 'image/png', 'image/webp'].includes(mime) ? mime : 'image/webp';
   
-  const blob = new Blob(bytes, { type: validMimeType });
+  const blob = new Blob([mergedBytes], { type: validMimeType });
   console.info({ step: 'base64-convert-done', finalMime: blob.type, size: blob.size });
   
   return blob;
