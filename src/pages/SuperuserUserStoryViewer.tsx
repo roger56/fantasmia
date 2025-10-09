@@ -5,14 +5,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle, BookOpen, Sparkles } from 'lucide-react';
+import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle, BookOpen, Sparkles, Feather } from 'lucide-react';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useStoryReading } from '@/hooks/useStoryReading';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import ShareMenu from '@/components/shared/ShareMenu';
 import MediaMenu from '@/components/shared/MediaMenu';
-import ModifyMenu from '@/components/shared/ModifyMenu';
+
 import EditTextDialog from '@/components/shared/EditTextDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
@@ -377,16 +377,12 @@ const SuperuserUserStoryViewer = () => {
                 <Sparkles className="w-4 h-4 mr-2" />
                 Migliora testo (AI)
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowPoetry(true)}>
+                <Feather className="w-4 h-4 mr-2" />
+                Poesia (AI)
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Button
-            variant="outline"
-            onClick={() => setShowPoetry(true)}
-            className="flex items-center gap-2"
-          >
-            📝 Poesia
-          </Button>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -452,15 +448,6 @@ const SuperuserUserStoryViewer = () => {
           </CardContent>
         </Card>
 
-        {/* Modify Menu */}
-        <ModifyMenu
-          storyContent={storyText}
-          storyTitle={storyTitle}
-          isEditing={false}
-          onEditToggle={() => setShowEditDialog(true)}
-          onContentChange={handleContentChange}
-          storyId={id}
-        />
 
         {/* Media Status */}
         {!mediaAsset && (
