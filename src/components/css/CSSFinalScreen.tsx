@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Volume2, Languages, Save, Share, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
 import MediaButton from '@/components/shared/MediaButton';
@@ -41,7 +41,7 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
   const [unifiedContent, setUnifiedContent] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
-  const { speak, getButtonText } = useTTS();
+  const { speak, getButtonText } = useUnifiedTTS();
 
   // Generate unified content from initial question and phases
   const generateUnifiedContent = () => {

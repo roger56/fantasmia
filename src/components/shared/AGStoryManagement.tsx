@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import RecommendedBooksDialog from './RecommendedBooksDialog';
 import StoryLayout from './StoryLayout';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 
 interface AGStoryManagementProps {
   category: 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers';
@@ -41,7 +41,7 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
   const [newStory, setNewStory] = useState({ title: '', content: '' });
   const [booksDialogStory, setBooksDialogStory] = useState<AGStory | null>(null);
   
-  const { isPlaying, speak, stop, currentStoryId } = useTTS();
+  const { isPlaying, speak, stop, currentStoryId } = useUnifiedTTS();
 
   useEffect(() => {
     loadStories();

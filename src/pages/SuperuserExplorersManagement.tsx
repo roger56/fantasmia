@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
 import PoetryOverlay from '@/components/shared/PoetryOverlay';
 import EditTextDialog from '@/components/shared/EditTextDialog';
@@ -39,7 +39,7 @@ const SuperuserExplorersManagement = () => {
   const [showBooks, setShowBooks] = useState(false);
   const [showPoetry, setShowPoetry] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const { speak, stop, isPlaying } = useTTS();
+  const { speak, stop, isPlaying } = useUnifiedTTS();
   const { toast } = useToast();
 
   // Mock data - in real app would come from database

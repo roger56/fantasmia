@@ -9,7 +9,7 @@ import { ArrowLeft, Volume2, Edit, Save, Globe, Share2, Copy, Mail } from 'lucid
 import { getStories, getStoriesForUser, saveStory, Story } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
 import { useToast } from '@/hooks/use-toast';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { useTranslation } from '@/hooks/useTranslation';
 import HomeButton from '@/components/HomeButton';
 import MediaButton from '@/components/shared/MediaButton';
@@ -28,7 +28,7 @@ const StoryViewer = () => {
   const [translatedTitle, setTranslatedTitle] = useState('');
   const [showTextImprover, setShowTextImprover] = useState(false);
   
-  const { speak, getButtonText } = useTTS();
+  const { speak, getButtonText } = useUnifiedTTS({ storyId });
   const { isTranslated, isTranslating, translateContent, getCurrentLanguage } = useTranslation();
 
   useEffect(() => {

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Volume2, VolumeX, Image, BookOpen } from 'lucide-react';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
@@ -30,7 +30,7 @@ interface AGUserStoryListProps {
 const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subtitle }) => {
   const navigate = useNavigate();
   const [stories, setStories] = useState<AGStory[]>([]);
-  const { speak, stop, isPlaying, currentStoryId } = useTTS();
+  const { speak, stop, isPlaying, currentStoryId } = useUnifiedTTS();
   const { toast } = useToast();
   const [selectedStory, setSelectedStory] = useState<AGStory | null>(null);
   const [showBooksDialog, setShowBooksDialog] = useState(false);

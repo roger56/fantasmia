@@ -4,7 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Volume2, Languages, Save, Share, Edit, Mail, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 
 interface ActionButtonGroupProps {
   content: string;
@@ -33,7 +33,7 @@ const ActionButtonGroup: React.FC<ActionButtonGroupProps> = ({
   showTranslate = true,
   className = ""
 }) => {
-  const { speak, getButtonText } = useTTS();
+  const { speak, getButtonText } = useUnifiedTTS();
   const { toast } = useToast();
 
   const handleListen = () => {

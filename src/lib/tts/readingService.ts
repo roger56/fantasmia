@@ -9,8 +9,9 @@ interface ReadingState {
   currentStoryId: string | null;
   currentLanguage: 'italian' | 'english';
   utterance: SpeechSynthesisUtterance | null;
-  savedText: string | null; // Testo completo per resume
-  currentCharIndex: number; // Posizione corrente per resume
+  savedText: string | null;
+  currentCharIndex: number;
+  textHash: string | null; // Hash del testo per rilevare modifiche
 }
 
 class ReadingService {
@@ -22,9 +23,12 @@ class ReadingService {
     utterance: null,
     savedText: null,
     currentCharIndex: 0,
+    textHash: null,
   };
 
   private listeners: Set<() => void> = new Set();
+  private lastPlayTime = 0;
+  private debounceMs = 300;
 
   /**
    * Subscribe to state changes
@@ -51,6 +55,19 @@ class ReadingService {
   }
 
   /**
+   * Generate simple hash for text change detection
+   */
+  private hashText(text: string): string {
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      const char = text.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash.toString(36);
+  }
+
+  /**
    * Play or resume text with offset tracking for proper resume
    */
   play(text: string, storyId: string, language: 'italian' | 'english' = 'italian') {
@@ -58,36 +75,56 @@ class ReadingService {
       throw new Error('Speech synthesis not supported');
     }
 
-    const isSameStory = storyId === this.state.currentStoryId && this.state.savedText === text;
+    // Debounce rapid clicks
+    const now = Date.now();
+    if (now - this.lastPlayTime < this.debounceMs) {
+      return;
+    }
+    this.lastPlayTime = now;
+
+    const textHash = this.hashText(text);
+    const isSameStory = storyId === this.state.currentStoryId && 
+                        this.state.textHash === textHash &&
+                        this.state.savedText === text;
+    const languageChanged = language !== this.state.currentLanguage;
+
+    // Language changed - stop and restart from beginning
+    if (languageChanged && this.state.isPlaying) {
+      speechSynthesis.cancel();
+      this.state.currentCharIndex = 0;
+      this.state.currentLanguage = language;
+      // Continue to start new playback below
+    }
 
     // If same story and paused, resume from saved position
-    if (isSameStory && this.state.isPaused && this.state.utterance) {
+    if (isSameStory && !languageChanged && this.state.isPaused && this.state.utterance) {
       speechSynthesis.resume();
       this.state.isPaused = false;
       this.notify();
       return;
     }
 
-    // If playing same story, pause it
-    if (isSameStory && this.state.isPlaying && !this.state.isPaused) {
+    // If playing same story (not paused), pause it
+    if (isSameStory && !languageChanged && this.state.isPlaying && !this.state.isPaused) {
       speechSynthesis.pause();
       this.state.isPaused = true;
       this.notify();
       return;
     }
 
-    // Different story or first play - determine text to speak
+    // Different story, text changed, or language changed - determine text to speak
     let textToSpeak = text;
     let startFromBeginning = true;
 
-    if (isSameStory && this.state.currentCharIndex > 0 && this.state.savedText) {
+    if (isSameStory && !languageChanged && this.state.currentCharIndex > 0 && this.state.savedText) {
       // Resume from saved position
       textToSpeak = text.substring(this.state.currentCharIndex);
       startFromBeginning = false;
     } else {
-      // New story or restart
+      // New story, text changed, or language changed - restart
       this.state.currentCharIndex = 0;
       this.state.savedText = text;
+      this.state.textHash = textHash;
     }
 
     // Stop any current speech
@@ -107,6 +144,7 @@ class ReadingService {
       this.state.currentLanguage = language;
       if (startFromBeginning) {
         this.state.savedText = text;
+        this.state.textHash = textHash;
       }
       this.notify();
     };
@@ -117,6 +155,7 @@ class ReadingService {
       this.state.utterance = null;
       this.state.currentCharIndex = 0;
       this.state.savedText = null;
+      this.state.textHash = null;
       this.notify();
     };
 
@@ -174,15 +213,32 @@ class ReadingService {
     this.state.currentStoryId = null;
     this.state.currentCharIndex = 0;
     this.state.savedText = null;
+    this.state.textHash = null;
     this.notify();
   }
 
   /**
-   * Set language for next playback
+   * Set language and restart playback if currently playing
    */
   setLanguage(language: 'italian' | 'english') {
-    this.state.currentLanguage = language;
-    this.notify();
+    if (this.state.currentLanguage !== language) {
+      const wasPlaying = this.state.isPlaying;
+      const currentStoryId = this.state.currentStoryId;
+      const currentText = this.state.savedText;
+      
+      // Stop current playback
+      if (wasPlaying) {
+        this.stop();
+      }
+      
+      this.state.currentLanguage = language;
+      this.notify();
+      
+      // If was playing, restart from beginning with new language
+      if (wasPlaying && currentStoryId && currentText) {
+        this.play(currentText, currentStoryId, language);
+      }
+    }
   }
 
   /**

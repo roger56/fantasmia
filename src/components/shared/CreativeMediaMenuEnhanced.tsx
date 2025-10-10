@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Languages, Volume2, Share2, Image, Video, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { translateToEnglish } from '@/utils/translation';
 import { getStoryImage } from '@/utils/userStorage';
 import MediaGenerationDialog from './MediaGenerationDialog';
@@ -25,7 +25,7 @@ const CreativeMediaMenuEnhanced: React.FC<CreativeMediaMenuEnhancedProps> = ({
   readOnlyForUsers = false
 }) => {
   const { toast } = useToast();
-  const { isPlaying, speak, stop } = useTTS();
+  const { isPlaying, speak, stop } = useUnifiedTTS();
   const [showMediaDialog, setShowMediaDialog] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [existingImage, setExistingImage] = useState<any>(null);

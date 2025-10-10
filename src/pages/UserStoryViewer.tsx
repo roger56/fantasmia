@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle } from 'lucide-react';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { usePermanentTranslation } from '@/hooks/usePermanentTranslation';
 import { canAccessStory, getCurrentProfileId } from '@/utils/profileManager';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
@@ -30,7 +30,7 @@ const UserStoryViewer = () => {
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showModifyMenu, setShowModifyMenu] = useState(false);
-  const { speak, stop, isPlaying, getButtonText } = useTTS();
+  const { speak, stop, isPlaying, getButtonText } = useUnifiedTTS({ storyId: id });
   const translation = usePermanentTranslation(story, setStory);
   
   // Stop TTS quando si esce dalla pagina

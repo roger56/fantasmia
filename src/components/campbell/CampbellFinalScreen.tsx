@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Share, Volume2, Languages, Save, ArrowLeft, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
 import MediaButton from '@/components/shared/MediaButton';
@@ -38,7 +38,7 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
   const [editableContent, setEditableContent] = useState(storyContent);
   const [currentContent, setCurrentContent] = useState(storyContent);
   const { toast } = useToast();
-  const { speak, getButtonText } = useTTS();
+  const { speak, getButtonText } = useUnifiedTTS();
 
   const cleanedContent = currentContent.replace(/\n\n+/g, '\n');
 

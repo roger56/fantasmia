@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Play, Pause, Mic, MicOff, Volume2 } from 'lucide-react';
 import { professions } from '@/data/professions';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { useToast } from '@/hooks/use-toast';
 import SpeechToText from '@/components/SpeechToText';
 import StoryLayout from '@/components/shared/StoryLayout';
@@ -24,7 +24,7 @@ const ProfessionStoryEditor = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { speak, isPlaying } = useTTS();
+  const { speak, isPlaying } = useUnifiedTTS();
   const { toast } = useToast();
 
   // Auto-scroll functionality

@@ -10,7 +10,7 @@ import { fantasMiaDB } from '@/utils/indexedDB';
 import { useToast } from '@/hooks/use-toast';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import { usePermanentTranslation } from '@/hooks/usePermanentTranslation';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import ModifyMenu from '@/components/shared/ModifyMenu';
 
 interface AGStory {
@@ -39,7 +39,7 @@ const SuperuserReadingStoriesView = () => {
   const [selectedStory, setSelectedStory] = useState<AGStory | null>(null);
   
   const { isTranslating } = usePermanentTranslation(null, () => {});
-  const { speak, stop, isPlaying } = useTTS();
+  const { speak, stop, isPlaying } = useUnifiedTTS();
 
   const loadStories = async () => {
     try {

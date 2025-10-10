@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import { getAllReadingStoriesForSuperuser, updateReadingStory, ReadingStory } from '@/utils/userStorage';
 import { useToast } from '@/hooks/use-toast';
-import { useTTS } from '@/hooks/useTTS';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import HomeButton from '@/components/HomeButton';
 import PoetryGenerator from '@/components/shared/PoetryGenerator';
 
@@ -24,7 +24,7 @@ const SuperuserReadingStoryViewer = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPoetryGenerator, setShowPoetryGenerator] = useState(false);
   const { toast } = useToast();
-  const { isPlaying, isPaused, speak, stop, getButtonText } = useTTS();
+  const { isPlaying, isPaused, speak, stop, getButtonText } = useUnifiedTTS({ storyId: id });
 
   useEffect(() => {
     // Check if user is authenticated as superuser
