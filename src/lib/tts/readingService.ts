@@ -115,9 +115,11 @@ class ReadingService {
     // Different story, text changed, or language changed - determine text to speak
     let textToSpeak = text;
     let startFromBeginning = true;
+    let baseOffset = 0; // Track offset for resume
 
     if (isSameStory && !languageChanged && this.state.currentCharIndex > 0 && this.state.savedText) {
       // Resume from saved position
+      baseOffset = this.state.currentCharIndex;
       textToSpeak = text.substring(this.state.currentCharIndex);
       startFromBeginning = false;
     } else {
@@ -126,6 +128,16 @@ class ReadingService {
       this.state.savedText = text;
       this.state.textHash = textHash;
     }
+
+    console.log('🎵 TTS Action:', {
+      action: isSameStory && !languageChanged ? (this.state.isPaused ? 'RESUME' : 'PAUSE') : 'NEW',
+      currentCharIndex: this.state.currentCharIndex,
+      baseOffset,
+      textLength: text.length,
+      textToSpeakLength: textToSpeak.length,
+      textHash,
+      startFromBeginning
+    });
 
     // Stop any current speech
     speechSynthesis.cancel();
@@ -178,14 +190,19 @@ class ReadingService {
     };
 
     // Track character progress for resume
+    // CRITICAL: When resuming from offset, event.charIndex is relative to the substring
+    // We must add the base offset to get the correct position in the original text
     utterance.onboundary = (event) => {
       if (event.name === 'word' || event.name === 'sentence') {
-        // Update current position (relative to full text)
-        if (startFromBeginning) {
-          this.state.currentCharIndex = event.charIndex;
-        } else {
-          this.state.currentCharIndex = this.state.currentCharIndex + event.charIndex;
-        }
+        // Update current position (always baseOffset + event.charIndex)
+        this.state.currentCharIndex = baseOffset + event.charIndex;
+        console.log('📍 TTS Progress:', {
+          eventCharIndex: event.charIndex,
+          baseOffset,
+          actualCharIndex: this.state.currentCharIndex,
+          total: text.length,
+          progress: Math.round((this.state.currentCharIndex / text.length) * 100) + '%'
+        });
       }
     };
 

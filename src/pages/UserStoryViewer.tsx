@@ -152,11 +152,8 @@ const UserStoryViewer = () => {
     
     const textToRead = `${story.title || 'Storia senza titolo'}. ${story.text || 'Contenuto non disponibile'}`;
     
-    if (isPlaying) {
-      stop();
-    } else {
-      speak(textToRead, translation.getCurrentLanguage());
-    }
+    // Let readingService handle play/pause/resume automatically
+    speak(textToRead, translation.getCurrentLanguage());
   };
 
   const handleTranslate = () => {
