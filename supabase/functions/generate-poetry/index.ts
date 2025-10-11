@@ -94,25 +94,25 @@ Create a rhyming poem, fun and suitable for children, inspired by this story.`;
     poetry = poetry.replace(/^["']|["']$/g, '').trim();
 
     // Ensure max lines
-    const lines = poetry.split('\n').filter(line => line.trim().length > 0);
+    const lines = poetry.split('\n').filter((line: string) => line.trim().length > 0);
     if (lines.length > maxLines) {
       poetry = lines.slice(0, maxLines).join('\n');
     }
 
     console.debug('POEM:success', { 
-      lines: poetry.split('\n').filter(line => line.trim().length > 0).length 
+      lines: poetry.split('\n').filter((line: string) => line.trim().length > 0).length 
     });
 
     return new Response(JSON.stringify({ 
       poetry,
       language,
-      lineCount: poetry.split('\n').filter(line => line.trim().length > 0).length
+      lineCount: poetry.split('\n').filter((line: string) => line.trim().length > 0).length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.warn('POEM:error', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
