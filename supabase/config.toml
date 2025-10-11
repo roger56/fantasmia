@@ -1,10 +1,1 @@
-project_id = "aomisprfxjatoibvcmhh"
-
-[functions.generate-image]
-verify_jwt = false
-
-[functions.generate-poetry]
-verify_jwt = false
-
-[functions.improve-text]
-verify_jwt = false
+project_id = "vjzuouvowdmeakhlbzex"
