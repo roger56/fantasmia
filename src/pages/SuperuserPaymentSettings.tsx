@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard, TrendingUp } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, CreditCard, TrendingUp, AlertTriangle } from 'lucide-react';
+import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 
@@ -15,25 +16,28 @@ const SuperuserPaymentSettings = () => {
 
   useEffect(() => {
     const fetchTotalCost = async () => {
+      if (!CLOUD_ENABLED || !supabase) {
+        console.log('💰 Cloud sync disabilitato, costi non disponibili');
+        setTotalCost(0);
+        setIsLoading(false);
+        return;
+      }
+      
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('media_generations')
           .select('cost');
 
         if (error) {
           console.error('Error fetching cost data:', error);
-          return;
+          setTotalCost(0);
+        } else {
+          const total = data?.reduce((sum: number, record: any) => sum + (record.cost || 0), 0) || 0;
+          setTotalCost(total);
         }
-
-        const total = data?.reduce((sum, record) => sum + (record.cost || 0), 0) || 0;
-        setTotalCost(total);
       } catch (error) {
         console.error('Error calculating total cost:', error);
-        toast({
-          title: "Errore",
-          description: "Non è stato possibile calcolare il costo totale",
-          variant: "destructive"
-        });
+        setTotalCost(0);
       } finally {
         setIsLoading(false);
       }
@@ -71,6 +75,16 @@ const SuperuserPaymentSettings = () => {
         </div>
 
         <div className="grid gap-6">
+          {/* Cloud Sync Warning */}
+          {!CLOUD_ENABLED && (
+            <Alert className="border-yellow-400 bg-yellow-50">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                ⚠️ Cloud Sync disabilitato - I costi delle generazioni AI non vengono tracciati
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {/* Costo Totale Card */}
           <Card className="border-2 border-blue-200 bg-blue-50">
             <CardHeader>

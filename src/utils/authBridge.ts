@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
 import { User } from '../utils/userStorage';
 
 interface SupabaseAuthResult {
@@ -18,19 +18,24 @@ export class AuthBridge {
    * Create or login a localStorage user into Supabase
    */
   static async bridgeUserToSupabase(localUser: User): Promise<SupabaseAuthResult> {
+    if (!CLOUD_ENABLED || !supabase) {
+      console.log('🔒 Cloud auth disabilitato');
+      return {
+        success: false,
+        error: 'Cloud sync disabled'
+      };
+    }
+    
     try {
-      // Check if user already exists in Supabase by checking profiles
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile } = await (supabase as any)
         .from('profiles')
         .select('*')
         .eq('name', localUser.name)
         .single();
 
       if (existingProfile) {
-        // User already exists, create a session using the existing profile
         return await this.createSupabaseSessionForUser(existingProfile);
       } else {
-        // User doesn't exist, create them in Supabase
         return await this.createSupabaseUser(localUser);
       }
     } catch (error) {
@@ -72,7 +77,7 @@ export class AuthBridge {
 
       if (authData.user) {
         // Create the user profile
-        const { error: profileError } = await supabase
+        const { error: profileError } = await (supabase as any)
           .from('profiles')
           .insert({
             user_id: authData.user.id,
@@ -81,7 +86,7 @@ export class AuthBridge {
             email: localUser.email,
             user_type: localUser.name.toLowerCase() === 'superuser' ? 'superuser' : 'user',
             style_preference: 'default',
-            password: localUser.password // Keep original password for compatibility
+            password: localUser.password
           });
 
         if (profileError) {
@@ -228,20 +233,25 @@ export class AuthBridge {
    * Check if user is authenticated (either via Supabase or bridged session)
    */
   static async isAuthenticated(): Promise<{ authenticated: boolean; userId?: string; userName?: string }> {
-    // Check Supabase session first
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('user_id', session.user.id)
-        .single();
-      
-      return {
-        authenticated: true,
-        userId: session.user.id,
-        userName: profile?.name || 'Unknown User'
-      };
+    if (CLOUD_ENABLED && supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data: profile } = await (supabase as any)
+            .from('profiles')
+            .select('name')
+            .eq('user_id', session.user.id)
+            .single();
+          
+          return {
+            authenticated: true,
+            userId: session.user.id,
+            userName: profile?.name || 'Unknown User'
+          };
+        }
+      } catch (error) {
+        console.warn('⚠️ Supabase auth check failed:', error);
+      }
     }
 
     // Check bridged session

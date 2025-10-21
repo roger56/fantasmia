@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import { testBase64Conversion } from '@/utils/base64Utils';
 import { AGDataReset } from '@/utils/agDataReset';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import { CLOUD_ENABLED } from '@/integrations/supabase/client';
 
 interface DebugData {
   profiles: { count: number; items: Profile[] };
@@ -421,6 +422,16 @@ const DebugIndexedDB = () => {
             <div><strong>Origin:</strong> {window.location.origin}</div>
             <div><strong>Current Profile ID:</strong> {currentProfileId || 'Nessuno'}</div>
             <div><strong>Service Worker:</strong> {hasServiceWorker ? 'Presente' : 'Assente'}</div>
+            <div className="flex items-center gap-2">
+              <strong>Cloud Sync:</strong>
+              <span className={`px-2 py-1 rounded text-sm font-bold ${
+                CLOUD_ENABLED 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-gray-100 text-gray-800'
+              }`}>
+                {CLOUD_ENABLED ? '☁️ ON' : '📦 OFF (IndexedDB only)'}
+              </span>
+            </div>
             
             <div className="mt-4">
               <Button onClick={hardReload} variant="outline" size="sm">

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
-import { supabase } from '@/integrations/supabase/client';
+import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
 import { base64ToBlobSafe, convertImageToBlob } from '@/utils/base64Utils';
 
 interface MediaGenerationDialogProps {
@@ -58,6 +58,15 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
 
     setIsGenerating(true);
     try {
+      if (!CLOUD_ENABLED || !supabase) {
+        toast({
+          title: "Funzione non disponibile",
+          description: "Cloud sync disabilitato - funzionalità AI non disponibili",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Always include "no text" instruction by default, then add user comments
       const baseInstruction = "nessun testo scritto interno al disegno";
       const prompt = userComment 

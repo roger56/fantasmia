@@ -5,13 +5,23 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://vjzuouvowdmeakhlbzex.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqenVvdXZvd2RtZWFraGxiemV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDgyMTQsImV4cCI6MjA3NTA4NDIxNH0.2suGd3mVUOIAvYgZrcDebRgOOTMS99EHCxOKO3k7cWE";
 
+// Cloud sync control flag
+export const CLOUD_ENABLED = 
+  (import.meta.env.VITE_ENABLE_CLOUD_SYNC || '').toString() === 'true';
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-  }
-});
+// Only create client if cloud sync is enabled
+export const supabase = CLOUD_ENABLED
+  ? createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        storage: localStorage,
+        persistSession: true,
+        autoRefreshToken: true,
+      }
+    })
+  : null;
+
+// Helper to check if cloud is available at runtime
+export const isCloudAvailable = () => CLOUD_ENABLED && supabase !== null;

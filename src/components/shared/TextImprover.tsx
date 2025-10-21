@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Sparkles, Loader2, RefreshCw, X, Check } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
 import CopyrightWarningDialog from './CopyrightWarningDialog';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
@@ -69,6 +69,15 @@ const TextImprover: React.FC<TextImproverProps> = ({
 
   const handleProceedWithImprovement = async () => {
     if (!selectedStyle) return;
+    
+    if (!CLOUD_ENABLED || !supabase) {
+      toast({
+        title: "Funzione non disponibile",
+        description: "Cloud sync disabilitato - funzionalità AI non disponibili",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setShowCopyrightWarning(false);
     setIsImproving(true);

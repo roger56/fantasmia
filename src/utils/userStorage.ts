@@ -136,27 +136,33 @@ export const markMessagesAsRead = (userId: string) => {
 };
 
 export const saveStory = async (story: Story) => {
-  // Try to save to Supabase first, then fallback to localStorage
+  // PRIMARIO: salvataggio localStorage (sempre attivo)
+  saveStoryToLocalStorage(story);
+  console.log('✅ Storia salvata in localStorage');
+  
+  // OPZIONALE: sync cloud (solo se CLOUD_ENABLED)
+  const { CLOUD_ENABLED, supabase } = await import('@/integrations/supabase/client');
+  
+  if (!CLOUD_ENABLED || !supabase) {
+    console.log('🔒 Cloud sync disabilitato - solo IndexedDB');
+    return;
+  }
+  
+  // Try cloud sync (non-blocking)
   try {
-    // Check for both real Supabase session and bridged session
     const { data: { session } } = await supabase.auth.getSession();
-    
-    // Import AuthBridge dynamically to avoid circular dependency
     const { AuthBridge } = await import('./authBridge');
     const bridgedSession = AuthBridge.getCurrentBridgedSession();
     
     if (session || bridgedSession) {
-      // Determine user ID and name
       let userId = session?.user.id;
       let userName = story.authorName;
       
       if (bridgedSession && !session) {
-        // Use bridged session data
         userId = bridgedSession.user.id;
         userName = bridgedSession.user.user_metadata?.name || story.authorName;
       }
       
-      // User è autenticato - salva in Supabase
       const storyData = {
         title: story.title,
         content: story.content || '',
@@ -165,41 +171,26 @@ export const saveStory = async (story: Story) => {
         status: story.status,
         user_id: userId,
         author_id: userId,
-        author_name: userName, // Il trigger automaticamente lo correggerà se necessario
+        author_name: userName,
         user_name: userName,
         is_public: story.isPublic || false,
         language: story.language || 'italian'
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('stories')
         .insert([storyData])
         .select()
         .single();
 
       if (error) {
-        console.error('Errore salvataggio Supabase:', error);
-        // Fallback a localStorage
-        saveStoryToLocalStorage(story);
+        console.warn('⚠️ Cloud sync fallito (non bloccante):', error);
       } else {
-        console.log('Storia salvata in Supabase:', data);
-        // Salva anche in localStorage per compatibilità
-        const storyWithSupabaseData = {
-          ...story,
-          id: data.id,
-          authorName: data.author_name || data.user_name || story.authorName
-        };
-        saveStoryToLocalStorage(storyWithSupabaseData);
+        console.log('☁️ Storia sincronizzata su cloud:', data);
       }
-    } else {
-      // User non autenticato - salva solo in localStorage
-      console.log('Utente non autenticato, salvataggio in localStorage');
-      saveStoryToLocalStorage(story);
     }
   } catch (error) {
-    console.error('Errore during save:', error);
-    // Fallback a localStorage
-    saveStoryToLocalStorage(story);
+    console.warn('⚠️ Cloud sync error (non bloccante):', error);
   }
 };
 
@@ -310,43 +301,47 @@ export const getStoriesForUser = (userId: string, includePublic: boolean = false
 
 export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
   try {
-    // Get stories from both Supabase and localStorage, then merge them
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // Import AuthBridge to check for bridged sessions
-    const { AuthBridge } = await import('./authBridge');
-    const bridgedSession = AuthBridge.getCurrentBridgedSession();
+    const { CLOUD_ENABLED, supabase } = await import('@/integrations/supabase/client');
     
     let supabaseStories: Story[] = [];
     
-    if (session || bridgedSession) {
-      const { data: supabaseStoriesData, error } = await supabase
-        .from('stories')
-        .select('*')
-        .order('created_at', { ascending: false });
+    // Only try cloud if enabled
+    if (CLOUD_ENABLED && supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const { AuthBridge } = await import('./authBridge');
+        const bridgedSession = AuthBridge.getCurrentBridgedSession();
+        
+        if (session || bridgedSession) {
+          const { data: supabaseStoriesData, error } = await (supabase as any)
+            .from('stories')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-      if (!error && supabaseStoriesData) {
-        // Convert Supabase format to local Story format
-        supabaseStories = supabaseStoriesData.map(story => ({
-          id: story.id,
-          title: story.title,
-          content: story.content || '',
-          status: story.status as 'completed' | 'suspended' | 'in-progress',
-          lastModified: story.updated_at || story.created_at,
-          mode: (story.mode || story.category) as 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS',
-          authorId: story.author_id || story.user_id,
-          authorName: story.author_name || story.user_name || 'Utente Sconosciuto',
-          isPublic: story.is_public || false,
-          language: (story.language || 'italian') as 'italian' | 'english'
-        }));
+          if (!error && supabaseStoriesData) {
+            supabaseStories = supabaseStoriesData.map((story: any) => ({
+              id: story.id,
+              title: story.title,
+              content: story.content || '',
+              status: story.status as 'completed' | 'suspended' | 'in-progress',
+              lastModified: story.updated_at || story.created_at,
+              mode: (story.mode || story.category) as 'GHOST' | 'PROPP' | 'PROPP_FREE' | 'AIROTS' | 'PAROLE_CHIAMANO' | 'CAMPBELL' | 'CSS',
+              authorId: story.author_id || story.user_id,
+              authorName: story.author_name || story.user_name || 'Utente Sconosciuto',
+              isPublic: story.is_public || false,
+              language: (story.language || 'italian') as 'italian' | 'english'
+            }));
+          }
+        }
+      } catch (cloudError) {
+        console.warn('⚠️ Cloud fetch fallito, uso solo localStorage:', cloudError);
       }
     }
     
-    // Get localStorage stories
+    // Always get localStorage stories
     const localStories = getStories();
     const users = getUsers();
     
-    // Process localStorage stories and ensure proper author names
     const processedLocalStories = localStories.map(story => {
       const user = users.find(u => u.id === story.authorId);
       return {
@@ -355,11 +350,10 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
       };
     });
     
-    // Merge stories from both sources, removing duplicates by title and author
+    // Merge stories, removing duplicates
     const allStories = [...supabaseStories];
     
     processedLocalStories.forEach(localStory => {
-      // Check if this story already exists in Supabase stories
       const existsInSupabase = supabaseStories.some(supabaseStory => 
         supabaseStory.title === localStory.title && 
         supabaseStory.authorName === localStory.authorName
@@ -370,7 +364,6 @@ export const getAllStoriesForSuperuser = async (): Promise<Story[]> => {
       }
     });
     
-    // Sort by descending date
     return allStories.sort((a, b) => 
       new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
     );

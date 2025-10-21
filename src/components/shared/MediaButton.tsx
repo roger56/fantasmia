@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Palette, Loader2, Download, Bug, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -138,6 +138,16 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       description: "Sto creando l'immagine. Attendere circa 10-15 secondi.",
       variant: "default"
     });
+
+    if (!CLOUD_ENABLED || !supabase) {
+      setIsGenerating(false);
+      toast({
+        title: "Funzione non disponibile",
+        description: "Cloud sync disabilitato - funzionalità AI non disponibili",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       // Use userId prop or get from state (set by AuthBridge)

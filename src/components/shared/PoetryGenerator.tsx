@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Feather, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface PoetryGeneratorProps {
@@ -22,6 +22,15 @@ const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({
   const { toast } = useToast();
 
   const handleGeneratePoetry = async () => {
+    if (!CLOUD_ENABLED || !supabase) {
+      toast({
+        title: "Funzione non disponibile",
+        description: "Cloud sync disabilitato - funzionalità AI non disponibili",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsGenerating(true);
 
     try {

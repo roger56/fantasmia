@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Copy, Mail, Wand2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
 
 interface PoetryOverlayProps {
   open: boolean;
@@ -29,6 +29,15 @@ const PoetryOverlay: React.FC<PoetryOverlayProps> = ({
       toast({
         title: "Contenuto mancante",
         description: "È necessario un testo della storia per generare la poesia",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!CLOUD_ENABLED || !supabase) {
+      toast({
+        title: "Funzione non disponibile",
+        description: "Cloud sync disabilitato - funzionalità AI non disponibili",
         variant: "destructive"
       });
       return;
