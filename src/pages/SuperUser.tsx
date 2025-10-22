@@ -91,9 +91,9 @@ const SuperUser = () => {
             </CardHeader>
             <CardContent>
               <Button 
+                onClick={() => navigate('/superuser-settings')}
                 variant="outline"
                 className="w-full"
-                disabled
               >
                 Configurazioni
               </Button>
