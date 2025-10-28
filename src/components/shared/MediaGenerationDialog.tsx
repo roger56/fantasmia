@@ -572,24 +572,40 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       <Dialog open={showCommentDialog} onOpenChange={(open) => handleCloseDialog(setShowCommentDialog, open)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Aggiungi un commento (opzionale)</DialogTitle>
-            <DialogDescription>Personalizza l'immagine aggiungendo specifiche o dettagli desiderati.</DialogDescription>
+            <DialogTitle>Genera Immagine</DialogTitle>
+            <DialogDescription>Personalizza l'immagine aggiungendo specifiche o dettagli desiderati (opzionale).</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Aggiungi delle specifiche per personalizzare l'immagine:
+            {/* Mostra lo stile selezionato */}
+            {selectedStyle && (
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <div className="text-sm font-medium">
+                  Stile selezionato: <span className="text-primary capitalize">{selectedStyle}</span>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Note aggiuntive (opzionale)</label>
+              <div className="text-xs text-muted-foreground mb-2">
+                Aggiungi delle specifiche per personalizzare l'immagine
+              </div>
+              <Textarea
+                value={userComment}
+                onChange={(e) => setUserComment(e.target.value)}
+                placeholder="es. 'in stile fiabesco', 'con ambientazione spaziale', 'con colori vivaci'..."
+                className="min-h-[100px]"
+              />
             </div>
-            <Textarea
-              value={userComment}
-              onChange={(e) => setUserComment(e.target.value)}
-              placeholder="es. 'in stile fiabesco', 'con ambientazione spaziale', 'con colori vivaci'..."
-              className="min-h-[100px]"
-            />
+            
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => handleCloseDialog(setShowCommentDialog, false)}>
                 Annulla
               </Button>
-              <Button onClick={handleGenerateWithComment}>Genera Immagine</Button>
+              <Button onClick={handleGenerateWithComment} className="gap-2">
+                <Palette className="w-4 h-4" />
+                Genera Immagine
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -633,6 +649,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         open={showCopyrightWarning}
         onOpenChange={handleCopyrightWarningChange}
         onConfirm={handleCopyrightProceed}
+        selectedStyle={selectedStyle}
       />
     </>
   );

@@ -7,13 +7,23 @@ interface CopyrightWarningDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  selectedStyle?: string;
 }
 
 const CopyrightWarningDialog: React.FC<CopyrightWarningDialogProps> = ({
   open,
   onOpenChange,
-  onConfirm
+  onConfirm,
+  selectedStyle
 }) => {
+  const styleLabels: Record<string, string> = {
+    fumetto: "Fumetto",
+    fotografico: "Fotografico",
+    astratto: "Astratto",
+    manga: "Manga",
+    acquarello: "Acquarello",
+    carboncino: "Carboncino"
+  };
   const handleConfirm = () => {
     onConfirm();
     onOpenChange(false);
@@ -28,12 +38,19 @@ const CopyrightWarningDialog: React.FC<CopyrightWarningDialogProps> = ({
             Attenzione Copyright
           </DialogTitle>
         </DialogHeader>
-        <DialogDescription id="copyright-warning-desc" className="space-y-3">
-          <span className="block">
+        <DialogDescription id="copyright-warning-desc" className="space-y-4">
+          {selectedStyle && (
+            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+              <div className="text-sm font-medium text-foreground">
+                Stile selezionato: <span className="text-primary">{styleLabels[selectedStyle] || selectedStyle}</span>
+              </div>
+            </div>
+          )}
+          <span className="block text-foreground">
             I disegni di storie contenenti personaggi soggetti a diritto d'autore 
             (es. Cenerentola, Pinocchio, Biancaneve, ecc.) non saranno effettuati.
           </span>
-          <span className="block font-medium">
+          <span className="block font-medium text-foreground">
             Confermi di aver preso visione di questa informazione e di voler procedere?
           </span>
         </DialogDescription>
