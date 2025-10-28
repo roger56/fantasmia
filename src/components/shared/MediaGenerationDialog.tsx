@@ -58,13 +58,7 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
 
     setIsGenerating(true);
     try {
-      if (!CLOUD_ENABLED || !supabase) {
-        toast({
-          title: "Funzione non disponibile",
-          description: "Cloud sync disabilitato - funzionalità AI non disponibili",
-          variant: "destructive"
-        });
-        return;
+      
       }
       
       // Always include "no text" instruction by default, then add user comments
