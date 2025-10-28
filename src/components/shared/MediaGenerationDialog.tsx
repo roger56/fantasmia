@@ -1,464 +1,602 @@
-import React, { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Download } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { fantasMiaDB } from '@/utils/indexedDB';
-import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
-import { base64ToBlobSafe, convertImageToBlob } from '@/utils/base64Utils';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Palette, Loader2, Download, Bug, AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { CLOUD_ENABLED, supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuthBridge } from "@/utils/authBridge";
+import CopyrightWarningDialog from "./CopyrightWarningDialog";
 
-interface MediaGenerationDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface MediaButtonProps {
   storyContent: string;
-  storyTitle: string;
-  storyId: string;
-  userId: string;
+  storyTitle?: string;
+  storyId?: string;
+  className?: string;
+  userId?: string;
 }
 
-interface PreviewSource {
-  kind: 'blob' | 'dataURL';
-  blob?: Blob;
-  dataURL?: string;
-  mime?: string;
-}
-
-const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
-  open,
-  onOpenChange,
-  storyContent,
-  storyTitle,
-  storyId,
-  userId
-}) => {
-  const [selectedStyle, setSelectedStyle] = useState<string>('');
-  const [userComment, setUserComment] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const previewRef = useRef<PreviewSource | null>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
+const MediaButton: React.FC<MediaButtonProps> = ({ storyContent, storyTitle, storyId, className = "", userId }) => {
   const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [userComment, setUserComment] = useState("");
+  const [showCommentDialog, setShowCommentDialog] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState("");
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [isDebugMode, setIsDebugMode] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAuthWarning, setShowAuthWarning] = useState(false);
+  const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const handleStyleSelect = (style: string) => {
-    setSelectedStyle(style);
-  };
+  // Reset state when story changes
+  useEffect(() => {
+    console.log("MediaButton: Story changed, resetting state");
+    console.log("MediaButton: New storyId:", storyId);
+    console.log("MediaButton: New storyContent preview:", storyContent?.substring(0, 100) + "...");
 
-  const handleGenerate = async () => {
-    if (!selectedStyle) {
-      toast({
-        title: "Seleziona uno stile",
-        description: "Devi selezionare uno stile per generare l'immagine",
-        variant: "destructive"
-      });
+    setUserComment("");
+    setDebugInfo(null);
+    setGeneratedImage(null);
+    setShowImageDialog(false);
+  }, [storyContent, storyId]);
+
+  // Check if user is in Superuser mode and authentication status
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    setIsDebugMode(currentPath.includes("superuser"));
+
+    // Check authentication status using AuthBridge
+    const checkAuth = async () => {
+      const authStatus = await AuthBridge.isAuthenticated();
+      setIsAuthenticated(authStatus.authenticated);
+      setCurrentUserId(authStatus.userId || null);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes (both Supabase and localStorage)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      checkAuth(); // Re-check using AuthBridge instead of just Supabase session
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleMediaAction = async (type: string, subtype: string) => {
+    // Check if user is authenticated using AuthBridge
+    const authStatus = await AuthBridge.isAuthenticated();
+    if (!authStatus.authenticated) {
+      setShowAuthWarning(true);
       return;
     }
 
-    setIsGenerating(true);
-    try {
-      // RIMOSSO CONTROLLO CLOUD_ENABLED - API Vercel funziona sempre
-      // if (!CLOUD_ENABLED || !supabase) {
-      //   toast({
-      //     title: "Funzione non disponibile",
-      //     description: "Cloud sync disabilitato - funzionalità AI non disponibili",
-      //     variant: "destructive"
-      //   });
-      //   return;
-      // }
-      
-      // Always include "no text" instruction by default, then add user comments
-      const baseInstruction = "nessun testo scritto interno al disegno";
-      const prompt = userComment 
-        ? `${storyContent}\n\nNote aggiuntive: ${baseInstruction}, ${userComment}`
-        : `${storyContent}\n\nNote aggiuntive: ${baseInstruction}`;
+    if (type === "Disegno") {
+      setSelectedStyle(subtype.toLowerCase());
+      setShowCopyrightWarning(true);
+    } else {
+      toast({
+        title: "Funzione in sviluppo",
+        description: `${type} - ${subtype} sarà presto disponibile`,
+        variant: "default",
+      });
+    }
+  };
 
-      // CHIAMATA API VERCEL - SOSTITUZIONE SUPABASE
-      const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          style: selectedStyle,
-          storyId: storyId,
-          storyTitle: storyTitle,
-          userId: userId
-        })
+  const handleGenerateWithComment = async () => {
+    setShowCommentDialog(false);
+    await handleImageGeneration(selectedStyle);
+  };
+
+  const handleCopyrightModify = () => {
+    setShowCopyrightWarning(false);
+    // Navigate back or close - for now just close
+  };
+
+  const handleCopyrightProceed = () => {
+    setShowCopyrightWarning(false);
+    setShowCommentDialog(true);
+  };
+
+  const handleImageGeneration = async (style: string) => {
+    try {
+      console.log("🚀 Starting image generation...");
+      setIsGenerating(true);
+
+      // Validation before sending
+      if (!storyContent || storyContent.trim().length === 0) {
+        console.error("❌ No story content available for image generation");
+        toast({
+          title: "Errore",
+          description: "Nessun contenuto della storia disponibile",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Use userId prop or get from state (set by AuthBridge)
+      const userIdToUse = userId || currentUserId;
+      if (!userIdToUse) {
+        throw new Error("User ID is required");
+      }
+
+      // Create enhanced prompt with user comment
+      const enhancedPrompt = userComment ? `${storyContent}\n\nNote aggiuntive: ${userComment}` : storyContent;
+
+      const requestBody = {
+        prompt: enhancedPrompt,
+        style: style,
+      };
+
+      console.log("🔍 Current state:", {
+        prompt: enhancedPrompt.substring(0, 100) + "...",
+        style: style,
+        storyId: storyId,
+        isGenerating: isGenerating,
       });
 
-      const data = await response.json();
+      console.log("📤 Sending request to API:", requestBody);
+
+      if (!enhancedPrompt || !enhancedPrompt.trim()) {
+        console.error("❌ Prompt is empty!");
+        toast({
+          title: "Errore",
+          description: "Inserisci un prompt valido",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!style) {
+        console.error("❌ No style selected!");
+        toast({
+          title: "Errore",
+          description: "Seleziona uno stile",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Show informative message during generation
+      toast({
+        title: "Generazione in corso...",
+        description: "Sto creando l'immagine. Attendere circa 10-15 secondi.",
+        variant: "default",
+      });
+
+      // Add timeout to fetch
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi
+
+      // CHIAMATA API VERCEL - AGGIUNGI HEADERS CORS MANUALMENTE
+      const response = await fetch("https://fantasmia-ai.vercel.app/api/openai/image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+        mode: "cors",
+      });
+
+      clearTimeout(timeoutId);
+
+      console.log("📥 Response status:", response.status);
+      console.log("📋 Response headers:", Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        throw new Error(data.error || 'Image generation failed');
+        const errorText = await response.text();
+        console.error("❌ HTTP error:", response.status, errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      if (data?.image_url) {
-        // FORCE LOCAL-ONLY: Convert all to local preview data
-        let previewSourceData: PreviewSource;
-        
-        if (data.image_url.startsWith('data:image')) {
-          // Base64 from API - convert to dataURL
-          previewSourceData = {
-            kind: 'dataURL',
-            dataURL: data.image_url,
-            mime: data.image_url.split(',')[0].split(':')[1].split(';')[0]
-          };
-          console.info('preview-ready', { kind: 'dataURL', dataLen: data.image_url.length, mime: previewSourceData.mime });
-        } else {
-          // Remote URL fallback - fetch ONCE immediately to create local blob
-          try {
-            console.warn('Remote URL received, fetching once for local preview:', data.image_url);
-            const response = await fetch(data.image_url, { mode: 'cors', cache: 'no-store' });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const blob = await response.blob();
-            if (!blob.type.startsWith('image/')) throw new Error(`Invalid content type: ${blob.type}`);
-            if (blob.size < 10240) throw new Error('Anteprima vuota');
-            
-            previewSourceData = {
-              kind: 'blob',
-              blob,
-              mime: blob.type
-            };
-            console.info('preview-ready', { kind: 'blob', blobSize: blob.size, mime: blob.type });
-          } catch (fetchError) {
-            console.error('preview-error', { step: 'build-preview', message: fetchError?.message });
-            toast({
-              title: "Errore", 
-              description: "Rigenera immagine (formato base64) - impossibile caricare anteprima",
-              variant: "destructive"
-            });
-            return;
-          }
-        }
-        
-        previewRef.current = previewSourceData;
-        setShowPreview(true);
+      const data = await response.json();
+      console.log("✅ API response received:", {
+        keys: Object.keys(data),
+        hasImageBase64: !!data.image_base64,
+        imageBase64Length: data.image_base64?.length,
+        hasImageUrl: !!data.image_url,
+        style: data.style,
+        error: data.error,
+      });
+
+      // Store debug information for Superuser mode
+      if (isDebugMode) {
+        setDebugInfo(
+          JSON.stringify(
+            {
+              response: data,
+              prompt: enhancedPrompt.substring(0, 200) + "...",
+              style: style,
+              timestamp: new Date().toISOString(),
+              statusCode: response.status,
+            },
+            null,
+            2,
+          ),
+        );
+      }
+
+      // Gestione della risposta - PRIMA base64, POI url come fallback
+      if (data.image_base64) {
+        console.log("🎨 Creating image from base64...");
+        const base64Image = `data:image/png;base64,${data.image_base64}`;
+        setGeneratedImage(base64Image);
+        setShowImageDialog(true);
+        setUserComment(""); // Reset comment after generation
+        console.log("✅ Image set successfully from base64");
+
         toast({
           title: "Immagine generata!",
-          description: "Anteprima pronta per la revisione"
+          description: "Immagine creata con successo",
+          variant: "default",
         });
+      } else if (data.image_url) {
+        console.log("🔗 Using image URL as fallback...");
+        setGeneratedImage(data.image_url);
+        setShowImageDialog(true);
+        setUserComment("");
+        console.log("✅ Image set successfully from URL");
+
+        toast({
+          title: "Immagine generata!",
+          description: "Immagine creata con successo",
+          variant: "default",
+        });
+      } else if (data.error) {
+        console.error("❌ API returned error:", data.error);
+
+        const errorMessage =
+          data.error?.includes("content policy") || data.detail?.includes("safety system")
+            ? "❌ Il contenuto della storia contiene parole non adatte per la generazione di immagini.\n\n🔧 Suggerimenti:\n• Evita riferimenti a violenza, armi o morte\n• Rimuovi parole come 'battaglia', 'guerra', 'sangue'\n• Riformula il testo con termini più neutri"
+            : data.error?.includes("Prompt too long")
+              ? "❌ Il testo della storia è troppo lungo per generare un'immagine.\n\n🔧 Suggerimenti:\n• Riduci la lunghezza del testo\n• Seleziona solo la parte più importante della storia"
+              : data.error || "Errore nella generazione dell'immagine";
+
+        throw new Error(errorMessage);
+      } else {
+        console.error("❌ No image data in response:", data);
+        throw new Error("No image data received from API");
       }
     } catch (error) {
+      console.error("💥 Error generating image:", error);
+
+      // Show error in toast
       toast({
         title: "Errore",
-        description: error instanceof Error ? error.message : "Errore durante la generazione dell'immagine",
-        variant: "destructive"
+        description: error instanceof Error ? error.message : "Errore nella generazione dell'immagine",
+        variant: "destructive",
       });
-      console.error('Error generating image:', error);
+
+      // In debug mode, still show the dialog with error info
+      if (isDebugMode) {
+        setShowImageDialog(true);
+      }
     } finally {
+      console.log("🏁 Image generation process completed");
       setIsGenerating(false);
     }
   };
 
-  const handleConfirm = async () => {
-    const previewSource = previewRef.current;
-    if (!previewSource) {
-      console.error({ step: 'confirm-save-error', error: 'No preview source available' });
-      toast({
-        title: "Errore",
-        description: "Nessuna immagine da salvare",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleDownloadImage = async () => {
+    if (!generatedImage) return;
 
     try {
-      // Normalize IDs to ensure consistency
-      const normalizedStoryId = String(storyId);
-      const normalizedOwnerId = String(userId);
-      
-      // Detailed telemetry
-      console.info({ 
-        step: 'preview-kind', 
-        kind: previewSource.kind, 
-        hasBlob: !!previewSource.blob, 
-        dataURLlen: previewSource.dataURL?.length 
+      // Use a proxy or different approach for CORS-protected images
+      const response = await fetch(generatedImage, {
+        mode: "cors",
+        method: "GET",
       });
-      
-      let blob: Blob;
-      let source: string;
-      
-      // Convert preview source to blob - LOCAL DATA ONLY
-      if (previewSource.kind === 'blob' && previewSource.blob) {
-        console.info({ step: 'convert-start', path: 'blob' });
-        blob = previewSource.blob;
-        source = 'openai';
-      } else if (previewSource.kind === 'dataURL' && previewSource.dataURL) {
-        console.info({ step: 'convert-start', path: 'dataURL' });
-        // Use safe base64 converter for robust conversion
-        blob = base64ToBlobSafe(previewSource.dataURL);
-        source = 'openai';
-      } else {
-        throw new Error('Only blob and dataURL preview sources are supported for saving. No remote fetching allowed.');
-      }
-      
-      console.info({ step: 'convert-done', mime: blob.type, size: blob.size });
 
-      // Validate blob size (minimum 10KB, max 20MB)
-      const minSize = 10 * 1024; // 10KB
-      const maxSize = 20 * 1024 * 1024; // 20MB
-      
-      if (blob.size < minSize) {
-        throw new Error(`Immagine non valida (${(blob.size / 1024).toFixed(1)}KB), rigenera`);
-      }
-      
-      if (blob.size > maxSize) {
-        throw new Error(`Image too large: ${(blob.size / 1024 / 1024).toFixed(2)}MB (max: 20MB)`);
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
       }
 
-      // Create media asset record with normalized IDs
-      const mediaAsset = {
-        id: `${normalizedStoryId}-generated-${Date.now()}`,
-        storyId: normalizedStoryId,
-        ownerProfileId: normalizedOwnerId,
-        type: 'image' as const,
-        source: source as 'openai' | 'canvas-fallback',
-        mime: blob.type || 'image/png',
-        size: blob.size,
-        createdAt: new Date().toISOString(),
-        data: blob
-      };
-
-      console.info({ step: 'saving-from', kind: previewSource.kind, finalMime: mediaAsset.mime, finalSize: blob.size });
-
-      // Atomic transaction: save media asset and update story flag (auto-detect type)
-      await fantasMiaDB.saveMediaAssetWithStoryUpdate(mediaAsset, normalizedStoryId);
-      console.info({ step: 'idb-write-done', storyId: normalizedStoryId });
-      
-      // Post-write verification and UI update
-      const mediaCount = await fantasMiaDB.getMediaCountByStoryId(normalizedStoryId);
-      
-      if (mediaCount >= 1) {
-        // Emit event for real-time UI synchronization
-        window.dispatchEvent(new CustomEvent('media:updated', { 
-          detail: { 
-            storyId: normalizedStoryId, 
-            count: mediaCount,
-            action: 'image-added'
-          } 
-        }));
-        window.dispatchEvent(new CustomEvent('am:changed')); // REQUISITO: Lista reattiva
-      } else {
-        throw new Error('Post-save verification failed: media count is 0');
-      }
-      
-      // Show success toast
-      toast({
-        title: "Immagine salvata con successo!",
-        description: "L'immagine è stata associata alla storia e sarà visibile nelle liste",
-        duration: 2000
-      });
-      
-      // Clean up any object URLs if they were created for display
-      // (Object URLs are no longer stored in previewSource, but may exist from img display)
-      
-      onOpenChange(false);
-      resetDialog();
-        
-    } catch (error) {
-      // Detailed telemetry
-      console.error({ 
-        step: 'convert-error', 
-        storyId: String(storyId), 
-        errorName: error?.name, 
-        errorMessage: error?.message,
-        previewKind: previewSource?.kind
-      });
-      
-      // Enhanced error messages
-      let errorMessage = "Errore durante il salvataggio dell'immagine";
-      
-      if (error.message.includes('non valida') || error.message.includes('rigenera')) {
-        errorMessage = error.message;
-      } else if (error.message.includes('too large')) {
-        errorMessage = error.message;
-      } else if (error.message.includes('Canvas fallback failed')) {
-        errorMessage = "Impossibile convertire l'immagine, rigenera";
-      } else if (error.message.includes('Post-save verification failed')) {
-        errorMessage = "Salvataggio immagine non riuscito - verifica fallita";
-      }
-      
-      toast({
-        title: "Errore salvataggio",
-        description: errorMessage,
-        variant: "destructive",
-        duration: 5000
-      });
-    }
-  };
-
-  const handleDownload = async () => {
-    const previewSource = previewRef.current;
-    if (!previewSource) return;
-    
-    try {
-      let blob: Blob;
-      let filename: string;
-      
-      if (previewSource.kind === 'blob' && previewSource.blob) {
-        blob = previewSource.blob;
-      } else if (previewSource.kind === 'dataURL' && previewSource.dataURL) {
-        // Use safe base64 converter
-        blob = base64ToBlobSafe(previewSource.dataURL);
-      } else {
-        throw new Error('No valid source for download');
-      }
-      
-      // Determine file extension from MIME type
-      const ext = blob.type === 'image/webp' ? 'webp' : blob.type === 'image/jpeg' ? 'jpg' : 'png';
-      filename = `${storyTitle}-${selectedStyle}.${ext}`;
-      
-      const objectURL = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = objectURL;
-      link.download = filename;
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${storyTitle || "immagine"}-${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(objectURL);
-    } catch (error) {
-      console.error('Download failed:', error);
+      window.URL.revokeObjectURL(url);
+
       toast({
-        title: "Errore download",
-        description: "Impossibile scaricare l'immagine",
-        variant: "destructive"
+        title: "Download completato",
+        description: "L'immagine è stata scaricata sul tuo dispositivo",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Download error:", error);
+      toast({
+        title: "Errore nel download",
+        description:
+          "Non è stato possibile scaricare l'immagine. Prova a cliccare destro sull'immagine e seleziona 'Salva immagine'.",
+        variant: "destructive",
       });
     }
   };
 
-  const resetDialog = () => {
-    setSelectedStyle('');
-    setUserComment('');
-    // Don't revoke objectURL here - only after successful save
-    previewRef.current = null;
-    setShowPreview(false);
-    setIsGenerating(false);
-  };
-
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      resetDialog();
-    }
-    onOpenChange(newOpen);
-  };
-
-  const styles = [
-    { value: 'fumetto', label: '🎨 Fumetto', description: 'Stile cartoon colorato' },
-    { value: 'fotografico', label: '📸 Fotografico', description: 'Realismo fotografico' },
-    { value: 'astratto', label: '🎭 Astratto', description: 'Arte astratta' },
-    { value: 'manga', label: '🎌 Manga', description: 'Stile anime giapponese' },
-    { value: 'acquarello', label: '🖌️ Acquarello', description: 'Pittura ad acquarello' },
-    { value: 'carboncino', label: '✏️ Carboncino', description: 'Disegno a carboncino' }
-  ];
-
-  const previewSource = previewRef.current;
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md" aria-describedby="dlg-desc-media-generation">
-        <DialogHeader>
-          <DialogTitle>Genera Disegno per la Storia</DialogTitle>
-        </DialogHeader>
-        <DialogDescription id="dlg-desc-media-generation">
-          Seleziona uno stile artistico e genera un'immagine per accompagnare la tua storia.
-        </DialogDescription>
-
-        {!showPreview ? (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="style">Seleziona lo stile</Label>
-              <Select value={selectedStyle} onValueChange={setSelectedStyle}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Scegli uno stile artistico" />
-                </SelectTrigger>
-                <SelectContent>
-                  {styles.map((style) => (
-                    <SelectItem key={style.value} value={style.value}>
-                      <div className="flex flex-col">
-                        <span>{style.label}</span>
-                        <span className="text-xs text-muted-foreground">{style.description}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="comment">Commenti aggiuntivi (opzionale)</Label>
-              <Textarea
-                id="comment"
-                placeholder="es: colori vivaci, stile specifico... (già incluso automaticamente: nessun testo nel disegno)"
-                value={userComment}
-                onChange={(e) => setUserComment(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="text-center">
-              <img 
-                ref={imgRef}
-                src={previewSource?.kind === 'dataURL' ? previewSource.dataURL : previewSource?.blob ? URL.createObjectURL(previewSource.blob) : ''}
-                alt="Immagine generata" 
-                className="max-w-full h-auto rounded-lg border"
-                onLoad={(e) => {
-                  // Clean up object URL after image loads to prevent memory leaks
-                  if (previewSource?.kind === 'blob' && e.currentTarget.src.startsWith('blob:')) {
-                    // Store reference for cleanup on unmount/close
-                  }
-                }}
-              />
-            </div>
-            <p className="text-sm text-muted-foreground text-center">
-              Stile: {styles.find(s => s.value === selectedStyle)?.label}
-            </p>
-          </div>
-        )}
-
-        <DialogFooter>
-          {!showPreview ? (
-            <>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Annulla
-              </Button>
-              <Button 
-                onClick={handleGenerate} 
-                disabled={isGenerating || !selectedStyle}
-              >
-                {isGenerating ? (
-                  <>
+    <>
+      <TooltipProvider>
+        <Tooltip>
+          <DropdownMenu>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className={`px-6 ${className}`} disabled={isGenerating}>
+                  {isGenerating ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generando...
-                  </>
-                ) : (
-                  'Genera Immagine'
-                )}
-              </Button>
-            </>
+                  ) : (
+                    <Palette className="w-4 h-4 mr-2" />
+                  )}
+                  {isGenerating ? "Generando..." : "MEDIA"}
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Queste funzioni prevedono un utilizzo estensivo di package AI e pagamenti relativi</p>
+            </TooltipContent>
+
+            <DropdownMenuContent className="w-56 bg-white border shadow-lg z-50">
+              {/* Disegno */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">Disegno</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="bg-white border shadow-lg">
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction("Disegno", "Fumetto")}
+                    disabled={isGenerating}
+                  >
+                    Fumetto
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction("Disegno", "Fotografico")}
+                    disabled={isGenerating}
+                  >
+                    Fotografico
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction("Disegno", "Astratto")}
+                    disabled={isGenerating}
+                  >
+                    Astratto
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction("Disegno", "Manga")}
+                    disabled={isGenerating}
+                  >
+                    Manga
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction("Disegno", "Acquarello")}
+                    disabled={isGenerating}
+                  >
+                    Acquarello
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction("Disegno", "Carboncino")}
+                    disabled={isGenerating}
+                  >
+                    Carboncino
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuSeparator />
+
+              {/* Filmato */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">Filmato</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="bg-white border shadow-lg">
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction("Filmato", "Ambientazione futuristica")}
+                  >
+                    Ambientazione futuristica
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction("Filmato", "Ambientazione storica")}
+                  >
+                    Ambientazione storica
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction("Filmato", "Ambientazione odierna")}
+                  >
+                    Ambientazione odierna
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => handleMediaAction("Filmato", "Ambientazione fantasy")}
+                  >
+                    Ambientazione fantasy
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuSeparator />
+
+              {/* Voci */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">Voci</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="bg-white border shadow-lg">
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Uomo")}>
+                    Uomo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Donna")}>
+                    Donna
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Bambino")}>
+                    Bambino
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Bambina")}>
+                    Bambina
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Image Display Dialog - CORREZIONE ERRORI DOM */}
+      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Immagine Generata - {storyTitle}</DialogTitle>
+            <DialogDescription>
+              Visualizza l'immagine generata per la storia. Puoi scaricarla sul tuo dispositivo.
+            </DialogDescription>
+          </DialogHeader>
+
+          {generatedImage ? (
+            <div className="flex flex-col items-center space-y-4">
+              <img
+                src={generatedImage}
+                alt="Immagine generata per la storia"
+                className="max-w-full h-auto rounded-lg shadow-lg"
+              />
+              <div className="flex items-center gap-4">
+                <Button onClick={handleDownloadImage} variant="outline" className="flex items-center gap-2">
+                  <Download className="w-4 h-4" />
+                  Scarica Immagine
+                </Button>
+              </div>
+              <div className="text-sm text-muted-foreground text-center">
+                L'immagine è temporanea e verrà persa alla chiusura della pagina.
+                <br />
+                Usa il pulsante "Scarica" per salvarla sul tuo dispositivo (tasto destro per condividere).
+              </div>
+            </div>
           ) : (
-            <div className="flex gap-2 w-full">
-              <Button variant="outline" onClick={() => setShowPreview(false)}>
-                Indietro
-              </Button>
-              <Button variant="outline" onClick={handleDownload}>
-                <Download className="w-4 h-4 mr-2" />
-                Scarica
-              </Button>
-              <Button onClick={handleConfirm}>
-                Conferma e Salva
-              </Button>
+            isDebugMode &&
+            debugInfo && (
+              <div className="flex flex-col items-center space-y-4">
+                <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                  <h3 className="text-lg font-semibold text-red-800 mb-2">❌ Generazione Fallita</h3>
+                  <div className="text-sm text-red-700">
+                    La generazione dell'immagine non è riuscita. Le informazioni di debug sono disponibili qui sotto per
+                    identificare il problema.
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+
+          {/* Debug section for Superuser */}
+          {isDebugMode && debugInfo && (
+            <div className="w-full mt-4 p-4 border rounded-lg bg-gray-50">
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <Bug className="w-4 h-4" />
+                    Debug Info (Superuser)
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">{debugInfo}</pre>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Comment Dialog - CORREZIONE ERRORI DOM */}
+      <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Aggiungi un commento (opzionale)</DialogTitle>
+            <DialogDescription>Personalizza l'immagine aggiungendo specifiche o dettagli desiderati.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Aggiungi delle specifiche per personalizzare l'immagine:
+            </div>
+            <Textarea
+              value={userComment}
+              onChange={(e) => setUserComment(e.target.value)}
+              placeholder="es. 'in stile fiabesco', 'con ambientazione spaziale', 'con colori vivaci'..."
+              className="min-h-[100px]"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCommentDialog(false)}>
+                Annulla
+              </Button>
+              <Button onClick={handleGenerateWithComment}>Genera Immagine</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Authentication Warning Dialog - CORREZIONE ERRORI DOM */}
+      <Dialog open={showAuthWarning} onOpenChange={setShowAuthWarning}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              Accesso Richiesto
+            </DialogTitle>
+            <DialogDescription>I servizi media richiedono l'autenticazione utente per funzionare.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                I servizi media (Disegno, Filmato, Voci) sono disponibili solo per utenti autenticati.
+              </AlertDescription>
+            </Alert>
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">Per utilizzare questi servizi è necessario:</div>
+              <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1 ml-2">
+                <li>Effettuare il login con email e password</li>
+                <li>Accedere alle storie dal proprio profilo utente</li>
+              </ul>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowAuthWarning(false)}>
+                Ho capito
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Copyright Warning Dialog */}
+      <CopyrightWarningDialog
+        open={showCopyrightWarning}
+        onOpenChange={setShowCopyrightWarning}
+        onConfirm={handleCopyrightProceed}
+      />
+    </>
   );
 };
 
-export default MediaGenerationDialog;
+export default MediaButton;
