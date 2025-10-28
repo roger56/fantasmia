@@ -139,7 +139,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       variant: "default"
     });
 
-    if (!CLOUD_ENABLED || !supabase) {
+    if (!CLOUD_ENABLED) {
       setIsGenerating(false);
       toast({
         title: "Funzione non disponibile",
@@ -161,37 +161,45 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         ? `${storyContent}\n\nNote aggiuntive: ${userComment}`
         : storyContent;
 
-      const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: {
+      // CHIAMATA API VERCEL - SOSTITUZIONE SUPABASE
+      const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           prompt: enhancedPrompt,
           style: style,
           storyId: storyId,
           storyTitle: storyTitle,
           userId: userIdToUse
-        }
+        })
       });
 
-      if (error) {
-        console.error('Image generation error:', error);
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Image generation API error:', data);
         
         // Store debug information for Superuser mode
         if (isDebugMode) {
           setDebugInfo(JSON.stringify({
-            error: error.message,
-            details: error.details || 'Nessun dettaglio aggiuntivo',
+            error: data.error || 'Unknown error',
+            details: data.detail || 'Nessun dettaglio aggiuntivo',
             timestamp: new Date().toISOString(),
             prompt: enhancedPrompt.substring(0, 200) + '...',
-            style: style
+            style: style,
+            statusCode: response.status
           }, null, 2));
           
           // In Superuser mode, open dialog to show debug info
           setShowImageDialog(true);
         }
 
-        const errorMessage = error.message?.includes('safety system') 
+        const errorMessage = data.error?.includes('content policy') || data.detail?.includes('safety system')
           ? "❌ Il contenuto della storia contiene parole non adatte per la generazione di immagini.\n\n🔧 Suggerimenti:\n• Evita riferimenti a violenza, armi o morte\n• Rimuovi parole come 'battaglia', 'guerra', 'sangue'\n• Riformula il testo con termini più neutri"
-          : error.message?.includes('non-2xx status') 
-            ? "⚠️ Errore del server durante la generazione.\n\n🔄 Riprova tra qualche minuto."
+          : data.error?.includes('Prompt too long')
+            ? "❌ Il testo della storia è troppo lungo per generare un'immagine.\n\n🔧 Suggerimenti:\n• Riduci la lunghezza del testo\n• Seleziona solo la parte più importante della storia"
             : "❌ Si è verificato un errore durante la generazione dell'immagine.\n\n🔍 Controlla il contenuto della storia e riprova.";
         
         // Only throw error if not in debug mode, otherwise show in dialog
@@ -200,13 +208,13 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         }
       }
 
-      if (data?.imageUrl) {
-        setGeneratedImage(data.imageUrl);
+      if (data?.image_url) {
+        setGeneratedImage(data.image_url);
         setShowImageDialog(true);
         setUserComment(''); // Reset comment after generation
         toast({
           title: "Immagine generata!",
-          description: `Costo: €${data.cost.toFixed(3)}`,
+          description: "Immagine creata con successo",
           variant: "default"
         });
       }
