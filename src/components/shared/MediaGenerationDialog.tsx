@@ -22,15 +22,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthBridge } from "@/utils/authBridge";
 import CopyrightWarningDialog from "./CopyrightWarningDialog";
 
-// INTERFACCIA SEMPLIFICATA - RIMUOVI open e onOpenChange TEMPORANEAMENTE
 export interface MediaButtonProps {
   storyContent: string;
   storyTitle?: string;
   storyId?: string;
   className?: string;
   userId?: string;
-  // open?: boolean; // RIMOSSO TEMPORANEAMENTE
-  // onOpenChange?: (open: boolean) => void; // RIMOSSO TEMPORANEAMENTE
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const MediaButton: React.FC<MediaButtonProps> = ({
@@ -39,8 +38,8 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   storyId,
   className = "",
   userId,
-  // open, // RIMOSSO TEMPORANEAMENTE
-  // onOpenChange // RIMOSSO TEMPORANEAMENTE
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange
 }) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -55,6 +54,28 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const [showAuthWarning, setShowAuthWarning] = useState(false);
   const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Sync external open state with internal state
+  useEffect(() => {
+    if (externalOpen !== undefined && externalOpen === true) {
+      // When externally opened, trigger the copyright warning
+      setShowCopyrightWarning(true);
+    } else if (externalOpen === false) {
+      // When externally closed, reset all dialogs
+      setShowCopyrightWarning(false);
+      setShowCommentDialog(false);
+      setShowImageDialog(false);
+      setShowAuthWarning(false);
+    }
+  }, [externalOpen]);
+
+  // Helper functions to handle dialog state changes with external callback
+  const handleCloseDialog = (setterFn: (value: boolean) => void, value: boolean) => {
+    setterFn(value);
+    if (!value && externalOnOpenChange) {
+      externalOnOpenChange(false);
+    }
+  };
 
   // Reset state when story changes
   useEffect(() => {
@@ -119,7 +140,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
   const handleCopyrightModify = () => {
     setShowCopyrightWarning(false);
-    // Navigate back or close - for now just close
+    externalOnOpenChange?.(false);
   };
 
   const handleCopyrightProceed = () => {
@@ -478,7 +499,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       </TooltipProvider>
 
       {/* Image Display Dialog */}
-      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+      <Dialog open={showImageDialog} onOpenChange={(open) => handleCloseDialog(setShowImageDialog, open)}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Immagine Generata - {storyTitle}</DialogTitle>
@@ -541,7 +562,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       </Dialog>
 
       {/* Comment Dialog */}
-      <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
+      <Dialog open={showCommentDialog} onOpenChange={(open) => handleCloseDialog(setShowCommentDialog, open)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Aggiungi un commento (opzionale)</DialogTitle>
@@ -558,7 +579,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
               className="min-h-[100px]"
             />
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowCommentDialog(false)}>
+              <Button variant="outline" onClick={() => handleCloseDialog(setShowCommentDialog, false)}>
                 Annulla
               </Button>
               <Button onClick={handleGenerateWithComment}>Genera Immagine</Button>
@@ -568,7 +589,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       </Dialog>
 
       {/* Authentication Warning Dialog */}
-      <Dialog open={showAuthWarning} onOpenChange={setShowAuthWarning}>
+      <Dialog open={showAuthWarning} onOpenChange={(open) => handleCloseDialog(setShowAuthWarning, open)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -592,7 +613,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
               </ul>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowAuthWarning(false)}>
+              <Button variant="outline" onClick={() => handleCloseDialog(setShowAuthWarning, false)}>
                 Ho capito
               </Button>
             </div>
@@ -603,7 +624,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       {/* Copyright Warning Dialog */}
       <CopyrightWarningDialog
         open={showCopyrightWarning}
-        onOpenChange={setShowCopyrightWarning}
+        onOpenChange={(open) => handleCloseDialog(setShowCopyrightWarning, open)}
         onConfirm={handleCopyrightProceed}
       />
     </>
