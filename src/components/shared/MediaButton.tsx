@@ -112,45 +112,21 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   };
 
   const handleImageGeneration = async (style: string) => {
-    // Validation before sending
-    if (!storyContent || storyContent.trim().length === 0) {
-      console.error('MediaButton: No story content available for image generation');
-      toast({
-        title: "Errore",
-        description: "Nessun contenuto della storia disponibile",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    console.log('MediaButton: Starting image generation');
-    console.log('MediaButton: StoryId being sent:', storyId);
-    console.log('MediaButton: StoryTitle being sent:', storyTitle);
-    console.log('MediaButton: StoryContent being sent (first 200 chars):', storyContent.substring(0, 200));
-    console.log('MediaButton: Style selected:', style);
-
-    setIsGenerating(true);
-    setDebugInfo(null); // Reset debug info
-    
-    // Show informative message during generation
-    toast({
-      title: "Generazione in corso...",
-      description: "Sto creando l'immagine. Attendere circa 10-15 secondi.",
-      variant: "default"
-    });
-
-    // RIMOSSO CONTROLLO CLOUD_ENABLED - API Vercel funziona sempre
-    // if (!CLOUD_ENABLED) {
-    //   setIsGenerating(false);
-    //   toast({
-    //     title: "Funzione non disponibile",
-    //     description: "Cloud sync disabilitato - funzionalità AI non disponibili",
-    //     variant: "destructive"
-    //   });
-    //   return;
-    // }
-
     try {
+      console.log("🚀 Starting image generation...");
+      setIsGenerating(true);
+      
+      // Validation before sending
+      if (!storyContent || storyContent.trim().length === 0) {
+        console.error('❌ No story content available for image generation');
+        toast({
+          title: "Errore",
+          description: "Nessun contenuto della storia disponibile",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Use userId prop or get from state (set by AuthBridge)
       const userIdToUse = userId || currentUserId;
       if (!userIdToUse) {
@@ -162,71 +138,144 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         ? `${storyContent}\n\nNote aggiuntive: ${userComment}`
         : storyContent;
 
-      // CHIAMATA API VERCEL - SOSTITUZIONE SUPABASE
+      const requestBody = {
+        prompt: enhancedPrompt,
+        style: style,
+        storyId: storyId,
+        storyTitle: storyTitle,
+        userId: userIdToUse
+      };
+      
+      console.log("🔍 Current state:", {
+        prompt: enhancedPrompt.substring(0, 100) + '...',
+        style: style,
+        storyId: storyId,
+        isGenerating: isGenerating
+      });
+
+      console.log("📤 Sending request to API:", requestBody);
+
+      if (!enhancedPrompt || !enhancedPrompt.trim()) {
+        console.error("❌ Prompt is empty!");
+        setError("Please enter a prompt");
+        return;
+      }
+
+      if (!style) {
+        console.error("❌ No style selected!");
+        setError("Please select a style");
+        return;
+      }
+
+      // Show informative message during generation
+      toast({
+        title: "Generazione in corso...",
+        description: "Sto creando l'immagine. Attendere circa 10-15 secondi.",
+        variant: "default"
+      });
+
+      // Add timeout to fetch
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi
+
+      // CHIAMATA API VERCEL
       const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          prompt: enhancedPrompt,
-          style: style,
-          storyId: storyId,
-          storyTitle: storyTitle,
-          userId: userIdToUse
-        })
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
       });
 
-      const data = await response.json();
+      clearTimeout(timeoutId);
 
+      console.log("📥 Response status:", response.status);
+      
       if (!response.ok) {
-        console.error('Image generation API error:', data);
-        
-        // Store debug information for Superuser mode
-        if (isDebugMode) {
-          setDebugInfo(JSON.stringify({
-            error: data.error || 'Unknown error',
-            details: data.detail || 'Nessun dettaglio aggiuntivo',
-            timestamp: new Date().toISOString(),
-            prompt: enhancedPrompt.substring(0, 200) + '...',
-            style: style,
-            statusCode: response.status
-          }, null, 2));
-          
-          // In Superuser mode, open dialog to show debug info
-          setShowImageDialog(true);
-        }
-
-        const errorMessage = data.error?.includes('content policy') || data.detail?.includes('safety system')
-          ? "❌ Il contenuto della storia contiene parole non adatte per la generazione di immagini.\n\n🔧 Suggerimenti:\n• Evita riferimenti a violenza, armi o morte\n• Rimuovi parole come 'battaglia', 'guerra', 'sangue'\n• Riformula il testo con termini più neutri"
-          : data.error?.includes('Prompt too long')
-            ? "❌ Il testo della storia è troppo lungo per generare un'immagine.\n\n🔧 Suggerimenti:\n• Riduci la lunghezza del testo\n• Seleziona solo la parte più importante della storia"
-            : "❌ Si è verificato un errore durante la generazione dell'immagine.\n\n🔍 Controlla il contenuto della storia e riprova.";
-        
-        // Only throw error if not in debug mode, otherwise show in dialog
-        if (!isDebugMode) {
-          throw new Error(errorMessage);
-        }
+        const errorText = await response.text();
+        console.error("❌ HTTP error:", response.status, errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      if (data?.image_url) {
-        setGeneratedImage(data.image_url);
+      const data = await response.json();
+      console.log("✅ API response received:", {
+        keys: Object.keys(data),
+        hasImageBase64: !!data.image_base64,
+        imageBase64Length: data.image_base64?.length,
+        hasImageUrl: !!data.image_url,
+        style: data.style,
+        error: data.error
+      });
+      
+      // Store debug information for Superuser mode
+      if (isDebugMode) {
+        setDebugInfo(JSON.stringify({
+          response: data,
+          prompt: enhancedPrompt.substring(0, 200) + '...',
+          style: style,
+          timestamp: new Date().toISOString(),
+          statusCode: response.status
+        }, null, 2));
+      }
+
+      // Gestione della risposta - PRIMA base64, POI url come fallback
+      if (data.image_base64) {
+        console.log("🎨 Creating image from base64...");
+        const base64Image = `data:image/png;base64,${data.image_base64}`;
+        setGeneratedImage(base64Image);
         setShowImageDialog(true);
         setUserComment(''); // Reset comment after generation
+        console.log("✅ Image set successfully from base64");
+        
         toast({
           title: "Immagine generata!",
           description: "Immagine creata con successo",
           variant: "default"
         });
+      } else if (data.image_url) {
+        console.log("🔗 Using image URL as fallback...");
+        setGeneratedImage(data.image_url);
+        setShowImageDialog(true);
+        setUserComment('');
+        console.log("✅ Image set successfully from URL");
+        
+        toast({
+          title: "Immagine generata!",
+          description: "Immagine creata con successo",
+          variant: "default"
+        });
+      } else if (data.error) {
+        console.error("❌ API returned error:", data.error);
+        
+        const errorMessage = data.error?.includes('content policy') || data.detail?.includes('safety system')
+          ? "❌ Il contenuto della storia contiene parole non adatte per la generazione di immagini.\n\n🔧 Suggerimenti:\n• Evita riferimenti a violenza, armi o morte\n• Rimuovi parole come 'battaglia', 'guerra', 'sangue'\n• Riformula il testo con termini più neutri"
+          : data.error?.includes('Prompt too long')
+            ? "❌ Il testo della storia è troppo lungo per generare un'immagine.\n\n🔧 Suggerimenti:\n• Riduci la lunghezza del testo\n• Seleziona solo la parte più importante della storia"
+            : data.error || "Errore nella generazione dell'immagine";
+        
+        throw new Error(errorMessage);
+      } else {
+        console.error("❌ No image data in response:", data);
+        throw new Error('No image data received from API');
       }
+      
     } catch (error) {
-      console.error('Errore nella generazione immagine:', error);
+      console.error('💥 Error generating image:', error);
+      
+      // Show error in toast
       toast({
         title: "Errore",
         description: error instanceof Error ? error.message : "Errore nella generazione dell'immagine",
         variant: "destructive"
       });
+      
+      // In debug mode, still show the dialog with error info
+      if (isDebugMode) {
+        setShowImageDialog(true);
+      }
     } finally {
+      console.log("🏁 Image generation process completed");
       setIsGenerating(false);
     }
   };
