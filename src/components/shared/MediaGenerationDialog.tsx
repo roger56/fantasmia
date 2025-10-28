@@ -22,15 +22,26 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthBridge } from "@/utils/authBridge";
 import CopyrightWarningDialog from "./CopyrightWarningDialog";
 
-interface MediaButtonProps {
+// INTERFACCIA SEMPLIFICATA - RIMUOVI open e onOpenChange TEMPORANEAMENTE
+export interface MediaButtonProps {
   storyContent: string;
   storyTitle?: string;
   storyId?: string;
   className?: string;
   userId?: string;
+  // open?: boolean; // RIMOSSO TEMPORANEAMENTE
+  // onOpenChange?: (open: boolean) => void; // RIMOSSO TEMPORANEAMENTE
 }
 
-const MediaButton: React.FC<MediaButtonProps> = ({ storyContent, storyTitle, storyId, className = "", userId }) => {
+const MediaButton: React.FC<MediaButtonProps> = ({
+  storyContent,
+  storyTitle,
+  storyId,
+  className = "",
+  userId,
+  // open, // RIMOSSO TEMPORANEAMENTE
+  // onOpenChange // RIMOSSO TEMPORANEAMENTE
+}) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -186,7 +197,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({ storyContent, storyTitle, sto
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi
 
-      // CHIAMATA API VERCEL - AGGIUNGI HEADERS CORS MANUALMENTE
+      // CHIAMATA API VERCEL
       const response = await fetch("https://fantasmia-ai.vercel.app/api/openai/image", {
         method: "POST",
         headers: {
@@ -466,7 +477,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({ storyContent, storyTitle, sto
         </Tooltip>
       </TooltipProvider>
 
-      {/* Image Display Dialog - CORREZIONE ERRORI DOM */}
+      {/* Image Display Dialog */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
           <DialogHeader>
@@ -529,7 +540,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({ storyContent, storyTitle, sto
         </DialogContent>
       </Dialog>
 
-      {/* Comment Dialog - CORREZIONE ERRORI DOM */}
+      {/* Comment Dialog */}
       <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -556,7 +567,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({ storyContent, storyTitle, sto
         </DialogContent>
       </Dialog>
 
-      {/* Authentication Warning Dialog - CORREZIONE ERRORI DOM */}
+      {/* Authentication Warning Dialog */}
       <Dialog open={showAuthWarning} onOpenChange={setShowAuthWarning}>
         <DialogContent className="max-w-md">
           <DialogHeader>
