@@ -149,6 +149,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     setShowCommentDialog(true);
   };
 
+  // Handler specifico per copyright warning che NON chiude il dialog parent
+  const handleCopyrightWarningChange = (open: boolean) => {
+    setShowCopyrightWarning(open);
+    // NON chiamare externalOnOpenChange per permettere il passaggio al comment dialog
+  };
+
   const handleImageGeneration = async (style: string) => {
     try {
       console.log("🚀 Starting image generation...");
@@ -625,7 +631,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       {/* Copyright Warning Dialog */}
       <CopyrightWarningDialog
         open={showCopyrightWarning}
-        onOpenChange={(open) => handleCloseDialog(setShowCopyrightWarning, open)}
+        onOpenChange={handleCopyrightWarningChange}
         onConfirm={handleCopyrightProceed}
       />
     </>
