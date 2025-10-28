@@ -58,8 +58,15 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
 
     setIsGenerating(true);
     try {
-      
-      }
+      // RIMOSSO CONTROLLO CLOUD_ENABLED - API Vercel funziona sempre
+      // if (!CLOUD_ENABLED || !supabase) {
+      //   toast({
+      //     title: "Funzione non disponibile",
+      //     description: "Cloud sync disabilitato - funzionalità AI non disponibili",
+      //     variant: "destructive"
+      //   });
+      //   return;
+      // }
       
       // Always include "no text" instruction by default, then add user comments
       const baseInstruction = "nessun testo scritto interno al disegno";
@@ -67,36 +74,44 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
         ? `${storyContent}\n\nNote aggiuntive: ${baseInstruction}, ${userComment}`
         : `${storyContent}\n\nNote aggiuntive: ${baseInstruction}`;
 
-      const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: {
-          prompt,
+      // CHIAMATA API VERCEL - SOSTITUZIONE SUPABASE
+      const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: prompt,
           style: selectedStyle,
-          storyId,
-          storyTitle,
-          userId,
-          response_format: 'b64_json' // Force base64 response to avoid remote URLs
-        }
+          storyId: storyId,
+          storyTitle: storyTitle,
+          userId: userId
+        })
       });
 
-      if (error) throw error;
+      const data = await response.json();
 
-      if (data?.imageUrl) {
+      if (!response.ok) {
+        throw new Error(data.error || 'Image generation failed');
+      }
+
+      if (data?.image_url) {
         // FORCE LOCAL-ONLY: Convert all to local preview data
         let previewSourceData: PreviewSource;
         
-        if (data.imageUrl.startsWith('data:image')) {
+        if (data.image_url.startsWith('data:image')) {
           // Base64 from API - convert to dataURL
           previewSourceData = {
             kind: 'dataURL',
-            dataURL: data.imageUrl,
-            mime: data.imageUrl.split(',')[0].split(':')[1].split(';')[0]
+            dataURL: data.image_url,
+            mime: data.image_url.split(',')[0].split(':')[1].split(';')[0]
           };
-          console.info('preview-ready', { kind: 'dataURL', dataLen: data.imageUrl.length, mime: previewSourceData.mime });
+          console.info('preview-ready', { kind: 'dataURL', dataLen: data.image_url.length, mime: previewSourceData.mime });
         } else {
           // Remote URL fallback - fetch ONCE immediately to create local blob
           try {
-            console.warn('Remote URL received, fetching once for local preview:', data.imageUrl);
-            const response = await fetch(data.imageUrl, { mode: 'cors', cache: 'no-store' });
+            console.warn('Remote URL received, fetching once for local preview:', data.image_url);
+            const response = await fetch(data.image_url, { mode: 'cors', cache: 'no-store' });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
             const blob = await response.blob();
@@ -130,7 +145,7 @@ const MediaGenerationDialog: React.FC<MediaGenerationDialogProps> = ({
     } catch (error) {
       toast({
         title: "Errore",
-        description: "Errore durante la generazione dell'immagine",
+        description: error instanceof Error ? error.message : "Errore durante la generazione dell'immagine",
         variant: "destructive"
       });
       console.error('Error generating image:', error);

@@ -139,15 +139,16 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       variant: "default"
     });
 
-    if (!CLOUD_ENABLED) {
-      setIsGenerating(false);
-      toast({
-        title: "Funzione non disponibile",
-        description: "Cloud sync disabilitato - funzionalità AI non disponibili",
-        variant: "destructive"
-      });
-      return;
-    }
+    // RIMOSSO CONTROLLO CLOUD_ENABLED - API Vercel funziona sempre
+    // if (!CLOUD_ENABLED) {
+    //   setIsGenerating(false);
+    //   toast({
+    //     title: "Funzione non disponibile",
+    //     description: "Cloud sync disabilitato - funzionalità AI non disponibili",
+    //     variant: "destructive"
+    //   });
+    //   return;
+    // }
 
     try {
       // Use userId prop or get from state (set by AuthBridge)
