@@ -14,7 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Palette, Loader2, Download, Bug, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { CLOUD_ENABLED, supabase } from "@/integrations/supabase/client";
+import { CLOUD_ENABLED } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -103,14 +103,15 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
     checkAuth();
 
-    // Listen for auth changes (both Supabase and localStorage)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      checkAuth(); // Re-check using AuthBridge instead of just Supabase session
-    });
+    // Listen for auth changes using localStorage events (AuthBridge compatibility)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'fantasmia_user') {
+        checkAuth();
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const handleMediaAction = async (type: string, subtype: string) => {
