@@ -28,16 +28,14 @@ const CopyrightWarningDialog: React.FC<CopyrightWarningDialogProps> = ({
             Attenzione Copyright
           </DialogTitle>
         </DialogHeader>
-        <DialogDescription id="copyright-warning-desc">
-          <div className="space-y-3 text-sm">
-            <p>
-              I disegni di storie contenenti personaggi soggetti a diritto d'autore 
-              (es. Cenerentola, Pinocchio, Biancaneve, ecc.) non saranno effettuati.
-            </p>
-            <p className="font-medium">
-              Confermi di aver preso visione di questa informazione e di voler procedere?
-            </p>
-          </div>
+        <DialogDescription id="copyright-warning-desc" className="space-y-3">
+          <span className="block">
+            I disegni di storie contenenti personaggi soggetti a diritto d'autore 
+            (es. Cenerentola, Pinocchio, Biancaneve, ecc.) non saranno effettuati.
+          </span>
+          <span className="block font-medium">
+            Confermi di aver preso visione di questa informazione e di voler procedere?
+          </span>
         </DialogDescription>
 
         <DialogFooter>
