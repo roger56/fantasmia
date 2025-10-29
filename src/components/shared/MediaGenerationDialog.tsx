@@ -39,7 +39,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   className = "",
   userId,
   open: externalOpen,
-  onOpenChange: externalOnOpenChange
+  onOpenChange: externalOnOpenChange,
 }) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -114,13 +114,13 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
     // Listen for auth changes using localStorage events (AuthBridge compatibility)
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'fantasmia_user') {
+      if (e.key === "fantasmia_user") {
         checkAuth();
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const handleMediaAction = async (type: string, subtype: string) => {
@@ -235,7 +235,9 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi
 
       // CHIAMATA API VERCEL
-      const response = await fetch("https://fantasmia-ai.vercel.app/api/openai/image", {
+      // CHIAMATA API VERCEL - usando variabile d'ambiente
+      const openAiImageUrl = import.meta.env.VITE_OPENAI_API_URL || "https://fantasmia-ai.vercel.app/api/openai/image";
+      const response = await fetch(openAiImageUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -353,27 +355,27 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
   const handleSaveImage = async (imageDataUrl: string) => {
     if (!storyId) {
-      console.warn('⚠️ No storyId provided, cannot save image');
+      console.warn("⚠️ No storyId provided, cannot save image");
       return;
     }
 
     try {
-      console.log('💾 Saving image to IndexedDB for story:', storyId);
+      console.log("💾 Saving image to IndexedDB for story:", storyId);
 
       // Import IndexedDB manager
-      const { fantasMiaDB } = await import('@/utils/indexedDB');
+      const { fantasMiaDB } = await import("@/utils/indexedDB");
 
       // Save using the unified pipeline
       const assetId = await fantasMiaDB.saveMediaFromPreview({
         storyId: String(storyId),
-        ownerProfileId: userId || currentUserId || 'superuser',
+        ownerProfileId: userId || currentUserId || "superuser",
         previewUrl: imageDataUrl,
-        type: 'image',
-        source: 'openai',
-        filename: `${storyTitle || 'image'}-${Date.now()}.png`,
+        type: "image",
+        source: "openai",
+        filename: `${storyTitle || "image"}-${Date.now()}.png`,
       });
 
-      console.log('✅ Image saved to IndexedDB:', { assetId, storyId });
+      console.log("✅ Image saved to IndexedDB:", { assetId, storyId });
 
       // Update AG story has_image flag
       const agStory = await fantasMiaDB.getAGStoryById(String(storyId));
@@ -383,16 +385,17 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           has_image: true,
           updated_at: new Date().toISOString(),
         });
-        console.log('✅ AG story updated with has_image: true');
+        console.log("✅ AG story updated with has_image: true");
       }
 
       // Dispatch custom event to trigger icon refresh
-      window.dispatchEvent(new CustomEvent('storyImageSaved', { 
-        detail: { storyId } 
-      }));
-
+      window.dispatchEvent(
+        new CustomEvent("storyImageSaved", {
+          detail: { storyId },
+        }),
+      );
     } catch (error) {
-      console.error('❌ Error saving image to IndexedDB:', error);
+      console.error("❌ Error saving image to IndexedDB:", error);
       toast({
         title: "Avviso",
         description: "Immagine generata ma non salvata automaticamente. Usa il pulsante Download.",
@@ -638,7 +641,9 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Genera Immagine</DialogTitle>
-            <DialogDescription>Personalizza l'immagine aggiungendo specifiche o dettagli desiderati (opzionale).</DialogDescription>
+            <DialogDescription>
+              Personalizza l'immagine aggiungendo specifiche o dettagli desiderati (opzionale).
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {/* Mostra lo stile selezionato */}
@@ -649,7 +654,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
                 </div>
               </div>
             )}
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Note aggiuntive (opzionale)</label>
               <div className="text-xs text-muted-foreground mb-2">
@@ -662,7 +667,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
                 className="min-h-[100px]"
               />
             </div>
-            
+
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => handleCloseDialog(setShowCommentDialog, false)}>
                 Annulla
@@ -714,18 +719,16 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Seleziona Stile Artistico</DialogTitle>
-            <DialogDescription>
-              Scegli uno stile per la generazione dell'immagine della storia
-            </DialogDescription>
+            <DialogDescription>Scegli uno stile per la generazione dell'immagine della storia</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
             {[
-              { name: 'Fumetto', style: 'fumetto' },
-              { name: 'Fotografico', style: 'fotografico' },
-              { name: 'Astratto', style: 'astratto' },
-              { name: 'Manga', style: 'manga' },
-              { name: 'Acquarello', style: 'acquarello' },
-              { name: 'Carboncino', style: 'carboncino' }
+              { name: "Fumetto", style: "fumetto" },
+              { name: "Fotografico", style: "fotografico" },
+              { name: "Astratto", style: "astratto" },
+              { name: "Manga", style: "manga" },
+              { name: "Acquarello", style: "acquarello" },
+              { name: "Carboncino", style: "carboncino" },
             ].map(({ name, style }) => (
               <Button
                 key={style}
