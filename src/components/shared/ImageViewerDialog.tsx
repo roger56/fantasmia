@@ -8,8 +8,8 @@ interface ImageViewerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   imageUrl: string;
-  storyTitle: string;
-  style: string;
+  storyTitle?: string;
+  style?: string;
   imageBlob?: Blob;
   storyId?: string;
 }
@@ -18,8 +18,8 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
   open,
   onOpenChange,
   imageUrl,
-  storyTitle,
-  style,
+  storyTitle = "Storia",
+  style = "AI Generated",
   imageBlob,
   storyId
 }) => {

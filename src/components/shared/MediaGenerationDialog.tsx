@@ -293,9 +293,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         setUserComment(""); // Reset comment after generation
         console.log("✅ Image set successfully from base64");
 
+        // SAVE TO INDEXEDDB AUTOMATICALLY
+        await handleSaveImage(base64Image);
+
         toast({
-          title: "Immagine generata!",
-          description: "Immagine creata con successo",
+          title: "Immagine generata e salvata!",
+          description: "Immagine creata e associata alla storia",
           variant: "default",
         });
       } else if (data.image_url) {
@@ -305,9 +308,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         setUserComment("");
         console.log("✅ Image set successfully from URL");
 
+        // SAVE TO INDEXEDDB AUTOMATICALLY
+        await handleSaveImage(data.image_url);
+
         toast({
-          title: "Immagine generata!",
-          description: "Immagine creata con successo",
+          title: "Immagine generata e salvata!",
+          description: "Immagine creata e associata alla storia",
           variant: "default",
         });
       } else if (data.error) {
@@ -342,6 +348,56 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     } finally {
       console.log("🏁 Image generation process completed");
       setIsGenerating(false);
+    }
+  };
+
+  const handleSaveImage = async (imageDataUrl: string) => {
+    if (!storyId) {
+      console.warn('⚠️ No storyId provided, cannot save image');
+      return;
+    }
+
+    try {
+      console.log('💾 Saving image to IndexedDB for story:', storyId);
+
+      // Import IndexedDB manager
+      const { fantasMiaDB } = await import('@/utils/indexedDB');
+
+      // Save using the unified pipeline
+      const assetId = await fantasMiaDB.saveMediaFromPreview({
+        storyId: String(storyId),
+        ownerProfileId: userId || currentUserId || 'superuser',
+        previewUrl: imageDataUrl,
+        type: 'image',
+        source: 'openai',
+        filename: `${storyTitle || 'image'}-${Date.now()}.png`,
+      });
+
+      console.log('✅ Image saved to IndexedDB:', { assetId, storyId });
+
+      // Update AG story has_image flag
+      const agStory = await fantasMiaDB.getAGStoryById(String(storyId));
+      if (agStory) {
+        await fantasMiaDB.saveAGStory({
+          ...agStory,
+          has_image: true,
+          updated_at: new Date().toISOString(),
+        });
+        console.log('✅ AG story updated with has_image: true');
+      }
+
+      // Dispatch custom event to trigger icon refresh
+      window.dispatchEvent(new CustomEvent('storyImageSaved', { 
+        detail: { storyId } 
+      }));
+
+    } catch (error) {
+      console.error('❌ Error saving image to IndexedDB:', error);
+      toast({
+        title: "Avviso",
+        description: "Immagine generata ma non salvata automaticamente. Usa il pulsante Download.",
+        variant: "default",
+      });
     }
   };
 

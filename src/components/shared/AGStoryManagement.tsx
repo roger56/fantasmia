@@ -45,6 +45,16 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
 
   useEffect(() => {
     loadStories();
+
+    // Listen for image saved events
+    const handleImageSaved = () => {
+      loadStories();
+    };
+
+    window.addEventListener('storyImageSaved', handleImageSaved);
+    return () => {
+      window.removeEventListener('storyImageSaved', handleImageSaved);
+    };
   }, [category]);
 
   const loadStories = async () => {
