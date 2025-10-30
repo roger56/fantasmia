@@ -5,11 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Volume2, VolumeX, Image, BookOpen } from 'lucide-react';
+import { Volume2, VolumeX, Volume1, Image, BookOpen } from 'lucide-react';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
+import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 
 interface AGStory {
   id: string;
@@ -30,10 +31,13 @@ interface AGUserStoryListProps {
 const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subtitle }) => {
   const navigate = useNavigate();
   const [stories, setStories] = useState<AGStory[]>([]);
-  const { speak, stop, isPlaying, currentStoryId } = useUnifiedTTS();
+  const { speak, stop, pause, isPlaying, isPaused, currentStoryId } = useUnifiedTTS();
   const { toast } = useToast();
   const [selectedStory, setSelectedStory] = useState<AGStory | null>(null);
   const [showBooksDialog, setShowBooksDialog] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [selectedImageStyle, setSelectedImageStyle] = useState<string>("Generato da AI");
 
   useEffect(() => {
     loadStories();
@@ -64,17 +68,49 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
     event.stopPropagation();
     const fullText = `${story.title}. ${story.content}`;
     
+    // Se sta leggendo questa storia
     if (isPlaying && currentStoryId === story.id) {
-      stop();
+      // Se è in pausa, riprendi
+      if (isPaused) {
+        speak(fullText, 'italian', story.id); // Il servizio gestisce automaticamente resume
+      } else {
+        // Altrimenti metti in pausa
+        pause();
+      }
     } else {
+      // Nuova storia, inizia lettura
       speak(fullText, 'italian', story.id);
     }
   };
 
-  const handleImageClick = (story: AGStory, event: React.MouseEvent) => {
+  const handleImageClick = async (story: AGStory, event: React.MouseEvent) => {
     event.stopPropagation();
     if (story.has_image) {
-      navigate(`/ag-story-detail/${story.id}`);
+      try {
+        // Carica l'immagine da IndexedDB e aprila in overlay
+        const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(story.id);
+        if (mediaAsset && mediaAsset.data) {
+          const url = URL.createObjectURL(mediaAsset.data);
+          setSelectedImageUrl(url);
+          setSelectedStory(story);
+          // Extract style from metadata if available
+          const style = mediaAsset.metadata?.style || "Generato da AI";
+          setSelectedImageStyle(style.charAt(0).toUpperCase() + style.slice(1)); // Capitalize
+          setImageDialogOpen(true);
+        } else {
+          toast({
+            title: "Errore",
+            description: "Impossibile caricare l'immagine"
+          });
+        }
+      } catch (error) {
+        console.error('Error loading image:', error);
+        toast({
+          title: "Errore",
+          description: "Impossibile caricare l'immagine",
+          variant: "destructive"
+        });
+      }
     } else {
       toast({
         title: "Nessuna immagine",
@@ -131,14 +167,23 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
                                 className="h-9 w-9 p-0"
                               >
                                 {isPlaying && currentStoryId === story.id ? (
-                                  <VolumeX className="h-4 w-4 text-primary" />
+                                  isPaused ? (
+                                    <Volume1 className="h-4 w-4 text-orange-600" />
+                                  ) : (
+                                    <VolumeX className="h-4 w-4 text-primary" />
+                                  )
                                 ) : (
                                   <Volume2 className="h-4 w-4" />
                                 )}
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>{isPlaying && currentStoryId === story.id ? 'Ferma' : 'Leggi'}</p>
+                              <p>
+                                {isPlaying && currentStoryId === story.id 
+                                  ? (isPaused ? 'Riprendi' : 'Pausa')
+                                  : 'Leggi'
+                                }
+                              </p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -200,6 +245,18 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
           storyId={selectedStory.id}
           storyTitle={selectedStory.title}
           isSuperuser={false}
+        />
+      )}
+
+      {/* Image Viewer Dialog */}
+      {selectedStory && selectedImageUrl && (
+        <ImageViewerDialog
+          open={imageDialogOpen}
+          onOpenChange={setImageDialogOpen}
+          imageUrl={selectedImageUrl}
+          storyTitle={selectedStory.title}
+          storyId={selectedStory.id}
+          style={selectedImageStyle}
         />
       )}
     </StoryLayout>

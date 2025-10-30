@@ -186,8 +186,11 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         throw new Error("User ID is required");
       }
 
-      // Create enhanced prompt with user comment
-      const enhancedPrompt = userComment ? `${storyContent}\n\nNote aggiuntive: ${userComment}` : storyContent;
+      // Create enhanced prompt with user comment and NO TEXT policy
+      const noTextPolicy = "IMPORTANTE: L'immagine non deve contenere testi, parole, scritte o frasi visibili di alcun tipo.";
+      const enhancedPrompt = userComment 
+        ? `${storyContent}\n\nNote aggiuntive: ${userComment}\n\n${noTextPolicy}` 
+        : `${storyContent}\n\n${noTextPolicy}`;
 
       const requestBody = {
         prompt: enhancedPrompt,
@@ -365,6 +368,38 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       // Import IndexedDB manager
       const { fantasMiaDB } = await import("@/utils/indexedDB");
 
+      // Detect story type (am or ag)
+      const storyType = await fantasMiaDB.detectStoryType(String(storyId));
+      if (!storyType) {
+        throw new Error('Story not found');
+      }
+
+      // Check if image already exists for this story
+      const existingMedia = await fantasMiaDB.getLatestMediaAssetByStoryId(String(storyId));
+      
+      if (existingMedia) {
+        // Show confirmation dialog
+        const confirmReplace = confirm(
+          '⚠️ Esiste già un disegno associato a questa storia.\n\n' +
+          'Vuoi sostituirlo con quello nuovo?\n\n' +
+          '✅ OK = Sostituisci il disegno precedente\n' +
+          '❌ Annulla = Mantieni il disegno esistente'
+        );
+        
+        if (!confirmReplace) {
+          console.log('🚫 User cancelled image replacement');
+          toast({
+            title: "Operazione annullata",
+            description: "Il disegno esistente è stato mantenuto",
+          });
+          return;
+        }
+        
+        // Delete existing media asset
+        await fantasMiaDB.deleteMediaAsset(existingMedia.id);
+        console.log('🗑️ Existing image deleted:', existingMedia.id);
+      }
+
       // Convert base64 to Blob
       const [header, base64Data] = imageDataUrl.split(',');
       const mimeMatch = header.match(/data:([^;]+)/);
@@ -377,13 +412,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       }
       const blob = new Blob([bytes], { type: mime });
 
-      // Detect story type (am or ag)
-      const storyType = await fantasMiaDB.detectStoryType(String(storyId));
-      if (!storyType) {
-        throw new Error('Story not found');
-      }
-
-      // Create media asset
+      // Create media asset with style metadata
       const assetId = `${storyId}-openai-${Date.now()}`;
       const asset = {
         id: assetId,
@@ -395,6 +424,9 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         size: blob.size,
         createdAt: new Date().toISOString(),
         data: blob,
+        metadata: {
+          style: selectedStyle, // Save the actual style name
+        }
       };
 
       // Save media asset and update story flag atomically
@@ -404,6 +436,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         assetId,
         storyId,
         storyType,
+        style: selectedStyle,
       });
 
       // Dispatch custom event to trigger icon refresh

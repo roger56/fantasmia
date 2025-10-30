@@ -11,6 +11,7 @@ interface StoryImageIndicatorProps {
 const StoryImageIndicator: React.FC<StoryImageIndicatorProps> = ({ storyId, className = "" }) => {
   const [hasImage, setHasImage] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageStyle, setImageStyle] = useState<string>("Generato da AI");
   const [showViewer, setShowViewer] = useState(false);
 
   const checkImage = async () => {
@@ -21,6 +22,9 @@ const StoryImageIndicator: React.FC<StoryImageIndicatorProps> = ({ storyId, clas
       if (mediaAsset && mediaAsset.data) {
         const url = URL.createObjectURL(mediaAsset.data);
         setImageUrl(url);
+        // Extract style from metadata if available
+        const style = mediaAsset.metadata?.style || "Generato da AI";
+        setImageStyle(style.charAt(0).toUpperCase() + style.slice(1)); // Capitalize
       }
     } catch (error) {
       console.error('Error checking image:', error);
@@ -73,6 +77,7 @@ const StoryImageIndicator: React.FC<StoryImageIndicatorProps> = ({ storyId, clas
           onOpenChange={setShowViewer}
           imageUrl={imageUrl}
           storyId={storyId}
+          style={imageStyle}
         />
       )}
     </>

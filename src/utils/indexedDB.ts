@@ -52,6 +52,10 @@ interface MediaAsset {
   data: Blob;                // OBBLIGATORIO per preview e download
   originalUrl?: string;      // opzionale, solo storico/diagnostica
   needsRefetch?: boolean;    // flag per indicare che il Blob è da ri-fetchare
+  metadata?: {
+    style?: string; // Store the style used for generation
+    [key: string]: any;
+  };
 }
 
 class FantasMiaDB {

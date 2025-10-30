@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, Volume2, VolumeX, Globe, Edit, ImageIcon, Trash2, Plus } from 'lucide-react';
+import { BookOpen, Volume2, VolumeX, Volume1, Globe, Edit, ImageIcon, Trash2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import RecommendedBooksDialog from './RecommendedBooksDialog';
+import ImageViewerDialog from './ImageViewerDialog';
 import StoryLayout from './StoryLayout';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 
@@ -40,8 +41,11 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newStory, setNewStory] = useState({ title: '', content: '' });
   const [booksDialogStory, setBooksDialogStory] = useState<AGStory | null>(null);
+  const [imageDialogStory, setImageDialogStory] = useState<AGStory | null>(null);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [selectedImageStyle, setSelectedImageStyle] = useState<string>("Generato da AI");
   
-  const { isPlaying, speak, stop, currentStoryId } = useUnifiedTTS();
+  const { isPlaying, isPaused, speak, stop, pause, currentStoryId } = useUnifiedTTS();
 
   useEffect(() => {
     loadStories();
@@ -175,10 +179,47 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
     const story = stories.find(s => s.id === storyId);
     if (!story) return;
     
+    // Se sta leggendo questa storia
     if (isPlaying && currentStoryId === storyId) {
-      stop();
+      // Se è in pausa, riprendi
+      if (isPaused) {
+        speak(story.content, 'italian', storyId); // Il servizio gestisce automaticamente resume
+      } else {
+        // Altrimenti metti in pausa
+        pause();
+      }
     } else {
+      // Nuova storia, inizia lettura
       speak(story.content, 'italian', storyId);
+    }
+  };
+
+  const handleImageIconClick = async (story: AGStory) => {
+    if (!story.has_image) return;
+    
+    try {
+      // Carica l'immagine da IndexedDB e aprila in overlay
+      const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(story.id);
+      if (mediaAsset && mediaAsset.data) {
+        const url = URL.createObjectURL(mediaAsset.data);
+        setSelectedImageUrl(url);
+        setImageDialogStory(story);
+        // Extract style from metadata if available
+        const style = mediaAsset.metadata?.style || "Generato da AI";
+        setSelectedImageStyle(style.charAt(0).toUpperCase() + style.slice(1)); // Capitalize
+      } else {
+        toast({
+          title: "Errore",
+          description: "Impossibile caricare l'immagine"
+        });
+      }
+    } catch (error) {
+      console.error('Error loading image:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare l'immagine",
+        variant: "destructive"
+      });
     }
   };
 
@@ -276,10 +317,18 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
                           variant="ghost"
                           size="icon"
                           onClick={() => handleTTSToggle(story.id)}
-                          title={isPlaying && currentStoryId === story.id ? "Ferma lettura" : "Leggi"}
+                          title={
+                            isPlaying && currentStoryId === story.id 
+                              ? (isPaused ? "Riprendi" : "Pausa") 
+                              : "Leggi"
+                          }
                         >
                           {isPlaying && currentStoryId === story.id ? (
-                            <VolumeX className="w-5 h-5 text-red-600" />
+                            isPaused ? (
+                              <Volume1 className="w-5 h-5 text-orange-600" />
+                            ) : (
+                              <VolumeX className="w-5 h-5 text-red-600" />
+                            )
                           ) : (
                             <Volume2 className="w-5 h-5 text-green-600" />
                           )}
@@ -309,8 +358,8 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
                         <Button
                           variant="ghost"
                           size="icon"
-                          title={story.has_image ? "Immagine presente" : "Nessuna immagine"}
-                          onClick={() => story.has_image && navigate(`/ag-story-detail-su/${story.id}`)}
+                          title={story.has_image ? "Visualizza immagine" : "Nessuna immagine"}
+                          onClick={() => story.has_image && handleImageIconClick(story)}
                           disabled={!story.has_image}
                         >
                           <ImageIcon className={`w-5 h-5 ${story.has_image ? 'text-green-600' : 'text-red-600'}`} />
@@ -377,6 +426,26 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
             storyId={booksDialogStory.id}
             storyTitle={booksDialogStory.title}
             isSuperuser={true}
+          />
+        )}
+
+        {/* Image Viewer Dialog */}
+        {imageDialogStory && selectedImageUrl && (
+          <ImageViewerDialog
+            open={!!imageDialogStory}
+            onOpenChange={(open) => {
+              if (!open) {
+                setImageDialogStory(null);
+                if (selectedImageUrl) {
+                  URL.revokeObjectURL(selectedImageUrl);
+                  setSelectedImageUrl(null);
+                }
+              }
+            }}
+            imageUrl={selectedImageUrl}
+            storyTitle={imageDialogStory.title}
+            storyId={imageDialogStory.id}
+            style={selectedImageStyle}
           />
         )}
       </div>
