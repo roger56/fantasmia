@@ -82,7 +82,21 @@ class FantasMiaDB {
           console.error('❌ IndexedDB connection error:', event);
         };
         
+        // VERIFICA CRITICA: controlla che tutti gli stores richiesti esistano
+        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets'];
+        const missingStores = requiredStores.filter(
+          name => !this.db!.objectStoreNames.contains(name)
+        );
+        
+        if (missingStores.length > 0) {
+          console.error('❌ CRITICAL: Missing object stores:', missingStores);
+          console.error('🔄 Database needs reset. Call fantasMiaDB.forceReset()');
+          reject(new Error(`Missing stores: ${missingStores.join(', ')}`));
+          return;
+        }
+        
         console.log('✅ IndexedDB initialized:', this.dbConfig.name, 'v' + this.dbConfig.version);
+        console.log('✅ All object stores present:', requiredStores);
         resolve();
       };
 
@@ -863,13 +877,102 @@ class FantasMiaDB {
       getRequest.onerror = () => reject(getRequest.error);
     });
   }
+
+  /**
+   * Force Reset Database - Cancella completamente il database e lo ricrea
+   * Utilizzare solo in caso di corruzione o problemi critici
+   */
+  async forceReset(): Promise<void> {
+    console.log('🔄 Force resetting IndexedDB...');
+    
+    // Close current connection
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
+    
+    // Delete database completely
+    return new Promise((resolve, reject) => {
+      const deleteRequest = indexedDB.deleteDatabase(this.dbConfig.name);
+      
+      deleteRequest.onsuccess = () => {
+        console.log('✅ Database deleted successfully');
+        resolve();
+      };
+      
+      deleteRequest.onerror = () => {
+        console.error('❌ Failed to delete database:', deleteRequest.error);
+        reject(deleteRequest.error);
+      };
+      
+      deleteRequest.onblocked = () => {
+        console.warn('⚠️ Database deletion blocked - close all tabs using this database');
+      };
+    });
+  }
+
+  /**
+   * Diagnostica Database - Restituisce informazioni sullo stato del database
+   */
+  async getDatabaseDiagnostics(): Promise<{
+    version: number;
+    storesPresent: string[];
+    storesMissing: string[];
+    isHealthy: boolean;
+  }> {
+    const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets'];
+    
+    if (!this.db) {
+      return {
+        version: 0,
+        storesPresent: [],
+        storesMissing: requiredStores,
+        isHealthy: false
+      };
+    }
+    
+    const storesPresent: string[] = [];
+    for (let i = 0; i < this.db.objectStoreNames.length; i++) {
+      storesPresent.push(this.db.objectStoreNames[i]);
+    }
+    
+    const storesMissing = requiredStores.filter(name => !storesPresent.includes(name));
+    
+    return {
+      version: this.db.version,
+      storesPresent,
+      storesMissing,
+      isHealthy: storesMissing.length === 0
+    };
+  }
 }
 
 // Singleton instance
 export const fantasMiaDB = new FantasMiaDB();
 
-// Initialize database on import
+// Initialize database on import with auto-recovery
 fantasMiaDB.init()
+  .catch(async (error) => {
+    console.error('❌ Database initialization failed:', error);
+    
+    // Auto-recovery: se mancano gli stores, resetta e riprova
+    if (error.message?.includes('Missing stores')) {
+      console.log('🔄 Attempting automatic recovery...');
+      
+      try {
+        // Auto-reset e retry
+        await fantasMiaDB.forceReset();
+        await fantasMiaDB.init();
+        
+        console.log('✅ Database recovered successfully via auto-reset');
+      } catch (recoveryError) {
+        console.error('❌ Auto-recovery failed:', recoveryError);
+        throw recoveryError;
+      }
+    } else {
+      throw error;
+    }
+  })
   .then(() => {
     // Run automatic migrations after database initialization
     return fantasMiaDB.migrateMediaAssetsFromLocalStorage();

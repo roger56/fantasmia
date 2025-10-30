@@ -28,14 +28,31 @@ const DebugIndexedDB = () => {
   const [selectedMediaAsset, setSelectedMediaAsset] = useState<MediaAsset | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [filterStoryId, setFilterStoryId] = useState<string>('');
+  const [dbDiagnostics, setDbDiagnostics] = useState<{
+    version: number;
+    storesPresent: string[];
+    storesMissing: string[];
+    isHealthy: boolean;
+  } | null>(null);
 
   // Verifiche ambiente
   const hasServiceWorker = 'serviceWorker' in navigator;
   
   useEffect(() => {
     loadDebugData();
+    loadDatabaseDiagnostics();
     setCurrentProfileId(getCurrentProfileId());
   }, []);
+
+  const loadDatabaseDiagnostics = async () => {
+    try {
+      const diagnostics = await fantasMiaDB.getDatabaseDiagnostics();
+      setDbDiagnostics(diagnostics);
+      console.log('📊 Database Diagnostics:', diagnostics);
+    } catch (error) {
+      console.error('Errore caricamento diagnostica DB:', error);
+    }
+  };
 
   const loadDebugData = async () => {
     setLoading(true);
@@ -260,6 +277,44 @@ const DebugIndexedDB = () => {
     });
   };
 
+  const handleForceReset = async () => {
+    if (!confirm('⚠️ ATTENZIONE: Questo cancellerà TUTTI i dati dal database IndexedDB!\n\nSei sicuro di voler continuare?')) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // 1. Reset completo
+      console.log('🔄 Step 1: Deleting database...');
+      await fantasMiaDB.forceReset();
+      
+      // 2. Re-init
+      console.log('🔄 Step 2: Re-initializing database...');
+      await fantasMiaDB.init();
+      
+      // 3. Verifica
+      console.log('🔄 Step 3: Verifying database...');
+      await loadDatabaseDiagnostics();
+      await loadDebugData();
+      
+      toast({
+        title: "✅ Database Resettato",
+        description: "Database cancellato e ricreato correttamente",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('❌ Reset failed:', error);
+      toast({
+        title: "❌ Errore Reset",
+        description: `Errore durante il reset del database: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const saveTestCanvas = async () => {
     try {
       // Create a test canvas (640x480)
@@ -437,6 +492,90 @@ const DebugIndexedDB = () => {
               <Button onClick={hardReload} variant="outline" size="sm">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Hard Reload
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Diagnostica Database */}
+        <Card className={dbDiagnostics?.isHealthy ? 'border-green-500' : 'border-red-500'}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="w-5 h-5" />
+              Diagnostica Database IndexedDB
+              {dbDiagnostics?.isHealthy ? (
+                <span className="text-green-600">✅ Healthy</span>
+              ) : (
+                <span className="text-red-600">❌ Issues Detected</span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <strong>Database Version:</strong>
+                <div className={`text-2xl font-bold ${
+                  dbDiagnostics?.version === 3 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  v{dbDiagnostics?.version || 0}
+                  {dbDiagnostics?.version !== 3 && (
+                    <span className="text-sm text-red-600 ml-2">(Expected: v3)</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <strong>Health Status:</strong>
+                <div className={`text-lg font-bold ${
+                  dbDiagnostics?.isHealthy ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {dbDiagnostics?.isHealthy ? '✅ All OK' : '❌ Needs Attention'}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <strong>Object Stores Present:</strong>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {dbDiagnostics?.storesPresent.map(store => (
+                  <span key={store} className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
+                    ✅ {store}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {dbDiagnostics && dbDiagnostics.storesMissing.length > 0 && (
+              <div>
+                <strong className="text-red-600">Object Stores Missing:</strong>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {dbDiagnostics.storesMissing.map(store => (
+                    <span key={store} className="px-2 py-1 bg-red-100 text-red-800 rounded text-sm">
+                      ❌ {store}
+                    </span>
+                  ))}
+                </div>
+                <Alert className="mt-3 border-red-500 bg-red-50">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    <strong>Database corrotto!</strong> Alcuni object stores mancanti. 
+                    Usa il pulsante "Force Reset Database" per risolvere.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
+            <div className="mt-4 flex gap-2">
+              <Button onClick={loadDatabaseDiagnostics} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Aggiorna Diagnostica
+              </Button>
+              <Button 
+                onClick={handleForceReset} 
+                variant="destructive" 
+                size="sm"
+                className="bg-red-600 hover:bg-red-700"
+              >
+                🔄 Force Reset Database
               </Button>
             </div>
           </CardContent>
