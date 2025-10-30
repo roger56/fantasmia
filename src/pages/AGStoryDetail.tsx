@@ -17,6 +17,7 @@ import MediaGenerationDialog from '@/components/shared/MediaGenerationDialog';
 import CopyrightWarningDialog from '@/components/shared/CopyrightWarningDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
+import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
 
 interface AGStory {
   id: string;
@@ -55,6 +56,29 @@ const AGStoryDetail = () => {
     if (id) {
       loadStory(id);
     }
+
+    // Listen for image saved events to refresh story state
+    const handleImageSaved = (event: CustomEvent) => {
+      if (event.detail.storyId === id) {
+        console.log('🔄 Image saved event received, reloading story:', id);
+        loadStory(id);
+      }
+    };
+
+    const handleMediaUpdated = (event: CustomEvent) => {
+      if (event.detail.storyId === id) {
+        console.log('🔄 Media updated event received, reloading story:', id);
+        loadStory(id);
+      }
+    };
+
+    window.addEventListener('storyImageSaved', handleImageSaved as EventListener);
+    window.addEventListener('media:updated', handleMediaUpdated as EventListener);
+
+    return () => {
+      window.removeEventListener('storyImageSaved', handleImageSaved as EventListener);
+      window.removeEventListener('media:updated', handleMediaUpdated as EventListener);
+    };
   }, [id]);
 
   const loadStory = async (storyId: string) => {
@@ -252,7 +276,10 @@ const AGStoryDetail = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-2xl font-bold text-foreground">{story.title}</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-foreground">{story.title}</h2>
+                <StoryImageIndicator storyId={story.id} className="ml-2" />
+              </div>
               <Button variant="outline" size="sm" onClick={openEditDialog}>
                 <Edit className="w-4 h-4 mr-2" />
                 Modifica

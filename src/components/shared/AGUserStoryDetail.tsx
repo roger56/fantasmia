@@ -11,6 +11,7 @@ import { useStoryReading } from '@/hooks/useStoryReading';
 import TranslationPreview from '@/components/shared/TranslationPreview';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
+import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
 
 interface AGStory {
   id: string;
@@ -40,6 +41,29 @@ const AGUserStoryDetail: React.FC = () => {
 
   useEffect(() => {
     loadStory();
+
+    // Listen for image saved events to refresh story state
+    const handleImageSaved = (event: CustomEvent) => {
+      if (event.detail.storyId === id) {
+        console.log('🔄 Image saved event received, reloading story:', id);
+        loadStory();
+      }
+    };
+
+    const handleMediaUpdated = (event: CustomEvent) => {
+      if (event.detail.storyId === id) {
+        console.log('🔄 Media updated event received, reloading story:', id);
+        loadStory();
+      }
+    };
+
+    window.addEventListener('storyImageSaved', handleImageSaved as EventListener);
+    window.addEventListener('media:updated', handleMediaUpdated as EventListener);
+
+    return () => {
+      window.removeEventListener('storyImageSaved', handleImageSaved as EventListener);
+      window.removeEventListener('media:updated', handleMediaUpdated as EventListener);
+    };
   }, [id]);
 
   const loadStory = async () => {
@@ -169,16 +193,8 @@ const AGUserStoryDetail: React.FC = () => {
             {reading.getTranslationButtonText()}
           </Button>
 
-          {/* Image Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleImageClick}
-            className="flex items-center gap-2"
-          >
-            <Image className={`h-4 w-4 ${story.has_image ? 'text-green-600' : 'text-muted-foreground'}`} />
-            Disegno
-          </Button>
+          {/* Image Indicator */}
+          <StoryImageIndicator storyId={story.id} className="cursor-pointer" />
 
           {/* Books Button */}
           <Button

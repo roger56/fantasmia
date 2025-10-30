@@ -365,33 +365,51 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       // Import IndexedDB manager
       const { fantasMiaDB } = await import("@/utils/indexedDB");
 
-      // Save using the unified pipeline
-      const assetId = await fantasMiaDB.saveMediaFromPreview({
+      // Convert base64 to Blob
+      const [header, base64Data] = imageDataUrl.split(',');
+      const mimeMatch = header.match(/data:([^;]+)/);
+      const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+      
+      const binaryString = atob(base64Data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: mime });
+
+      // Detect story type (am or ag)
+      const storyType = await fantasMiaDB.detectStoryType(String(storyId));
+      if (!storyType) {
+        throw new Error('Story not found');
+      }
+
+      // Create media asset
+      const assetId = `${storyId}-openai-${Date.now()}`;
+      const asset = {
+        id: assetId,
         storyId: String(storyId),
         ownerProfileId: userId || currentUserId || "superuser",
-        previewUrl: imageDataUrl,
-        type: "image",
-        source: "openai",
-        filename: `${storyTitle || "image"}-${Date.now()}.png`,
+        type: 'image' as const,
+        source: 'openai' as const,
+        mime,
+        size: blob.size,
+        createdAt: new Date().toISOString(),
+        data: blob,
+      };
+
+      // Save media asset and update story flag atomically
+      await fantasMiaDB.saveMediaAssetWithStoryUpdate(asset, String(storyId), storyType);
+
+      console.log("✅ Image saved to IndexedDB with story update:", {
+        assetId,
+        storyId,
+        storyType,
       });
-
-      console.log("✅ Image saved to IndexedDB:", { assetId, storyId });
-
-      // Update AG story has_image flag
-      const agStory = await fantasMiaDB.getAGStoryById(String(storyId));
-      if (agStory) {
-        await fantasMiaDB.saveAGStory({
-          ...agStory,
-          has_image: true,
-          updated_at: new Date().toISOString(),
-        });
-        console.log("✅ AG story updated with has_image: true");
-      }
 
       // Dispatch custom event to trigger icon refresh
       window.dispatchEvent(
         new CustomEvent("storyImageSaved", {
-          detail: { storyId },
+          detail: { storyId, storyType },
         }),
       );
     } catch (error) {
