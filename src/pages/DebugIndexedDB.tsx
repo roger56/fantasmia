@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RefreshCw, AlertTriangle, Database, User, FileText, Image, Home, ArrowLeft } from 'lucide-react';
+import { RefreshCw, AlertTriangle, AlertCircle, Database, User, FileText, Image, Home, ArrowLeft } from 'lucide-react';
 import { fantasMiaDB, Profile, AMStory, AGStory, MediaAsset } from '@/utils/indexedDB';
 import { getCurrentProfileId, createDemoProfile } from '@/utils/profileManager';
 import { runAutomaticTest } from '@/utils/storyManager';
@@ -278,7 +278,19 @@ const DebugIndexedDB = () => {
   };
 
   const handleForceReset = async () => {
-    if (!confirm('⚠️ ATTENZIONE: Questo cancellerà TUTTI i dati dal database IndexedDB!\n\nSei sicuro di voler continuare?')) {
+    const versionInfo = dbDiagnostics?.version !== 3 
+      ? `\n\n⚠️ Versione corrente: v${dbDiagnostics?.version} (richiesta: v3)`
+      : '';
+    
+    const confirmMessage = `⚠️ ATTENZIONE: Questa operazione:
+
+• Cancellerà TUTTI i dati locali (profili, storie, immagini)
+• Ricreerà il database alla versione corretta (v3)
+• Non può essere annullata${versionInfo}
+
+Continuare?`;
+
+    if (!confirm(confirmMessage)) {
       return;
     }
     
@@ -300,7 +312,7 @@ const DebugIndexedDB = () => {
       
       toast({
         title: "✅ Database Resettato",
-        description: "Database cancellato e ricreato correttamente",
+        description: "Database cancellato e ricreato correttamente alla v3",
         variant: "default"
       });
     } catch (error) {
@@ -519,7 +531,7 @@ const DebugIndexedDB = () => {
                 }`}>
                   v{dbDiagnostics?.version || 0}
                   {dbDiagnostics?.version !== 3 && (
-                    <span className="text-sm text-red-600 ml-2">(Expected: v3)</span>
+                    <span className="text-sm text-red-600 ml-2">(Attesa: v3)</span>
                   )}
                 </div>
               </div>
@@ -532,6 +544,18 @@ const DebugIndexedDB = () => {
                 </div>
               </div>
             </div>
+
+            {/* Version Mismatch Alert */}
+            {dbDiagnostics && dbDiagnostics.version !== 3 && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Version Mismatch Critico!</strong>
+                  <br />Il database è alla versione {dbDiagnostics.version} invece di 3.
+                  <br />È necessario un Force Reset per ricreare il database.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <div>
               <strong>Object Stores Present:</strong>

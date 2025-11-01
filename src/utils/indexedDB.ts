@@ -86,6 +86,15 @@ class FantasMiaDB {
           console.error('❌ IndexedDB connection error:', event);
         };
         
+        // ⚠️ VERIFICA CRITICA: controlla la versione del database
+        if (this.db.version !== this.dbConfig.version) {
+          const errorMsg = `Version mismatch: expected v${this.dbConfig.version}, got v${this.db.version}`;
+          console.error('❌ CRITICAL:', errorMsg);
+          console.error('🔄 Database needs force reset. Run: fantasMiaDB.forceReset()');
+          reject(new Error(errorMsg));
+          return;
+        }
+        
         // VERIFICA CRITICA: controlla che tutti gli stores richiesti esistano
         const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets'];
         const missingStores = requiredStores.filter(
@@ -959,18 +968,23 @@ fantasMiaDB.init()
   .catch(async (error) => {
     console.error('❌ Database initialization failed:', error);
     
-    // Auto-recovery: se mancano gli stores, resetta e riprova
-    if (error.message?.includes('Missing stores')) {
+    // Auto-recovery: gestisce sia stores mancanti che version mismatch
+    if (error.message?.includes('Missing stores') || error.message?.includes('Version mismatch')) {
       console.log('🔄 Attempting automatic recovery...');
+      console.log('⚠️ This will DELETE all local data and recreate the database');
       
       try {
         // Auto-reset e retry
         await fantasMiaDB.forceReset();
+        console.log('✅ Database deleted');
+        
         await fantasMiaDB.init();
+        console.log('✅ Database recreated at correct version');
         
         console.log('✅ Database recovered successfully via auto-reset');
       } catch (recoveryError) {
         console.error('❌ Auto-recovery failed:', recoveryError);
+        console.error('⚠️ Manual intervention required: Close ALL tabs and clear browser data');
         throw recoveryError;
       }
     } else {
