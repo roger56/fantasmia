@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Palette, Globe, Volume2, VolumeX, Trash2, Upload, Wand2, Video, Edit } from 'lucide-react';
+import { Palette, Globe, Volume2, VolumeX, Trash2, Upload, Wand2, Video, Edit, Eye, Music } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import { useStoryReading } from '@/hooks/useStoryReading';
@@ -18,6 +18,7 @@ import CopyrightWarningDialog from '@/components/shared/CopyrightWarningDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
 import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
+import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 
 interface AGStory {
   id: string;
@@ -44,6 +45,9 @@ const AGStoryDetail = () => {
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
   const [showBooksDialog, setShowBooksDialog] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [viewerImageUrl, setViewerImageUrl] = useState<string>('');
+  const [viewerImageStyle, setViewerImageStyle] = useState<string>('');
   
   // Unified reading service
   const reading = useStoryReading({
@@ -184,6 +188,44 @@ const AGStoryDetail = () => {
     }
   };
 
+  const handleViewImage = async () => {
+    if (!story) return;
+    
+    try {
+      const mediaAsset = await fantasMiaDB.getMediaAssetByStoryId(story.id);
+      if (mediaAsset) {
+        const blob = new Blob([mediaAsset.data], { type: mediaAsset.mime });
+        const url = URL.createObjectURL(blob);
+        setViewerImageUrl(url);
+        setViewerImageStyle(mediaAsset.metadata?.style || 'Generato da AI');
+        setShowImageViewer(true);
+        console.log('🖼️ Opening image viewer for story:', story.id);
+      } else {
+        toast({
+          title: "Nessuna immagine",
+          description: "Non c'è un'immagine associata a questa storia",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error loading image:', error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dell'immagine",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImageViewerClose = () => {
+    if (viewerImageUrl) {
+      URL.revokeObjectURL(viewerImageUrl);
+    }
+    setShowImageViewer(false);
+    setViewerImageUrl('');
+    setViewerImageStyle('');
+  };
+
   const getCategoryRoute = (category: string) => {
     const categoryRoutes: Record<string, string> = {
       'explorers': '/ag-explorers',
@@ -219,22 +261,34 @@ const AGStoryDetail = () => {
         {/* Action Menu - Top Bar */}
         <div className="flex flex-wrap justify-between items-center gap-3 p-4 bg-accent/30 rounded-lg border">
           <div className="flex flex-wrap gap-2">
-            {/* Disegno Menu */}
+            {/* MEDIA Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
                   <Palette className="w-4 h-4" />
-                  Disegno
+                  MEDIA
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => setShowCopyrightWarning(true)}>
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Disegno (AI)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleViewImage}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Vedi disegno associato
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowUploadDialog(true)}>
                   <Upload className="w-4 h-4 mr-2" />
                   Carica da PC
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowCopyrightWarning(true)}>
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Disegno AI
+                <DropdownMenuItem disabled>
+                  <Video className="w-4 h-4 mr-2" />
+                  Filmato
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>
+                  <Music className="w-4 h-4 mr-2" />
+                  Voci
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -376,6 +430,15 @@ const AGStoryDetail = () => {
           storyId={story?.id || ''}
           storyTitle={story?.title || ''}
           isSuperuser={true}
+        />
+
+        {/* Image Viewer Dialog */}
+        <ImageViewerDialog
+          open={showImageViewer}
+          onOpenChange={handleImageViewerClose}
+          imageUrl={viewerImageUrl}
+          storyTitle={story?.title || ''}
+          style={viewerImageStyle}
         />
       </div>
     </StoryLayout>
