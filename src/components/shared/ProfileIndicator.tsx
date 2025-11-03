@@ -18,15 +18,49 @@ const ProfileIndicator: React.FC = () => {
     return saved ? JSON.parse(saved) : false;
   });
 
+  // Helper function con gerarchia di priorità per recuperare il nome utente
+  const getUserName = (): string | null => {
+    // PRIORITÀ 1: Check se c'è una sessione superuser attiva
+    const superuserSession = localStorage.getItem('superuser-session');
+    const superuserExpiry = localStorage.getItem('superuser-session-expiry');
+    
+    if (superuserSession && superuserExpiry) {
+      const expiryTime = parseInt(superuserExpiry);
+      if (expiryTime > Date.now()) {
+        return 'superuser';
+      }
+    }
+    
+    // PRIORITÀ 2: Check bridged session da AuthBridge
+    try {
+      const bridgedSessionData = localStorage.getItem('fantasmia_supabase_session');
+      if (bridgedSessionData) {
+        const session = JSON.parse(bridgedSessionData);
+        if (session.expires_at > Date.now()) {
+          return session.user?.user_metadata?.name || null;
+        }
+      }
+    } catch (error) {
+      console.warn('Error parsing bridged session:', error);
+    }
+    
+    // PRIORITÀ 3: Profilo da IndexedDB (getCurrentProfile)
+    const profile = getCurrentProfile();
+    return profile?.name || null;
+  };
+
   useEffect(() => {
     const checkUser = () => {
-      const profile = getCurrentProfile();
-      if (profile) {
-        setUserName(profile.name);
+      const name = getUserName();
+      if (name) {
+        setUserName(name);
       }
     };
 
     checkUser();
+    
+    // Polling ogni 1 secondo per aggiornamenti in tempo reale
+    const interval = setInterval(checkUser, 1000);
 
     // Responsive handler
     const handleResize = () => {
@@ -34,7 +68,10 @@ const ProfileIndicator: React.FC = () => {
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
