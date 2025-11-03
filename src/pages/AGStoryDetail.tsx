@@ -13,7 +13,7 @@ import { fantasMiaDB } from '@/utils/indexedDB';
 import { useStoryReading } from '@/hooks/useStoryReading';
 import StoryLayout from '@/components/shared/StoryLayout';
 import FileUploadDialog from '@/components/shared/FileUploadDialog';
-import MediaGenerationDialog from '@/components/shared/MediaGenerationDialog';
+
 import CopyrightWarningDialog from '@/components/shared/CopyrightWarningDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
@@ -42,7 +42,6 @@ const AGStoryDetail = () => {
   
   // Media dialogs
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showAIDialog, setShowAIDialog] = useState(false);
   const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
   const [showBooksDialog, setShowBooksDialog] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
@@ -390,23 +389,18 @@ const AGStoryDetail = () => {
           />
         )}
 
-        {/* AI Generation Dialog */}
-        {story && (
-          <MediaGenerationDialog
-            open={showAIDialog}
-            onOpenChange={setShowAIDialog}
-            storyContent={story.content}
-            storyTitle={story.title}
-            storyId={story.id}
-            userId="superuser"
-          />
-        )}
 
         {/* Copyright Warning Dialog */}
         <CopyrightWarningDialog
           open={showCopyrightWarning}
           onOpenChange={setShowCopyrightWarning}
-          onConfirm={() => setShowAIDialog(true)}
+          onConfirm={() => {
+            setShowCopyrightWarning(false);
+            toast({
+              title: "Funzione in sviluppo",
+              description: "La generazione AI sarà disponibile a breve"
+            });
+          }}
         />
 
         {/* Translation Preview Dialog */}
