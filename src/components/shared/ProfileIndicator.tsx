@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User, Move } from 'lucide-react';
-import { AuthBridge } from '@/utils/authBridge';
+import { User, Move, Minimize, Maximize2 } from 'lucide-react';
+import { getCurrentProfile } from '@/utils/profileManager';
 
 const MOBILE_BREAKPOINT = 992;
 
@@ -13,12 +13,16 @@ const ProfileIndicator: React.FC = () => {
   });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, elementX: 0, elementY: 0 });
+  const [isMinimized, setIsMinimized] = useState(() => {
+    const saved = localStorage.getItem('profile-indicator-minimized');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   useEffect(() => {
-    const checkUser = async () => {
-      const authStatus = await AuthBridge.isAuthenticated();
-      if (authStatus.authenticated && authStatus.userName) {
-        setUserName(authStatus.userName);
+    const checkUser = () => {
+      const profile = getCurrentProfile();
+      if (profile) {
+        setUserName(profile.name);
       }
     };
 
@@ -68,6 +72,16 @@ const ProfileIndicator: React.FC = () => {
     localStorage.setItem('profile-indicator-position', JSON.stringify(position));
   };
 
+  const handleMinimize = () => {
+    setIsMinimized(true);
+    localStorage.setItem('profile-indicator-minimized', JSON.stringify(true));
+  };
+
+  const handleExpand = () => {
+    setIsMinimized(false);
+    localStorage.setItem('profile-indicator-minimized', JSON.stringify(false));
+  };
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -96,25 +110,57 @@ const ProfileIndicator: React.FC = () => {
     );
   }
 
-  // Desktop: draggable with saved position
+  // Desktop: minimized state
+  if (isMinimized) {
+    const style = position.x === 0 && position.y === 0 
+      ? {} 
+      : { 
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          bottom: '1rem',
+          right: '1rem'
+        };
+
+    return (
+      <div 
+        className={`fixed bg-white/90 backdrop-blur-sm border border-slate-200 rounded-full p-2.5 shadow-sm cursor-pointer select-none hover:bg-white transition-colors ${position.x === 0 && position.y === 0 ? 'bottom-4 right-4' : ''}`}
+        style={{ ...style, zIndex: 9999 }}
+        onClick={handleExpand}
+        title={`Profilo: ${userName} - Click per espandere`}
+      >
+        <User className="w-4 h-4 text-slate-700" />
+      </div>
+    );
+  }
+
+  // Desktop: expanded draggable with saved position
   const style = position.x === 0 && position.y === 0 
     ? {} 
     : { 
         transform: `translate(${position.x}px, ${position.y}px)`,
-        top: '1rem',
+        bottom: '1rem',
         right: '1rem'
       };
 
   return (
     <div 
-      className={`fixed bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg px-3 py-2 shadow-sm z-50 cursor-move select-none ${position.x === 0 && position.y === 0 ? 'top-4 right-20' : ''}`}
-      style={style}
+      className={`fixed bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg px-3 py-2 shadow-sm cursor-move select-none ${position.x === 0 && position.y === 0 ? 'bottom-4 right-4' : ''}`}
+      style={{ ...style, zIndex: 9999 }}
       onMouseDown={handleMouseDown}
     >
       <div className="flex items-center gap-2 text-sm text-slate-700">
         <User className="w-4 h-4" />
         <span className="font-medium">Profilo: {userName}</span>
         <Move className="w-3 h-3 opacity-50" />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleMinimize();
+          }}
+          className="ml-1 p-0.5 hover:bg-slate-200 rounded transition-colors"
+          title="Minimizza"
+        >
+          <Minimize className="w-3 h-3" />
+        </button>
       </div>
     </div>
   );
