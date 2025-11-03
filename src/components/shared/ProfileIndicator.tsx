@@ -20,18 +20,7 @@ const ProfileIndicator: React.FC = () => {
 
   // Helper function con gerarchia di priorità per recuperare il nome utente
   const getUserName = (): string | null => {
-    // PRIORITÀ 1: Check se c'è una sessione superuser attiva
-    const superuserSession = localStorage.getItem('superuser-session');
-    const superuserExpiry = localStorage.getItem('superuser-session-expiry');
-    
-    if (superuserSession && superuserExpiry) {
-      const expiryTime = parseInt(superuserExpiry);
-      if (expiryTime > Date.now()) {
-        return 'superuser';
-      }
-    }
-    
-    // PRIORITÀ 2: Check bridged session da AuthBridge
+    // PRIORITÀ 1: Check bridged session da AuthBridge (utente normale loggato)
     try {
       const bridgedSessionData = localStorage.getItem('fantasmia_supabase_session');
       if (bridgedSessionData) {
@@ -44,9 +33,24 @@ const ProfileIndicator: React.FC = () => {
       console.warn('Error parsing bridged session:', error);
     }
     
-    // PRIORITÀ 3: Profilo da IndexedDB (getCurrentProfile)
+    // PRIORITÀ 2: Profilo da IndexedDB (getCurrentProfile)
     const profile = getCurrentProfile();
-    return profile?.name || null;
+    if (profile?.name) {
+      return profile.name;
+    }
+    
+    // PRIORITÀ 3: Check se c'è una sessione superuser attiva (solo se nessun utente normale)
+    const superuserSession = localStorage.getItem('superuser-session');
+    const superuserExpiry = localStorage.getItem('superuser-session-expiry');
+    
+    if (superuserSession && superuserExpiry) {
+      const expiryTime = parseInt(superuserExpiry);
+      if (expiryTime > Date.now()) {
+        return 'superuser';
+      }
+    }
+    
+    return null;
   };
 
   useEffect(() => {
