@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RefreshCw, AlertTriangle, AlertCircle, Database, User, FileText, Image, Home, ArrowLeft } from 'lucide-react';
+import { RefreshCw, AlertTriangle, AlertCircle, Database, User, FileText, Image, Home, ArrowLeft, Shield, HardDrive } from 'lucide-react';
 import { fantasMiaDB, Profile, AMStory, AGStory, MediaAsset } from '@/utils/indexedDB';
 import { getCurrentProfileId, createDemoProfile } from '@/utils/profileManager';
 import { runAutomaticTest } from '@/utils/storyManager';
@@ -12,6 +12,7 @@ import { testBase64Conversion } from '@/utils/base64Utils';
 import { AGDataReset } from '@/utils/agDataReset';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import { CLOUD_ENABLED } from '@/integrations/supabase/client';
+import { persistenceManager, type PersistenceStatus } from '@/utils/persistenceManager';
 
 interface DebugData {
   profiles: { count: number; items: Profile[] };
@@ -34,6 +35,7 @@ const DebugIndexedDB = () => {
     storesMissing: string[];
     isHealthy: boolean;
   } | null>(null);
+  const [persistenceStatus, setPersistenceStatus] = useState<PersistenceStatus | null>(null);
 
   // Verifiche ambiente
   const hasServiceWorker = 'serviceWorker' in navigator;
@@ -41,8 +43,19 @@ const DebugIndexedDB = () => {
   useEffect(() => {
     loadDebugData();
     loadDatabaseDiagnostics();
+    loadPersistenceStatus();
     setCurrentProfileId(getCurrentProfileId());
   }, []);
+
+  const loadPersistenceStatus = async () => {
+    try {
+      const status = await persistenceManager.getPersistenceStatus();
+      setPersistenceStatus(status);
+      console.log('📊 Persistence Status:', status);
+    } catch (error) {
+      console.error('Errore caricamento persistence status:', error);
+    }
+  };
 
   const loadDatabaseDiagnostics = async () => {
     try {
@@ -309,6 +322,7 @@ Continuare?`;
       console.log('🔄 Step 3: Verifying database...');
       await loadDatabaseDiagnostics();
       await loadDebugData();
+      await loadPersistenceStatus();
       
       toast({
         title: "✅ Database Resettato",
@@ -324,6 +338,77 @@ Continuare?`;
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRequestPersistence = async () => {
+    try {
+      const granted = await persistenceManager.requestPersistentStorage();
+      await loadPersistenceStatus();
+      
+      toast({
+        title: granted ? "✅ Persistenza Attivata" : "⚠️ Persistenza Non Disponibile",
+        description: granted 
+          ? "I dati saranno mantenuti anche dopo settimane di inattività"
+          : "Il browser potrebbe eliminare i dati dopo 7 giorni su iOS",
+        variant: granted ? "default" : "destructive"
+      });
+    } catch (error) {
+      console.error('Errore richiesta persistenza:', error);
+      toast({
+        title: "❌ Errore",
+        description: "Impossibile richiedere la persistenza",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    try {
+      const success = await persistenceManager.createBackup();
+      await loadPersistenceStatus();
+      
+      toast({
+        title: success ? "✅ Backup Creato" : "❌ Errore Backup",
+        description: success 
+          ? "Backup salvato in localStorage"
+          : "Impossibile creare il backup",
+        variant: success ? "default" : "destructive"
+      });
+    } catch (error) {
+      console.error('Errore creazione backup:', error);
+      toast({
+        title: "❌ Errore Backup",
+        description: "Impossibile creare il backup",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRestoreBackup = async () => {
+    if (!confirm('⚠️ Ripristinare i dati dal backup? Questa operazione sovrascriverà i dati attuali.')) {
+      return;
+    }
+
+    try {
+      const success = await persistenceManager.restoreFromBackup();
+      await loadDebugData();
+      await loadPersistenceStatus();
+      
+      toast({
+        title: success ? "✅ Dati Ripristinati" : "❌ Nessun Backup",
+        description: success 
+          ? "Dati ripristinati con successo dal backup"
+          : "Nessun backup disponibile",
+        variant: success ? "default" : "destructive"
+      });
+    } catch (error) {
+      console.error('Errore ripristino backup:', error);
+      toast({
+        title: "❌ Errore Ripristino",
+        description: "Impossibile ripristinare i dati",
+        variant: "destructive"
+      });
     }
   };
 
@@ -506,6 +591,154 @@ Continuare?`;
                 Hard Reload
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Persistence Status Panel - NEW */}
+        <Card className={persistenceStatus?.isPersistent ? 'border-green-500' : 'border-yellow-500'}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5" />
+              Stato Persistenza Dati (iOS/iPadOS)
+              {persistenceStatus?.isPersistent ? (
+                <span className="text-green-600">✅ Permanente</span>
+              ) : (
+                <span className="text-yellow-600">⚠️ Limitato</span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Persistence Status */}
+            <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+              <div className="flex items-center gap-3 mb-3">
+                <HardDrive className={`w-6 h-6 ${persistenceStatus?.isPersistent ? 'text-green-600' : 'text-yellow-600'}`} />
+                <div>
+                  <div className="font-bold text-lg">
+                    {persistenceStatus?.isPersistent 
+                      ? '🛡️ Salvataggio Garantito' 
+                      : '⚠️ Salvataggio Limitato'}
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    {persistenceStatus?.isPersistent 
+                      ? 'I tuoi dati sono protetti e resteranno salvati permanentemente'
+                      : 'Su iOS/iPadOS i dati potrebbero essere cancellati dopo 7 giorni di inattività'}
+                  </div>
+                </div>
+              </div>
+              
+              {!persistenceStatus?.isPersistent && (
+                <Button 
+                  onClick={handleRequestPersistence}
+                  variant="default"
+                  size="sm"
+                  className="w-full"
+                >
+                  🔒 Attiva Persistenza Permanente
+                </Button>
+              )}
+            </div>
+
+            {/* Storage Layers */}
+            <div>
+              <strong className="text-sm text-slate-700">Layer di Storage Attivi:</strong>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className={`p-2 rounded text-sm ${persistenceStatus?.layers.indexedDB ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {persistenceStatus?.layers.indexedDB ? '✅' : '❌'} IndexedDB (Layer 1)
+                </div>
+                <div className={`p-2 rounded text-sm ${persistenceStatus?.layers.localStorage ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {persistenceStatus?.layers.localStorage ? '✅' : '❌'} localStorage (Layer 2)
+                </div>
+                <div className={`p-2 rounded text-sm ${persistenceStatus?.layers.fileSystemAPI ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                  {persistenceStatus?.layers.fileSystemAPI ? '✅' : '➖'} File System (Layer 3)
+                </div>
+                <div className={`p-2 rounded text-sm ${persistenceStatus?.layers.serviceWorker ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                  {persistenceStatus?.layers.serviceWorker ? '✅' : '➖'} Service Worker (Layer 4)
+                </div>
+              </div>
+            </div>
+
+            {/* Storage Quota */}
+            <div>
+              <strong className="text-sm text-slate-700">Spazio Storage:</strong>
+              <div className="mt-2 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Utilizzato:</span>
+                  <span className="font-mono">{persistenceStatus ? (persistenceStatus.usage / 1024 / 1024).toFixed(2) : 0} MB</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Disponibile:</span>
+                  <span className="font-mono">{persistenceStatus ? (persistenceStatus.quota / 1024 / 1024).toFixed(2) : 0} MB</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${
+                      (persistenceStatus?.percentUsed || 0) > 90 ? 'bg-red-500' :
+                      (persistenceStatus?.percentUsed || 0) > 75 ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${Math.min(persistenceStatus?.percentUsed || 0, 100)}%` }}
+                  />
+                </div>
+                <div className="text-xs text-slate-500 text-right">
+                  {persistenceStatus?.percentUsed.toFixed(1)}% utilizzato
+                </div>
+              </div>
+            </div>
+
+            {/* Backup Info */}
+            <div className="border-t pt-3 space-y-2">
+              <div className="text-sm">
+                <strong>Ultimo Backup:</strong>
+                <div className="text-slate-600">
+                  {persistenceStatus?.lastBackup 
+                    ? new Date(parseInt(persistenceStatus.lastBackup)).toLocaleString('it-IT')
+                    : 'Nessun backup disponibile'}
+                </div>
+              </div>
+              {persistenceStatus?.lastRecovery && (
+                <div className="text-sm">
+                  <strong>Ultimo Ripristino:</strong>
+                  <div className="text-slate-600">
+                    {new Date(parseInt(persistenceStatus.lastRecovery)).toLocaleString('it-IT')}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-2">
+              <Button 
+                onClick={handleCreateBackup}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                💾 Crea Backup
+              </Button>
+              <Button 
+                onClick={handleRestoreBackup}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                ♻️ Ripristina Backup
+              </Button>
+              <Button 
+                onClick={loadPersistenceStatus}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Info Box */}
+            <Alert className="bg-blue-50 border-blue-200">
+              <AlertCircle className="w-4 h-4 text-blue-600" />
+              <AlertDescription className="text-sm text-blue-800">
+                <strong>Sistema Multi-Layer:</strong> I tuoi dati sono automaticamente duplicati su più livelli di storage. 
+                Se IndexedDB viene svuotato, il sistema ripristinerà automaticamente i dati dal backup.
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
 

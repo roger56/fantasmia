@@ -70,7 +70,7 @@ class FantasMiaDB {
       return Promise.resolve(); // Already initialized
     }
     
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const request = indexedDB.open(this.dbConfig.name, this.dbConfig.version);
 
       request.onerror = () => {
@@ -963,7 +963,7 @@ class FantasMiaDB {
 // Singleton instance
 export const fantasMiaDB = new FantasMiaDB();
 
-// Initialize database on import with auto-recovery
+// Initialize database on import with auto-recovery and persistence manager
 fantasMiaDB.init()
   .catch(async (error) => {
     console.error('❌ Database initialization failed:', error);
@@ -1002,6 +1002,11 @@ fantasMiaDB.init()
     // Skip existing media assets migration (disabled to prevent CORS/403 errors)
     console.log('🔄 Starting migration of existing media assets without Blob...');
     console.log('✅ Migration completed: 0 assets restored from originalUrl (remote fetch disabled)');
+    
+    // Initialize persistence manager after all migrations
+    return import('./persistenceManager').then(({ persistenceManager }) => {
+      return persistenceManager.initialize();
+    });
   })
   .catch(console.error);
 

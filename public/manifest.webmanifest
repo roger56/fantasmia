@@ -1,0 +1,31 @@
+{
+  "name": "Fantasmia - Storie Creative",
+  "short_name": "Fantasmia",
+  "description": "Crea storie fantastiche con l'aiuto dell'intelligenza artificiale",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "orientation": "any",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/lovable-uploads/bed28b99-056e-49de-89f5-9619c373a7c0.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/bed28b99-056e-49de-89f5-9619c373a7c0.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "permissions": [
+    "storage",
+    "persistent-storage"
+  ],
+  "categories": ["education", "entertainment", "productivity"],
+  "prefer_related_applications": false
+}
