@@ -1,7 +1,14 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle } from "lucide-react";
 
 interface CopyrightWarningDialogProps {
   open: boolean;
@@ -14,18 +21,27 @@ const CopyrightWarningDialog: React.FC<CopyrightWarningDialogProps> = ({
   open,
   onOpenChange,
   onConfirm,
-  selectedStyle
+  selectedStyle,
 }) => {
+  console.log("CopyrightDialog rendered with selectedStyle:", selectedStyle);
+
   const styleLabels: Record<string, string> = {
     fumetto: "Fumetto",
     fotografico: "Fotografico",
     astratto: "Astratto",
     manga: "Manga",
     acquarello: "Acquarello",
-    carboncino: "Carboncino"
+    carboncino: "Carboncino",
   };
+
   const handleConfirm = () => {
+    console.log("Confirm button clicked");
     onConfirm();
+    onOpenChange(false);
+  };
+
+  const handleCancel = () => {
+    console.log("Cancel button clicked");
     onOpenChange(false);
   };
 
@@ -47,8 +63,8 @@ const CopyrightWarningDialog: React.FC<CopyrightWarningDialogProps> = ({
             </div>
           )}
           <span className="block text-foreground">
-            I disegni di storie contenenti personaggi soggetti a diritto d'autore 
-            (es. Cenerentola, Pinocchio, Biancaneve, ecc.) non saranno effettuati.
+            I disegni di storie contenenti personaggi soggetti a diritto d'autore (es. Cenerentola, Pinocchio,
+            Biancaneve, ecc.) non saranno effettuati.
           </span>
           <span className="block font-medium text-foreground">
             Confermi di aver preso visione di questa informazione e di voler procedere?
@@ -56,12 +72,10 @@ const CopyrightWarningDialog: React.FC<CopyrightWarningDialogProps> = ({
         </DialogDescription>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleCancel}>
             Annulla
           </Button>
-          <Button onClick={handleConfirm}>
-            Confermo e Procedo
-          </Button>
+          <Button onClick={handleConfirm}>Confermo e Procedo</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
