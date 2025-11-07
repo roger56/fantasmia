@@ -92,31 +92,37 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   }, []);
 
   const handleMediaAction = async (type: string, subtype: string) => {
-    console.log("handleMediaAction called - type:", type, "subtype:", subtype);
+    console.log("=== handleMediaAction START ===");
+    console.log("Type:", type, "Subtype:", subtype);
 
     const authStatus = await AuthBridge.isAuthenticated();
     console.log("Auth status:", authStatus);
 
     if (!authStatus.authenticated) {
-      console.log("User not authenticated");
+      console.log("=== NOT AUTHENTICATED ===");
       setShowAuthWarning(true);
       return;
     }
 
     if (type === "Disegno") {
       const style = subtype.toLowerCase();
-      console.log("Setting selected style to:", style);
+      console.log("Setting style to:", style);
+
+      // FORZA l'aggiornamento immediato
       setSelectedStyle(style);
+
+      console.log("SelectedStyle after set:", style); // Log immediato
       console.log("Opening copyright warning");
       setShowCopyrightWarning(true);
     } else {
-      console.log("Other media type:", type);
+      console.log("Other media type");
       toast({
         title: "Funzione in sviluppo",
-        description: type + " - " + subtype + " sarà presto disponibile",
+        description: `${type} - ${subtype} sarà presto disponibile`,
         variant: "default",
       });
     }
+    console.log("=== handleMediaAction END ===");
   };
 
   const handleGenerateWithComment = async () => {
