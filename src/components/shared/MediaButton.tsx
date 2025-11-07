@@ -55,6 +55,19 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // DEBUG: Traccia tutti i render del componente
+  console.log("MediaButton RENDER - selectedStyle:", selectedStyle, "showCopyrightWarning:", showCopyrightWarning);
+
+  // DEBUG: Traccia cambiamenti di selectedStyle
+  useEffect(() => {
+    console.log("selectedStyle UPDATED:", selectedStyle);
+  }, [selectedStyle]);
+
+  // DEBUG: Traccia cambiamenti di showCopyrightWarning
+  useEffect(() => {
+    console.log("showCopyrightWarning UPDATED:", showCopyrightWarning, "with selectedStyle:", selectedStyle);
+  }, [showCopyrightWarning]);
+
   // Reset state when story changes
   useEffect(() => {
     console.log("MediaButton: Story changed, resetting state");
@@ -75,6 +88,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     // Check authentication status using AuthBridge
     const checkAuth = async () => {
       const authStatus = await AuthBridge.isAuthenticated();
+      console.log("AuthBridge check result:", authStatus);
       setIsAuthenticated(authStatus.authenticated);
       setCurrentUserId(authStatus.userId || null);
     };
@@ -85,6 +99,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session);
       checkAuth();
     });
 
@@ -92,54 +107,57 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   }, []);
 
   const handleMediaAction = async (type: string, subtype: string) => {
-    console.log("=== handleMediaAction START ===");
-    console.log("Type:", type, "Subtype:", subtype);
+    console.log("=== 🎬 handleMediaAction START ===");
+    console.log("Clicked on:", type, "-", subtype);
 
     const authStatus = await AuthBridge.isAuthenticated();
-    console.log("Auth status:", authStatus);
+    console.log("Auth status result:", authStatus);
 
     if (!authStatus.authenticated) {
-      console.log("=== NOT AUTHENTICATED ===");
+      console.log("❌ BLOCKED: User not authenticated");
       setShowAuthWarning(true);
       return;
     }
 
     if (type === "Disegno") {
       const style = subtype.toLowerCase();
-      console.log("Setting style to:", style);
+      console.log("🎨 Setting selectedStyle to:", style);
 
-      // FORZA l'aggiornamento immediato
+      // Imposta lo stile e poi apri il dialog con un piccolo delay
       setSelectedStyle(style);
 
-      console.log("SelectedStyle after set:", style); // Log immediato
-      console.log("Opening copyright warning");
-      setShowCopyrightWarning(true);
+      // Aspetta che React aggiorni lo stato prima di aprire il dialog
+      setTimeout(() => {
+        console.log("🚀 Opening copyright dialog - current selectedStyle:", selectedStyle);
+        console.log("📝 Expected style:", style);
+        setShowCopyrightWarning(true);
+      }, 100);
     } else {
-      console.log("Other media type");
+      console.log("📹 Other media type:", type);
       toast({
         title: "Funzione in sviluppo",
-        description: `${type} - ${subtype} sarà presto disponibile`,
+        description: type + " - " + subtype + " sarà presto disponibile",
         variant: "default",
       });
     }
-    console.log("=== handleMediaAction END ===");
+    console.log("=== 🎬 handleMediaAction END ===");
   };
 
   const handleGenerateWithComment = async () => {
-    console.log("Generate with comment called");
+    console.log("🔄 Generate with comment called - selectedStyle:", selectedStyle);
     setShowCommentDialog(false);
     await handleImageGeneration(selectedStyle);
   };
 
   const handleCopyrightProceed = () => {
-    console.log("Copyright proceed called");
+    console.log("✅ Copyright proceed clicked - selectedStyle:", selectedStyle);
     setShowCopyrightWarning(false);
     setShowCommentDialog(true);
   };
 
   const handleImageGeneration = async (style: string) => {
     try {
-      console.log("Starting image generation...");
+      console.log("🚀 Starting image generation with style:", style);
       setIsGenerating(true);
 
       // Validation before sending
@@ -167,14 +185,14 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         style: style,
       };
 
-      console.log("Current state:", {
+      console.log("📊 Current state:", {
         prompt: enhancedPrompt.substring(0, 100) + "...",
         style: style,
         storyId: storyId,
         isGenerating: isGenerating,
       });
 
-      console.log("Sending request to API:", requestBody);
+      console.log("📤 Sending request to API:", requestBody);
 
       if (!enhancedPrompt || !enhancedPrompt.trim()) {
         console.error("Prompt is empty!");
@@ -221,8 +239,8 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
       clearTimeout(timeoutId);
 
-      console.log("Response status:", response.status);
-      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+      console.log("📥 Response status:", response.status);
+      console.log("📋 Response headers:", Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -231,7 +249,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       }
 
       const data = await response.json();
-      console.log("API response received:", {
+      console.log("✅ API response received:", {
         keys: Object.keys(data),
         hasImageBase64: !!data.image_base64,
         imageBase64Length: data.image_base64?.length,
@@ -259,12 +277,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
       // Gestione della risposta - PRIMA base64, POI url come fallback
       if (data.image_base64) {
-        console.log("Creating image from base64...");
+        console.log("🎨 Creating image from base64...");
         const base64Image = "data:image/png;base64," + data.image_base64;
         setGeneratedImage(base64Image);
         setShowImageDialog(true);
         setUserComment(""); // Reset comment after generation
-        console.log("Image set successfully from base64");
+        console.log("✅ Image set successfully from base64");
 
         toast({
           title: "Immagine generata!",
@@ -272,11 +290,11 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           variant: "default",
         });
       } else if (data.image_url) {
-        console.log("Using image URL as fallback...");
+        console.log("🔗 Using image URL as fallback...");
         setGeneratedImage(data.image_url);
         setShowImageDialog(true);
         setUserComment("");
-        console.log("Image set successfully from URL");
+        console.log("✅ Image set successfully from URL");
 
         toast({
           title: "Immagine generata!",
@@ -284,7 +302,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           variant: "default",
         });
       } else if (data.error) {
-        console.error("API returned error:", data.error);
+        console.error("❌ API returned error:", data.error);
 
         const errorMessage =
           data.error?.includes("content policy") || data.detail?.includes("safety system")
@@ -295,11 +313,11 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
         throw new Error(errorMessage);
       } else {
-        console.error("No image data in response:", data);
+        console.error("❌ No image data in response:", data);
         throw new Error("No image data received from API");
       }
     } catch (error) {
-      console.error("Error generating image:", error);
+      console.error("💥 Error generating image:", error);
 
       // Show error in toast
       toast({
@@ -313,7 +331,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         setShowImageDialog(true);
       }
     } finally {
-      console.log("Image generation process completed");
+      console.log("🏁 Image generation process completed");
       setIsGenerating(false);
     }
   };
@@ -365,7 +383,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           <DropdownMenu>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className={"px-6 " + className} disabled={isGenerating}>
+                <Button
+                  variant="outline"
+                  className={"px-6 " + className}
+                  disabled={isGenerating}
+                  onClick={() => console.log("🖱️ MEDIA button clicked")}
+                >
                   {isGenerating ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
@@ -382,7 +405,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
             <DropdownMenuContent className="w-56 bg-white border shadow-lg z-50">
               {/* Disegno */}
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="cursor-pointer">Disegno</DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger
+                  className="cursor-pointer"
+                  onClick={() => console.log("📁 Disegno submenu opened")}
+                >
+                  Disegno
+                </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="bg-white border shadow-lg">
                   <DropdownMenuItem
                     className="cursor-pointer"
