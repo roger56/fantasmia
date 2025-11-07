@@ -110,35 +110,29 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     console.log("=== 🎬 handleMediaAction START ===");
     console.log("Clicked on:", type, "-", subtype);
 
+    console.log("🔐 Checking authentication...");
     const authStatus = await AuthBridge.isAuthenticated();
-    console.log("Auth status result:", authStatus);
+    console.log("🔐 AuthBridge result:", authStatus);
+    console.log("🔐 Authenticated:", authStatus?.authenticated);
+    console.log("🔐 User ID:", authStatus?.userId);
 
     if (!authStatus.authenticated) {
-      console.log("❌ BLOCKED: User not authenticated");
+      console.log("❌ AUTH FAILED - Showing auth warning");
       setShowAuthWarning(true);
       return;
     }
 
+    console.log("✅ AUTH SUCCESS - Proceeding with style selection");
+
     if (type === "Disegno") {
       const style = subtype.toLowerCase();
       console.log("🎨 Setting selectedStyle to:", style);
-
-      // Imposta lo stile e poi apri il dialog con un piccolo delay
       setSelectedStyle(style);
 
-      // Aspetta che React aggiorni lo stato prima di aprire il dialog
       setTimeout(() => {
-        console.log("🚀 Opening copyright dialog - current selectedStyle:", selectedStyle);
-        console.log("📝 Expected style:", style);
+        console.log("🚀 Opening copyright dialog");
         setShowCopyrightWarning(true);
       }, 100);
-    } else {
-      console.log("📹 Other media type:", type);
-      toast({
-        title: "Funzione in sviluppo",
-        description: type + " - " + subtype + " sarà presto disponibile",
-        variant: "default",
-      });
     }
     console.log("=== 🎬 handleMediaAction END ===");
   };
