@@ -132,10 +132,8 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   if (!authStatus.authenticated) {
     setShowAuthWarning(true);
     return;
-  }
-  */
   };
-
+  
   const handleGenerateWithComment = async () => {
     console.log("🔄 Generate with comment called - selectedStyle:", selectedStyle);
     setShowCommentDialog(false);
