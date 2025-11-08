@@ -128,10 +128,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
     // COMMENTA il codice di autenticazione originale:
     /*
-  const authStatus = await AuthBridge.isAuthenticated();
+  const authStatus = await AuthBridge.isAuthenticated()=> {
   if (!authStatus.authenticated) {
     setShowAuthWarning(true);
     return;
+  }
+    
   };
   
   const handleGenerateWithComment = async () => {
