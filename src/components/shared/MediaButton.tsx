@@ -106,22 +106,25 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleMediaAction = async (type: string, subtype: string) => {
-    console.log("=== 🧪 TEST VERSION ===");
-
-    // TEMPORANEO: bypass autenticazione per test
-    console.log("🧪 BYPASSING AUTH FOR TESTING");
+ const handleMediaAction = async (type: string, subtype: string) => {
+    // Check if user is authenticated using AuthBridge
+    const authStatus = await AuthBridge.isAuthenticated();
+    if (!authStatus.authenticated) {
+      setShowAuthWarning(true);
+      return;
+    }
 
     if (type === "Disegno") {
-      const style = subtype.toLowerCase();
-      console.log("🎨 Setting selectedStyle to:", style);
-      setSelectedStyle(style);
-
-      setTimeout(() => {
-        console.log("🚀 Opening copyright dialog");
-        setShowCopyrightWarning(true);
-      }, 100);
+      setSelectedStyle(subtype.toLowerCase());
+      setShowCopyrightWarning(true);
+    } else {
+      toast({
+        title: "Funzione in sviluppo",
+        description: `${type} - ${subtype} sarà presto disponibile`,
+        variant: "default",
+      });
     }
+  };
 
     // COMMENTA il codice di autenticazione originale:
     /*
