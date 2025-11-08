@@ -106,7 +106,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     return () => subscription.unsubscribe();
   }, []);
 
- const handleMediaAction = async (type: string, subtype: string) => {
+  const handleMediaAction = async (type: string, subtype: string) => {
     // Check if user is authenticated using AuthBridge
     const authStatus = await AuthBridge.isAuthenticated();
     if (!authStatus.authenticated) {
@@ -126,16 +126,15 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     }
   };
 
-    // COMMENTA il codice di autenticazione originale:
-    /*
-  const authStatus = await AuthBridge.isAuthenticated()=> {
+  // COMMENTA il codice di autenticazione originale:
+  /*
+  const authStatus = await AuthBridge.isAuthenticated();
   if (!authStatus.authenticated) {
     setShowAuthWarning(true);
     return;
   }
-    
-  };
-  
+    */
+
   const handleGenerateWithComment = async () => {
     console.log("🔄 Generate with comment called - selectedStyle:", selectedStyle);
     setShowCommentDialog(false);
