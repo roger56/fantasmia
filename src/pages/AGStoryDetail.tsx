@@ -13,8 +13,7 @@ import { fantasMiaDB } from '@/utils/indexedDB';
 import { useStoryReading } from '@/hooks/useStoryReading';
 import StoryLayout from '@/components/shared/StoryLayout';
 import FileUploadDialog from '@/components/shared/FileUploadDialog';
-
-import CopyrightWarningDialog from '@/components/shared/CopyrightWarningDialog';
+import MediaButton from '@/components/shared/MediaGenerationDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
 import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
@@ -42,7 +41,7 @@ const AGStoryDetail = () => {
   
   // Media dialogs
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
+  const [showMediaGeneration, setShowMediaGeneration] = useState(false);
   const [showBooksDialog, setShowBooksDialog] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [viewerImageUrl, setViewerImageUrl] = useState<string>('');
@@ -269,7 +268,7 @@ const AGStoryDetail = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setShowCopyrightWarning(true)}>
+                <DropdownMenuItem onClick={() => setShowMediaGeneration(true)}>
                   <Wand2 className="w-4 h-4 mr-2" />
                   Disegno (AI)
                 </DropdownMenuItem>
@@ -389,19 +388,17 @@ const AGStoryDetail = () => {
           />
         )}
 
-
-        {/* Copyright Warning Dialog */}
-        <CopyrightWarningDialog
-          open={showCopyrightWarning}
-          onOpenChange={setShowCopyrightWarning}
-          onConfirm={() => {
-            setShowCopyrightWarning(false);
-            toast({
-              title: "Funzione in sviluppo",
-              description: "La generazione AI sarà disponibile a breve"
-            });
-          }}
-        />
+        {/* Media Generation with AI */}
+        {story && (
+          <MediaButton
+            open={showMediaGeneration}
+            onOpenChange={setShowMediaGeneration}
+            storyContent={story.content}
+            storyTitle={story.title}
+            storyId={story.id}
+            userId="superuser"
+          />
+        )}
 
         {/* Translation Preview Dialog */}
         <TranslationPreview
