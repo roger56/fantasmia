@@ -24,6 +24,7 @@ const StoryLayout: React.FC<StoryLayoutProps> = ({
   backgroundColor = "bg-gradient-to-br from-slate-50 to-slate-100"
 }) => {
   const navigate = useNavigate();
+  const currentPath = window.location.pathname;
 
   return (
     <div className={`min-h-screen ${backgroundColor} relative`}>
@@ -49,6 +50,8 @@ const StoryLayout: React.FC<StoryLayoutProps> = ({
           <div className="flex-1 text-center">
             <h1 className="text-xl font-bold text-slate-800">{title}</h1>
             {subtitle && <p className="text-sm text-slate-600">{subtitle}</p>}
+            {/* Indicatore path corrente */}
+            <p className="text-xs text-slate-400 mt-0.5 font-mono">{currentPath}</p>
           </div>
           
           {/* Contenuto header aggiuntivo */}

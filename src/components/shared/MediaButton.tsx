@@ -370,6 +370,17 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
   return (
     <>
+      {/* Overlay centrato durante generazione */}
+      {isGenerating && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-8 shadow-2xl flex flex-col items-center space-y-4">
+            <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            <p className="text-lg font-semibold text-foreground">Generando...</p>
+            <p className="text-sm text-muted-foreground">Attendere circa 10-15 secondi</p>
+          </div>
+        </div>
+      )}
+
       <TooltipProvider>
         <Tooltip>
           <DropdownMenu>

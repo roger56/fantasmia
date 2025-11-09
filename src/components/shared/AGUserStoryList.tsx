@@ -148,14 +148,21 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
                   stories.map((story) => (
                     <div 
                       key={story.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors gap-4"
                       onClick={() => handleStoryClick(story)}
                     >
-                      <div className="flex-1">
-                        <h3 className="font-medium text-foreground">{story.title}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground truncate md:text-base">{story.title}</h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(story.created_at).toLocaleDateString('it-IT', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })}
+                        </p>
                       </div>
                       
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 flex-shrink-0">
                         {/* Read button with TTS */}
                         <TooltipProvider>
                           <Tooltip>

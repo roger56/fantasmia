@@ -291,7 +291,7 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
                   </p>
                 ) : (
                   stories.map((story) => (
-                    <div key={story.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div key={story.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors gap-4">
                       <div className="flex-1 min-w-0">
                         <button
                           onClick={() => navigate(`/ag-story-detail-su/${story.id}`)}
@@ -299,6 +299,13 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
                         >
                           {story.title}
                         </button>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(story.created_at).toLocaleDateString('it-IT', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })}
+                        </p>
                       </div>
                       
                       <div className="flex items-center gap-1 ml-4">
