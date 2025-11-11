@@ -412,6 +412,95 @@ Continuare?`;
     }
   };
 
+  const handleResetStories = async () => {
+    const confirmMessage = `⚠️ ATTENZIONE: Questa operazione eliminerà:
+
+• Tutte le storie AM (archivio utenti)
+• Tutte le storie AG (archivio Superuser)
+• Tutti i media assets (immagini)
+
+I dati NON potranno essere recuperati.
+
+Continuare?`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      console.log('🗑️ Eliminazione storie e media...');
+      
+      // Elimina tutti i contenuti degli store
+      await fantasMiaDB.init();
+      const db = fantasMiaDB['db'];
+      
+      if (!db) {
+        throw new Error('Database non inizializzato');
+      }
+      
+      // Clear AM stories
+      await new Promise<void>((resolve, reject) => {
+        const txAM = db.transaction(['am_stories'], 'readwrite');
+        const request = txAM.objectStore('am_stories').clear();
+        request.onsuccess = () => {
+          console.log('✅ AM stories cleared');
+          resolve();
+        };
+        request.onerror = () => reject(request.error);
+      });
+      
+      // Clear AG stories
+      await new Promise<void>((resolve, reject) => {
+        const txAG = db.transaction(['ag_stories'], 'readwrite');
+        const request = txAG.objectStore('ag_stories').clear();
+        request.onsuccess = () => {
+          console.log('✅ AG stories cleared');
+          resolve();
+        };
+        request.onerror = () => reject(request.error);
+      });
+      
+      // Clear media assets
+      await new Promise<void>((resolve, reject) => {
+        const txMedia = db.transaction(['media_assets'], 'readwrite');
+        const request = txMedia.objectStore('media_assets').clear();
+        request.onsuccess = () => {
+          console.log('✅ Media assets cleared');
+          resolve();
+        };
+        request.onerror = () => reject(request.error);
+      });
+      
+      console.log('✅ Reset completato');
+      
+      // Ricarica dati
+      await loadDebugData();
+      await loadPersistenceStatus();
+      
+      toast({
+        title: "✅ Archivi Resettati",
+        description: "Tutte le storie e immagini sono state eliminate",
+        variant: "default"
+      });
+      
+      // Emit eventi per aggiornare UI
+      window.dispatchEvent(new CustomEvent('am:changed'));
+      window.dispatchEvent(new CustomEvent('ag:changed'));
+      
+    } catch (error) {
+      console.error('❌ Errore reset archivi:', error);
+      toast({
+        title: "❌ Errore Reset",
+        description: `Impossibile resettare gli archivi: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const saveTestCanvas = async () => {
     try {
       // Create a test canvas (640x480)
@@ -969,6 +1058,10 @@ Continuare?`;
               }
             }} variant="destructive">
               🔄 Esegui Reset AG/AM
+            </Button>
+            
+            <Button onClick={handleResetStories} variant="destructive" className="bg-orange-600 hover:bg-orange-700">
+              🗑️ Reset Archivi Storie
             </Button>
           </CardContent>
         </Card>
