@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Eye, Trash2, Image, ImageOff } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Search, Eye, Trash2, Image, ImageOff, BookPlus } from 'lucide-react';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import StoryLayout from '@/components/shared/StoryLayout';
+import AlbumCreatorDialog from '@/components/superuser/AlbumCreatorDialog';
+import { AlbumGenerationConfig } from '@/utils/albumPdfGenerator';
 
 const SuperuserAMArchive = () => {
   const navigate = useNavigate();
@@ -21,6 +24,8 @@ const SuperuserAMArchive = () => {
   const [imageUrl, setImageUrl] = useState<string>('');
   const [currentImageBlob, setCurrentImageBlob] = useState<Blob | null>(null);
   const [selectedStoryTitle, setSelectedStoryTitle] = useState('');
+  const [selectedStories, setSelectedStories] = useState<Set<string>>(new Set());
+  const [albumDialogOpen, setAlbumDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -201,6 +206,52 @@ const SuperuserAMArchive = () => {
     setSelectedStoryTitle('');
   };
 
+  const toggleStorySelection = (storyId: string) => {
+    const newSelection = new Set(selectedStories);
+    if (newSelection.has(storyId)) {
+      newSelection.delete(storyId);
+    } else {
+      newSelection.add(storyId);
+    }
+    setSelectedStories(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedStories.size === filteredStories.length) {
+      setSelectedStories(new Set());
+    } else {
+      setSelectedStories(new Set(filteredStories.map(s => s.id)));
+    }
+  };
+
+  const handleCreateAlbum = () => {
+    // Get album settings from localStorage
+    const savedSettings = localStorage.getItem('fantasmia_album_settings');
+    const albumSettings = savedSettings ? JSON.parse(savedSettings) : {
+      minStoriesForAlbum: 5,
+      pageSize: 'A4-portrait',
+      margins: 20,
+      fontFamily: 'Arial',
+      fontSizeBody: 12,
+      fontSizeTitles: 18,
+      imageStyleDefault: 'fotografico'
+    };
+
+    // Check minimum stories requirement
+    if (selectedStories.size < albumSettings.minStoriesForAlbum) {
+      toast({
+        title: "Selezione insufficiente",
+        description: `Seleziona almeno ${albumSettings.minStoriesForAlbum} storie per creare un album`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAlbumDialogOpen(true);
+  };
+
+  const selectedStoriesArray = filteredStories.filter(s => selectedStories.has(s.id));
+
   if (loading) {
     return (
       <StoryLayout
@@ -217,10 +268,40 @@ const SuperuserAMArchive = () => {
     <>
       <StoryLayout
         title="Archivio Utenti (AM)"
-        subtitle={`${filteredStories.length} storie totali`}
+        subtitle={`${filteredStories.length} storie totali${selectedStories.size > 0 ? ` • ${selectedStories.size} selezionate` : ''}`}
         onBack={() => navigate('/superuser')}
       >
         <div className="space-y-4">
+          {/* Selection toolbar */}
+          {selectedStories.size > 0 && (
+            <Card className="bg-primary/10 border-primary">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium">
+                    {selectedStories.size} {selectedStories.size === 1 ? 'storia selezionata' : 'storie selezionate'}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedStories(new Set())}
+                    >
+                      Deseleziona tutto
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleCreateAlbum}
+                      className="gap-2"
+                    >
+                      <BookPlus className="w-4 h-4" />
+                      Crea Album
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Search Bar */}
           <Card>
             <CardContent className="p-4">
@@ -250,18 +331,34 @@ const SuperuserAMArchive = () => {
               <CardContent className="p-0">
                 <div className="max-h-[600px] overflow-y-auto">
                   <div className="divide-y divide-border">
+                    {/* Select All row */}
+                    <div className="p-4 bg-muted/30 sticky top-0 z-10">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={selectedStories.size === filteredStories.length && filteredStories.length > 0}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                        <span className="text-sm font-medium">Seleziona tutto</span>
+                      </div>
+                    </div>
+
+                    {/* Story rows */}
                     {filteredStories.map((story) => (
                       <div
                         key={story.id}
-                        className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                          console.log({ action: "open-superuser-viewer", id: story.id });
-                          navigate(`/superuser-user-story-viewer/${story.id}`);
-                        }}
+                        className="p-4 hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center justify-between gap-4">
+                          {/* Checkbox */}
+                          <div className="flex items-center">
+                            <Checkbox
+                              checked={selectedStories.has(story.id)}
+                              onCheckedChange={() => toggleStorySelection(story.id)}
+                            />
+                          </div>
+
                           {/* Title */}
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/superuser-user-story-viewer/${story.id}`)}>
                             <h3 className="font-semibold text-foreground truncate">
                               {story.title || 'Storia senza titolo'}
                             </h3>
@@ -349,6 +446,26 @@ const SuperuserAMArchive = () => {
         storyTitle={selectedStoryTitle}
         style=""
       />
+
+      {albumDialogOpen && (
+        <AlbumCreatorDialog
+          open={albumDialogOpen}
+          onOpenChange={setAlbumDialogOpen}
+          stories={selectedStoriesArray}
+          config={(() => {
+            const saved = localStorage.getItem('fantasmia_album_settings');
+            return saved ? JSON.parse(saved) : {
+              minStoriesForAlbum: 5,
+              pageSize: 'A4-portrait',
+              margins: 20,
+              fontFamily: 'Arial',
+              fontSizeBody: 12,
+              fontSizeTitles: 18,
+              imageStyleDefault: 'fotografico'
+            };
+          })()}
+        />
+      )}
     </>
   );
 };

@@ -28,6 +28,31 @@ interface AMStory {
   poem?: string;
 }
 
+interface Album {
+  id: string;
+  title: string;
+  author: string;
+  createdAt: string;
+  stories: Array<{
+    storyId: string;
+    title: string;
+    type: string;
+    pagesAlloc: { text: number; image: 1 };
+    imageIdUsed?: string;
+  }>;
+  pdfBlob: Blob;
+  zipBlob?: Blob;
+  settingsSnapshot: {
+    pageSize: string;
+    margins: number;
+    fontFamily: string;
+    fontSizeBody: number;
+    fontSizeTitles: number;
+    minStoriesForAlbum: number;
+    imageStyleDefault: string;
+  };
+}
+
 interface AGStory {
   id: string;
   title: string;
@@ -62,7 +87,7 @@ class FantasMiaDB {
   private db: IDBDatabase | null = null;
   private readonly dbConfig: DatabaseConfig = {
     name: 'FantasMiaV2',
-    version: 3 // Bump version for complete media assets schema
+    version: 4 // Bump version for albums store
   };
 
   async init(): Promise<void> {
@@ -96,7 +121,7 @@ class FantasMiaDB {
         }
         
         // VERIFICA CRITICA: controlla che tutti gli stores richiesti esistano
-        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets'];
+        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums'];
         const missingStores = requiredStores.filter(
           name => !this.db!.objectStoreNames.contains(name)
         );
@@ -118,7 +143,7 @@ class FantasMiaDB {
         console.log('🔄 IndexedDB upgrade from version', event.oldVersion, 'to', event.newVersion);
 
         // Delete existing stores to recreate with proper indices
-        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets'];
+        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums'];
         storeNames.forEach(storeName => {
           if (db.objectStoreNames.contains(storeName)) {
             db.deleteObjectStore(storeName);
@@ -151,6 +176,11 @@ class FantasMiaDB {
         mediaStore.createIndex('by_type', 'type', { unique: false });
         mediaStore.createIndex('by_source', 'source', { unique: false });
         console.log('✅ Created media_assets store with all indices');
+
+        // Albums store
+        const albumStore = db.createObjectStore('albums', { keyPath: 'id' });
+        albumStore.createIndex('by_createdAt', 'createdAt', { unique: false });
+        console.log('✅ Created albums store');
       };
     });
   }
@@ -958,6 +988,43 @@ class FantasMiaDB {
       isHealthy: storesMissing.length === 0
     };
   }
+
+  // Albums Management
+  async saveAlbum(album: Album): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['albums'], 'readwrite');
+    const store = transaction.objectStore('albums');
+    await store.put(album);
+  }
+
+  async getAlbums(): Promise<Album[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['albums'], 'readonly');
+    const store = transaction.objectStore('albums');
+    const request = store.getAll();
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAlbumById(albumId: string): Promise<Album | null> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['albums'], 'readonly');
+    const store = transaction.objectStore('albums');
+    const request = store.get(albumId);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteAlbum(albumId: string): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['albums'], 'readwrite');
+    const store = transaction.objectStore('albums');
+    await store.delete(albumId);
+  }
 }
 
 // Singleton instance
@@ -1010,4 +1077,4 @@ fantasMiaDB.init()
   })
   .catch(console.error);
 
-export type { Profile, AMStory, AGStory, MediaAsset };
+export type { Profile, AMStory, AGStory, MediaAsset, Album };

@@ -1,15 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield } from 'lucide-react';
+import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
+import AlbumSettings, { AlbumSettingsData } from '@/components/superuser/AlbumSettings';
 
 const SuperuserSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  const [albumSettings, setAlbumSettings] = useState<AlbumSettingsData>(() => {
+    const saved = localStorage.getItem('fantasmia_album_settings');
+    return saved ? JSON.parse(saved) : {
+      minStoriesForAlbum: 5,
+      pageSize: 'A4-portrait',
+      margins: 20,
+      fontFamily: 'Arial',
+      fontSizeBody: 12,
+      fontSizeTitles: 18,
+      imageStyleDefault: 'fotografico'
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fantasmia_album_settings', JSON.stringify(albumSettings));
+  }, [albumSettings]);
 
   const handleSettingClick = (settingName: string) => {
     toast({
@@ -61,6 +79,14 @@ const SuperuserSettings = () => {
       icon: Settings,
       action: () => handleSettingClick('SPARE'),
       showTooltip: true
+    },
+    {
+      title: 'Album e Impaginazione',
+      description: 'Impostazioni per creazione album stampabili',
+      icon: BookOpen,
+      action: () => {}, // Handled inline
+      showTooltip: false,
+      isInline: true
     }
   ];
 
@@ -87,6 +113,15 @@ const SuperuserSettings = () => {
         <div className="grid gap-4 md:grid-cols-2">
           {settingsOptions.map((option, index) => {
             const IconComponent = option.icon;
+            
+            // Special inline component for Album settings
+            if (option.isInline) {
+              return (
+                <div key={index} className="md:col-span-2">
+                  <AlbumSettings settings={albumSettings} onChange={setAlbumSettings} />
+                </div>
+              );
+            }
             
             if (option.showTooltip) {
               return (
