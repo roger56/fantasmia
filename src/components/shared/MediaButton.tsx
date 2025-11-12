@@ -95,15 +95,17 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
     checkAuth();
 
-    // Listen for auth changes (both Supabase and localStorage)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event, session);
-      checkAuth();
-    });
+    // Listen for auth changes (only if Supabase is available)
+    if (CLOUD_ENABLED && supabase) {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log("Auth state changed:", event, session);
+        checkAuth();
+      });
 
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   const handleMediaAction = async (type: string, subtype: string) => {
