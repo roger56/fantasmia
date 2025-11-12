@@ -75,7 +75,7 @@ const UserStoryViewer = () => {
     }
 
     try {
-      console.log({ action: "load-am-story", id, found: "loading" });
+      console.log('🔍 UserStoryViewer: Caricamento storia', { id, action: "load-am-story" });
       
       await fantasMiaDB.init();
 
@@ -86,6 +86,14 @@ const UserStoryViewer = () => {
 
       request.onsuccess = () => {
         const result = request.result;
+        console.log('🔍 UserStoryViewer: Risultato query IndexedDB', { 
+          id, 
+          found: !!result, 
+          storyOwner: result?.ownerProfileId,
+          storyTitle: result?.title,
+          storyMode: result?.mode
+        });
+        
         if (result) {
           // SECURITY CHECK: Verifica proprietà storia
           if (!canAccessStory(result)) {
@@ -100,11 +108,15 @@ const UserStoryViewer = () => {
             return;
           }
           
-          console.log({ action: "load-am-story", id, found: true, story: result });
+          console.log('✅ UserStoryViewer: Storia caricata con successo', { 
+            id, 
+            title: result.title,
+            mode: result.mode 
+          });
           setStory(result);
           loadMediaAsset(id);
         } else {
-          console.log({ action: "load-am-story", id, found: false });
+          console.error('❌ UserStoryViewer: Storia non trovata in IndexedDB', { id });
           setStory(null);
         }
         setLoading(false);
@@ -336,7 +348,10 @@ const UserStoryViewer = () => {
             Indietro
           </Button>
           
-          <h1 className="text-xl font-bold text-slate-800">Visualizza Storia</h1>
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-slate-800">Visualizza Storia</h1>
+            <p className="text-xs text-slate-400 font-mono">/user-story-viewer/{id}</p>
+          </div>
           
           <Button 
             variant="ghost" 

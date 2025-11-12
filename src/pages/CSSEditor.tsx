@@ -80,44 +80,61 @@ const CSSEditor = () => {
   };
 
   const handleSaveStory = async (title: string) => {
-    const authorId = profileId || 'anonymous';
-    const authorName = profileName || 'Anonimo';
-
+    console.log('🎯 CSSEditor: Inizio salvataggio storia', { title, profileId });
+    
     const storyContent = getFullStoryWithQuestions();
-
-    const storyData = {
-      id: editStory?.id || Date.now().toString(),
-      title,
-      content: storyContent,
-      status: 'completed' as const,
-      lastModified: new Date().toISOString(),
-      mode: 'CSS' as const,
-      authorId,
-      authorName,
-      isPublic: false,
-      language
-    };
+    
+    if (!storyContent.trim()) {
+      toast({
+        title: "Errore",
+        description: "La storia è vuota, non può essere salvata",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       if (editStory) {
-        updateStory(editStory.id, storyData);
+        // Usa storiesRepo per update
+        const { updateStory: repoUpdateStory } = await import('@/lib/storiesRepo');
+        await repoUpdateStory(editStory.id, {
+          title,
+          text: storyContent,
+          mode: 'CSS'
+        });
+        
+        console.log('✅ CSSEditor: Storia aggiornata', editStory.id);
+        
         toast({
           title: "Storia aggiornata!",
           description: `"${title}" è stata aggiornata con successo.`
         });
+        
+        navigate(`/user-story-viewer/${editStory.id}`);
       } else {
-        const savedId = await saveStoryBridge(storyData);
+        // Usa storiesRepo per create
+        const { createAMStory } = await import('@/lib/storiesRepo');
+        const savedId = await createAMStory(profileId || 'anonymous', {
+          title,
+          text: storyContent,
+          mode: 'CSS'
+        });
+        
+        console.log('✅ CSSEditor: Storia creata con ID:', savedId);
+        
         toast({
           title: "Storia salvata!",
           description: `"${title}" è stata salvata con successo.`
         });
         
-        // Navigate direttamente alla pagina di dettaglio
-        setTimeout(() => {
-          navigate(`/user-story-viewer/${savedId}`);
-        }, 500);
+        // Breve attesa per garantire che IndexedDB abbia scritto
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        console.log('🚀 CSSEditor: Navigando a viewer con ID:', savedId);
+        navigate(`/user-story-viewer/${savedId}`);
       }
     } catch (error) {
+      console.error('❌ CSSEditor: Errore salvataggio', error);
       toast({
         title: "Errore",
         description: "Impossibile salvare la storia",
@@ -197,8 +214,11 @@ const CSSEditor = () => {
 
   if (currentPhase === 'warning') {
     return (
-      <div>
+      <div className="min-h-screen relative">
         <ProfileIndicator />
+        <div className="fixed top-4 right-20 text-xs text-slate-400 font-mono bg-white/80 px-2 py-1 rounded z-50">
+          /css-editor (warning)
+        </div>
         <CSSWarningScreen 
           onContinue={() => setCurrentPhase('question-selection')}
           onExit={handleExit}
@@ -209,8 +229,11 @@ const CSSEditor = () => {
 
   if (currentPhase === 'question-selection') {
     return (
-      <div>
+      <div className="min-h-screen relative">
         <ProfileIndicator />
+        <div className="fixed top-4 right-20 text-xs text-slate-400 font-mono bg-white/80 px-2 py-1 rounded z-50">
+          /css-editor (selection)
+        </div>
         <CSSQuestionSelectionScreen
           onQuestionSelect={handleQuestionSelect}
           onExit={handleExit}
@@ -221,8 +244,11 @@ const CSSEditor = () => {
 
   if (currentPhase === 'guided-questions') {
     return (
-      <div>
+      <div className="min-h-screen relative">
         <ProfileIndicator />
+        <div className="fixed top-4 right-20 text-xs text-slate-400 font-mono bg-white/80 px-2 py-1 rounded z-50">
+          /css-editor (questions {currentQuestionIndex + 1})
+        </div>
         <CSSGuidedQuestionsScreen
           initialQuestion={initialQuestion}
           phases={storyPhases}
@@ -241,8 +267,11 @@ const CSSEditor = () => {
 
   if (currentPhase === 'final') {
     return (
-      <div>
+      <div className="min-h-screen relative">
         <ProfileIndicator />
+        <div className="fixed top-4 right-20 text-xs text-slate-400 font-mono bg-white/80 px-2 py-1 rounded z-50">
+          /css-editor (final)
+        </div>
         <CSSFinalScreen
           initialQuestion={initialQuestion}
           storyContent={getStoryContent()}
