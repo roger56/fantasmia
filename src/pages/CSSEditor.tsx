@@ -214,41 +214,32 @@ const CSSEditor = () => {
 
   if (currentPhase === 'warning') {
     return (
-      <div className="min-h-screen relative">
+      <>
         <ProfileIndicator />
-        <div className="fixed top-4 right-20 text-xs text-slate-400 font-mono bg-white/80 px-2 py-1 rounded z-50">
-          /css-editor (warning)
-        </div>
         <CSSWarningScreen 
           onContinue={() => setCurrentPhase('question-selection')}
           onExit={handleExit}
         />
-      </div>
+      </>
     );
   }
 
   if (currentPhase === 'question-selection') {
     return (
-      <div className="min-h-screen relative">
+      <>
         <ProfileIndicator />
-        <div className="fixed top-4 right-20 text-xs text-slate-400 font-mono bg-white/80 px-2 py-1 rounded z-50">
-          /css-editor (selection)
-        </div>
         <CSSQuestionSelectionScreen
           onQuestionSelect={handleQuestionSelect}
           onExit={handleExit}
         />
-      </div>
+      </>
     );
   }
 
   if (currentPhase === 'guided-questions') {
     return (
-      <div className="min-h-screen relative">
+      <>
         <ProfileIndicator />
-        <div className="fixed top-4 right-20 text-xs text-slate-400 font-mono bg-white/80 px-2 py-1 rounded z-50">
-          /css-editor (questions {currentQuestionIndex + 1})
-        </div>
         <CSSGuidedQuestionsScreen
           initialQuestion={initialQuestion}
           phases={storyPhases}
@@ -261,17 +252,14 @@ const CSSEditor = () => {
           onLanguageToggle={handleLanguageToggle}
           isTranslating={isTranslating}
         />
-      </div>
+      </>
     );
   }
 
   if (currentPhase === 'final') {
     return (
-      <div className="min-h-screen relative">
+      <>
         <ProfileIndicator />
-        <div className="fixed top-4 right-20 text-xs text-slate-400 font-mono bg-white/80 px-2 py-1 rounded z-50">
-          /css-editor (final)
-        </div>
         <CSSFinalScreen
           initialQuestion={initialQuestion}
           storyContent={getStoryContent()}
@@ -285,7 +273,7 @@ const CSSEditor = () => {
           onLanguageToggle={handleLanguageToggle}
           isTranslating={isTranslating}
         />
-      </div>
+      </>
     );
   }
 

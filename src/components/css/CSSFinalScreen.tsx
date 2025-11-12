@@ -7,7 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
-import MediaButton from '@/components/shared/MediaButton';
+import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
+import ModifyMenu from "@/components/shared/ModifyMenu";
 
 interface CSSFinalScreenProps {
   initialQuestion: string;
@@ -195,6 +196,22 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
               </div>
             )}
 
+            {/* Modify Menu */}
+            <ModifyMenu
+              storyContent={unifiedContent}
+              isEditing={editMode}
+              onEditToggle={handleEditToggle}
+              onContentChange={setUnifiedContent}
+              storyTitle="Storia CSS"
+              className="mb-4"
+            />
+
+            {/* Creative Media Menu */}
+            <CreativeMediaMenu
+              storyContent={unifiedContent}
+              className="mb-4"
+            />
+
             {/* Action buttons */}
             <div className="flex flex-wrap gap-3 pt-4">
               <Button onClick={handleListen} variant="outline">
@@ -210,12 +227,6 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
                 <Languages className="w-4 h-4 mr-2" />
                 {isTranslating ? 'Traduzione...' : (language === 'italian' ? 'ENGLISH' : 'ITALIANO')}
               </Button>
-              
-              <MediaButton 
-                storyContent={unifiedContent}
-                storyTitle="Storia CSS"
-                userId={profileId}
-              />
               
               <Button variant="outline" onClick={handleShare}>
                 <Share className="w-4 h-4 mr-2" />

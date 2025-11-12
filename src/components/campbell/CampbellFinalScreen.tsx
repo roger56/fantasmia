@@ -6,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
-import MediaButton from '@/components/shared/MediaButton';
 import ModifyMenu from "@/components/shared/ModifyMenu";
 import CreativeMediaMenu from "@/components/shared/CreativeMediaMenu";
 
@@ -187,12 +186,6 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
             <Languages className="w-4 h-4 mr-2" />
             {language === 'italian' ? 'ENGLISH' : 'ITALIANO'}
           </Button>
-          
-          <MediaButton 
-            storyContent={cleanedContent}
-            storyTitle="Il Viaggio dell'Eroe"
-            userId={profileId}
-          />
           
           <Button variant="outline" onClick={handleEditClick}>
             <Edit className="w-4 h-4 mr-2" />

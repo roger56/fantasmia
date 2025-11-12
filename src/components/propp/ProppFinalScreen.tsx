@@ -6,7 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { FileText, Globe, Home, Save } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/hooks/use-toast';
-import MediaButton from '@/components/shared/MediaButton';
 import ModifyMenu from "@/components/shared/ModifyMenu";
 import CreativeMediaMenu from "@/components/shared/CreativeMediaMenu";
 
@@ -125,13 +124,7 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
                 <Globe className="w-4 h-4 mr-2" />
                 {getButtonText()}
               </Button>
-              <MediaButton 
-                storyContent={finalStory}
-                storyTitle={storyTitle || "Storia Propp"}
-                userId={profileId}
-                className="px-6"
-              />
-              <Button 
+              <Button
                 onClick={handleCopyToClipboard}
                 variant="outline" 
                 className="px-6"
