@@ -238,34 +238,60 @@ export async function generateAlbumZIP(
   pdfBlob: Blob,
   stories: StoryForAlbum[]
 ): Promise<Blob> {
+  console.log('📦 Inizio creazione ZIP con', stories.length, 'storie');
   const zip = new JSZip();
   
   // Add PDF
   zip.file('album.pdf', pdfBlob);
+  console.log('✅ PDF aggiunto allo ZIP');
   
-  // Add metadata JSON
+  // Add manifest.json con struttura completa
   const metadata = {
-    title: album.title,
-    author: album.author,
+    albumTitle: album.title,
     createdAt: album.createdAt,
-    stories: album.stories,
-    settings: album.settingsSnapshot
+    createdBy: album.author,
+    stories: album.stories.map((s, idx) => ({
+      id: s.storyId,
+      title: s.title,
+      author: album.author,
+      hasImage: stories[idx]?.mediaAsset?.data ? true : false
+    })),
+    format: album.settingsSnapshot.pageSize,
+    pageCount: album.stories.reduce((acc, s) => acc + s.pagesAlloc.text + s.pagesAlloc.image, 2) // +2 for cover and index
   };
-  zip.file('album.json', JSON.stringify(metadata, null, 2));
+  zip.file('manifest.json', JSON.stringify(metadata, null, 2));
+  console.log('✅ manifest.json creato');
+  
+  // Add texts folder
+  const textsFolder = zip.folder('texts');
+  if (textsFolder) {
+    for (const item of stories) {
+      const fileName = `${item.story.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+      const textContent = `Titolo: ${item.story.title}\nAutore: ${album.author}\n\nTesto:\n${item.story.text}`;
+      textsFolder.file(fileName, textContent);
+    }
+    console.log('✅', stories.length, 'file di testo aggiunti');
+  }
   
   // Add images folder
   const imagesFolder = zip.folder('images');
   if (imagesFolder) {
+    let imageCount = 0;
     for (const item of stories) {
       if (item.mediaAsset?.data) {
-        const fileName = `${item.story.id}.webp`;
+        const fileName = `${item.story.title.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
         imagesFolder.file(fileName, item.mediaAsset.data);
+        imageCount++;
       }
     }
+    console.log('✅', imageCount, 'immagini aggiunte');
   }
   
   // Generate ZIP
-  return await zip.generateAsync({ type: 'blob' });
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  console.log('✅ ZIP generato, dimensione:', (zipBlob.size / 1024 / 1024).toFixed(2), 'MB');
+  
+  return zipBlob;
 }
 
 export function calculatePagesAllocation(storyType: string): { text: number; image: 1 } {
