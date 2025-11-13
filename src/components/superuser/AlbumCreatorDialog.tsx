@@ -58,6 +58,8 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
       return;
     }
 
+    console.log('📘 AlbumBuilder - storie selezionate:', stories.map(s => ({ id: s.id, title: s.title, mode: s.mode })));
+
     setIsGenerating(true);
     setProgress(0);
     setProgressMessage('Preparazione...');
@@ -80,6 +82,8 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
         });
       }
 
+      console.log('📄 Storie preparate per album:', storiesForAlbum.length);
+
       // Generate PDF
       const generator = new AlbumPDFGenerator(config);
       const pdfBlob = await generator.generateAlbum(
@@ -92,6 +96,7 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
         }
       );
 
+      console.log('🧾 PDF generato, size:', (pdfBlob.size / 1024 / 1024).toFixed(2), 'MB');
       setGeneratedPdfBlob(pdfBlob);
 
       // Generate ZIP
@@ -114,9 +119,12 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
 
       const zipBlob = await generateAlbumZIP(albumData, pdfBlob, storiesForAlbum);
       setGeneratedZipBlob(zipBlob);
+      
+      console.log('📦 ZIP creato con', storiesForAlbum.length, 'file, dimensione:', (zipBlob.size / 1024 / 1024).toFixed(2), 'MB');
 
       // Save to IndexedDB
       await fantasMiaDB.saveAlbum(albumData);
+      console.log('💾 Album salvato in IndexedDB');
 
       setProgress(100);
       setProgressMessage('Completato!');
@@ -127,7 +135,7 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
       });
 
     } catch (error) {
-      console.error('Error generating album:', error);
+      console.error('❌ Errore generazione album:', error);
       toast({
         title: "Errore",
         description: "Errore durante la generazione dell'album",
@@ -157,6 +165,7 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
   const handleDownloadZIP = () => {
     if (!generatedZipBlob) return;
     
+    console.log('⬇️ Download ZIP avviato, dimensione:', (generatedZipBlob.size / 1024 / 1024).toFixed(2), 'MB');
     const url = URL.createObjectURL(generatedZipBlob);
     const a = document.createElement('a');
     a.href = url;
@@ -168,6 +177,127 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
       title: "Download avviato",
       description: "Lo ZIP è stato scaricato"
     });
+  };
+
+  const handleSendToPrint = async () => {
+    if (!generatedPdfBlob || !albumTitle) return;
+
+    const confirmed = window.confirm(
+      "Vuoi inviare l'album al centro raccolta per la stampa? Riceverai conferma via email."
+    );
+
+    if (!confirmed) return;
+
+    setIsGenerating(true);
+    setProgress(0);
+    setProgressMessage('Preparazione invio...');
+
+    try {
+      console.log('✉️ Invio email iniziato...');
+      
+      // Convert blobs to base64
+      const blobToBase64 = (blob: Blob): Promise<string> =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = reader.result as string;
+            resolve(base64.split(',')[1]); // Remove data:mime;base64, prefix
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+
+      setProgressMessage('Conversione PDF...');
+      const pdfBase64 = await blobToBase64(generatedPdfBlob);
+      
+      const attachments = [
+        {
+          filename: 'album.pdf',
+          content: pdfBase64,
+          contentType: 'application/pdf'
+        }
+      ];
+
+      // Add ZIP if available and under 15MB
+      if (generatedZipBlob) {
+        const zipSizeMB = generatedZipBlob.size / 1024 / 1024;
+        console.log('📦 Dimensione ZIP:', zipSizeMB.toFixed(2), 'MB');
+        
+        if (zipSizeMB < 15) {
+          setProgressMessage('Conversione ZIP...');
+          const zipBase64 = await blobToBase64(generatedZipBlob);
+          attachments.push({
+            filename: 'album.zip',
+            content: zipBase64,
+            contentType: 'application/zip'
+          });
+        } else {
+          console.warn('⚠️ ZIP troppo grande (>15MB), invio solo PDF e manifest');
+        }
+      }
+
+      const payload = {
+        to: 'roger56@fantasmia.it',
+        subject: `FANTASMIA – Richiesta stampa album: ${albumTitle}`,
+        html: `
+          <h1>Richiesta stampa album</h1>
+          <p><strong>Album:</strong> ${albumTitle}</p>
+          <p><strong>Autore:</strong> ${albumAuthor}</p>
+          <p><strong>Storie incluse:</strong> ${stories.length}</p>
+          <p><strong>Data richiesta:</strong> ${new Date().toLocaleString('it-IT')}</p>
+          <hr>
+          <p>In allegato trovi il PDF dell'album${generatedZipBlob ? ' e lo ZIP completo con testi e immagini' : ''}.</p>
+        `,
+        text: `Richiesta stampa album "${albumTitle}" di ${albumAuthor}. ${stories.length} storie incluse.`,
+        attachments
+      };
+
+      console.log('➡️ Payload:', {
+        subject: payload.subject,
+        to: payload.to,
+        attachmentsCount: attachments.length,
+        attachmentSizes: attachments.map(a => `${a.filename}: ${(a.content.length / 1024).toFixed(2)}KB`)
+      });
+
+      setProgressMessage('Invio in corso...');
+      
+      const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/send_email_ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      console.log('📬 Risposta API status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        throw new Error(`Errore API: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ API Response:', result);
+
+      setProgressMessage('Completato!');
+      setProgress(100);
+
+      toast({
+        title: "✅ Email inviata",
+        description: "La richiesta di stampa è stata inviata con successo al centro raccolta"
+      });
+
+    } catch (error) {
+      console.error('❌ Errore invio email:', error);
+      toast({
+        title: "Errore",
+        description: error instanceof Error ? error.message : "Errore durante l'invio dell'email",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const moveStory = (index: number, direction: 'up' | 'down') => {
@@ -322,6 +452,24 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
                   </Button>
                 )}
               </div>
+
+              <Button 
+                onClick={handleSendToPrint} 
+                size="lg" 
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Invio in corso...
+                  </>
+                ) : (
+                  <>
+                    📮 STAMPA LIBRO
+                  </>
+                )}
+              </Button>
 
               <Button onClick={() => onOpenChange(false)} variant="secondary" className="w-full">
                 Chiudi
