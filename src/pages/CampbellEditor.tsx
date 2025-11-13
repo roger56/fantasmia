@@ -10,6 +10,7 @@ import CampbellWarningScreen from '@/components/campbell/CampbellWarningScreen';
 import CampbellCardSelectionScreen from '@/components/campbell/CampbellCardSelectionScreen';
 import CampbellWritingScreen from '@/components/campbell/CampbellWritingScreen';
 import CampbellFinalScreen from '@/components/campbell/CampbellFinalScreen';
+import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
 const CampbellEditor = () => {
   const navigate = useNavigate();
@@ -191,54 +192,66 @@ const CampbellEditor = () => {
 
   if (currentPhase === 'warning') {
     return (
-      <CampbellWarningScreen 
-        onContinue={() => setCurrentPhase('card-selection')}
-        onExit={handleExit}
-      />
+      <>
+        <ProfileIndicator />
+        <CampbellWarningScreen 
+          onContinue={() => setCurrentPhase('card-selection')}
+          onExit={handleExit}
+        />
+      </>
     );
   }
 
   if (currentPhase === 'card-selection') {
     return (
-      <CampbellCardSelectionScreen
-        selectedCards={selectedCards}
-        onCardSelect={handleCardSelect}
-        onExit={handleExit}
-        onFinish={handleFinishStory}
-        storyContent={getAllContent()}
-      />
+      <>
+        <ProfileIndicator />
+        <CampbellCardSelectionScreen
+          selectedCards={selectedCards}
+          onCardSelect={handleCardSelect}
+          onExit={handleExit}
+          onFinish={handleFinishStory}
+          storyContent={getAllContent()}
+        />
+      </>
     );
   }
 
   if (currentPhase === 'writing' && currentCard) {
     return (
-      <CampbellWritingScreen
-        card={currentCard}
-        currentContent={getCurrentContent()}
-        allContent={getAllContent()}
-        onContentChange={handleContentChange}
-        onBack={handleBackToCards}
-        onSave={handleSaveStory}
-        profileName={profileName}
-        language={language}
-        onLanguageToggle={handleLanguageToggle}
-      />
+      <>
+        <ProfileIndicator />
+        <CampbellWritingScreen
+          card={currentCard}
+          currentContent={getCurrentContent()}
+          allContent={getAllContent()}
+          onContentChange={handleContentChange}
+          onBack={handleBackToCards}
+          onSave={handleSaveStory}
+          profileName={profileName}
+          language={language}
+          onLanguageToggle={handleLanguageToggle}
+        />
+      </>
     );
   }
 
   if (currentPhase === 'final') {
     const currentStoryContent = finalStoryContent || getStoryContent();
     return (
-      <CampbellFinalScreen
-        storyContent={currentStoryContent}
-        onExit={handleExit}
-        onSave={handleSaveStory}
-        profileName={profileName}
-        profileId={profileId}
-        language={language}
-        onLanguageToggle={handleLanguageToggle}
-        onStoryChange={setFinalStoryContent}
-      />
+      <>
+        <ProfileIndicator />
+        <CampbellFinalScreen
+          storyContent={currentStoryContent}
+          onExit={handleExit}
+          onSave={handleSaveStory}
+          profileName={profileName}
+          profileId={profileId}
+          language={language}
+          onLanguageToggle={handleLanguageToggle}
+          onStoryChange={setFinalStoryContent}
+        />
+      </>
     );
   }
 

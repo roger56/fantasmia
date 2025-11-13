@@ -81,6 +81,20 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
       title={`Carta #${card.id}: ${card.title}`}
       subtitle={card.description}
       onBack={onBack}
+      headerContent={
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={handleContinue} size="sm" className="bg-blue-600 hover:bg-blue-700">
+            Continua
+          </Button>
+          
+          <ActionButtonGroup
+            content={fullStoryContent}
+            language={language}
+            onLanguageToggle={onLanguageToggle}
+            onSave={handleSaveClick}
+          />
+        </div>
+      }
     >
       <StoryDisplayCard
         title="La tua storia finora:"
@@ -93,19 +107,6 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
         onChange={handleContentUpdate}
         placeholder="Scrivi qui il seguito della tua storia..."
       />
-
-      <div className="flex flex-wrap gap-3 mt-6">
-        <Button onClick={handleContinue} className="bg-blue-600 hover:bg-blue-700">
-          Continua
-        </Button>
-        
-        <ActionButtonGroup
-          content={fullStoryContent}
-          language={language}
-          onLanguageToggle={onLanguageToggle}
-          onSave={handleSaveClick}
-        />
-      </div>
     </StoryLayout>
   );
 };

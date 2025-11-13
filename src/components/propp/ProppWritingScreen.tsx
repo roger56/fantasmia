@@ -39,13 +39,42 @@ const ProppWritingScreen: React.FC<ProppWritingScreenProps> = ({
           <Button variant="ghost" onClick={onExit}>
             <Home className="w-5 h-5" />
           </Button>
-          <div className="text-center">
+          <div className="text-center flex-1">
             <h1 className="text-xl font-bold text-slate-800">Scrivi il Paragrafo</h1>
             <p className="text-sm text-slate-600">Cluster {currentCluster}/9</p>
           </div>
-          <Button variant="outline" onClick={onSuspend}>
-            <Pause className="w-4 h-4 mr-2" />
-            Sospendi
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onSuspend} size="sm">
+              <Pause className="w-4 h-4 mr-2" />
+              Sospendi
+            </Button>
+          </div>
+        </div>
+        
+        {/* Action buttons moved to top */}
+        <div className="flex gap-3 justify-center mb-6">
+          {canGoBack && (
+            <Button onClick={onBack} variant="outline" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Indietro
+            </Button>
+          )}
+          <Button 
+            onClick={onContinue} 
+            disabled={!currentParagraph.trim()}
+            size="sm"
+          >
+            {isLastCluster ? (
+              <>
+                <FileText className="w-4 h-4 mr-2" />
+                Fine Storia
+              </>
+            ) : (
+              <>
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Continua
+              </>
+            )}
           </Button>
         </div>
 
@@ -94,37 +123,6 @@ const ProppWritingScreen: React.FC<ProppWritingScreenProps> = ({
           maxLines={10}
           onSpeechResult={(text) => onParagraphChange(currentParagraph + (currentParagraph ? ' ' : '') + text)}
         />
-
-        {/* Navigation */}
-        <div className="flex gap-3 justify-center">
-          <Button onClick={onExit} variant="outline">
-            <Home className="w-4 h-4 mr-2" />
-            Home
-          </Button>
-          {canGoBack && (
-            <Button onClick={onBack} variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Indietro
-            </Button>
-          )}
-          <Button 
-            onClick={onContinue} 
-            disabled={!currentParagraph.trim()}
-            className="px-8"
-          >
-            {isLastCluster ? (
-              <>
-                <FileText className="w-4 h-4 mr-2" />
-                Fine Storia
-              </>
-            ) : (
-              <>
-                <ArrowRight className="w-4 h-4 mr-2" />
-                Continua
-              </>
-            )}
-          </Button>
-        </div>
       </div>
     </div>
   );

@@ -81,9 +81,36 @@ const CSSGuidedQuestionsScreen: React.FC<CSSGuidedQuestionsScreenProps> = ({
       onBack={onBack}
       backgroundColor="bg-gradient-to-br from-purple-50 to-blue-50"
       headerContent={
-        <div className="text-sm text-slate-500">
-          {phases.filter(p => p.answer.trim()).length} risposte date
-        </div>
+        <>
+          <div className="text-sm text-slate-500 mb-3">
+            {phases.filter(p => p.answer.trim()).length} risposte date
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={handleSkip} variant="outline" size="sm">
+              <SkipForward className="w-4 h-4 mr-2" />
+              Salta
+            </Button>
+            
+            <Button onClick={handleNext} size="sm" className="bg-purple-600 hover:bg-purple-700">
+              <ArrowRight className="w-4 h-4 mr-2" />
+              {currentQuestionIndex < guidedQuestions.length - 1 ? 'Avanti' : 'Finisci'}
+            </Button>
+            
+            {phases.filter(p => p.answer.trim()).length >= 3 && (
+              <Button onClick={onFinish} variant="outline" size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                Finisci Storia
+              </Button>
+            )}
+            
+            <ActionButtonGroup
+              content={getStoryContent()}
+              language={language}
+              onLanguageToggle={onLanguageToggle}
+              isTranslating={isTranslating}
+              showSave={false}
+            />
+          </div>
+        </>
       }
     >
       {/* Story so far */}
@@ -111,32 +138,6 @@ const CSSGuidedQuestionsScreen: React.FC<CSSGuidedQuestionsScreenProps> = ({
         onChange={handleAnswerChange}
         placeholder="Scrivi la tua risposta qui..."
       />
-
-      <div className="flex flex-wrap gap-3 mt-6">
-        <Button onClick={handleSkip} variant="outline">
-          <SkipForward className="w-4 h-4 mr-2" />
-          Salta
-        </Button>
-        
-        <Button onClick={handleNext} className="bg-purple-600 hover:bg-purple-700">
-          <ArrowRight className="w-4 h-4 mr-2" />
-          {currentQuestionIndex < guidedQuestions.length - 1 ? 'Avanti' : 'Finisci'}
-        </Button>
-        
-        {phases.filter(p => p.answer.trim()).length >= 3 && (
-          <Button onClick={onFinish} variant="outline" className="bg-green-600 hover:bg-green-700 text-white">
-            Finisci Storia
-          </Button>
-        )}
-        
-        <ActionButtonGroup
-          content={getStoryContent()}
-          language={language}
-          onLanguageToggle={onLanguageToggle}
-          isTranslating={isTranslating}
-          showSave={false}
-        />
-      </div>
     </StoryLayout>
   );
 };
