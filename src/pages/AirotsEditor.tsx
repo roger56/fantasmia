@@ -26,7 +26,6 @@ const AirotsEditor = () => {
   const [storyTitle, setStoryTitle] = useState(editStory?.title || '');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [language, setLanguage] = useState<'italian' | 'english'>('italian');
   const [isTranslating, setIsTranslating] = useState(false);
 
@@ -330,7 +329,7 @@ const AirotsEditor = () => {
             <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-bold text-slate-800">Conclusione - AIROTS</h1>
+            <h1 className="text-xl font-bold text-slate-800">La tua storia è pronta!</h1>
             <Button variant="ghost" onClick={() => navigate('/profiles')}>
               <Home className="w-5 h-5" />
             </Button>
@@ -338,18 +337,18 @@ const AirotsEditor = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>La tua storia al contrario è pronta!</CardTitle>
+              <CardTitle>🎉 Inserisci il titolo e salva</CardTitle>
+              <p className="text-slate-600">Il titolo è obbligatorio per salvare la storia</p>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Titolo della Storia al Contrario *
+                  Titolo della Storia *
                 </label>
                 <Textarea
-                  placeholder="Inserisci un titolo che riveli l'essenza rovesciata..."
+                  placeholder="Inserisci un titolo per la tua storia..."
                   value={storyTitle}
                   onChange={handleTitleChange}
-                  disabled={!isEditing}
                   className="text-lg resize-none overflow-hidden min-h-[80px]"
                   style={{ height: 'auto', minHeight: '80px' }}
                   onInput={(e) => {
@@ -366,9 +365,18 @@ const AirotsEditor = () => {
                 </label>
                 <Textarea
                   value={finalStory}
-                  disabled={!isEditing}
-                  className="text-base leading-relaxed resize-none overflow-hidden min-h-[80px]"
-                  style={{ height: 'auto', minHeight: '80px' }}
+                  onChange={(e) => {
+                    const newAnswers = [...answers];
+                    const lines = e.target.value.split('\n');
+                    lines.forEach((line, index) => {
+                      if (index < newAnswers.length) {
+                        newAnswers[index] = line;
+                      }
+                    });
+                    setAnswers(newAnswers);
+                  }}
+                  className="text-base leading-relaxed resize-none overflow-hidden min-h-[200px]"
+                  style={{ height: 'auto', minHeight: '200px' }}
                   onInput={(e) => {
                     const target = e.target as HTMLTextAreaElement;
                     target.style.height = 'auto';
@@ -378,9 +386,13 @@ const AirotsEditor = () => {
               </div>
 
               <div className="flex flex-wrap gap-3 justify-center">
-                <Button onClick={handleSave} className="px-6">
+                <Button 
+                  onClick={handleSave} 
+                  className="px-6"
+                  disabled={!storyTitle.trim()}
+                >
                   <Save className="w-4 h-4 mr-2" />
-                  SALVA
+                  SALVA STORIA
                 </Button>
                 <Button onClick={handleShare} variant="outline" className="px-6">
                   <Share className="w-4 h-4 mr-2" />
@@ -398,17 +410,6 @@ const AirotsEditor = () => {
                 >
                   <Languages className="w-4 h-4 mr-2" />
                   {isTranslating ? 'Traduzione...' : (language === 'italian' ? 'ENGLISH' : 'ITALIANO')}
-                </Button>
-                <Button 
-                  onClick={() => setIsEditing(!isEditing)} 
-                  variant="outline" 
-                  className="px-6"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  {isEditing ? 'SALVA MODIFICHE' : 'MODIFICA'}
-                </Button>
-                <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
-                  NUOVA STORIA
                 </Button>
               </div>
             </CardContent>
