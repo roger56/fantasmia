@@ -53,6 +53,13 @@ interface Album {
   };
 }
 
+interface SystemSettings {
+  id: 'email_config'; // single document pattern
+  minStoriesForEmail: number;
+  maxStoriesForEmail: number;
+  updatedAt: string;
+}
+
 interface AGStory {
   id: string;
   title: string;
@@ -87,7 +94,7 @@ class FantasMiaDB {
   private db: IDBDatabase | null = null;
   private readonly dbConfig: DatabaseConfig = {
     name: 'FantasMiaV2',
-    version: 4 // Bump version for albums store
+    version: 5 // Bump version for system_settings store
   };
 
   async init(): Promise<void> {
@@ -121,7 +128,7 @@ class FantasMiaDB {
         }
         
         // VERIFICA CRITICA: controlla che tutti gli stores richiesti esistano
-        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums'];
+        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings'];
         const missingStores = requiredStores.filter(
           name => !this.db!.objectStoreNames.contains(name)
         );
@@ -143,7 +150,7 @@ class FantasMiaDB {
         console.log('🔄 IndexedDB upgrade from version', event.oldVersion, 'to', event.newVersion);
 
         // Delete existing stores to recreate with proper indices
-        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums'];
+        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings'];
         storeNames.forEach(storeName => {
           if (db.objectStoreNames.contains(storeName)) {
             db.deleteObjectStore(storeName);
@@ -181,6 +188,10 @@ class FantasMiaDB {
         const albumStore = db.createObjectStore('albums', { keyPath: 'id' });
         albumStore.createIndex('by_createdAt', 'createdAt', { unique: false });
         console.log('✅ Created albums store');
+
+        // System Settings store
+        const settingsStore = db.createObjectStore('system_settings', { keyPath: 'id' });
+        console.log('✅ Created system_settings store');
       };
     });
   }
@@ -1025,6 +1036,54 @@ class FantasMiaDB {
     const store = transaction.objectStore('albums');
     await store.delete(albumId);
   }
+
+  // System Settings Management
+  async getSystemSettings(): Promise<SystemSettings> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['system_settings'], 'readonly');
+    const store = transaction.objectStore('system_settings');
+    const request = store.get('email_config');
+    
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        const result = request.result;
+        if (result) {
+          resolve(result);
+        } else {
+          // Return default values if not found
+          const defaults: SystemSettings = {
+            id: 'email_config',
+            minStoriesForEmail: 1,
+            maxStoriesForEmail: 2,
+            updatedAt: new Date().toISOString()
+          };
+          resolve(defaults);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveSystemSettings(settings: Omit<SystemSettings, 'id' | 'updatedAt'>): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['system_settings'], 'readwrite');
+    const store = transaction.objectStore('system_settings');
+    
+    const settingsToSave: SystemSettings = {
+      id: 'email_config',
+      ...settings,
+      updatedAt: new Date().toISOString()
+    };
+    
+    return new Promise((resolve, reject) => {
+      const request = store.put(settingsToSave);
+      request.onsuccess = () => {
+        console.log('✅ System settings saved:', settingsToSave);
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
 }
 
 // Singleton instance
@@ -1077,4 +1136,4 @@ fantasMiaDB.init()
   })
   .catch(console.error);
 
-export type { Profile, AMStory, AGStory, MediaAsset, Album };
+export type { Profile, AMStory, AGStory, MediaAsset, Album, SystemSettings };

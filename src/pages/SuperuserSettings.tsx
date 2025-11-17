@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import AlbumSettings, { AlbumSettingsData } from '@/components/superuser/AlbumSettings';
+import { fantasMiaDB } from '@/utils/indexedDB';
 
 const SuperuserSettings = () => {
   const navigate = useNavigate();
@@ -25,9 +28,79 @@ const SuperuserSettings = () => {
     };
   });
 
+  const [emailSettings, setEmailSettings] = useState({
+    minStoriesForEmail: 1,
+    maxStoriesForEmail: 2
+  });
+
+  const [isLoadingEmailSettings, setIsLoadingEmailSettings] = useState(true);
+
   useEffect(() => {
     localStorage.setItem('fantasmia_album_settings', JSON.stringify(albumSettings));
   }, [albumSettings]);
+
+  useEffect(() => {
+    loadEmailSettings();
+  }, []);
+
+  const loadEmailSettings = async () => {
+    try {
+      const settings = await fantasMiaDB.getSystemSettings();
+      setEmailSettings({
+        minStoriesForEmail: settings.minStoriesForEmail,
+        maxStoriesForEmail: settings.maxStoriesForEmail
+      });
+    } catch (error) {
+      console.error('Error loading email settings:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare le impostazioni email",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingEmailSettings(false);
+    }
+  };
+
+  const handleEmailSettingsChange = async (field: 'minStoriesForEmail' | 'maxStoriesForEmail', value: number) => {
+    const newSettings = { ...emailSettings, [field]: value };
+    
+    // Validation: min must be <= max
+    if (field === 'minStoriesForEmail' && value > newSettings.maxStoriesForEmail) {
+      toast({
+        title: "Errore di validazione",
+        description: "Il minimo non può essere maggiore del massimo",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (field === 'maxStoriesForEmail' && value < newSettings.minStoriesForEmail) {
+      toast({
+        title: "Errore di validazione",
+        description: "Il massimo non può essere minore del minimo",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setEmailSettings(newSettings);
+    
+    try {
+      await fantasMiaDB.saveSystemSettings(newSettings);
+      toast({
+        title: "Impostazioni salvate",
+        description: "Le impostazioni email sono state aggiornate"
+      });
+    } catch (error) {
+      console.error('Error saving email settings:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile salvare le impostazioni",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleSettingClick = (settingName: string) => {
     toast({
@@ -87,6 +160,15 @@ const SuperuserSettings = () => {
       action: () => {}, // Handled inline
       showTooltip: false,
       isInline: true
+    },
+    {
+      title: 'Configurazione invio album via e-mail',
+      description: 'Limiti min/max per selezione storie da inviare',
+      icon: Mail,
+      action: () => {}, // Handled inline
+      showTooltip: false,
+      isInline: true,
+      isEmailConfig: true
     }
   ];
 
@@ -115,10 +197,61 @@ const SuperuserSettings = () => {
             const IconComponent = option.icon;
             
             // Special inline component for Album settings
-            if (option.isInline) {
+            if (option.isInline && !option.isEmailConfig) {
               return (
                 <div key={index} className="md:col-span-2">
                   <AlbumSettings settings={albumSettings} onChange={setAlbumSettings} />
+                </div>
+              );
+            }
+
+            // Special inline component for Email configuration
+            if (option.isEmailConfig) {
+              return (
+                <div key={index} className="md:col-span-2">
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                          <Mail className="w-6 h-6 text-slate-700" />
+                        </div>
+                        <div>
+                          <CardTitle>Configurazione invio album via e-mail</CardTitle>
+                          <p className="text-sm text-slate-600 mt-1">
+                            Definisci il numero minimo e massimo di storie selezionabili per l'invio
+                          </p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingEmailSettings ? (
+                        <p className="text-sm text-muted-foreground">Caricamento...</p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="minStories">Numero minimo di storie</Label>
+                            <Input
+                              id="minStories"
+                              type="number"
+                              min="1"
+                              value={emailSettings.minStoriesForEmail}
+                              onChange={(e) => handleEmailSettingsChange('minStoriesForEmail', parseInt(e.target.value) || 1)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="maxStories">Numero massimo di storie</Label>
+                            <Input
+                              id="maxStories"
+                              type="number"
+                              min="1"
+                              value={emailSettings.maxStoriesForEmail}
+                              onChange={(e) => handleEmailSettingsChange('maxStoriesForEmail', parseInt(e.target.value) || 2)}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
               );
             }
