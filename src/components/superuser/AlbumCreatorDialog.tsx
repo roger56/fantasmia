@@ -180,10 +180,10 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
   };
 
   const handleSendToPrint = async () => {
-    if (!generatedPdfBlob || !albumTitle) return;
+    if (!albumTitle) return;
 
     const confirmed = window.confirm(
-      "Vuoi inviare l'album al centro raccolta per la stampa? Riceverai conferma via email."
+      "Vuoi inviare le storie selezionate al centro raccolta per la stampa? Riceverai conferma via email."
     );
 
     if (!confirmed) return;
@@ -207,32 +207,38 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
           reader.readAsDataURL(blob);
         });
 
-      setProgressMessage('Conversione PDF...');
-      const pdfBase64 = await blobToBase64(generatedPdfBlob);
-      
-      const attachments = [
-        {
-          filename: 'album.pdf',
-          content: pdfBase64,
-          contentType: 'application/pdf'
-        }
-      ];
+      setProgressMessage('Preparazione file...');
+      const attachments = [];
 
-      // Add ZIP if available and under 15MB
-      if (generatedZipBlob) {
-        const zipSizeMB = generatedZipBlob.size / 1024 / 1024;
-        console.log('📦 Dimensione ZIP:', zipSizeMB.toFixed(2), 'MB');
+      // For each story, send only TXT and IMAGE (if present)
+      for (const story of stories) {
+        // Create TXT file for story
+        const txtContent = `Titolo: ${story.title}\nAutore: ${albumAuthor}\n\nTesto:\n${story.text}`;
+        const txtBlob = new Blob([txtContent], { type: 'text/plain' });
+        const txtBase64 = await blobToBase64(txtBlob);
         
-        if (zipSizeMB < 15) {
-          setProgressMessage('Conversione ZIP...');
-          const zipBase64 = await blobToBase64(generatedZipBlob);
-          attachments.push({
-            filename: 'album.zip',
-            content: zipBase64,
-            contentType: 'application/zip'
-          });
-        } else {
-          console.warn('⚠️ ZIP troppo grande (>15MB), invio solo PDF e manifest');
+        const safeFilename = story.title.replace(/[^a-z0-9]/gi, '_');
+        attachments.push({
+          filename: `${safeFilename}.txt`,
+          content: txtBase64,
+          contentType: 'text/plain'
+        });
+
+        console.log(`📄 File testo preparato: ${safeFilename}.txt`);
+
+        // Add image if present
+        if (story.hasImage) {
+          const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(story.id);
+          if (mediaAsset && mediaAsset.data) {
+            const imageBase64 = await blobToBase64(mediaAsset.data);
+            const imageExt = mediaAsset.mime.split('/')[1] || 'png';
+            attachments.push({
+              filename: `${safeFilename}.${imageExt}`,
+              content: imageBase64,
+              contentType: mediaAsset.mime
+            });
+            console.log(`🖼️ Immagine preparata: ${safeFilename}.${imageExt}`);
+          }
         }
       }
 
@@ -246,7 +252,7 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
           <p><strong>Storie incluse:</strong> ${stories.length}</p>
           <p><strong>Data richiesta:</strong> ${new Date().toLocaleString('it-IT')}</p>
           <hr>
-          <p>In allegato trovi il PDF dell'album${generatedZipBlob ? ' e lo ZIP completo con testi e immagini' : ''}.</p>
+          <p>In allegato trovi i file delle storie (testi e immagini).</p>
         `,
         text: `Richiesta stampa album "${albumTitle}" di ${albumAuthor}. ${stories.length} storie incluse.`,
         attachments
@@ -453,6 +459,15 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
                 )}
               </div>
 
+              <Button onClick={() => onOpenChange(false)} variant="secondary" className="w-full">
+                Chiudi
+              </Button>
+            </div>
+          )}
+
+          {/* Send to print section - available before PDF generation */}
+          {!isGenerating && albumTitle && stories.length > 0 && (
+            <div className="pt-4 border-t">
               <Button 
                 onClick={handleSendToPrint} 
                 size="lg" 
@@ -470,10 +485,9 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
                   </>
                 )}
               </Button>
-
-              <Button onClick={() => onOpenChange(false)} variant="secondary" className="w-full">
-                Chiudi
-              </Button>
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                Invia le storie selezionate al centro stampa (solo testi e immagini)
+              </p>
             </div>
           )}
         </div>

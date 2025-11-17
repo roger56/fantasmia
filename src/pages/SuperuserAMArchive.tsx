@@ -224,24 +224,15 @@ const SuperuserAMArchive = () => {
     }
   };
 
-  const handleCreateAlbum = () => {
-    // Get album settings from localStorage
-    const savedSettings = localStorage.getItem('fantasmia_album_settings');
-    const albumSettings = savedSettings ? JSON.parse(savedSettings) : {
-      minStoriesForAlbum: 5,
-      pageSize: 'A4-portrait',
-      margins: 20,
-      fontFamily: 'Arial',
-      fontSizeBody: 12,
-      fontSizeTitles: 18,
-      imageStyleDefault: 'fotografico'
-    };
+  const handleCreateAlbum = async () => {
+    // Get email settings from IndexedDB
+    const emailSettings = await fantasMiaDB.getSystemSettings();
 
-    // Check minimum stories requirement
-    if (selectedStories.size < albumSettings.minStoriesForAlbum) {
+    // Check min/max stories requirement
+    if (selectedStories.size < emailSettings.minStoriesForEmail || selectedStories.size > emailSettings.maxStoriesForEmail) {
       toast({
-        title: "Selezione insufficiente",
-        description: `Seleziona almeno ${albumSettings.minStoriesForAlbum} storie per creare un album`,
+        title: "Selezione non valida",
+        description: `Devi selezionare tra ${emailSettings.minStoriesForEmail} e ${emailSettings.maxStoriesForEmail} storie per l'invio`,
         variant: "destructive"
       });
       return;
