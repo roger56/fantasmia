@@ -12,7 +12,7 @@ import { canAccessStory, getCurrentProfileId } from '@/utils/profileManager';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import ShareMenu from '@/components/shared/ShareMenu';
-import MediaMenu from '@/components/shared/MediaMenu';
+import MediaGenerationDialog from '@/components/shared/MediaGenerationDialog';
 import ModifyMenu from '@/components/shared/ModifyMenu';
 import EditTextDialog from '@/components/shared/EditTextDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
@@ -392,12 +392,11 @@ const UserStoryViewer = () => {
             storyTitle={storyTitle}
           />
           
-          <MediaMenu
+          <MediaGenerationDialog
             storyId={id!}
             storyTitle={storyTitle}
             storyContent={storyText}
-            isSuperuser={false}
-            onMediaUpdate={handleMediaUpdate}
+            userId={story?.ownerProfileId || ''}
           />
 
           <ModifyMenu

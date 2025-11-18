@@ -11,7 +11,7 @@ import { useStoryReading } from '@/hooks/useStoryReading';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import ShareMenu from '@/components/shared/ShareMenu';
-import MediaMenu from '@/components/shared/MediaMenu';
+import MediaGenerationDialog from '@/components/shared/MediaGenerationDialog';
 
 import EditTextDialog from '@/components/shared/EditTextDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
@@ -350,12 +350,11 @@ const SuperuserUserStoryViewer = () => {
             storyTitle={storyTitle}
           />
           
-          <MediaMenu
+          <MediaGenerationDialog
             storyId={id!}
             storyTitle={storyTitle}
             storyContent={storyText}
-            isSuperuser={true}
-            onMediaUpdate={handleMediaUpdate}
+            userId={story?.ownerProfileId || ''}
           />
 
           <DropdownMenu>
