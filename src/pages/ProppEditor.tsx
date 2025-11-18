@@ -8,7 +8,7 @@ import ProppCardSelectionScreen from '@/components/propp/ProppCardSelectionScree
 import ProppWritingScreen from '@/components/propp/ProppWritingScreen';
 import ProppFreeWritingScreen from '@/components/propp/ProppFreeWritingScreen';
 import ProppFinalScreen from '@/components/propp/ProppFinalScreen';
-import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import StoryLayout from '@/components/shared/StoryLayout';
 
 const ProppEditor = () => {
   const navigate = useNavigate();
@@ -281,10 +281,15 @@ const ProppEditor = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      <ProfileIndicator />
+    <StoryLayout
+      title="Editor Propp"
+      subtitle={mode === 'free' ? 'Modalità Libera' : 'Modalità Seriale'}
+      onBack={handleExit}
+      showHomeButton={true}
+      backgroundColor="bg-gradient-to-br from-purple-50 to-pink-50"
+    >
       {renderCurrentPhase()}
-    </div>
+    </StoryLayout>
   );
 };
 
