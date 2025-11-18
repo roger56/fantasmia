@@ -10,7 +10,7 @@ import CSSWarningScreen from '@/components/css/CSSWarningScreen';
 import CSSQuestionSelectionScreen from '@/components/css/CSSQuestionSelectionScreen';
 import CSSGuidedQuestionsScreen from '@/components/css/CSSGuidedQuestionsScreen';
 import CSSFinalScreen from '@/components/css/CSSFinalScreen';
-import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import StoryLayout from '@/components/shared/StoryLayout';
 
 const CSSEditor = () => {
   const navigate = useNavigate();
@@ -214,32 +214,44 @@ const CSSEditor = () => {
 
   if (currentPhase === 'warning') {
     return (
-      <>
-        <ProfileIndicator />
+      <StoryLayout
+        title="Editor CSS"
+        subtitle="Cosa Succede Se..."
+        onBack={handleExit}
+        showHomeButton={true}
+      >
         <CSSWarningScreen 
           onContinue={() => setCurrentPhase('question-selection')}
           onExit={handleExit}
         />
-      </>
+      </StoryLayout>
     );
   }
 
   if (currentPhase === 'question-selection') {
     return (
-      <>
-        <ProfileIndicator />
+      <StoryLayout
+        title="Editor CSS"
+        subtitle="Seleziona la tua domanda"
+        onBack={handleExit}
+        showHomeButton={true}
+      >
         <CSSQuestionSelectionScreen
           onQuestionSelect={handleQuestionSelect}
           onExit={handleExit}
         />
-      </>
+      </StoryLayout>
     );
   }
 
   if (currentPhase === 'guided-questions') {
     return (
-      <>
-        <ProfileIndicator />
+      <StoryLayout
+        title="Editor CSS"
+        subtitle="Costruisci la tua storia"
+        onBack={handleExit}
+        showHomeButton={true}
+      >
         <CSSGuidedQuestionsScreen
           initialQuestion={initialQuestion}
           phases={storyPhases}
@@ -252,14 +264,18 @@ const CSSEditor = () => {
           onLanguageToggle={handleLanguageToggle}
           isTranslating={isTranslating}
         />
-      </>
+      </StoryLayout>
     );
   }
 
   if (currentPhase === 'final') {
     return (
-      <>
-        <ProfileIndicator />
+      <StoryLayout
+        title="Editor CSS"
+        subtitle="Storia completata"
+        onBack={handleExit}
+        showHomeButton={true}
+      >
         <CSSFinalScreen
           initialQuestion={initialQuestion}
           storyContent={getStoryContent()}
@@ -273,7 +289,7 @@ const CSSEditor = () => {
           onLanguageToggle={handleLanguageToggle}
           isTranslating={isTranslating}
         />
-      </>
+      </StoryLayout>
     );
   }
 

@@ -10,7 +10,7 @@ import CampbellWarningScreen from '@/components/campbell/CampbellWarningScreen';
 import CampbellCardSelectionScreen from '@/components/campbell/CampbellCardSelectionScreen';
 import CampbellWritingScreen from '@/components/campbell/CampbellWritingScreen';
 import CampbellFinalScreen from '@/components/campbell/CampbellFinalScreen';
-import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import StoryLayout from '@/components/shared/StoryLayout';
 
 const CampbellEditor = () => {
   const navigate = useNavigate();
@@ -192,20 +192,28 @@ const CampbellEditor = () => {
 
   if (currentPhase === 'warning') {
     return (
-      <>
-        <ProfileIndicator />
+      <StoryLayout
+        title="Editor Campbell"
+        subtitle="Viaggio dell'Eroe"
+        onBack={handleExit}
+        showHomeButton={true}
+      >
         <CampbellWarningScreen 
           onContinue={() => setCurrentPhase('card-selection')}
           onExit={handleExit}
         />
-      </>
+      </StoryLayout>
     );
   }
 
   if (currentPhase === 'card-selection') {
     return (
-      <>
-        <ProfileIndicator />
+      <StoryLayout
+        title="Editor Campbell"
+        subtitle="Seleziona le carte"
+        onBack={handleExit}
+        showHomeButton={true}
+      >
         <CampbellCardSelectionScreen
           selectedCards={selectedCards}
           onCardSelect={handleCardSelect}
@@ -213,14 +221,18 @@ const CampbellEditor = () => {
           onFinish={handleFinishStory}
           storyContent={getAllContent()}
         />
-      </>
+      </StoryLayout>
     );
   }
 
   if (currentPhase === 'writing' && currentCard) {
     return (
-      <>
-        <ProfileIndicator />
+      <StoryLayout
+        title="Editor Campbell"
+        subtitle="Scrivi la tua storia"
+        onBack={handleBackToCards}
+        showHomeButton={true}
+      >
         <CampbellWritingScreen
           card={currentCard}
           currentContent={getCurrentContent()}
@@ -232,15 +244,19 @@ const CampbellEditor = () => {
           language={language}
           onLanguageToggle={handleLanguageToggle}
         />
-      </>
+      </StoryLayout>
     );
   }
 
   if (currentPhase === 'final') {
     const currentStoryContent = finalStoryContent || getStoryContent();
     return (
-      <>
-        <ProfileIndicator />
+      <StoryLayout
+        title="Editor Campbell"
+        subtitle="Storia completata"
+        onBack={handleBackToCards}
+        showHomeButton={true}
+      >
         <CampbellFinalScreen
           storyContent={currentStoryContent}
           onExit={handleExit}
@@ -251,7 +267,7 @@ const CampbellEditor = () => {
           onLanguageToggle={handleLanguageToggle}
           onStoryChange={setFinalStoryContent}
         />
-      </>
+      </StoryLayout>
     );
   }
 

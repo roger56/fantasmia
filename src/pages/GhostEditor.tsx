@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveStoryBridge } from '@/utils/storyBridge';
 import SpeechToText from '@/components/SpeechToText';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
-import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import StoryLayout from '@/components/shared/StoryLayout';
 
 // TypeScript declarations for Speech Recognition API
 declare global {
@@ -234,233 +234,209 @@ const GhostEditor = () => {
 
   if (showFinalScreen) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-        <ProfileIndicator />
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-xl font-bold text-slate-800">Storia Completata - GHOST - {profileName}</h1>
-            <Button variant="ghost" onClick={() => navigate('/profiles')}>
-              <Home className="w-5 h-5" />
-            </Button>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>La tua storia è pronta!</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Titolo della Storia *
-                </label>
-                <Textarea
-                  placeholder="Inserisci il titolo della tua storia..."
-                  value={storyTitle}
-                  onChange={(e) => setStoryTitle(e.target.value)}
-                  className="text-lg resize-none overflow-hidden"
-                  style={{ height: 'auto', minHeight: '2.5rem' }}
-                  onInput={(e) => {
-                    const target = e.target as HTMLTextAreaElement;
-                    target.style.height = 'auto';
-                    target.style.height = target.scrollHeight + 'px';
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  La tua storia
-                </label>
-                <Textarea
-                  value={finalStory}
-                  onChange={(e) => setFinalStory(e.target.value)}
-                  className="text-base leading-relaxed resize-none overflow-hidden"
-                  style={{ height: 'auto', minHeight: '12rem' }}
-                  onInput={(e) => {
-                    const target = e.target as HTMLTextAreaElement;
-                    target.style.height = 'auto';
-                    target.style.height = Math.min(target.scrollHeight, window.innerHeight * 0.6) + 'px';
-                  }}
-                  readOnly
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-3 justify-center">
-                <Button onClick={handleSave} className="px-6">
-                  <Save className="w-4 h-4 mr-2" />
-                  Salva
-                </Button>
-                <Button 
-                  onClick={handleTranslate} 
-                  variant="outline" 
-                  className="px-6" 
-                  disabled={isTranslating}
-                >
-                  <Globe className="w-4 h-4 mr-2" />
-                  {isTranslating ? 'Traduzione...' : (isTranslated ? 'ITALIANO' : 'INGLESE')}
-                </Button>
-                <Button onClick={handleTextToSpeech} variant="outline" className="px-6">
-                  <Volume2 className="w-4 h-4 mr-2" />
-                  ASCOLTA
-                </Button>
-                <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
-                  Nuova Storia
-                </Button>
-                <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
-                  Indietro
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (showFinalDraft) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-        <ProfileIndicator />
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-xl font-bold text-slate-800">Bozza Finale - GHOST</h1>
-            <Button variant="ghost" onClick={() => navigate('/profiles')}>
-              <Home className="w-5 h-5" />
-            </Button>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Rivedi la tua storia</CardTitle>
-              <p className="text-slate-600">
-                Puoi modificare il testo finale prima di salvare
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Textarea
-                value={finalStory}
-                onChange={(e) => setFinalStory(e.target.value)}
-                className="text-base leading-relaxed resize-none overflow-hidden"
-                placeholder="La tua storia apparirà qui..."
-                style={{ height: 'auto', minHeight: '20rem' }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = Math.min(target.scrollHeight, window.innerHeight * 0.6) + 'px';
-                }}
-              />
-
-              <div className="flex gap-3 justify-center">
-                <Button onClick={() => setShowFinalDraft(false)} variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Torna alle Domande
-                </Button>
-                <Button onClick={handleFinalizeDraft}>
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Finalizza Storia
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <ProfileIndicator />
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate('/create-story', { state: { profileId, profileName } })}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-slate-800">Modalità GHOST</h1>
-            <span className="text-lg font-semibold text-slate-600">{currentQuestion + 1}/6</span>
-          </div>
-          <Button variant="ghost" onClick={() => navigate('/profiles')}>
-            <Home className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* Current Question and Previous Answers */}
-        <Card className="mb-6">
+      <StoryLayout
+        title="Storia Completata - GHOST"
+        subtitle={profileName}
+        onBack={() => navigate('/create-story', { state: { profileId, profileName } })}
+        showHomeButton={true}
+        backgroundColor="bg-gradient-to-br from-slate-50 to-slate-100"
+      >
+        <Card>
           <CardHeader>
-            <CardTitle className="text-xl text-blue-800">
-              {questions[currentQuestion].question}
-            </CardTitle>
-            <p className="text-slate-600 text-sm">
-              {questions[currentQuestion].suggestion}
-            </p>
+            <CardTitle>La tua storia è pronta!</CardTitle>
           </CardHeader>
-          <CardContent>
-            {/* Previous Answers - Compact Display */}
-            {currentQuestion > 0 && (
-              <div className="mb-4">
-                <h4 className="font-medium text-slate-700 mb-2">La tua storia fino a ora:</h4>
-                <div className="border rounded p-4 bg-slate-50 space-y-1">
-                  {answers.slice(0, currentQuestion).map((answer, index) => (
-                    <div key={index} className="text-sm">
-                      <span className="font-medium text-slate-700">{questions[index].question}</span>
-                      <span className="text-slate-500 mx-2">–</span>
-                      <span className="text-slate-800">{answer}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* New Answer Input */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Scrivi la tua risposta</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
+          <CardContent className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Titolo della Storia *
+              </label>
               <Textarea
-                value={currentAnswer}
-                onChange={(e) => setCurrentAnswer(e.target.value)}
-                placeholder="Scrivi qui la tua risposta..."
-                className="text-base resize-none overflow-hidden"
-                style={{ height: 'auto', minHeight: '3rem' }}
+                placeholder="Inserisci il titolo della tua storia..."
+                value={storyTitle}
+                onChange={(e) => setStoryTitle(e.target.value)}
+                className="text-lg resize-none overflow-hidden"
+                style={{ height: 'auto', minHeight: '2.5rem' }}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;
                   target.style.height = 'auto';
                   target.style.height = target.scrollHeight + 'px';
                 }}
               />
-              <SpeechToText
-                onResult={(text) => setCurrentAnswer(prev => prev + (prev ? ' ' : '') + text)}
-                className="shrink-0"
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                La tua storia
+              </label>
+              <Textarea
+                value={finalStory}
+                onChange={(e) => setFinalStory(e.target.value)}
+                className="text-base leading-relaxed resize-none overflow-hidden"
+                style={{ height: 'auto', minHeight: '12rem' }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = Math.min(target.scrollHeight, window.innerHeight * 0.6) + 'px';
+                }}
+                readOnly
               />
+            </div>
+
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Button onClick={handleSave} className="px-6">
+                <Save className="w-4 h-4 mr-2" />
+                Salva
+              </Button>
+              <Button 
+                onClick={handleTranslate} 
+                variant="outline" 
+                className="px-6" 
+                disabled={isTranslating}
+              >
+                <Globe className="w-4 h-4 mr-2" />
+                {isTranslating ? 'Traduzione...' : (isTranslated ? 'ITALIANO' : 'INGLESE')}
+              </Button>
+              <Button onClick={handleTextToSpeech} variant="outline" className="px-6">
+                <Volume2 className="w-4 h-4 mr-2" />
+                ASCOLTA
+              </Button>
+              <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
+                Nuova Storia
+              </Button>
+              <Button onClick={() => navigate('/create-story', { state: { profileId, profileName } })} variant="outline" className="px-6">
+                Indietro
+              </Button>
             </div>
           </CardContent>
         </Card>
+      </StoryLayout>
+    );
+  }
 
-        {/* Navigation Buttons */}
-        <div className="flex gap-3 justify-center">
+  if (showFinalDraft) {
+    return (
+      <StoryLayout
+        title="Bozza Finale - GHOST"
+        subtitle="Rivedi la tua storia"
+        onBack={() => navigate('/create-story', { state: { profileId, profileName } })}
+        showHomeButton={true}
+        backgroundColor="bg-gradient-to-br from-slate-50 to-slate-100"
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Rivedi la tua storia</CardTitle>
+            <p className="text-slate-600">
+              Puoi modificare il testo finale prima di salvare
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Textarea
+              value={finalStory}
+              onChange={(e) => setFinalStory(e.target.value)}
+              className="text-base leading-relaxed resize-none overflow-hidden"
+              placeholder="La tua storia apparirà qui..."
+              style={{ height: 'auto', minHeight: '20rem' }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = Math.min(target.scrollHeight, window.innerHeight * 0.6) + 'px';
+              }}
+            />
+
+            <div className="flex gap-3 justify-center">
+              <Button onClick={() => setShowFinalDraft(false)} variant="outline">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Torna alle Domande
+              </Button>
+              <Button onClick={handleFinalizeDraft}>
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Finalizza Storia
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </StoryLayout>
+    );
+  }
+
+  return (
+    <StoryLayout
+      title="Modalità GHOST"
+      subtitle={`${questions[currentQuestion].question} (${currentQuestion + 1}/6)`}
+      onBack={() => navigate('/create-story', { state: { profileId, profileName } })}
+      showHomeButton={true}
+      backgroundColor="bg-gradient-to-br from-slate-50 to-slate-100"
+    >
+      {/* Current Question and Previous Answers */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-xl text-blue-800">
+            {questions[currentQuestion].question}
+          </CardTitle>
+          <p className="text-slate-600 text-sm">
+            {questions[currentQuestion].suggestion}
+          </p>
+        </CardHeader>
+        <CardContent>
+          {/* Previous Answers - Compact Display */}
           {currentQuestion > 0 && (
-            <Button onClick={handleBack} variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Indietro
-            </Button>
+            <div className="mb-4">
+              <h4 className="font-medium text-slate-700 mb-2">La tua storia fino a ora:</h4>
+              <div className="border rounded p-4 bg-slate-50 space-y-1">
+                {answers.slice(0, currentQuestion).map((answer, index) => (
+                  <div key={index} className="text-sm">
+                    <span className="font-medium text-slate-700">{questions[index].question}</span>
+                    <span className="text-slate-500 mx-2">–</span>
+                    <span className="text-slate-800">{answer}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-          <Button onClick={handleContinue} disabled={!currentAnswer.trim()}>
-            <ArrowRight className="w-4 h-4 mr-2" />
-            Continua
+        </CardContent>
+      </Card>
+
+      {/* New Answer Input */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg">Scrivi la tua risposta</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Textarea
+              value={currentAnswer}
+              onChange={(e) => setCurrentAnswer(e.target.value)}
+              placeholder="Scrivi qui la tua risposta..."
+              className="text-base resize-none overflow-hidden"
+              style={{ height: 'auto', minHeight: '3rem' }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = target.scrollHeight + 'px';
+              }}
+            />
+            <SpeechToText
+              onResult={(text) => setCurrentAnswer(prev => prev + (prev ? ' ' : '') + text)}
+              className="shrink-0"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex gap-3 justify-center">
+        {currentQuestion > 0 && (
+          <Button onClick={handleBack} variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Indietro
           </Button>
-        </div>
+        )}
+        <Button onClick={handleContinue} disabled={!currentAnswer.trim()}>
+          <ArrowRight className="w-4 h-4 mr-2" />
+          Continua
+        </Button>
       </div>
-    </div>
+    </StoryLayout>
   );
 };
 
