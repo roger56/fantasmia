@@ -495,28 +495,33 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     }
   };
 
+  // Se il componente è controllato dall'esterno (tramite open/onOpenChange props),
+  // non mostrare il DropdownMenu trigger ma solo il Dialog
+  const isExternallyControlled = externalOpen !== undefined && externalOnOpenChange !== undefined;
+
   return (
     <>
-      <TooltipProvider>
-        <Tooltip>
-          <DropdownMenu>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className={`px-6 ${className}`} disabled={isGenerating}>
-                  {isGenerating ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Palette className="w-4 h-4 mr-2" />
-                  )}
-                  {isGenerating ? "Generando..." : "MEDIA"}
-                </Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Queste funzioni prevedono un utilizzo estensivo di package AI e pagamenti relativi</p>
-            </TooltipContent>
+      {!isExternallyControlled && (
+        <TooltipProvider>
+          <Tooltip>
+            <DropdownMenu>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className={`px-6 ${className}`} disabled={isGenerating}>
+                    {isGenerating ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Palette className="w-4 h-4 mr-2" />
+                    )}
+                    {isGenerating ? "Generando..." : "MEDIA"}
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Queste funzioni prevedono un utilizzo estensivo di package AI e pagamenti relativi</p>
+              </TooltipContent>
 
-            <DropdownMenuContent className="w-56 bg-white border shadow-lg z-50">
+              <DropdownMenuContent className="w-56 bg-white border shadow-lg z-50">
               {/* Disegno */}
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer">Disegno</DropdownMenuSubTrigger>
@@ -623,6 +628,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           </DropdownMenu>
         </Tooltip>
       </TooltipProvider>
+      )}
 
       {/* Image Display Dialog */}
       <Dialog open={showImageDialog} onOpenChange={(open) => handleCloseDialog(setShowImageDialog, open)}>
