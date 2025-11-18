@@ -13,7 +13,7 @@ import { fantasMiaDB } from '@/utils/indexedDB';
 import { useStoryReading } from '@/hooks/useStoryReading';
 import StoryLayout from '@/components/shared/StoryLayout';
 import FileUploadDialog from '@/components/shared/FileUploadDialog';
-import MediaButton from '@/components/shared/MediaGenerationDialog';
+import MediaGenerationDialog from '@/components/shared/MediaGenerationDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
 import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
@@ -388,9 +388,9 @@ const AGStoryDetail = () => {
           />
         )}
 
-        {/* Media Generation with AI */}
+        {/* Media Generation Dialog */}
         {story && (
-          <MediaButton
+          <MediaGenerationDialog
             open={showMediaGeneration}
             onOpenChange={setShowMediaGeneration}
             storyContent={story.content}
