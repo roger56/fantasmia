@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Feather, Loader2 } from 'lucide-react';
-import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Feather, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface PoetryGeneratorProps {
   storyContent: string;
@@ -12,40 +12,45 @@ interface PoetryGeneratorProps {
   className?: string;
 }
 
-const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({
-  storyContent,
-  storyTitle = '',
-  className = ''
-}) => {
+const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({ storyContent, storyTitle = "", className = "" }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedPoetry, setGeneratedPoetry] = useState('');
+  const [generatedPoetry, setGeneratedPoetry] = useState("");
   const { toast } = useToast();
 
   const handleGeneratePoetry = async () => {
-    if (!CLOUD_ENABLED || !supabase) {
+    // Niente più CLOUD_ENABLED / supabase: chiamiamo direttamente Vercel
+    if (!storyContent || !storyContent.trim()) {
       toast({
-        title: "Funzione non disponibile",
-        description: "Cloud sync disabilitato - funzionalità AI non disponibili",
-        variant: "destructive"
+        title: "Testo mancante",
+        description: "Scrivi prima una storia per poter generare una poesia.",
+        variant: "destructive",
       });
       return;
     }
-    
+
     setIsGenerating(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-poetry', {
-        body: {
-          storyContent,
-          storyTitle,
-          language: 'it',
-          maxLines: 10
-        }
+      // Costruiamo un tema: se c’è il titolo lo includiamo, altrimenti solo il contenuto
+      const theme = storyTitle?.trim() ? `${storyTitle.trim()} – ${storyContent}` : storyContent;
+
+      const response = await fetch("https://fantasmia-ai.vercel.app/api/openai/poetry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          theme,
+          style: "lirica", // oppure rendilo dinamico in futuro
+        }),
       });
 
-      if (error) {
-        throw new Error(error.message);
+      if (!response.ok) {
+        console.error("Poetry API HTTP error:", response.status, response.statusText);
+        throw new Error(`HTTP ${response.status}`);
       }
+
+      const data = await response.json();
 
       if (data?.poetry) {
         setGeneratedPoetry(data.poetry);
@@ -54,14 +59,15 @@ const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({
           description: "Poesia generata con successo!",
         });
       } else {
-        throw new Error('Nessuna poesia ricevuta');
+        console.error("Poetry API: risposta senza poesia valida", data);
+        throw new Error("Nessuna poesia ricevuta");
       }
     } catch (error) {
-      console.error('Error generating poetry:', error);
+      console.error("Error generating poetry:", error);
       toast({
         title: "Errore",
         description: "Non è stato possibile generare la poesia. Riprova più tardi.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
@@ -69,7 +75,7 @@ const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({
   };
 
   const handleReset = () => {
-    setGeneratedPoetry('');
+    setGeneratedPoetry("");
   };
 
   return (
@@ -83,15 +89,9 @@ const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({
       <CardContent>
         {!generatedPoetry ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Genera una poesia in rima di massimo 10 righe ispirata alla tua storia:
-            </p>
-            
-            <Button
-              onClick={handleGeneratePoetry}
-              disabled={isGenerating}
-              className="w-full"
-            >
+            <p className="text-sm text-muted-foreground mb-4">Genera una poesia in rima ispirata alla tua storia:</p>
+
+            <Button onClick={handleGeneratePoetry} disabled={isGenerating} className="w-full">
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -110,19 +110,13 @@ const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({
             <div className="flex items-center justify-between">
               <h4 className="font-semibold text-lg">Poesia generata</h4>
             </div>
-            
+
             <ScrollArea className="h-64 w-full border rounded-md p-4">
-              <div className="whitespace-pre-wrap text-sm leading-relaxed italic">
-                {generatedPoetry}
-              </div>
+              <div className="whitespace-pre-wrap text-sm leading-relaxed italic">{generatedPoetry}</div>
             </ScrollArea>
-            
+
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleReset}
-                className="flex items-center gap-2"
-              >
+              <Button variant="outline" onClick={handleReset} className="flex items-center gap-2">
                 <Feather className="w-4 h-4" />
                 Genera nuova poesia
               </Button>
