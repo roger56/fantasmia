@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +38,7 @@ const TextImprover: React.FC<TextImproverProps> = ({
 }) => {
   const [isImproving, setIsImproving] = useState(false);
   const [improvedText, setImprovedText] = useState("");
-  const [selectedStyle, setSelectedStyle] = useState<"ironico" | "fantasy" | "semplice" | "fantasioso" | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<"ironico" | "fantasy" | "semplice" | "fantasioso">("ironico");
   const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -63,21 +64,11 @@ const TextImprover: React.FC<TextImproverProps> = ({
     return null;
   };
 
-  const styleOptions = [
-    { value: "ironico" as const, label: "Ironico", description: "Tono ironico e divertente" },
-    { value: "fantasy" as const, label: "Fantasy", description: "Stile fantasy e magico" },
-    { value: "semplice" as const, label: "Semplice e leggero", description: "Linguaggio semplice e scorrevole" },
-    { value: "fantasioso" as const, label: "Fantasioso", description: "Ricco di fantasia e creatività" },
-  ];
-
-  const improveText = (style: typeof selectedStyle) => {
-    setSelectedStyle(style);
+  const improveText = () => {
     setShowCopyrightWarning(true);
   };
 
   const handleProceedWithImprovement = async () => {
-    if (!selectedStyle) return;
-
     setShowCopyrightWarning(false);
     setIsImproving(true);
 
@@ -300,7 +291,6 @@ const TextImprover: React.FC<TextImproverProps> = ({
 
   const handleChangeStyle = () => {
     setImprovedText("");
-    setSelectedStyle(null);
   };
 
   return (
@@ -316,27 +306,35 @@ const TextImprover: React.FC<TextImproverProps> = ({
           {!improvedText ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground mb-4">Seleziona uno stile per migliorare il tuo testo:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {styleOptions.map((option) => (
-                  <Button
-                    key={option.value}
-                    variant="outline"
-                    onClick={() => improveText(option.value)}
-                    disabled={isImproving}
-                    className="flex flex-col items-start p-4 h-auto text-left"
-                  >
-                    <span className="font-semibold">{option.label}</span>
-                    <span className="text-xs text-muted-foreground">{option.description}</span>
-                  </Button>
-                ))}
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Stile di miglioramento</label>
+                <Select value={selectedStyle} onValueChange={(value) => setSelectedStyle(value as typeof selectedStyle)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona stile" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ironico">Ironico</SelectItem>
+                    <SelectItem value="fantasy">Fantasy</SelectItem>
+                    <SelectItem value="semplice">Semplice e leggero</SelectItem>
+                    <SelectItem value="fantasioso">Fantasioso</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {isImproving && (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                  <span>Migliorando il testo...</span>
-                </div>
-              )}
+              <Button onClick={improveText} disabled={isImproving} className="w-full">
+                {isImproving ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                    Migliorando il testo...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Migliora Testo
+                  </>
+                )}
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">

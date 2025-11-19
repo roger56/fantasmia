@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Feather, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +16,7 @@ interface PoetryGeneratorProps {
 const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({ storyContent, storyTitle = "", className = "" }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPoetry, setGeneratedPoetry] = useState("");
+  const [poetryStyle, setPoetryStyle] = useState<string>("lirica");
   const { toast } = useToast();
 
   const handleGeneratePoetry = async () => {
@@ -41,7 +43,7 @@ const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({ storyContent, storyTi
         },
         body: JSON.stringify({
           theme,
-          style: "lirica", // oppure rendilo dinamico in futuro
+          style: poetryStyle,
         }),
       });
 
@@ -91,6 +93,22 @@ const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({ storyContent, storyTi
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground mb-4">Genera una poesia in rima ispirata alla tua storia:</p>
 
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Forma poetica</label>
+              <Select value={poetryStyle} onValueChange={setPoetryStyle}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona forma poetica" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lirica">Lirica</SelectItem>
+                  <SelectItem value="romantica">Romantica</SelectItem>
+                  <SelectItem value="epica">Epica</SelectItem>
+                  <SelectItem value="sonetto">Sonetto</SelectItem>
+                  <SelectItem value="libera">Libera</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button onClick={handleGeneratePoetry} disabled={isGenerating} className="w-full">
               {isGenerating ? (
                 <>
@@ -111,7 +129,7 @@ const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({ storyContent, storyTi
               <h4 className="font-semibold text-lg">Poesia generata</h4>
             </div>
 
-            <ScrollArea className="h-64 w-full border rounded-md p-4">
+            <ScrollArea className="max-h-64 w-full border rounded-md p-4">
               <div className="whitespace-pre-wrap text-sm leading-relaxed italic">{generatedPoetry}</div>
             </ScrollArea>
 
