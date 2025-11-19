@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Sparkles, Loader2, RefreshCw, X, Check } from 'lucide-react';
-import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
 import CopyrightWarningDialog from './CopyrightWarningDialog';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
@@ -70,21 +69,27 @@ const TextImprover: React.FC<TextImproverProps> = ({
   const handleProceedWithImprovement = async () => {
     if (!selectedStyle) return;
     
-    if (!CLOUD_ENABLED || !supabase) {
-      toast({
-        title: "Funzione non disponibile",
-        description: "Cloud sync disabilitato - funzionalità AI non disponibili",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     setShowCopyrightWarning(false);
     setIsImproving(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('improve-text', {
-        body: {
+      console.log('AI-IMPROVE: Starting text improvement with style:', selectedStyle);
+      
+      const apiUrl = import.meta.env.VITE_OPENAI_API_URL?.replace('/image', '/improve-text') 
+        || "https://fantasmia-ai.vercel.app/api/openai/improve-text";
+      
+      console.log('AI-IMPROVE: Calling endpoint:', apiUrl);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
           input_text: storyContent,
           style: selectedStyle,
           language: 'it',
@@ -92,29 +97,40 @@ const TextImprover: React.FC<TextImproverProps> = ({
           max_lines: 35,
           title: storyTitle,
           temperature: 0.7,
-          seed: null,
-          user_id: (await supabase.auth.getUser()).data.user?.id || 'anonymous'
-        }
+          user_id: 'local-user'
+        }),
+        signal: controller.signal,
+        mode: "cors",
       });
 
-      if (error) {
-        throw new Error(error.message);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AI-IMPROVE: API error response:', errorText);
+        throw new Error(`Errore API: ${response.status} - ${errorText}`);
       }
 
-      if (data?.improvedText) {
-        setImprovedText(data.improvedText);
+      const data = await response.json();
+      console.log('AI-IMPROVE: Response received:', data);
+      
+      const improved = data.improvedText || data.text || data.result;
+      
+      if (improved) {
+        setImprovedText(improved);
         toast({
           title: "Successo",
           description: "Testo migliorato con successo!",
         });
       } else {
-        throw new Error('Nessun testo migliorato ricevuto');
+        console.error('AI-IMPROVE: No improved text in response:', data);
+        throw new Error('Nessun testo migliorato ricevuto dalla risposta');
       }
     } catch (error) {
-      console.error('Error improving text:', error);
+      console.error('AI-IMPROVE: Error improving text:', error);
       toast({
         title: "Errore",
-        description: "Non è stato possibile migliorare il testo. Riprova più tardi.",
+        description: error instanceof Error ? error.message : "Errore durante il miglioramento del testo",
         variant: "destructive"
       });
     } finally {
