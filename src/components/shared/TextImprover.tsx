@@ -15,7 +15,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Sparkles, Loader2, RefreshCw, X, Check } from "lucide-react";
-import CopyrightWarningDialog from "./CopyrightWarningDialog";
 import { useToast } from "@/hooks/use-toast";
 import { fantasMiaDB } from "@/utils/indexedDB";
 
@@ -39,7 +38,6 @@ const TextImprover: React.FC<TextImproverProps> = ({
   const [isImproving, setIsImproving] = useState(false);
   const [improvedText, setImprovedText] = useState("");
   const [selectedStyle, setSelectedStyle] = useState<"ironico" | "fantasy" | "semplice" | "fantasioso">("ironico");
-  const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { toast } = useToast();
@@ -64,12 +62,7 @@ const TextImprover: React.FC<TextImproverProps> = ({
     return null;
   };
 
-  const improveText = () => {
-    setShowCopyrightWarning(true);
-  };
-
-  const handleProceedWithImprovement = async () => {
-    setShowCopyrightWarning(false);
+  const improveText = async () => {
     setIsImproving(true);
 
     try {
@@ -385,12 +378,6 @@ const TextImprover: React.FC<TextImproverProps> = ({
           )}
         </CardContent>
       </Card>
-
-      <CopyrightWarningDialog
-        open={showCopyrightWarning}
-        onOpenChange={setShowCopyrightWarning}
-        onConfirm={handleProceedWithImprovement}
-      />
 
       <AlertDialog open={showReplaceConfirm} onOpenChange={setShowReplaceConfirm}>
         <AlertDialogContent>
