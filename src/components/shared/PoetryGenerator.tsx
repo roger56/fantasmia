@@ -3,20 +3,20 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Feather, Loader2, ChevronDown } from "lucide-react";
+import { Feather, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PoetryGeneratorProps {
   storyContent: string;
   storyTitle?: string;
   className?: string;
+  initialStyle?: string;
 }
 
-const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({ storyContent, storyTitle = "", className = "" }) => {
+const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({ storyContent, storyTitle = "", className = "", initialStyle = "lirica" }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPoetry, setGeneratedPoetry] = useState("");
-  const [poetryStyle, setPoetryStyle] = useState<string>("lirica");
+  const [poetryStyle, setPoetryStyle] = useState<string>(initialStyle);
   const { toast } = useToast();
 
   const handleGeneratePoetry = async () => {
@@ -85,42 +85,13 @@ const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({ storyContent, storyTi
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Feather className="w-5 h-5" />
-          Genera Poesia
+          Genera Poesia - {poetryStyle.charAt(0).toUpperCase() + poetryStyle.slice(1)}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {!generatedPoetry ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">Genera una poesia in rima ispirata alla tua storia:</p>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Forma poetica</label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    <span className="capitalize">{poetryStyle}</span>
-                    <ChevronDown className="w-4 h-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-full bg-background border shadow-lg">
-                  <DropdownMenuItem onClick={() => setPoetryStyle('lirica')}>
-                    Lirica
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setPoetryStyle('romantica')}>
-                    Romantica
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setPoetryStyle('epica')}>
-                    Epica
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setPoetryStyle('sonetto')}>
-                    Sonetto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setPoetryStyle('libera')}>
-                    Libera
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <p className="text-sm text-muted-foreground mb-4">Genera una poesia in forma "{poetryStyle}" ispirata alla tua storia:</p>
 
             <Button onClick={handleGeneratePoetry} disabled={isGenerating} className="w-full">
               {isGenerating ? (

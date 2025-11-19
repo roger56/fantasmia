@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Sparkles, Loader2, RefreshCw, X, Check, ChevronDown } from "lucide-react";
+import { Sparkles, Loader2, RefreshCw, X, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { fantasMiaDB } from "@/utils/indexedDB";
 
@@ -25,6 +24,7 @@ interface TextImproverProps {
   onSave?: (content: string, title: string) => void;
   storyId?: string;
   className?: string;
+  initialStyle?: "ironico" | "fantasy" | "semplice" | "fantasioso";
 }
 
 const TextImprover: React.FC<TextImproverProps> = ({
@@ -34,10 +34,11 @@ const TextImprover: React.FC<TextImproverProps> = ({
   onSave,
   storyId: propStoryId,
   className = "",
+  initialStyle = "ironico",
 }) => {
   const [isImproving, setIsImproving] = useState(false);
   const [improvedText, setImprovedText] = useState("");
-  const [selectedStyle, setSelectedStyle] = useState<"ironico" | "fantasy" | "semplice" | "fantasioso">("ironico");
+  const [selectedStyle, setSelectedStyle] = useState<"ironico" | "fantasy" | "semplice" | "fantasioso">(initialStyle);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { toast } = useToast();
@@ -292,39 +293,15 @@ const TextImprover: React.FC<TextImproverProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5" />
-            Migliora testo (AI)
+            Migliora testo (AI) - {selectedStyle === 'semplice' ? 'Semplice e leggero' : selectedStyle.charAt(0).toUpperCase() + selectedStyle.slice(1)}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {!improvedText ? (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground mb-4">Seleziona uno stile per migliorare il tuo testo:</p>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Stile di miglioramento</label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
-                      <span className="capitalize">{selectedStyle === 'semplice' ? 'Semplice e leggero' : selectedStyle}</span>
-                      <ChevronDown className="w-4 h-4 ml-2" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-full bg-background border shadow-lg">
-                    <DropdownMenuItem onClick={() => setSelectedStyle('ironico')}>
-                      Ironico
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSelectedStyle('fantasy')}>
-                      Fantasy
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSelectedStyle('semplice')}>
-                      Semplice e leggero
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSelectedStyle('fantasioso')}>
-                      Fantasioso
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Migliora il testo della storia con l'AI nello stile "{selectedStyle === 'semplice' ? 'Semplice e leggero' : selectedStyle}".
+              </p>
 
               <Button onClick={improveText} disabled={isImproving} className="w-full">
                 {isImproving ? (
