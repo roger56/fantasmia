@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Feather, Loader2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Feather, Loader2, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PoetryGeneratorProps {
@@ -95,18 +95,31 @@ const PoetryGenerator: React.FC<PoetryGeneratorProps> = ({ storyContent, storyTi
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Forma poetica</label>
-              <Select value={poetryStyle} onValueChange={setPoetryStyle}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona forma poetica" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="lirica">Lirica</SelectItem>
-                  <SelectItem value="romantica">Romantica</SelectItem>
-                  <SelectItem value="epica">Epica</SelectItem>
-                  <SelectItem value="sonetto">Sonetto</SelectItem>
-                  <SelectItem value="libera">Libera</SelectItem>
-                </SelectContent>
-              </Select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    <span className="capitalize">{poetryStyle}</span>
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full bg-background border shadow-lg">
+                  <DropdownMenuItem onClick={() => setPoetryStyle('lirica')}>
+                    Lirica
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setPoetryStyle('romantica')}>
+                    Romantica
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setPoetryStyle('epica')}>
+                    Epica
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setPoetryStyle('sonetto')}>
+                    Sonetto
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setPoetryStyle('libera')}>
+                    Libera
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <Button onClick={handleGeneratePoetry} disabled={isGenerating} className="w-full">

@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Sparkles, Loader2, RefreshCw, X, Check } from "lucide-react";
+import { Sparkles, Loader2, RefreshCw, X, Check, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { fantasMiaDB } from "@/utils/indexedDB";
 
@@ -302,17 +302,28 @@ const TextImprover: React.FC<TextImproverProps> = ({
               
               <div className="space-y-2">
                 <label className="text-sm font-medium">Stile di miglioramento</label>
-                <Select value={selectedStyle} onValueChange={(value) => setSelectedStyle(value as typeof selectedStyle)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleziona stile" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ironico">Ironico</SelectItem>
-                    <SelectItem value="fantasy">Fantasy</SelectItem>
-                    <SelectItem value="semplice">Semplice e leggero</SelectItem>
-                    <SelectItem value="fantasioso">Fantasioso</SelectItem>
-                  </SelectContent>
-                </Select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      <span className="capitalize">{selectedStyle === 'semplice' ? 'Semplice e leggero' : selectedStyle}</span>
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full bg-background border shadow-lg">
+                    <DropdownMenuItem onClick={() => setSelectedStyle('ironico')}>
+                      Ironico
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedStyle('fantasy')}>
+                      Fantasy
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedStyle('semplice')}>
+                      Semplice e leggero
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedStyle('fantasioso')}>
+                      Fantasioso
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               <Button onClick={improveText} disabled={isImproving} className="w-full">
