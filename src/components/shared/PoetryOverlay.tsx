@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Copy, Mail, Wand2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ interface PoetryOverlayProps {
 const PoetryOverlay: React.FC<PoetryOverlayProps> = ({ open, onOpenChange, storyContent, storyTitle = "" }) => {
   const [poetry, setPoetry] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [poetryStyle, setPoetryStyle] = useState<string>("lirica");
   const { toast } = useToast();
 
   const generatePoetry = async () => {
@@ -42,7 +44,7 @@ const PoetryOverlay: React.FC<PoetryOverlayProps> = ({ open, onOpenChange, story
         },
         body: JSON.stringify({
           theme,
-          style: "lirica", // puoi parametrizzarlo in futuro
+          style: poetryStyle,
         }),
       });
 
@@ -128,6 +130,22 @@ const PoetryOverlay: React.FC<PoetryOverlayProps> = ({ open, onOpenChange, story
                   <p className="text-muted-foreground">Crea una poesia in rima ispirata alla tua storia</p>
                 </div>
 
+                <div className="space-y-2 text-left">
+                  <label className="text-sm font-medium">Forma poetica</label>
+                  <Select value={poetryStyle} onValueChange={setPoetryStyle}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona forma poetica" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lirica">Lirica</SelectItem>
+                      <SelectItem value="romantica">Romantica</SelectItem>
+                      <SelectItem value="epica">Epica</SelectItem>
+                      <SelectItem value="sonetto">Sonetto</SelectItem>
+                      <SelectItem value="libera">Libera</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Button onClick={generatePoetry} disabled={isGenerating} className="w-full">
                   {isGenerating ? (
                     <>
@@ -167,7 +185,7 @@ const PoetryOverlay: React.FC<PoetryOverlayProps> = ({ open, onOpenChange, story
                   </div>
                 </div>
 
-                <ScrollArea className="max-h-64">
+                <ScrollArea className="max-h-64 border rounded-md p-4">
                   <div className="whitespace-pre-wrap text-base leading-relaxed italic">{poetry}</div>
                 </ScrollArea>
               </CardContent>
