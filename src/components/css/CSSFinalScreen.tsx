@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
-import CreativeMediaMenu from '@/components/shared/CreativeMediaMenu';
 import ModifyMenu from "@/components/shared/ModifyMenu";
 
 interface CSSFinalScreenProps {
@@ -203,12 +202,6 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
               onEditToggle={handleEditToggle}
               onContentChange={setUnifiedContent}
               storyTitle="Storia CSS"
-              className="mb-4"
-            />
-
-            {/* Creative Media Menu */}
-            <CreativeMediaMenu
-              storyContent={unifiedContent}
               className="mb-4"
             />
 

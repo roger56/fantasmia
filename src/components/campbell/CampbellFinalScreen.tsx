@@ -7,7 +7,6 @@ import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import SaveDialog from '@/components/SaveDialog';
 import HomeButton from '@/components/HomeButton';
 import ModifyMenu from "@/components/shared/ModifyMenu";
-import CreativeMediaMenu from "@/components/shared/CreativeMediaMenu";
 
 interface CampbellFinalScreenProps {
   storyContent: string;
@@ -166,12 +165,6 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
             onStoryChange(newContent);
           } : undefined}
           storyTitle={storyTitle}
-          className="mb-6"
-        />
-
-        {/* Creative Media Menu */}
-        <CreativeMediaMenu
-          storyContent={currentContent}
           className="mb-6"
         />
 

@@ -7,7 +7,6 @@ import { FileText, Globe, Home, Save } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/hooks/use-toast';
 import ModifyMenu from "@/components/shared/ModifyMenu";
-import MediaMenu from "@/components/shared/MediaMenu";
 
 interface ProppFinalScreenProps {
   storyTitle: string;
@@ -103,19 +102,6 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
               storyTitle={storyTitle}
               className="mb-6"
             />
-
-            {/* Media Menu with AI image generation */}
-            {profileId && (
-              <div className="mb-6">
-                <MediaMenu
-                  storyId={`propp-temp-${Date.now()}`}
-                  storyTitle={storyTitle || 'Storia Propp'}
-                  storyContent={finalStory}
-                  userId={profileId}
-                  isSuperuser={false}
-                />
-              </div>
-            )}
 
             <div className="flex flex-wrap gap-3 justify-center">
               <Button onClick={onSave} className="px-6" disabled={!storyTitle.trim()}>

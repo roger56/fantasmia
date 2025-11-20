@@ -12,7 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { useTranslation } from '@/hooks/useTranslation';
 import HomeButton from '@/components/HomeButton';
-import MediaButton from '@/components/shared/MediaButton';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import TextImprover from '@/components/shared/TextImprover';
 
@@ -166,13 +165,6 @@ const StoryViewer = () => {
               <Volume2 className="w-4 h-4 mr-2" />
               {getButtonText()}
             </Button>
-            
-            <MediaButton 
-              storyContent={editedContent}
-              storyTitle={displayTitle}
-              userId={story.authorId}
-              className="w-full sm:w-auto"
-            />
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
