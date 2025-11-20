@@ -4,20 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle, BookOpen, Sparkles, Feather } from 'lucide-react';
+import { ArrowLeft, Home, Volume2, Trash2, AlertTriangle, BookOpen } from 'lucide-react';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useStoryReading } from '@/hooks/useStoryReading';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import ShareMenu from '@/components/shared/ShareMenu';
-import MediaGenerationDialog from '@/components/shared/MediaGenerationDialog';
+import ModifyMenu from '@/components/shared/ModifyMenu';
 
 import EditTextDialog from '@/components/shared/EditTextDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
-import PoetryOverlay from '@/components/shared/PoetryOverlay';
-import TextImprover from '@/components/shared/TextImprover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,8 +27,7 @@ const SuperuserUserStoryViewer = () => {
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showBooks, setShowBooks] = useState(false);
-  const [showPoetry, setShowPoetry] = useState(false);
-  const [showTextImprover, setShowTextImprover] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [ownerProfileName, setOwnerProfileName] = useState<string>('');
   const reading = useStoryReading({
     story,
@@ -350,38 +346,21 @@ const SuperuserUserStoryViewer = () => {
             storyTitle={storyTitle}
           />
           
-          <MediaGenerationDialog
-            storyId={id!}
-            storyTitle={storyTitle}
+          <ModifyMenu
             storyContent={storyText}
-            userId={story?.ownerProfileId || ''}
+            isEditing={isEditing}
+            onEditToggle={() => setShowEditDialog(true)}
+            onContentChange={(newContent) => {
+              if (story) {
+                setStory({ ...story, text: newContent });
+              }
+            }}
+            storyTitle={storyTitle}
+            storyId={id}
+            userRole="superuser"
+            userId={story?.ownerProfileId}
+            onMediaUpdate={() => loadMediaAsset(id!)}
           />
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                Modifica
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                <Edit className="w-4 h-4 mr-2" />
-                Modifica testo/titolo
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowTextImprover(true)}>
-                <Sparkles className="w-4 h-4 mr-2" />
-                Migliora testo (AI)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowPoetry(true)}>
-                <Feather className="w-4 h-4 mr-2" />
-                Poesia (AI)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -492,14 +471,6 @@ const SuperuserUserStoryViewer = () => {
         isSuperuser={true}
       />
 
-      {/* Poetry Overlay */}
-      <PoetryOverlay
-        open={showPoetry}
-        onOpenChange={setShowPoetry}
-        storyContent={storyText}
-        storyTitle={storyTitle}
-      />
-
       {/* Translation Preview */}
       <TranslationPreview
         open={reading.showPreview || reading.isTranslating}
@@ -512,31 +483,6 @@ const SuperuserUserStoryViewer = () => {
         onConfirm={reading.confirmTranslation}
         onCancel={reading.cancelTranslation}
       />
-
-      {/* Text Improver Dialog */}
-      {story && showTextImprover && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <TextImprover
-              storyContent={story.text}
-              onContentChange={(newContent) => {
-                setStory(prev => prev ? { ...prev, text: newContent } : null);
-                loadStory();
-              }}
-              storyTitle={story.title}
-              storyId={story.id}
-              className="bg-background"
-            />
-            <Button
-              variant="outline"
-              onClick={() => setShowTextImprover(false)}
-              className="mt-4 w-full"
-            >
-              Chiudi
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
