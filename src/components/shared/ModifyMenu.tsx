@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Edit, ChevronDown, Sparkles, Loader2, Feather } from 'lucide-react';
+import { Edit, ChevronDown, Sparkles, Loader2, Feather, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
+import MediaGenerationDialog from './MediaGenerationDialog';
+import ImageViewerDialog from './ImageViewerDialog';
+import { getStoryImage } from '@/utils/userStorage';
 
 interface ModifyMenuProps {
   storyContent: string;
@@ -17,6 +21,9 @@ interface ModifyMenuProps {
   storyTitle?: string;
   storyId?: string;
   className?: string;
+  userRole?: 'superuser' | 'user' | 'Superuser';
+  userId?: string;
+  onMediaUpdate?: () => void;
 }
 
 const ModifyMenu: React.FC<ModifyMenuProps> = ({
@@ -26,7 +33,10 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   onContentChange,
   storyTitle = '',
   storyId: propStoryId,
-  className = ""
+  className = "",
+  userRole = 'user',
+  userId,
+  onMediaUpdate
 }) => {
   const { toast } = useToast();
   const { id: routeId } = useParams<{ id: string }>();
@@ -36,16 +46,28 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   const [showPoetryConfirm, setShowPoetryConfirm] = useState(false);
   const [showPoetryResult, setShowPoetryResult] = useState(false);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
+  const [showMediaDialog, setShowMediaDialog] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
   
   // Style states
   const [selectedTextStyle, setSelectedTextStyle] = useState<"ironico" | "fantasy" | "semplice" | "fantasioso">("ironico");
   const [selectedPoetryStyle, setSelectedPoetryStyle] = useState<string>("lirica");
+  const [selectedDrawingStyle, setSelectedDrawingStyle] = useState<string>("");
   
   // Loading and result states
   const [isImproving, setIsImproving] = useState(false);
   const [isGeneratingPoetry, setIsGeneratingPoetry] = useState(false);
   const [improvedText, setImprovedText] = useState("");
   const [generatedPoetry, setGeneratedPoetry] = useState("");
+  const [existingImage, setExistingImage] = useState<any>(null);
+
+  useEffect(() => {
+    const storyIdToUse = getReliableStoryId();
+    if (storyIdToUse) {
+      const image = getStoryImage(storyIdToUse);
+      setExistingImage(image);
+    }
+  }, [propStoryId, routeId]);
 
   const getReliableStoryId = (): string | null => {
     if (routeId) {
@@ -71,6 +93,43 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   const handlePoetryClick = (style: string) => {
     setSelectedPoetryStyle(style);
     setShowPoetryConfirm(true);
+  };
+
+  const handleDrawingClick = (style: string) => {
+    setSelectedDrawingStyle(style);
+    if ((userRole === 'superuser' || userRole === 'Superuser') && getReliableStoryId()) {
+      setShowMediaDialog(true);
+    } else {
+      toast({
+        title: "Accesso limitato",
+        description: "Solo il Superuser può generare immagini"
+      });
+    }
+  };
+
+  const handleViewImage = () => {
+    if (existingImage) {
+      setShowImageViewer(true);
+    } else {
+      toast({
+        title: "Nessuna immagine",
+        description: "Non è presente alcuna immagine per questa storia"
+      });
+    }
+  };
+
+  const handleFilmClick = (type: string) => {
+    toast({ 
+      title: "In sviluppo", 
+      description: `Funzione filmato ${type} in fase di sviluppo` 
+    });
+  };
+
+  const handleVoiceClick = (type: string) => {
+    toast({ 
+      title: "In sviluppo", 
+      description: `Funzione voce ${type} in fase di sviluppo` 
+    });
   };
 
   const improveText = async () => {
@@ -225,71 +284,177 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   };
 
   return (
-    <div className={className}>
-      <div className="flex items-center gap-2">
-        {/* Pulsante Modifica */}
-        <Button variant="outline" size="sm" className="h-8" onClick={handleEditClick}>
-          <Edit className="w-4 h-4 mr-1" />
-          Modifica
-        </Button>
+    <TooltipProvider>
+      <div className={className}>
+        <div className="flex items-center gap-2">
+          {/* Pulsante Modifica */}
+          <Button variant="outline" size="sm" className="h-8" onClick={handleEditClick}>
+            <Edit className="w-4 h-4 mr-1" />
+            Modifica
+          </Button>
 
-        {/* Menu AI con submenu a due livelli */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8">
-              <Sparkles className="w-4 h-4 mr-1" />
-              AI
-              <ChevronDown className="w-3 h-3 ml-1" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="min-w-[200px] bg-background border shadow-lg z-50" align="start">
-            {/* Submenu Miglioramento testo */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="cursor-pointer">
-                Miglioramento testo
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="bg-background border shadow-lg">
-                <DropdownMenuItem onClick={() => handleImproveTextClick("ironico")} className="cursor-pointer">
-                  Ironico
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleImproveTextClick("fantasy")} className="cursor-pointer">
-                  Fantasy
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleImproveTextClick("semplice")} className="cursor-pointer">
-                  Semplice e leggero
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleImproveTextClick("fantasioso")} className="cursor-pointer">
-                  Fantasioso
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+          {/* Menu MEDIA(AI) unificato con submenu a due livelli */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                <Palette className="w-4 h-4 mr-1" />
+                MEDIA(AI)
+                <ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="min-w-[200px] bg-background border shadow-lg z-50" align="start">
+              {/* Submenu DISEGNO */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  DISEGNO
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="bg-background border shadow-lg">
+                  <DropdownMenuItem onClick={() => handleDrawingClick("fumetto")} className="cursor-pointer">
+                    Fumetto
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDrawingClick("fotografico")} className="cursor-pointer">
+                    Fotografico
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDrawingClick("astratto")} className="cursor-pointer">
+                    Astratto
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDrawingClick("manga")} className="cursor-pointer">
+                    Manga
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDrawingClick("acquarello")} className="cursor-pointer">
+                    Acquarello
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDrawingClick("carboncino")} className="cursor-pointer">
+                    Carboncino
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
 
-            {/* Submenu Poesia */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="cursor-pointer">
-                Poesia
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="bg-background border shadow-lg">
-                <DropdownMenuItem onClick={() => handlePoetryClick("lirica")} className="cursor-pointer">
-                  Lirica
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handlePoetryClick("romantica")} className="cursor-pointer">
-                  Romantica
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handlePoetryClick("epica")} className="cursor-pointer">
-                  Epica
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handlePoetryClick("sonetto")} className="cursor-pointer">
-                  Sonetto
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handlePoetryClick("libera")} className="cursor-pointer">
-                  Libera
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+              {/* Submenu MIGLIORA TESTO */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  MIGLIORA TESTO
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="bg-background border shadow-lg">
+                  <DropdownMenuItem onClick={() => handleImproveTextClick("ironico")} className="cursor-pointer">
+                    Ironico
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleImproveTextClick("fantasy")} className="cursor-pointer">
+                    Fantasy
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleImproveTextClick("semplice")} className="cursor-pointer">
+                    Semplice e leggero
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Submenu POESIA con tooltip */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  POESIA
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="bg-background border shadow-lg">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuItem onClick={() => handlePoetryClick("lirica")} className="cursor-pointer">
+                        Lirica
+                      </DropdownMenuItem>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Poesia emozionale, centrata sui sentimenti</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuItem onClick={() => handlePoetryClick("romantica")} className="cursor-pointer">
+                        Romantica
+                      </DropdownMenuItem>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Tema d'amore, tono dolce e ispirato</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuItem onClick={() => handlePoetryClick("epica")} className="cursor-pointer">
+                        Epica
+                      </DropdownMenuItem>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Stile narrativo eroico, avventura e grandezza</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuItem onClick={() => handlePoetryClick("sonetto")} className="cursor-pointer">
+                        Sonetto
+                      </DropdownMenuItem>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Metrica classica con rime strutturate</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuItem onClick={() => handlePoetryClick("libera")} className="cursor-pointer">
+                        Libera
+                      </DropdownMenuItem>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Versi senza schema fisso o rime</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Submenu FILMATO */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  FILMATO
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="bg-background border shadow-lg">
+                  <DropdownMenuItem onClick={() => handleFilmClick("futuristico")} className="cursor-pointer">
+                    Futuristico
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleFilmClick("storico")} className="cursor-pointer">
+                    Storico
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleFilmClick("oggi")} className="cursor-pointer">
+                    Oggi
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleFilmClick("fantasy")} className="cursor-pointer">
+                    Fantasy
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Submenu VOCI */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  VOCI
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="bg-background border shadow-lg">
+                  <DropdownMenuItem onClick={() => handleVoiceClick("uomo")} className="cursor-pointer">
+                    Uomo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleVoiceClick("donna")} className="cursor-pointer">
+                    Donna
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleVoiceClick("bambino")} className="cursor-pointer">
+                    Bambino
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleVoiceClick("bambina")} className="cursor-pointer">
+                    Bambina
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
       {/* Dialog: Conferma miglioramento testo */}
       <Dialog open={showTextConfirm} onOpenChange={setShowTextConfirm}>
@@ -391,7 +556,37 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {/* Media Generation Dialog */}
+      {(userRole === 'superuser' || userRole === 'Superuser') && getReliableStoryId() && (
+        <>
+          <MediaGenerationDialog
+            open={showMediaDialog}
+            onOpenChange={(open) => {
+              setShowMediaDialog(open);
+              if (!open && onMediaUpdate) {
+                onMediaUpdate();
+              }
+            }}
+            storyContent={storyContent}
+            storyTitle={storyTitle}
+            storyId={getReliableStoryId() || ''}
+            userId={userId || (userRole === 'Superuser' ? 'Superuser' : 'superuser')}
+          />
+          
+          {existingImage && (
+            <ImageViewerDialog
+              open={showImageViewer}
+              onOpenChange={setShowImageViewer}
+              imageUrl={existingImage.imageUrl}
+              storyTitle={storyTitle}
+              style={existingImage.style}
+            />
+          )}
+        </>
+      )}
+      </div>
+    </TooltipProvider>
   );
 };
 
