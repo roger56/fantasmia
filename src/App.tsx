@@ -36,7 +36,6 @@ import AirotsEditor from "./pages/AirotsEditor";
 import CampbellEditor from "./pages/CampbellEditor";
 import CSSEditor from "./pages/CSSEditor";
 import ReadingStories from "./pages/ReadingStories";
-import ReadingStoryTypeSelection from "./pages/ReadingStoryTypeSelection";
 import ScienceStories from "./pages/ScienceStories";
 import ScienceStoryEditor from "./pages/ScienceStoryEditor";
 import MagicStoryEditor from "./pages/MagicStoryEditor";
@@ -48,12 +47,10 @@ import SuperuserNordicMythsManagement from "./pages/SuperuserNordicMythsManageme
 import SuperuserExplorersManagement from "./pages/SuperuserExplorersManagement";
 import SuperuserStoryTypeSelection from "./pages/SuperuserStoryTypeSelection";
 import SuperuserReadingStoriesView from "./pages/SuperuserReadingStoriesView";
-import SuperuserReadingStoryViewer from "./pages/SuperuserReadingStoryViewer";
 import UserNordicMyths from "./pages/UserNordicMyths";
 import UserExplorers from "./pages/UserExplorers";
 import ReadingStoryViewer from "./pages/ReadingStoryViewer";
 import UserArchive from "./pages/UserArchive";
-import UserReadingSuperuserStories from "./pages/UserReadingSuperuserStories";
 import StoryTypeSelection from "./pages/StoryTypeSelection";
 import ScienceStoryViewer from "./pages/ScienceStoryViewer";
 import AGReadingStories from "./pages/AGReadingStories";
@@ -124,12 +121,9 @@ const App = () => (
           <Route path="/superuser-am-archive" element={<SuperuserAMArchive />} />
           <Route path="/superuser-story-type-selection" element={<SuperuserStoryTypeSelection />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
-          <Route path="/superuser-reading-story-viewer/:id" element={<SuperuserReadingStoryViewer />} />
           <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
-          <Route path="/user-reading-superuser-stories" element={<UserReadingSuperuserStories />} />
           <Route path="/magic-story-editor" element={<MagicStoryEditor />} />
           <Route path="/science-story-editor" element={<ScienceStoryEditor />} />
-          <Route path="/reading-story-type-selection" element={<ReadingStoryTypeSelection />} />
           
           <Route path="/superuser-science-stories-management" element={<SuperuserScienceStoriesManagement />} />
           <Route path="/superuser-greek-myths-management" element={<SuperuserGreekMythsManagement />} />
