@@ -1,3 +1,4 @@
+// DEPRECATO: non più usato, sostituito da AGStoryDetail (route: /ag-story-detail/:id per NSU, /ag-story-detail-su/:id per SU)
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import StoryLayout from '@/components/shared/StoryLayout';

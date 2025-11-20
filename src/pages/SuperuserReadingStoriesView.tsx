@@ -210,7 +210,7 @@ const SuperuserReadingStoriesView = () => {
       <div className="flex-1 min-w-0">
         <h3 
           className="font-medium text-sm text-blue-600 hover:text-blue-800 cursor-pointer truncate"
-          onClick={() => navigate(`/superuser-reading-story-viewer/${story.id}`)}
+          onClick={() => navigate(`/ag-story-detail-su/${story.id}`)}
         >
           {story.title}
         </h3>
@@ -246,7 +246,7 @@ const SuperuserReadingStoriesView = () => {
           variant="ghost"
           size="sm"
           className="p-1 h-8 w-8 text-blue-600 hover:text-blue-700"
-          onClick={() => navigate(`/superuser-reading-story-viewer/${story.id}`)}
+          onClick={() => navigate(`/ag-story-detail-su/${story.id}`)}
         >
           <Eye className="w-4 h-4" />
         </Button>
