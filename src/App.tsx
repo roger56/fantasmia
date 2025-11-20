@@ -124,7 +124,12 @@ const App = () => (
           <Route path="/superuser-am-archive" element={<SuperuserAMArchive />} />
           <Route path="/superuser-story-type-selection" element={<SuperuserStoryTypeSelection />} />
           <Route path="/superuser-reading-stories-view" element={<SuperuserReadingStoriesView />} />
+          <Route path="/superuser-reading-story-viewer/:id" element={<SuperuserReadingStoryViewer />} />
           <Route path="/superuser-reading-stories-management" element={<SuperuserReadingStoriesManagement />} />
+          <Route path="/user-reading-superuser-stories" element={<UserReadingSuperuserStories />} />
+          <Route path="/magic-story-editor" element={<MagicStoryEditor />} />
+          <Route path="/science-story-editor" element={<ScienceStoryEditor />} />
+          <Route path="/reading-story-type-selection" element={<ReadingStoryTypeSelection />} />
           
           <Route path="/superuser-science-stories-management" element={<SuperuserScienceStoriesManagement />} />
           <Route path="/superuser-greek-myths-management" element={<SuperuserGreekMythsManagement />} />
