@@ -52,7 +52,7 @@ import UserExplorers from "./pages/UserExplorers";
 // import ReadingStoryViewer from "./pages/ReadingStoryViewer"; // DEPRECATO: rimosso, usare AGStoryDetail
 import UserArchive from "./pages/UserArchive";
 import StoryTypeSelection from "./pages/StoryTypeSelection";
-import ScienceStoryViewer from "./pages/ScienceStoryViewer";
+// import ScienceStoryViewer from "./pages/ScienceStoryViewer"; // DEPRECATO: rimosso, usare AGStoryDetail
 import AGReadingStories from "./pages/AGReadingStories";
 import AGScienceStories from "./pages/AGScienceStories";
 import AGGreekMyths from "./pages/AGGreekMyths";
@@ -114,7 +114,6 @@ const App = () => (
           <Route path="/reading-stories" element={<ReadingStories />} />
           <Route path="/science-stories" element={<ScienceStories />} />
           
-          <Route path="/science-story-viewer/:id" element={<ScienceStoryViewer />} />
           <Route path="/user-archive" element={<UserArchive />} />
           <Route path="/user-story-viewer/:id" element={<UserStoryViewer />} />
           <Route path="/superuser-user-story-viewer/:id" element={<SuperuserUserStoryViewer />} />

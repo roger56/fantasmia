@@ -86,7 +86,7 @@ const ScienceStories = () => {
                     {story.content.substring(0, 100)}...
                   </p>
                   <Button 
-                    onClick={() => navigate(`/science-story-viewer/${story.id}`)}
+                    onClick={() => navigate(`/ag-story-detail/${story.id}`)}
                     size="sm"
                     className="w-full"
                   >
