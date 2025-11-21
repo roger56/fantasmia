@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Palette, Globe, Volume2, VolumeX, Trash2, Upload, Wand2, Video, Edit, Eye, Music } from 'lucide-react';
+import { Globe, Volume2, VolumeX, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import { useStoryReading } from '@/hooks/useStoryReading';
@@ -18,6 +17,7 @@ import TranslationPreview from '@/components/shared/TranslationPreview';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
 import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
+import ModifyMenu from '@/components/shared/ModifyMenu';
 
 interface AGStory {
   id: string;
@@ -259,37 +259,20 @@ const AGStoryDetail = () => {
         {/* Action Menu - Top Bar */}
         <div className="flex flex-wrap justify-between items-center gap-3 p-4 bg-accent/30 rounded-lg border">
           <div className="flex flex-wrap gap-2">
-            {/* MEDIA Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Palette className="w-4 h-4" />
-                  MEDIA
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setShowMediaGeneration(true)}>
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Disegno (AI)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleViewImage}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Vedi disegno associato
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowUploadDialog(true)}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Carica da PC
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                  <Video className="w-4 h-4 mr-2" />
-                  Filmato
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                  <Music className="w-4 h-4 mr-2" />
-                  Voci
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* MEDIA(AI) Menu unificato */}
+            <ModifyMenu
+              storyContent={story.content}
+              storyTitle={story.title}
+              storyId={story.id}
+              isEditing={false}
+              onEditToggle={() => {}}
+              showEditButton={false}
+              userRole="superuser"
+              userId="superuser"
+              onUploadClick={() => setShowUploadDialog(true)}
+              onViewImageClick={handleViewImage}
+              onMediaUpdate={handleMediaUpdate}
+            />
 
             {/* Translation */}
             <Button 

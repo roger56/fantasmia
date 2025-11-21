@@ -24,6 +24,9 @@ interface ModifyMenuProps {
   userRole?: 'superuser' | 'user' | 'Superuser';
   userId?: string;
   onMediaUpdate?: () => void;
+  showEditButton?: boolean;
+  onUploadClick?: () => void;
+  onViewImageClick?: () => void;
 }
 
 const ModifyMenu: React.FC<ModifyMenuProps> = ({
@@ -36,7 +39,10 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   className = "",
   userRole = 'user',
   userId,
-  onMediaUpdate
+  onMediaUpdate,
+  showEditButton = true,
+  onUploadClick,
+  onViewImageClick
 }) => {
   const { toast } = useToast();
   const { id: routeId } = useParams<{ id: string }>();
@@ -108,12 +114,25 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   };
 
   const handleViewImage = () => {
-    if (existingImage) {
+    if (onViewImageClick) {
+      onViewImageClick();
+    } else if (existingImage) {
       setShowImageViewer(true);
     } else {
       toast({
         title: "Nessuna immagine",
         description: "Non è presente alcuna immagine per questa storia"
+      });
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (onUploadClick) {
+      onUploadClick();
+    } else {
+      toast({
+        title: "Funzione non disponibile",
+        description: "Upload non configurato"
       });
     }
   };
@@ -288,10 +307,12 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
       <div className={className}>
         <div className="flex items-center gap-2">
           {/* Pulsante Modifica */}
-          <Button variant="outline" size="sm" className="h-8" onClick={handleEditClick}>
-            <Edit className="w-4 h-4 mr-1" />
-            Modifica
-          </Button>
+          {showEditButton && (
+            <Button variant="outline" size="sm" className="h-8" onClick={handleEditClick}>
+              <Edit className="w-4 h-4 mr-1" />
+              Modifica
+            </Button>
+          )}
 
           {/* Menu MEDIA(AI) unificato con submenu a due livelli */}
           <DropdownMenu>
@@ -309,6 +330,9 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
                   DISEGNO
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="bg-background border shadow-lg">
+                  <DropdownMenuItem onClick={handleViewImage} className="cursor-pointer">
+                    Vedi disegno associato
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleDrawingClick("fumetto")} className="cursor-pointer">
                     Fumetto
                   </DropdownMenuItem>
@@ -452,6 +476,15 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
+
+              {/* Carica da PC - solo per superuser */}
+              {(userRole === 'superuser' || userRole === 'Superuser') && onUploadClick && (
+                <>
+                  <DropdownMenuItem onClick={handleUploadClick} className="cursor-pointer">
+                    Carica da PC
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
