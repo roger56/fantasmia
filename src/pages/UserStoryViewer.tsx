@@ -350,7 +350,6 @@ const UserStoryViewer = () => {
           
           <div className="text-center">
             <h1 className="text-xl font-bold text-slate-800">Visualizza Storia</h1>
-            <p className="text-xs text-slate-400 font-mono">/user-story-viewer/{id}</p>
           </div>
           
           <Button 
