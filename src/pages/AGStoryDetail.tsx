@@ -1,30 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Globe, Volume2, VolumeX, Trash2, Edit } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { fantasMiaDB } from '@/utils/indexedDB';
-import { useStoryReading } from '@/hooks/useStoryReading';
-import StoryLayout from '@/components/shared/StoryLayout';
-import FileUploadDialog from '@/components/shared/FileUploadDialog';
-import MediaGenerationDialog from '@/components/shared/MediaGenerationDialog';
-import TranslationPreview from '@/components/shared/TranslationPreview';
-import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
-import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
-import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
-import ModifyMenu from '@/components/shared/ModifyMenu';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Globe, Volume2, VolumeX, Trash2, Edit } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { fantasMiaDB } from "@/utils/indexedDB";
+import { useStoryReading } from "@/hooks/useStoryReading";
+import StoryLayout from "@/components/shared/StoryLayout";
+import FileUploadDialog from "@/components/shared/FileUploadDialog";
+import TranslationPreview from "@/components/shared/TranslationPreview";
+import RecommendedBooksDialog from "@/components/shared/RecommendedBooksDialog";
+import StoryImageIndicator from "@/components/shared/StoryImageIndicator";
+import ImageViewerDialog from "@/components/shared/ImageViewerDialog";
+import ModifyMenu from "@/components/shared/ModifyMenu";
 
 interface AGStory {
   id: string;
   title: string;
   content: string;
-  category: 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers';
-  created_by: 'superuser';
+  category: "world" | "science" | "greek_myths" | "nordic_myths" | "explorers";
+  created_by: "superuser";
   created_at: string;
   updated_at: string;
   has_image: boolean;
@@ -37,21 +36,20 @@ const AGStoryDetail = () => {
   const { toast } = useToast();
   const [story, setStory] = useState<AGStory | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editedStory, setEditedStory] = useState<{ title: string; content: string }>({ title: '', content: '' });
-  
+  const [editedStory, setEditedStory] = useState<{ title: string; content: string }>({ title: "", content: "" });
+
   // Media dialogs
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showMediaGeneration, setShowMediaGeneration] = useState(false);
   const [showBooksDialog, setShowBooksDialog] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
-  const [viewerImageUrl, setViewerImageUrl] = useState<string>('');
-  const [viewerImageStyle, setViewerImageStyle] = useState<string>('');
-  
+  const [viewerImageUrl, setViewerImageUrl] = useState<string>("");
+  const [viewerImageStyle, setViewerImageStyle] = useState<string>("");
+
   // Unified reading service
   const reading = useStoryReading({
-    story: story ? { ...story, content: story.content || '' } : null,
+    story: story ? { ...story, content: story.content || "" } : null,
     onStoryUpdate: (updated) => setStory(updated),
-    storyType: 'ag'
+    storyType: "ag",
   });
 
   useEffect(() => {
@@ -62,24 +60,24 @@ const AGStoryDetail = () => {
     // Listen for image saved events to refresh story state
     const handleImageSaved = (event: CustomEvent) => {
       if (event.detail.storyId === id) {
-        console.log('🔄 Image saved event received, reloading story:', id);
+        console.log("🔄 Image saved event received, reloading story:", id);
         loadStory(id);
       }
     };
 
     const handleMediaUpdated = (event: CustomEvent) => {
       if (event.detail.storyId === id) {
-        console.log('🔄 Media updated event received, reloading story:', id);
+        console.log("🔄 Media updated event received, reloading story:", id);
         loadStory(id);
       }
     };
 
-    window.addEventListener('storyImageSaved', handleImageSaved as EventListener);
-    window.addEventListener('media:updated', handleMediaUpdated as EventListener);
+    window.addEventListener("storyImageSaved", handleImageSaved as EventListener);
+    window.addEventListener("media:updated", handleMediaUpdated as EventListener);
 
     return () => {
-      window.removeEventListener('storyImageSaved', handleImageSaved as EventListener);
-      window.removeEventListener('media:updated', handleMediaUpdated as EventListener);
+      window.removeEventListener("storyImageSaved", handleImageSaved as EventListener);
+      window.removeEventListener("media:updated", handleMediaUpdated as EventListener);
     };
   }, [id]);
 
@@ -89,17 +87,17 @@ const AGStoryDetail = () => {
       if (agStory) {
         setStory(agStory);
         setEditedStory({ title: agStory.title, content: agStory.content });
-        console.log('📖 Loaded AG story:', { id: storyId, title: agStory.title });
+        console.log("📖 Loaded AG story:", { id: storyId, title: agStory.title });
       } else {
         toast({
           title: "Errore",
           description: "Storia non trovata",
           variant: "destructive",
         });
-        navigate('/superuser-story-type-selection');
+        navigate("/superuser-story-type-selection");
       }
     } catch (error) {
-      console.error('❌ Error loading AG story:', error);
+      console.error("❌ Error loading AG story:", error);
       toast({
         title: "Errore",
         description: "Errore nel caricamento della storia",
@@ -122,22 +120,22 @@ const AGStoryDetail = () => {
       ...story,
       title: editedStory.title,
       content: editedStory.content,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     try {
       await fantasMiaDB.saveAGStory(updatedStory);
       setStory(updatedStory);
       setIsEditDialogOpen(false);
-      
+
       toast({
         title: "Storia aggiornata",
         description: "Le modifiche sono state salvate",
       });
-      
-      console.log('✅ AG story updated:', { id: story.id, title: updatedStory.title });
+
+      console.log("✅ AG story updated:", { id: story.id, title: updatedStory.title });
     } catch (error) {
-      console.error('❌ Error updating AG story:', error);
+      console.error("❌ Error updating AG story:", error);
       toast({
         title: "Errore",
         description: "Errore durante l'aggiornamento",
@@ -147,20 +145,20 @@ const AGStoryDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!story || !confirm('Sei sicuro di voler eliminare questa storia?')) return;
+    if (!story || !confirm("Sei sicuro di voler eliminare questa storia?")) return;
 
     try {
       await fantasMiaDB.deleteAGStory(story.id);
-      
+
       toast({
         title: "Storia eliminata",
         description: "La storia è stata rimossa",
       });
-      
-      console.log('🗑️ AG story deleted:', story.id);
-      navigate('/superuser-story-type-selection');
+
+      console.log("🗑️ AG story deleted:", story.id);
+      navigate("/superuser-story-type-selection");
     } catch (error) {
-      console.error('❌ Error deleting AG story:', error);
+      console.error("❌ Error deleting AG story:", error);
       toast({
         title: "Errore",
         description: "Errore durante l'eliminazione",
@@ -188,16 +186,16 @@ const AGStoryDetail = () => {
 
   const handleViewImage = async () => {
     if (!story) return;
-    
+
     try {
       const mediaAsset = await fantasMiaDB.getMediaAssetByStoryId(story.id);
       if (mediaAsset) {
         const blob = new Blob([mediaAsset.data], { type: mediaAsset.mime });
         const url = URL.createObjectURL(blob);
         setViewerImageUrl(url);
-        setViewerImageStyle(mediaAsset.metadata?.style || 'Generato da AI');
+        setViewerImageStyle(mediaAsset.metadata?.style || "Generato da AI");
         setShowImageViewer(true);
-        console.log('🖼️ Opening image viewer for story:', story.id);
+        console.log("🖼️ Opening image viewer for story:", story.id);
       } else {
         toast({
           title: "Nessuna immagine",
@@ -206,7 +204,7 @@ const AGStoryDetail = () => {
         });
       }
     } catch (error) {
-      console.error('❌ Error loading image:', error);
+      console.error("❌ Error loading image:", error);
       toast({
         title: "Errore",
         description: "Errore nel caricamento dell'immagine",
@@ -220,19 +218,19 @@ const AGStoryDetail = () => {
       URL.revokeObjectURL(viewerImageUrl);
     }
     setShowImageViewer(false);
-    setViewerImageUrl('');
-    setViewerImageStyle('');
+    setViewerImageUrl("");
+    setViewerImageStyle("");
   };
 
   const getCategoryRoute = (category: string) => {
     const categoryRoutes: Record<string, string> = {
-      'explorers': '/ag-explorers',
-      'greek_myths': '/ag-greek-myths',
-      'nordic_myths': '/ag-nordic-myths',
-      'world': '/ag-reading-stories',
-      'science': '/ag-science-stories'
+      explorers: "/ag-explorers",
+      greek_myths: "/ag-greek-myths",
+      nordic_myths: "/ag-nordic-myths",
+      world: "/ag-reading-stories",
+      science: "/ag-science-stories",
     };
-    return categoryRoutes[category] || '/superuser-story-type-selection';
+    return categoryRoutes[category] || "/superuser-story-type-selection";
   };
 
   if (!story) {
@@ -240,7 +238,7 @@ const AGStoryDetail = () => {
       <StoryLayout
         title="Caricamento..."
         subtitle="Caricamento storia in corso"
-        onBack={() => navigate('/superuser-story-type-selection')}
+        onBack={() => navigate("/superuser-story-type-selection")}
       >
         <div className="text-center py-8">
           <p>Caricamento storia...</p>
@@ -275,8 +273,8 @@ const AGStoryDetail = () => {
             />
 
             {/* Translation */}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => reading.initiateTranslation()}
               disabled={reading.isTranslating}
               className="flex items-center gap-2"
@@ -322,9 +320,7 @@ const AGStoryDetail = () => {
             </div>
             <ScrollArea className="h-[550px]">
               <div className="prose prose-slate max-w-none dark:prose-invert">
-                <div className="whitespace-pre-wrap text-foreground leading-relaxed">
-                  {story.content}
-                </div>
+                <div className="whitespace-pre-wrap text-foreground leading-relaxed">{story.content}</div>
               </div>
             </ScrollArea>
           </CardContent>
@@ -340,21 +336,19 @@ const AGStoryDetail = () => {
               <Input
                 placeholder="Titolo storia"
                 value={editedStory.title}
-                onChange={(e) => setEditedStory(prev => ({ ...prev, title: e.target.value }))}
+                onChange={(e) => setEditedStory((prev) => ({ ...prev, title: e.target.value }))}
               />
               <Textarea
                 placeholder="Contenuto storia"
                 value={editedStory.content}
-                onChange={(e) => setEditedStory(prev => ({ ...prev, content: e.target.value }))}
+                onChange={(e) => setEditedStory((prev) => ({ ...prev, content: e.target.value }))}
                 rows={15}
               />
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Annulla
                 </Button>
-                <Button onClick={handleEditSave}>
-                  Salva modifiche
-                </Button>
+                <Button onClick={handleEditSave}>Salva modifiche</Button>
               </div>
             </div>
           </DialogContent>
@@ -372,26 +366,16 @@ const AGStoryDetail = () => {
         )}
 
         {/* Media Generation Dialog */}
-        {story && (
-          <MediaGenerationDialog
-            open={showMediaGeneration}
-            onOpenChange={setShowMediaGeneration}
-            storyContent={story.content}
-            storyTitle={story.title}
-            storyId={story.id}
-            userId="superuser"
-          />
-        )}
 
         {/* Translation Preview Dialog */}
         <TranslationPreview
           open={reading.showPreview || reading.isTranslating}
           onOpenChange={() => {}}
-          originalTitle={story?.title || ''}
-          originalContent={story?.content || ''}
-          translatedTitle={reading.pendingTranslation?.title || ''}
-          translatedContent={reading.pendingTranslation?.content || ''}
-          language={reading.getCurrentLanguage() === 'italian' ? 'english' : 'italian'}
+          originalTitle={story?.title || ""}
+          originalContent={story?.content || ""}
+          translatedTitle={reading.pendingTranslation?.title || ""}
+          translatedContent={reading.pendingTranslation?.content || ""}
+          language={reading.getCurrentLanguage() === "italian" ? "english" : "italian"}
           onConfirm={reading.confirmTranslation}
           onCancel={reading.cancelTranslation}
           isSuperuser={true}
@@ -401,8 +385,8 @@ const AGStoryDetail = () => {
         <RecommendedBooksDialog
           open={showBooksDialog}
           onOpenChange={setShowBooksDialog}
-          storyId={story?.id || ''}
-          storyTitle={story?.title || ''}
+          storyId={story?.id || ""}
+          storyTitle={story?.title || ""}
           isSuperuser={true}
         />
 
@@ -411,7 +395,7 @@ const AGStoryDetail = () => {
           open={showImageViewer}
           onOpenChange={handleImageViewerClose}
           imageUrl={viewerImageUrl}
-          storyTitle={story?.title || ''}
+          storyTitle={story?.title || ""}
           style={viewerImageStyle}
         />
       </div>
