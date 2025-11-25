@@ -30,6 +30,8 @@ export interface MediaButtonProps {
   userId?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Se false, NON mostra il pulsante "MEDIA" ma solo le dialog interne */
+  showTrigger?: boolean;
 }
 
 const MediaButton: React.FC<MediaButtonProps> = ({
@@ -40,6 +42,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   userId,
   open: externalOpen,
   onOpenChange: externalOnOpenChange,
+  showTrigger = true,
 }) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -187,9 +190,10 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       }
 
       // Create enhanced prompt with user comment and NO TEXT policy
-      const noTextPolicy = "IMPORTANTE: L'immagine non deve contenere testi, parole, scritte o frasi visibili di alcun tipo.";
-      const enhancedPrompt = userComment 
-        ? `${storyContent}\n\nNote aggiuntive: ${userComment}\n\n${noTextPolicy}` 
+      const noTextPolicy =
+        "IMPORTANTE: L'immagine non deve contenere testi, parole, scritte o frasi visibili di alcun tipo.";
+      const enhancedPrompt = userComment
+        ? `${storyContent}\n\nNote aggiuntive: ${userComment}\n\n${noTextPolicy}`
         : `${storyContent}\n\n${noTextPolicy}`;
 
       const requestBody = {
@@ -238,7 +242,6 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi
 
       // CHIAMATA API VERCEL
-      // CHIAMATA API VERCEL - usando variabile d'ambiente
       const openAiImageUrl = import.meta.env.VITE_OPENAI_API_URL || "https://fantasmia-ai.vercel.app/api/openai/image";
       const response = await fetch(openAiImageUrl, {
         method: "POST",
@@ -371,40 +374,40 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       // Detect story type (am or ag)
       const storyType = await fantasMiaDB.detectStoryType(String(storyId));
       if (!storyType) {
-        throw new Error('Story not found');
+        throw new Error("Story not found");
       }
 
       // Check if image already exists for this story
       const existingMedia = await fantasMiaDB.getLatestMediaAssetByStoryId(String(storyId));
-      
+
       if (existingMedia) {
         // Show confirmation dialog
         const confirmReplace = confirm(
-          '⚠️ Esiste già un disegno associato a questa storia.\n\n' +
-          'Vuoi sostituirlo con quello nuovo?\n\n' +
-          '✅ OK = Sostituisci il disegno precedente\n' +
-          '❌ Annulla = Mantieni il disegno esistente'
+          "⚠️ Esiste già un disegno associato a questa storia.\n\n" +
+            "Vuoi sostituirlo con quello nuovo?\n\n" +
+            "✅ OK = Sostituisci il disegno precedente\n" +
+            "❌ Annulla = Mantieni il disegno esistente",
         );
-        
+
         if (!confirmReplace) {
-          console.log('🚫 User cancelled image replacement');
+          console.log("🚫 User cancelled image replacement");
           toast({
             title: "Operazione annullata",
             description: "Il disegno esistente è stato mantenuto",
           });
           return;
         }
-        
+
         // Delete existing media asset
         await fantasMiaDB.deleteMediaAsset(existingMedia.id);
-        console.log('🗑️ Existing image deleted:', existingMedia.id);
+        console.log("🗑️ Existing image deleted:", existingMedia.id);
       }
 
       // Convert base64 to Blob
-      const [header, base64Data] = imageDataUrl.split(',');
+      const [header, base64Data] = imageDataUrl.split(",");
       const mimeMatch = header.match(/data:([^;]+)/);
-      const mime = mimeMatch ? mimeMatch[1] : 'image/png';
-      
+      const mime = mimeMatch ? mimeMatch[1] : "image/png";
+
       const binaryString = atob(base64Data);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
@@ -418,15 +421,15 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         id: assetId,
         storyId: String(storyId),
         ownerProfileId: userId || currentUserId || "superuser",
-        type: 'image' as const,
-        source: 'openai' as const,
+        type: "image" as const,
+        source: "openai" as const,
         mime,
         size: blob.size,
         createdAt: new Date().toISOString(),
         data: blob,
         metadata: {
           style: selectedStyle, // Save the actual style name
-        }
+        },
       };
 
       // Save media asset and update story flag atomically
@@ -497,132 +500,135 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
   return (
     <>
-      <TooltipProvider>
-        <Tooltip>
-          <DropdownMenu>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className={`px-6 ${className}`} disabled={isGenerating}>
-                  {isGenerating ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Palette className="w-4 h-4 mr-2" />
-                  )}
-                  {isGenerating ? "Generando..." : "MEDIA"}
-                </Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Queste funzioni prevedono un utilizzo estensivo di package AI e pagamenti relativi</p>
-            </TooltipContent>
+      {/* TRIGGER opzionale: sparisce quando showTrigger = false */}
+      {showTrigger && (
+        <TooltipProvider>
+          <Tooltip>
+            <DropdownMenu>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className={`px-6 ${className}`} disabled={isGenerating}>
+                    {isGenerating ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Palette className="w-4 h-4 mr-2" />
+                    )}
+                    {isGenerating ? "Generando..." : "MEDIA"}
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Queste funzioni prevedono un utilizzo estensivo di package AI e pagamenti relativi</p>
+              </TooltipContent>
 
-            <DropdownMenuContent className="w-56 bg-white border shadow-lg z-50">
-              {/* Disegno */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="cursor-pointer">Disegno</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="bg-white border shadow-lg">
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => handleMediaAction("Disegno", "Fumetto")}
-                    disabled={isGenerating}
-                  >
-                    Fumetto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => handleMediaAction("Disegno", "Fotografico")}
-                    disabled={isGenerating}
-                  >
-                    Fotografico
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => handleMediaAction("Disegno", "Astratto")}
-                    disabled={isGenerating}
-                  >
-                    Astratto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => handleMediaAction("Disegno", "Manga")}
-                    disabled={isGenerating}
-                  >
-                    Manga
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => handleMediaAction("Disegno", "Acquarello")}
-                    disabled={isGenerating}
-                  >
-                    Acquarello
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => handleMediaAction("Disegno", "Carboncino")}
-                    disabled={isGenerating}
-                  >
-                    Carboncino
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+              <DropdownMenuContent className="w-56 bg-white border shadow-lg z-50">
+                {/* Disegno */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="cursor-pointer">Disegno</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="bg-white border shadow-lg">
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => handleMediaAction("Disegno", "Fumetto")}
+                      disabled={isGenerating}
+                    >
+                      Fumetto
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => handleMediaAction("Disegno", "Fotografico")}
+                      disabled={isGenerating}
+                    >
+                      Fotografico
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => handleMediaAction("Disegno", "Astratto")}
+                      disabled={isGenerating}
+                    >
+                      Astratto
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => handleMediaAction("Disegno", "Manga")}
+                      disabled={isGenerating}
+                    >
+                      Manga
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => handleMediaAction("Disegno", "Acquarello")}
+                      disabled={isGenerating}
+                    >
+                      Acquarello
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => handleMediaAction("Disegno", "Carboncino")}
+                      disabled={isGenerating}
+                    >
+                      Carboncino
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
 
-              <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
 
-              {/* Filmato */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="cursor-pointer">Filmato</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="bg-white border shadow-lg">
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => handleMediaAction("Filmato", "Ambientazione futuristica")}
-                  >
-                    Ambientazione futuristica
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => handleMediaAction("Filmato", "Ambientazione storica")}
-                  >
-                    Ambientazione storica
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => handleMediaAction("Filmato", "Ambientazione odierna")}
-                  >
-                    Ambientazione odierna
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => handleMediaAction("Filmato", "Ambientazione fantasy")}
-                  >
-                    Ambientazione fantasy
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+                {/* Filmato */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="cursor-pointer">Filmato</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="bg-white border shadow-lg">
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => handleMediaAction("Filmato", "Ambientazione futuristica")}
+                    >
+                      Ambientazione futuristica
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => handleMediaAction("Filmato", "Ambientazione storica")}
+                    >
+                      Ambientazione storica
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => handleMediaAction("Filmato", "Ambientazione odierna")}
+                    >
+                      Ambientazione odierna
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => handleMediaAction("Filmato", "Ambientazione fantasy")}
+                    >
+                      Ambientazione fantasy
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
 
-              <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
 
-              {/* Voci */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="cursor-pointer">Voci</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="bg-white border shadow-lg">
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Uomo")}>
-                    Uomo
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Donna")}>
-                    Donna
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Bambino")}>
-                    Bambino
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Bambina")}>
-                    Bambina
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </Tooltip>
-      </TooltipProvider>
+                {/* Voci */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="cursor-pointer">Voci</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="bg-white border shadow-lg">
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Uomo")}>
+                      Uomo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Donna")}>
+                      Donna
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Bambino")}>
+                      Bambino
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleMediaAction("Voci", "Bambina")}>
+                      Bambina
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </Tooltip>
+        </TooltipProvider>
+      )}
 
       {/* Image Display Dialog */}
       <Dialog open={showImageDialog} onOpenChange={(open) => handleCloseDialog(setShowImageDialog, open)}>
