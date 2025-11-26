@@ -605,6 +605,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
             storyTitle={storyTitle}
             storyId={getReliableStoryId() || ''}
             userId={userId || (userRole === 'Superuser' ? 'Superuser' : 'superuser')}
+            showTrigger={false}
           />
           
           {existingImage && (
