@@ -136,24 +136,6 @@ const SuperuserUserStoryViewer = () => {
     reading.initiateTranslation();
   };
 
-  const handleMediaClick = () => {
-    if (mediaAsset) {
-      setShowImageViewer(true);
-    } else {
-      toast({
-        title: "Nessuna immagine associata",
-        description: "Non ci sono immagini associate a questa storia",
-        variant: "default"
-      });
-    }
-  };
-
-  const handleMediaUpdate = () => {
-    // Reload media asset after update
-    if (id) {
-      loadMediaAsset(id);
-    }
-  };
 
   const handleDelete = async () => {
     if (!id) return;
