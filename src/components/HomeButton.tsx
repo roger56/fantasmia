@@ -10,7 +10,7 @@ const HomeButton = () => {
   return (
     <Button 
       variant="ghost" 
-      onClick={() => navigate('/')}
+      onClick={() => navigate('/profiles')}
       className="fixed top-4 right-4 z-50 bg-white shadow-md hover:shadow-lg"
       size="icon"
     >
