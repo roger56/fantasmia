@@ -215,11 +215,21 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
       const storyIdToUse = getReliableStoryId();
       
       if (storyIdToUse) {
-        const existingStory = await fantasMiaDB.getAMStoryById(storyIdToUse);
+        // Try AM story first
+        const existingAMStory = await fantasMiaDB.getAMStoryById(storyIdToUse);
 
-        if (existingStory) {
-          existingStory.text = improvedText;
-          await fantasMiaDB.saveAMStory(existingStory);
+        if (existingAMStory) {
+          existingAMStory.text = improvedText;
+          await fantasMiaDB.saveAMStory(existingAMStory);
+        } else {
+          // Try AG story
+          const existingAGStory = await fantasMiaDB.getAGStoryById(storyIdToUse);
+          
+          if (existingAGStory) {
+            existingAGStory.content = improvedText;
+            existingAGStory.updated_at = new Date().toISOString();
+            await fantasMiaDB.saveAGStory(existingAGStory);
+          }
         }
       }
 
