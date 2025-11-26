@@ -264,6 +264,9 @@ const AGStoryDetail = () => {
               storyId={story.id}
               isEditing={false}
               onEditToggle={() => {}}
+              onContentChange={(newContent) => {
+                setStory({ ...story, content: newContent });
+              }}
               showEditButton={false}
               userRole="superuser"
               userId="superuser"
