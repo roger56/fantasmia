@@ -12,7 +12,7 @@ import { canAccessStory, getCurrentProfileId } from '@/utils/profileManager';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import ShareMenu from '@/components/shared/ShareMenu';
-import MediaGenerationDialog from '@/components/shared/MediaGenerationDialog';
+
 import ModifyMenu from '@/components/shared/ModifyMenu';
 import EditTextDialog from '@/components/shared/EditTextDialog';
 import TranslationPreview from '@/components/shared/TranslationPreview';
@@ -172,24 +172,6 @@ const UserStoryViewer = () => {
     translation.initiateTranslation();
   };
 
-  const handleMediaClick = () => {
-    if (mediaAsset) {
-      setShowImageViewer(true);
-    } else {
-      toast({
-        title: "Nessuna immagine associata",
-        description: "Non ci sono immagini associate a questa storia",
-        variant: "default"
-      });
-    }
-  };
-
-  const handleMediaUpdate = () => {
-    // Reload media asset after update
-    if (id) {
-      loadMediaAsset(id);
-    }
-  };
 
   const handleDelete = async () => {
     if (!id) return;
@@ -389,13 +371,6 @@ const UserStoryViewer = () => {
           <ShareMenu 
             storyContent={storyText}
             storyTitle={storyTitle}
-          />
-          
-          <MediaGenerationDialog
-            storyId={id!}
-            storyTitle={storyTitle}
-            storyContent={storyText}
-            userId={story?.ownerProfileId || ''}
           />
 
           <ModifyMenu
