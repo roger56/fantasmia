@@ -151,7 +151,7 @@ const Profiles = () => {
           {/* Home Button - Top Right */}
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/profiles')}
             className="flex items-center gap-2"
           >
             <Home className="w-5 h-5" />
