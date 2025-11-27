@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Globe, Volume2, VolumeX, Trash2, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import SpeechToText from "@/components/SpeechToText";
 import { fantasMiaDB } from "@/utils/indexedDB";
 import { useStoryReading } from "@/hooks/useStoryReading";
 import StoryLayout from "@/components/shared/StoryLayout";
@@ -341,12 +342,21 @@ const AGStoryDetail = () => {
                 value={editedStory.title}
                 onChange={(e) => setEditedStory((prev) => ({ ...prev, title: e.target.value }))}
               />
-              <Textarea
-                placeholder="Contenuto storia"
-                value={editedStory.content}
-                onChange={(e) => setEditedStory((prev) => ({ ...prev, content: e.target.value }))}
-                rows={15}
-              />
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Contenuto storia"
+                  value={editedStory.content}
+                  onChange={(e) => setEditedStory((prev) => ({ ...prev, content: e.target.value }))}
+                  rows={15}
+                />
+                <SpeechToText
+                  onResult={(transcript) => {
+                    const newContent = editedStory.content + (editedStory.content ? ' ' : '') + transcript;
+                    setEditedStory((prev) => ({ ...prev, content: newContent }));
+                  }}
+                  className="shrink-0"
+                />
+              </div>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Annulla
