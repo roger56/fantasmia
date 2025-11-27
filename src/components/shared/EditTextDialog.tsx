@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Save } from 'lucide-react';
+import SpeechToText from '@/components/SpeechToText';
 
 interface EditTextDialogProps {
   open: boolean;
@@ -71,14 +72,22 @@ const EditTextDialog: React.FC<EditTextDialogProps> = ({
           )}
           <div>
             <Label htmlFor="story-text">Testo della storia</Label>
-            <Textarea
-              id="story-text"
-              value={editedText}
-              onChange={(e) => setEditedText(e.target.value)}
-              rows={showTitleField ? 10 : 12}
-              className="mt-2"
-              placeholder="Scrivi qui il testo della storia..."
-            />
+            <div className="flex gap-2 mt-2">
+              <Textarea
+                id="story-text"
+                value={editedText}
+                onChange={(e) => setEditedText(e.target.value)}
+                rows={showTitleField ? 10 : 12}
+                placeholder="Scrivi qui il testo della storia..."
+              />
+              <SpeechToText
+                onResult={(transcript) => {
+                  const newText = editedText + (editedText ? ' ' : '') + transcript;
+                  setEditedText(newText);
+                }}
+                className="shrink-0"
+              />
+            </div>
           </div>
         </div>
 
