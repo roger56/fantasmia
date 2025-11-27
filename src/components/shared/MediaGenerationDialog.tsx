@@ -61,10 +61,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
 
   // Sync external open state with internal state
   useEffect(() => {
-    if (externalOpen !== undefined && externalOpen === true) {
-      // When externally opened, trigger the style selection dialog first
-      setShowStyleSelection(true);
-    } else if (externalOpen === false) {
+    if (externalOpen !== undefined && externalOpen === false) {
       // When externally closed, reset all dialogs
       setShowStyleSelection(false);
       setShowCopyrightWarning(false);
@@ -72,6 +69,8 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       setShowImageDialog(false);
       setShowAuthWarning(false);
     }
+    // Note: We do NOT open style selection when externalOpen=true
+    // The style is selected from the dropdown menu directly
   }, [externalOpen]);
 
   // Helper functions to handle dialog state changes with external callback
@@ -82,7 +81,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     }
   };
 
-  // Handler for style selection from external trigger
+  // Handler for style selection (not used anymore - styles come from dropdown)
   const handleStyleSelected = (style: string) => {
     setSelectedStyle(style.toLowerCase());
     setShowStyleSelection(false);
@@ -771,40 +770,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Style Selection Dialog - Shown when opened externally */}
-      <Dialog open={showStyleSelection} onOpenChange={(open) => handleCloseDialog(setShowStyleSelection, open)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Seleziona Stile Artistico</DialogTitle>
-            <DialogDescription>Scegli uno stile per la generazione dell'immagine della storia</DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
-            {[
-              { name: "Fumetto", style: "fumetto" },
-              { name: "Fotografico", style: "fotografico" },
-              { name: "Astratto", style: "astratto" },
-              { name: "Manga", style: "manga" },
-              { name: "Acquarello", style: "acquarello" },
-              { name: "Carboncino", style: "carboncino" },
-            ].map(({ name, style }) => (
-              <Button
-                key={style}
-                variant="outline"
-                className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-primary/10 hover:border-primary transition-colors"
-                onClick={() => handleStyleSelected(style)}
-              >
-                <Palette className="w-6 h-6" />
-                <span className="font-medium">{name}</span>
-              </Button>
-            ))}
-          </div>
-          <div className="flex justify-end pt-4 border-t">
-            <Button variant="outline" onClick={() => handleCloseDialog(setShowStyleSelection, false)}>
-              Annulla
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Style Selection Dialog - REMOVED: Redundant, style is selected from dropdown menu */}
 
       {/* Copyright Warning Dialog */}
       <CopyrightWarningDialog
