@@ -128,13 +128,20 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
 
       const isSuperuser = userRole === 'superuser' || userRole === 'Superuser';
       
-      // For AM stories: check ownership
-      // For AG stories: allow all authenticated users (they are public stories)
+      // For AG stories: ONLY superuser can generate drawings
+      // For AM stories: owner OR superuser can generate drawings
       if (agStory) {
-        // AG stories are public, allow generation
-        setShowMediaDialog(true);
+        // AG stories: only superuser
+        if (isSuperuser) {
+          setShowMediaDialog(true);
+        } else {
+          toast({
+            title: "Accesso negato",
+            description: "Solo il Superuser può generare disegni per le storie AG"
+          });
+        }
       } else if (amStory) {
-        // AM stories require ownership or superuser
+        // AM stories: owner or superuser
         const ownsStory = amStory.ownerProfileId === userId;
         if (isSuperuser || ownsStory) {
           setShowMediaDialog(true);
