@@ -76,29 +76,23 @@ const ProppFreeWritingScreen: React.FC<ProppFreeWritingScreenProps> = ({
       return;
     }
 
+    // Use readingService for consistent pause/resume behavior
     if ('speechSynthesis' in window) {
-      if (isReading && !isPaused) {
-        window.speechSynthesis.pause();
+      const { readingService } = require('@/lib/tts/readingService');
+      const state = readingService.getState();
+      
+      if (state.isPlaying && !state.isPaused) {
+        readingService.pause();
         setIsPaused(true);
-      } else if (isPaused) {
-        window.speechSynthesis.resume();
+        setIsReading(true);
+      } else if (state.isPaused) {
+        readingService.play(storyText, 'propp-free-story', 'italian');
         setIsPaused(false);
+        setIsReading(true);
       } else {
-        const utterance = new SpeechSynthesisUtterance(storyText);
-        utterance.lang = 'it-IT';
-        utterance.onstart = () => {
-          setIsReading(true);
-          setIsPaused(false);
-        };
-        utterance.onend = () => {
-          setIsReading(false);
-          setIsPaused(false);
-        };
-        utterance.onerror = () => {
-          setIsReading(false);
-          setIsPaused(false);
-        };
-        window.speechSynthesis.speak(utterance);
+        readingService.play(storyText, 'propp-free-story', 'italian');
+        setIsReading(true);
+        setIsPaused(false);
       }
     } else {
       toast({

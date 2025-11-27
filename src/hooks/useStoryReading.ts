@@ -50,10 +50,12 @@ export const useStoryReading = ({ story, onStoryUpdate, storyType }: UseStoryRea
     return detectLanguage(getContent());
   }, [story, getContent]);
 
-  // Get translation button text
+  // Get translation button text - shows opposite language
   const getTranslationButtonText = useCallback(() => {
     if (isTranslating) return 'Traduzione...';
-    return getCurrentLanguage() === 'italian' ? 'INGLESE' : 'ITALIANO';
+    const currentLang = getCurrentLanguage();
+    // Button shows the TARGET language (opposite of current)
+    return currentLang === 'italian' ? 'INGLESE' : 'ITALIANO';
   }, [isTranslating, getCurrentLanguage]);
 
   // Get TTS button text
@@ -111,12 +113,22 @@ export const useStoryReading = ({ story, onStoryUpdate, storyType }: UseStoryRea
     if (!story || !pendingTranslation) return;
 
     try {
+      const currentLang = getCurrentLanguage();
+      const targetLang = currentLang === 'italian' ? 'english' : 'italian';
+      
       const updatedStory = {
         ...story,
         title: pendingTranslation.title,
         ...(story.content !== undefined ? { content: pendingTranslation.content } : { text: pendingTranslation.content }),
-        language: getCurrentLanguage() === 'italian' ? 'english' : 'italian',
+        language: targetLang,
       };
+
+      console.log('💾 Saving translation:', { 
+        currentLang, 
+        targetLang, 
+        storyId: story.id,
+        updatedLanguage: updatedStory.language 
+      });
 
       // Save based on story type
       if (storyType === 'ag') {
@@ -132,7 +144,7 @@ export const useStoryReading = ({ story, onStoryUpdate, storyType }: UseStoryRea
         window.dispatchEvent(new CustomEvent('am:changed'));
       }
 
-      // Update local state
+      // Update local state FIRST before clearing preview
       if (onStoryUpdate) {
         onStoryUpdate(updatedStory);
       }
@@ -140,10 +152,9 @@ export const useStoryReading = ({ story, onStoryUpdate, storyType }: UseStoryRea
       setPendingTranslation(null);
       setShowPreview(false);
 
-      const targetLang = getCurrentLanguage() === 'italian' ? 'inglese' : 'italiano';
       toast({
         title: 'Traduzione salvata',
-        description: `La storia è stata tradotta e salvata in ${targetLang}`,
+        description: `La storia è stata tradotta e salvata in ${targetLang === 'italian' ? 'italiano' : 'inglese'}`,
       });
     } catch (error) {
       console.error('Error saving translation:', error);

@@ -10,7 +10,7 @@ interface WritingCardProps {
   onChange: (value: string) => void;
   placeholder?: string;
   maxLines?: number;
-  showSpeechToText?: boolean;
+  showSpeechToText?: boolean; // Default: true
   onSpeechResult?: (text: string) => void;
 }
 
