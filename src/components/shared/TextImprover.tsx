@@ -109,9 +109,12 @@ const TextImprover: React.FC<TextImproverProps> = ({
       const data = await response.json();
       console.log("AI-IMPROVE: Response received:", data);
 
-      const improved = data.improvedText || data.text || data.result;
+      let improved = data.improvedText || data.text || data.result;
 
       if (improved) {
+        // Remove leading and trailing quotes/apostrophes
+        improved = improved.trim().replace(/^["']|["']$/g, '');
+        
         setImprovedText(improved);
         toast({
           title: "Successo",
