@@ -209,6 +209,7 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
 
       setProgressMessage('Preparazione file...');
       const attachments = [];
+      let totalSize = 0;
 
       // For each story, send only TXT and IMAGE (if present)
       for (const story of stories) {
@@ -224,6 +225,7 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
           contentType: 'text/plain'
         });
 
+        totalSize += txtBlob.size;
         console.log(`📄 File testo preparato: ${safeFilename}.txt`);
 
         // Add image if present
@@ -237,10 +239,28 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
               content: imageBase64,
               contentType: mediaAsset.mime
             });
+            totalSize += mediaAsset.data.size;
             console.log(`🖼️ Immagine preparata: ${safeFilename}.${imageExt}`);
           }
         }
       }
+
+      // Check total size (10 MB limit)
+      const MAX_SIZE = 10 * 1024 * 1024; // 10 MB in bytes
+      if (totalSize > MAX_SIZE) {
+        const sizeMB = (totalSize / 1024 / 1024).toFixed(2);
+        console.error(`❌ File troppo grande: ${sizeMB} MB (limite: 10 MB)`);
+        
+        setIsGenerating(false);
+        toast({
+          title: "Errore",
+          description: `Il file supera il limite massimo di 10 MB (dimensione: ${sizeMB} MB). Riduci il numero o la dimensione delle immagini prima di procedere.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log(`✅ Dimensione totale: ${(totalSize / 1024 / 1024).toFixed(2)} MB (entro il limite)`);
 
       const payload = {
         to: 'roger56@fantasmia.it',
@@ -481,7 +501,7 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
                   </>
                 ) : (
                   <>
-                    📮 STAMPA LIBRO
+                    👉 INVIA ALLA STAMPA
                   </>
                 )}
               </Button>
