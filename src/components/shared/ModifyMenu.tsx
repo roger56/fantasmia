@@ -101,14 +101,55 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
     setShowPoetryConfirm(true);
   };
 
-  const handleDrawingClick = (style: string) => {
+  const handleDrawingClick = async (style: string) => {
     setSelectedDrawingStyle(style);
-    if ((userRole === 'superuser' || userRole === 'Superuser') && getReliableStoryId()) {
-      setShowMediaDialog(true);
-    } else {
+    const storyIdToUse = getReliableStoryId();
+    
+    if (!storyIdToUse) {
       toast({
-        title: "Accesso limitato",
-        description: "Solo il Superuser può generare immagini"
+        title: "Errore",
+        description: "ID storia non valido"
+      });
+      return;
+    }
+
+    // Check if user owns this story
+    try {
+      const amStory = await fantasMiaDB.getAMStoryById(storyIdToUse);
+      const agStory = !amStory ? await fantasMiaDB.getAGStoryById(storyIdToUse) : null;
+
+      if (!amStory && !agStory) {
+        toast({
+          title: "Errore",
+          description: "Storia non trovata"
+        });
+        return;
+      }
+
+      const isSuperuser = userRole === 'superuser' || userRole === 'Superuser';
+      
+      // For AM stories: check ownership
+      // For AG stories: allow all authenticated users (they are public stories)
+      if (agStory) {
+        // AG stories are public, allow generation
+        setShowMediaDialog(true);
+      } else if (amStory) {
+        // AM stories require ownership or superuser
+        const ownsStory = amStory.ownerProfileId === userId;
+        if (isSuperuser || ownsStory) {
+          setShowMediaDialog(true);
+        } else {
+          toast({
+            title: "Accesso negato",
+            description: "Puoi generare disegni solo per le tue storie"
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error checking story ownership:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile verificare i permessi"
       });
     }
   };
@@ -190,9 +231,12 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
       }
 
       const data = await response.json();
-      const improved = data.improvedText || data.text || data.result;
+      let improved = data.improvedText || data.text || data.result;
 
       if (improved) {
+        // Remove leading and trailing quotes/apostrophes
+        improved = improved.trim().replace(/^["']|["']$/g, '');
+        
         setImprovedText(improved);
         setShowReplaceConfirm(true);
       } else {
@@ -600,8 +644,8 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Media Generation Dialog */}
-      {(userRole === 'superuser' || userRole === 'Superuser') && getReliableStoryId() && (
+      {/* Media Generation Dialog - available for story owners */}
+      {getReliableStoryId() && (
         <>
           <MediaGenerationDialog
             open={showMediaDialog}
