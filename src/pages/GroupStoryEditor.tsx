@@ -175,68 +175,49 @@ const GroupStoryEditor = () => {
         backgroundColor="bg-gradient-to-br from-violet-50 via-purple-50 to-pink-50"
       >
         <div className="space-y-6">
-          {/* Introduction Card */}
-          <Card className="border-violet-200 bg-gradient-to-r from-violet-50 to-purple-50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-violet-900">
-                <Users className="w-5 h-5" />
-                Come funziona
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-violet-800">
-              <p>🖊️ Ogni utente scrive <strong>solo 3 righe</strong></p>
-              <p>👀 Vedi solo l'<strong>ultima riga</strong> del contributo precedente</p>
-              <p>⏸️ Non puoi scrivere due volte di seguito</p>
-              <p>✨ La storia termina quando qualcuno scrive <strong>"felici e contenti"</strong></p>
-              <p>📚 Servono almeno <strong>3 contributi e 2 utenti diversi</strong> per completarla</p>
-            </CardContent>
-          </Card>
-
-          {/* Stats Card */}
-          <Card className="border-purple-200">
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-purple-700">{stats.totalContributions}</div>
-                  <div className="text-xs text-muted-foreground">Contributi</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-purple-700">{stats.uniqueUsers}</div>
-                  <div className="text-xs text-muted-foreground">Autori</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-purple-700">
-                    {lastLine ? '✅' : '🆕'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {lastLine ? 'In corso' : 'Nuova'}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Last Line Preview */}
-          {lastLine && (
-            <Card className="border-pink-200 bg-pink-50/50">
-              <CardHeader>
-                <CardTitle className="text-sm text-pink-900 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Ultima riga scritta{stats.lastContributor && ` da ${stats.lastContributor}`}:
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="italic text-pink-800 text-sm leading-relaxed">
-                  "{lastLine}"
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Writing Area */}
+          {/* Writing Area - Unico card con statistiche integrate */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Il tuo contributo (3 righe)</CardTitle>
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg">Il tuo contributo (3 righe)</CardTitle>
+                  
+                  {/* Stats integrate nel header */}
+                  <div className="flex gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="font-bold text-purple-700">{stats.totalContributions}</div>
+                      <div className="text-xs text-muted-foreground">Contributi</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-purple-700">{stats.uniqueUsers}</div>
+                      <div className="text-xs text-muted-foreground">Autori</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-purple-700">
+                        {lastLine ? '✅' : '🆕'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {lastLine ? 'In corso' : 'Nuova'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Last Line Preview - integrato nel header */}
+                {lastLine && (
+                  <div className="p-3 bg-pink-50/50 border border-pink-200 rounded-lg">
+                    <div className="text-sm text-pink-900 flex items-center gap-2 mb-2">
+                      <Sparkles className="w-4 h-4" />
+                      <span className="font-semibold">
+                        Ultima riga scritta{stats.lastContributor && ` da ${stats.lastContributor}`}:
+                      </span>
+                    </div>
+                    <p className="italic text-pink-800 text-sm leading-relaxed">
+                      "{lastLine}"
+                    </p>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <Textarea
@@ -300,7 +281,7 @@ const GroupStoryEditor = () => {
               <div className="space-y-2 pt-2">
                 <p className="font-semibold text-foreground">Come funziona:</p>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>Ogni utente scrive <strong>solo 3 righe</strong></li>
+                  <li>Ogni utente scrive <strong>solo 3 righe, terminate con il tasto A CAPO</strong></li>
                   <li>Vedi solo l'ultima riga del contributo precedente</li>
                   <li>Non puoi scrivere due volte consecutive</li>
                   <li>La storia termina quando qualcuno scrive "<strong>felici e contenti</strong>"</li>

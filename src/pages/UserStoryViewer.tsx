@@ -8,7 +8,7 @@ import { ArrowLeft, Home, Volume2, Trash2, Edit, AlertTriangle } from 'lucide-re
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { usePermanentTranslation } from '@/hooks/usePermanentTranslation';
-import { canAccessStory, getCurrentProfileId } from '@/utils/profileManager';
+import { canAccessStory, getCurrentProfileId, isSuperUser } from '@/utils/profileManager';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import ShareMenu from '@/components/shared/ShareMenu';
@@ -380,6 +380,8 @@ const UserStoryViewer = () => {
             onEditToggle={() => setShowEditDialog(true)}
             onContentChange={handleContentChange}
             storyId={id}
+            userRole={isSuperUser() ? 'superuser' : 'user'}
+            userId={getCurrentProfileId() || undefined}
           />
 
           <AlertDialog>
