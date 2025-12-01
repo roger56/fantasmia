@@ -60,6 +60,26 @@ interface SystemSettings {
   updatedAt: string;
 }
 
+interface GroupStory {
+  id: string;
+  title?: string;
+  status: 'in_progress' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  finalAGStoryId?: string; // Reference to AG story after completion
+}
+
+interface GroupStoryContribution {
+  id: string;
+  groupStoryId: string;
+  userId: string;
+  userName: string;
+  content: string; // 3 lines of text
+  orderIndex: number;
+  createdAt: string;
+}
+
 interface AGStory {
   id: string;
   title: string;
@@ -94,7 +114,7 @@ class FantasMiaDB {
   private db: IDBDatabase | null = null;
   private readonly dbConfig: DatabaseConfig = {
     name: 'FantasMiaV2',
-    version: 5 // Bump version for system_settings store
+    version: 6 // Bump version for group_stories and group_story_contributions stores
   };
 
   async init(): Promise<void> {
@@ -128,7 +148,7 @@ class FantasMiaDB {
         }
         
         // VERIFICA CRITICA: controlla che tutti gli stores richiesti esistano
-        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings'];
+        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions'];
         const missingStores = requiredStores.filter(
           name => !this.db!.objectStoreNames.contains(name)
         );
@@ -150,7 +170,7 @@ class FantasMiaDB {
         console.log('🔄 IndexedDB upgrade from version', event.oldVersion, 'to', event.newVersion);
 
         // Delete existing stores to recreate with proper indices
-        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings'];
+        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions'];
         storeNames.forEach(storeName => {
           if (db.objectStoreNames.contains(storeName)) {
             db.deleteObjectStore(storeName);
@@ -192,6 +212,19 @@ class FantasMiaDB {
         // System Settings store
         const settingsStore = db.createObjectStore('system_settings', { keyPath: 'id' });
         console.log('✅ Created system_settings store');
+
+        // Group Stories store
+        const groupStoryStore = db.createObjectStore('group_stories', { keyPath: 'id' });
+        groupStoryStore.createIndex('status', 'status', { unique: false });
+        groupStoryStore.createIndex('createdAt', 'createdAt', { unique: false });
+        console.log('✅ Created group_stories store');
+
+        // Group Story Contributions store
+        const groupContributionStore = db.createObjectStore('group_story_contributions', { keyPath: 'id' });
+        groupContributionStore.createIndex('groupStoryId', 'groupStoryId', { unique: false });
+        groupContributionStore.createIndex('userId', 'userId', { unique: false });
+        groupContributionStore.createIndex('orderIndex', 'orderIndex', { unique: false });
+        console.log('✅ Created group_story_contributions store');
       };
     });
   }
@@ -1080,6 +1113,62 @@ class FantasMiaDB {
       request.onsuccess = () => {
         console.log('✅ System settings saved:', settingsToSave);
         resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Group Stories Management
+  async saveGroupStory(story: GroupStory): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['group_stories'], 'readwrite');
+    const store = transaction.objectStore('group_stories');
+    await store.put(story);
+  }
+
+  async getGroupStoryById(storyId: string): Promise<GroupStory | null> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['group_stories'], 'readonly');
+    const store = transaction.objectStore('group_stories');
+    const request = store.get(storyId);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getGroupStoriesByStatus(status: 'in_progress' | 'completed'): Promise<GroupStory[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['group_stories'], 'readonly');
+    const store = transaction.objectStore('group_stories');
+    const index = store.index('status');
+    const request = index.getAll(status);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Group Story Contributions Management
+  async saveGroupStoryContribution(contribution: GroupStoryContribution): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['group_story_contributions'], 'readwrite');
+    const store = transaction.objectStore('group_story_contributions');
+    await store.put(contribution);
+  }
+
+  async getContributionsByGroupStoryId(groupStoryId: string): Promise<GroupStoryContribution[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['group_story_contributions'], 'readonly');
+    const store = transaction.objectStore('group_story_contributions');
+    const index = store.index('groupStoryId');
+    const request = index.getAll(groupStoryId);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        const contributions = request.result;
+        // Sort by orderIndex
+        contributions.sort((a, b) => a.orderIndex - b.orderIndex);
+        resolve(contributions);
       };
       request.onerror = () => reject(request.error);
     });
