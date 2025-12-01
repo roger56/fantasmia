@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, User, Lock, Shield, Globe, Home } from 'lucide-react';
 import { getUsers, authenticateUser, markMessagesAsRead } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
-import { setCurrentProfileId } from '@/utils/profileManager';
+import { setCurrentProfileId, clearCurrentProfile } from '@/utils/profileManager';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
@@ -21,6 +21,9 @@ const Profiles = () => {
   const [allProfiles, setAllProfiles] = useState<any[]>([]);
   
   useEffect(() => {
+    // Pulisci il profilo corrente quando si torna alla selezione profili
+    clearCurrentProfile();
+    
     const users = getUsers();
     setProfiles(users);
     

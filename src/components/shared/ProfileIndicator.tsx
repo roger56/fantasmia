@@ -56,9 +56,7 @@ const ProfileIndicator: React.FC = () => {
   useEffect(() => {
     const checkUser = () => {
       const name = getUserName();
-      if (name) {
-        setUserName(name);
-      }
+      setUserName(name); // Sempre aggiorna, anche se null
     };
 
     checkUser();
