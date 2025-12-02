@@ -63,11 +63,13 @@ interface SystemSettings {
 interface GroupStory {
   id: string;
   title?: string;
-  status: 'in_progress' | 'completed';
+  status: 'in_progress' | 'pending_approval' | 'completed';
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
   finalAGStoryId?: string; // Reference to AG story after completion
+  approvedBy?: string;
+  approvedAt?: string;
 }
 
 interface GroupStoryContribution {
@@ -1137,7 +1139,7 @@ class FantasMiaDB {
     });
   }
 
-  async getGroupStoriesByStatus(status: 'in_progress' | 'completed'): Promise<GroupStory[]> {
+  async getGroupStoriesByStatus(status: 'in_progress' | 'pending_approval' | 'completed'): Promise<GroupStory[]> {
     if (!this.db) await this.init();
     const transaction = this.db!.transaction(['group_stories'], 'readonly');
     const store = transaction.objectStore('group_stories');
@@ -1145,6 +1147,28 @@ class FantasMiaDB {
     const request = index.getAll(status);
     return new Promise((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAllGroupStories(): Promise<GroupStory[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['group_stories'], 'readonly');
+    const store = transaction.objectStore('group_stories');
+    const request = store.getAll();
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteGroupStory(storyId: string): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['group_stories'], 'readwrite');
+    const store = transaction.objectStore('group_stories');
+    return new Promise((resolve, reject) => {
+      const request = store.delete(storyId);
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }
@@ -1170,6 +1194,17 @@ class FantasMiaDB {
         contributions.sort((a, b) => a.orderIndex - b.orderIndex);
         resolve(contributions);
       };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteGroupStoryContribution(contributionId: string): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['group_story_contributions'], 'readwrite');
+    const store = transaction.objectStore('group_story_contributions');
+    return new Promise((resolve, reject) => {
+      const request = store.delete(contributionId);
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }

@@ -5,11 +5,13 @@ import { createAGStory } from '@/lib/storiesRepo';
 interface GroupStory {
   id: string;
   title?: string;
-  status: 'in_progress' | 'completed';
+  status: 'in_progress' | 'pending_approval' | 'completed';
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
   finalAGStoryId?: string;
+  approvedBy?: string;
+  approvedAt?: string;
 }
 
 interface GroupStoryContribution {
@@ -28,6 +30,20 @@ interface CompletionCheck {
   contributionCount: number;
   uniqueUsers: number;
   containsEndPhrase: boolean;
+}
+
+interface GroupStoryWithDetails {
+  id: string;
+  title?: string;
+  status: 'in_progress' | 'pending_approval' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  finalAGStoryId?: string;
+  contributionCount: number;
+  uniqueUsers: number;
+  contributors: string[];
+  lastContributor?: string;
 }
 
 const generateId = () => `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -66,7 +82,7 @@ export const addContribution = async (
   userId: string,
   userName: string,
   content: string
-): Promise<{ success: boolean; error?: string; completed?: boolean; agStoryId?: string }> => {
+): Promise<{ success: boolean; error?: string; pendingApproval?: boolean; completed?: boolean; agStoryId?: string }> => {
   try {
     const groupStory = await fantasMiaDB.getGroupStoryById(groupStoryId);
     if (!groupStory) {
@@ -75,6 +91,10 @@ export const addContribution = async (
     
     if (groupStory.status === 'completed') {
       return { success: false, error: 'Questa storia è già stata completata' };
+    }
+    
+    if (groupStory.status === 'pending_approval') {
+      return { success: false, error: 'Questa storia è in attesa di approvazione' };
     }
     
     // Get existing contributions
@@ -103,15 +123,29 @@ export const addContribution = async (
     
     // Update group story timestamp
     groupStory.updatedAt = new Date().toISOString();
+    
+    // Set title from first contribution if not set
+    if (!groupStory.title && contributions.length === 0) {
+      // Extract first line as potential title
+      const firstLine = content.trim().split('\n')[0];
+      if (firstLine.length <= 50) {
+        groupStory.title = firstLine;
+      }
+    }
+    
     await fantasMiaDB.saveGroupStory(groupStory);
     
     // Check completion conditions
     const completionCheck = await checkCompletionConditions(groupStoryId);
     
     if (completionCheck.canComplete) {
-      // Complete and migrate to AG
-      const agStoryId = await completeAndMigrateToAG(groupStoryId);
-      return { success: true, completed: true, agStoryId };
+      // Mark as pending approval instead of completing directly
+      groupStory.status = 'pending_approval';
+      groupStory.updatedAt = new Date().toISOString();
+      await fantasMiaDB.saveGroupStory(groupStory);
+      
+      console.log('📝 Group story marked as pending approval:', groupStoryId);
+      return { success: true, pendingApproval: true };
     }
     
     return { success: true, completed: false };
@@ -188,12 +222,75 @@ export const checkCompletionConditions = async (groupStoryId: string): Promise<C
 };
 
 /**
- * Complete the group story and migrate it to AG
+ * Get all group stories with details (for SU management)
  */
-const completeAndMigrateToAG = async (groupStoryId: string): Promise<string> => {
+export const getAllGroupStoriesWithDetails = async (): Promise<GroupStoryWithDetails[]> => {
+  const allStories = await fantasMiaDB.getAllGroupStories();
+  
+  const storiesWithDetails: GroupStoryWithDetails[] = [];
+  
+  for (const story of allStories) {
+    const contributions = await fantasMiaDB.getContributionsByGroupStoryId(story.id);
+    const contributorNames = [...new Set(contributions.map(c => c.userName))];
+    
+    storiesWithDetails.push({
+      id: story.id,
+      title: story.title,
+      status: story.status,
+      createdAt: story.createdAt,
+      updatedAt: story.updatedAt,
+      completedAt: story.completedAt,
+      finalAGStoryId: story.finalAGStoryId,
+      contributionCount: contributions.length,
+      uniqueUsers: contributorNames.length,
+      contributors: contributorNames,
+      lastContributor: contributions.length > 0 ? contributions[contributions.length - 1].userName : undefined
+    });
+  }
+  
+  // Sort by updatedAt descending
+  storiesWithDetails.sort((a, b) => 
+    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+  
+  return storiesWithDetails;
+};
+
+/**
+ * Get pending approval stories count (for dashboard badge)
+ */
+export const getPendingApprovalCount = async (): Promise<number> => {
+  const pendingStories = await fantasMiaDB.getGroupStoriesByStatus('pending_approval');
+  return pendingStories.length;
+};
+
+/**
+ * Get in-progress stories count (for dashboard badge)
+ */
+export const getInProgressCount = async (): Promise<number> => {
+  const inProgressStories = await fantasMiaDB.getGroupStoriesByStatus('in_progress');
+  return inProgressStories.length;
+};
+
+/**
+ * Get full content of a group story (assembled from all contributions)
+ */
+export const getGroupStoryFullContent = async (groupStoryId: string): Promise<string> => {
+  const contributions = await fantasMiaDB.getContributionsByGroupStoryId(groupStoryId);
+  return contributions.map(c => c.content).join('\n\n');
+};
+
+/**
+ * Approve and publish group story to AG (called by SU)
+ */
+export const approveAndPublish = async (groupStoryId: string, superuserId: string): Promise<string> => {
   const groupStory = await fantasMiaDB.getGroupStoryById(groupStoryId);
   if (!groupStory) {
     throw new Error('Group story not found');
+  }
+  
+  if (groupStory.status !== 'pending_approval') {
+    throw new Error('Story is not pending approval');
   }
   
   const contributions = await fantasMiaDB.getContributionsByGroupStoryId(groupStoryId);
@@ -212,11 +309,34 @@ const completeAndMigrateToAG = async (groupStoryId: string): Promise<string> => 
   groupStory.status = 'completed';
   groupStory.completedAt = new Date().toISOString();
   groupStory.finalAGStoryId = agStoryId;
+  groupStory.approvedBy = superuserId;
+  groupStory.approvedAt = new Date().toISOString();
   await fantasMiaDB.saveGroupStory(groupStory);
   
-  console.log('✅ Group story completed and migrated to AG:', agStoryId);
+  console.log('✅ Group story approved and migrated to AG:', agStoryId);
   
   return agStoryId;
+};
+
+/**
+ * Reject and delete a group story (called by SU)
+ */
+export const rejectGroupStory = async (groupStoryId: string): Promise<void> => {
+  const groupStory = await fantasMiaDB.getGroupStoryById(groupStoryId);
+  if (!groupStory) {
+    throw new Error('Group story not found');
+  }
+  
+  // Delete all contributions
+  const contributions = await fantasMiaDB.getContributionsByGroupStoryId(groupStoryId);
+  for (const contribution of contributions) {
+    await fantasMiaDB.deleteGroupStoryContribution(contribution.id);
+  }
+  
+  // Delete the group story
+  await fantasMiaDB.deleteGroupStory(groupStoryId);
+  
+  console.log('🗑️ Group story rejected and deleted:', groupStoryId);
 };
 
 /**

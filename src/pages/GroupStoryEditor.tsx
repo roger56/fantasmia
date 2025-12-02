@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Sparkles, AlertCircle } from 'lucide-react';
+import { Users, Sparkles, AlertCircle, Volume2, VolumeX, Square } from 'lucide-react';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { AuthBridge } from '@/utils/authBridge';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 
 const GroupStoryEditor = () => {
   const navigate = useNavigate();
@@ -38,6 +39,9 @@ const GroupStoryEditor = () => {
     lastContributor: null
   });
   const [showIntro, setShowIntro] = useState(true);
+
+  // TTS hook per leggere l'ultima riga
+  const tts = useUnifiedTTS();
 
   useEffect(() => {
     const initialize = async () => {
@@ -78,6 +82,35 @@ const GroupStoryEditor = () => {
     initialize();
   }, [navigate, toast]);
 
+  // Stop TTS when unmounting
+  useEffect(() => {
+    return () => {
+      tts.stop();
+    };
+  }, []);
+
+  const handleTTSClick = () => {
+    const textToRead = lastLine || content || 'Nessun testo da leggere';
+    
+    if (tts.isPlaying) {
+      tts.pause();
+    } else if (tts.isPaused) {
+      tts.play();
+    } else {
+      tts.speak(textToRead, 'italian');
+    }
+  };
+
+  const handleStopTTS = () => {
+    tts.stop();
+  };
+
+  const getTTSButtonText = () => {
+    if (tts.isPlaying) return 'Pausa';
+    if (tts.isPaused) return 'Riprendi';
+    return 'Leggi';
+  };
+
   const handleSave = async () => {
     if (!content.trim()) {
       toast({
@@ -114,15 +147,25 @@ const GroupStoryEditor = () => {
         return;
       }
 
-      if (result.completed && result.agStoryId) {
-        // Story completed!
+      if (result.pendingApproval) {
+        // Story completed but waiting for SU approval
+        toast({
+          title: '📝 Storia Inviata!',
+          description: 'La storia è stata inviata per l\'approvazione del Superuser. Riceverai una notifica quando sarà pubblicata.',
+          duration: 6000
+        });
+
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2500);
+      } else if (result.completed && result.agStoryId) {
+        // Story completed and published (legacy - should not happen with new flow)
         toast({
           title: '🎉 Storia Completata!',
           description: 'La storia di gruppo è stata completata e archiviata in AG - Storie di Lettura',
           duration: 5000
         });
 
-        // Navigate to the AG story
         setTimeout(() => {
           navigate(`/ag-story-detail/${result.agStoryId}`);
         }, 2000);
@@ -206,15 +249,46 @@ const GroupStoryEditor = () => {
                 {/* Last Line Preview - integrato nel header */}
                 {lastLine && (
                   <div className="p-3 bg-pink-50/50 border border-pink-200 rounded-lg">
-                    <div className="text-sm text-pink-900 flex items-center gap-2 mb-2">
-                      <Sparkles className="w-4 h-4" />
-                      <span className="font-semibold">
-                        Ultima riga scritta{stats.lastContributor && ` da ${stats.lastContributor}`}:
-                      </span>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="text-sm text-pink-900 flex items-center gap-2 mb-2">
+                          <Sparkles className="w-4 h-4" />
+                          <span className="font-semibold">
+                            Ultima riga scritta{stats.lastContributor && ` da ${stats.lastContributor}`}:
+                          </span>
+                        </div>
+                        <p className="italic text-pink-800 text-sm leading-relaxed">
+                          "{lastLine}"
+                        </p>
+                      </div>
+                      
+                      {/* TTS Buttons */}
+                      <div className="flex gap-1 ml-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleTTSClick}
+                          className="gap-1 text-pink-700 hover:text-pink-900 hover:bg-pink-100"
+                        >
+                          {tts.isPlaying ? (
+                            <VolumeX className="w-4 h-4" />
+                          ) : (
+                            <Volume2 className="w-4 h-4" />
+                          )}
+                          <span className="text-xs">{getTTSButtonText()}</span>
+                        </Button>
+                        {(tts.isPlaying || tts.isPaused) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleStopTTS}
+                            className="text-pink-700 hover:text-pink-900 hover:bg-pink-100"
+                          >
+                            <Square className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <p className="italic text-pink-800 text-sm leading-relaxed">
-                      "{lastLine}"
-                    </p>
                   </div>
                 )}
               </div>
@@ -286,6 +360,7 @@ const GroupStoryEditor = () => {
                   <li>Non puoi scrivere due volte consecutive</li>
                   <li>La storia termina quando qualcuno scrive "<strong>felici e contenti</strong>"</li>
                   <li>Servono almeno <strong>3 contributi</strong> e <strong>2 utenti diversi</strong></li>
+                  <li>La storia verrà approvata dal <strong>Superuser</strong> prima della pubblicazione</li>
                 </ul>
               </div>
 
