@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Edit, ChevronDown, Sparkles, Loader2, Feather, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAILoading } from '@/hooks/useAILoading';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import MediaGenerationDialog from './MediaGenerationDialog';
 import ImageViewerDialog from './ImageViewerDialog';
@@ -45,6 +46,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   onViewImageClick
 }) => {
   const { toast } = useToast();
+  const { showLoading, hideLoading } = useAILoading();
   const { id: routeId } = useParams<{ id: string }>();
   
   // Dialog states
@@ -202,6 +204,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   const improveText = async () => {
     setShowTextConfirm(false);
     setIsImproving(true);
+    showLoading("Miglioramento testo in corso...");
 
     try {
       const apiUrl = import.meta.env.VITE_OPENAI_API_URL?.replace("/image", "/improve-text") || "https://fantasmia-ai.vercel.app/api/openai/improve-text";
@@ -258,6 +261,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
       });
     } finally {
       setIsImproving(false);
+      hideLoading();
     }
   };
 
@@ -318,6 +322,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
     }
 
     setIsGeneratingPoetry(true);
+    showLoading("Generazione poesia in corso...");
 
     try {
       const theme = storyTitle?.trim() ? `${storyTitle.trim()} – ${storyContent}` : storyContent;
@@ -360,6 +365,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
       });
     } finally {
       setIsGeneratingPoetry(false);
+      hideLoading();
     }
   };
 
@@ -658,8 +664,11 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
             open={showMediaDialog}
             onOpenChange={(open) => {
               setShowMediaDialog(open);
-              if (!open && onMediaUpdate) {
-                onMediaUpdate();
+              if (!open) {
+                setSelectedDrawingStyle(""); // Reset style when closing
+                if (onMediaUpdate) {
+                  onMediaUpdate();
+                }
               }
             }}
             storyContent={storyContent}
@@ -667,6 +676,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
             storyId={getReliableStoryId() || ''}
             userId={userId || (userRole === 'Superuser' ? 'Superuser' : 'superuser')}
             showTrigger={false}
+            initialStyle={selectedDrawingStyle}
           />
           
           {existingImage && (

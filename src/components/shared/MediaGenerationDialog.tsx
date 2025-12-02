@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Palette, Loader2, Download, Bug, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAILoading } from "@/hooks/useAILoading";
 import { CLOUD_ENABLED } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +33,8 @@ export interface MediaButtonProps {
   onOpenChange?: (open: boolean) => void;
   /** Se false, NON mostra il pulsante "MEDIA" ma solo le dialog interne */
   showTrigger?: boolean;
+  /** Stile pre-selezionato da ModifyMenu - salta direttamente al copyright warning */
+  initialStyle?: string;
 }
 
 const MediaButton: React.FC<MediaButtonProps> = ({
@@ -43,8 +46,10 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   open: externalOpen,
   onOpenChange: externalOnOpenChange,
   showTrigger = true,
+  initialStyle,
 }) => {
   const { toast } = useToast();
+  const { showLoading, hideLoading } = useAILoading();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
@@ -69,9 +74,17 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       setShowImageDialog(false);
       setShowAuthWarning(false);
     }
-    // Note: We do NOT open style selection when externalOpen=true
-    // The style is selected from the dropdown menu directly
   }, [externalOpen]);
+
+  // Handle initialStyle from ModifyMenu - skip directly to copyright warning
+  useEffect(() => {
+    if (externalOpen && initialStyle) {
+      console.log("📌 MediaGenerationDialog opened with initialStyle:", initialStyle);
+      setSelectedStyle(initialStyle.toLowerCase());
+      // Skip style selection, go directly to copyright warning
+      setShowCopyrightWarning(true);
+    }
+  }, [externalOpen, initialStyle]);
 
   // Helper functions to handle dialog state changes with external callback
   const handleCloseDialog = (setterFn: (value: boolean) => void, value: boolean) => {
@@ -170,6 +183,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     try {
       console.log("🚀 Starting image generation...");
       setIsGenerating(true);
+      showLoading("Generazione immagine in corso...");
 
       // Validation before sending
       if (!storyContent || storyContent.trim().length === 0) {
@@ -355,6 +369,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     } finally {
       console.log("🏁 Image generation process completed");
       setIsGenerating(false);
+      hideLoading();
     }
   };
 
