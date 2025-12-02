@@ -92,11 +92,10 @@ const GroupStoryEditor = () => {
   const handleTTSClick = () => {
     const textToRead = lastLine || content || 'Nessun testo da leggere';
     
-    if (tts.isPlaying) {
+    if (tts.isPlaying && !tts.isPaused) {
       tts.pause();
-    } else if (tts.isPaused) {
-      tts.play();
     } else {
+      // Both resume from pause and new playback use speak()
       tts.speak(textToRead, 'italian');
     }
   };
