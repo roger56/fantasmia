@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Users, Clock, Check, Eye, Trash2, BookOpen } from 'lucide-react';
+import { Users, Clock, Check, Eye, Trash2, BookOpen, PenLine } from 'lucide-react';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { AuthBridge } from '@/utils/authBridge';
 import { useToast } from '@/hooks/use-toast';
@@ -296,6 +296,17 @@ const CTManagement = () => {
         showHomeButton
         backgroundColor="bg-gradient-to-br from-violet-50 via-purple-50 to-pink-50"
       >
+        {/* Button to participate in active story */}
+        <div className="flex justify-end mb-4">
+          <Button
+            onClick={() => navigate('/group-story')}
+            className="gap-2 bg-violet-600 hover:bg-violet-700"
+          >
+            <PenLine className="w-4 h-4" />
+            Partecipa alla storia attiva
+          </Button>
+        </div>
+
         <Tabs defaultValue="pending" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pending" className="gap-2">
