@@ -30,6 +30,7 @@ const GroupStoryEditor = () => {
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
+  const [isSuperuser, setIsSuperuser] = useState(false);
   const [groupStoryId, setGroupStoryId] = useState<string>('');
   const [lastLine, setLastLine] = useState<string | null>(null);
   const [content, setContent] = useState('');
@@ -54,6 +55,7 @@ const GroupStoryEditor = () => {
 
         setUserId(auth.userId);
         setUserName(auth.userName);
+        setIsSuperuser(auth.userName === 'superuser' || auth.userName === 'Superuser');
 
         // Get or create active group story
         const activeStory = await getOrCreateActiveGroupStory();
@@ -350,6 +352,15 @@ const GroupStoryEditor = () => {
               <p className="text-base">
                 Questa è una modalità <strong>collaborativa</strong> dove tutti gli utenti contribuiscono a creare una storia insieme.
               </p>
+              
+              {isSuperuser && (
+                <div className="p-3 bg-violet-50 border border-violet-200 rounded-lg">
+                  <p className="text-sm text-violet-800">
+                    <strong>Nota per il Superuser:</strong> Durante la scrittura collaborativa partecipi come un utente normale 
+                    (3 righe per volta). I tuoi privilegi di approvazione e MEDIA(AI) saranno disponibili solo dopo la chiusura della storia.
+                  </p>
+                </div>
+              )}
               
               <div className="space-y-2 pt-2">
                 <p className="font-semibold text-foreground">Come funziona:</p>

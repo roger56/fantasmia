@@ -213,6 +213,11 @@ const Dashboard = () => {
                 <p className="text-violet-600 text-sm">
                   Scrivi una storia insieme agli altri utenti - Modalità collaborativa
                 </p>
+                {isSuperuser && (
+                  <p className="text-violet-500 text-xs mt-2 italic">
+                    Anche tu puoi partecipare come contributore!
+                  </p>
+                )}
               </CardContent>
             </Card>
 
