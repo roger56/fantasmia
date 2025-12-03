@@ -295,8 +295,19 @@ export const approveAndPublish = async (groupStoryId: string, superuserId: strin
   
   const contributions = await fantasMiaDB.getContributionsByGroupStoryId(groupStoryId);
   
-  // Assemble full story text
-  const fullText = contributions.map(c => c.content).join('\n\n');
+  // Assemble full story text and normalize newlines
+  let fullText = contributions.map(c => c.content).join('\n\n');
+  
+  // Normalize: max 2 consecutive newlines for readable paragraphs
+  fullText = fullText
+    .replace(/\n{3,}/g, '\n\n')  // Max 2 consecutive newlines
+    .replace(/[ \t]+$/gm, '')     // Remove trailing whitespace from lines
+    .trim();
+  
+  console.log('📝 CT Story normalized for AG:', {
+    originalLength: contributions.map(c => c.content).join('\n\n').length,
+    normalizedLength: fullText.length
+  });
   
   // Create AG story
   const agStoryId = await createAGStory('group', {
