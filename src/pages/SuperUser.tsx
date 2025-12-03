@@ -58,6 +58,33 @@ const SuperUser = () => {
             </CardContent>
           </Card>
 
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-violet-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-violet-600" />
+                Storie CT - Continua Tu...
+              </CardTitle>
+              <CardDescription>
+                Gestisci storie collaborative e partecipa come co-autore
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button 
+                onClick={() => navigate('/ct-management')}
+                className="w-full bg-violet-600 hover:bg-violet-700"
+              >
+                Gestione CT
+              </Button>
+              <Button 
+                onClick={() => navigate('/group-story')}
+                variant="outline"
+                className="w-full border-violet-300 text-violet-700 hover:bg-violet-50"
+              >
+                Partecipa alla Storia
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
