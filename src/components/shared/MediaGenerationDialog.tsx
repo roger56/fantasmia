@@ -23,6 +23,32 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthBridge } from "@/utils/authBridge";
 import CopyrightWarningDialog from "./CopyrightWarningDialog";
 
+// Sanitize content for image generation API - removes newlines and problematic characters
+const sanitizePromptContent = (content: string): string => {
+  let sanitized = content;
+  
+  // 1. Replace ALL newlines with single spaces (API doesn't need line breaks)
+  sanitized = sanitized.replace(/\n+/g, ' ');
+  
+  // 2. Normalize multiple spaces to single space
+  sanitized = sanitized.replace(/\s{2,}/g, ' ');
+  
+  // 3. Normalize problematic quote characters
+  sanitized = sanitized.replace(/[""'']/g, '"');
+  
+  // 4. Remove control characters
+  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+  
+  // 5. Truncate if too long (max 2000 chars for image prompt)
+  const MAX_PROMPT_LENGTH = 2000;
+  if (sanitized.length > MAX_PROMPT_LENGTH) {
+    sanitized = sanitized.substring(0, MAX_PROMPT_LENGTH) + '...';
+    console.log('⚠️ Prompt truncated from', content.length, 'to', MAX_PROMPT_LENGTH, 'chars');
+  }
+  
+  return sanitized.trim();
+};
+
 export interface MediaButtonProps {
   storyContent: string;
   storyTitle?: string;
@@ -202,12 +228,22 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         throw new Error("User ID is required");
       }
 
+      // Sanitize content for API - removes newlines and problematic characters
+      const sanitizedContent = sanitizePromptContent(storyContent);
+      
+      console.log("📊 Content sanitization:", {
+        originalLength: storyContent.length,
+        sanitizedLength: sanitizedContent.length,
+        hadMultipleNewlines: /\n{3,}/.test(storyContent),
+        hadAnyNewlines: /\n/.test(storyContent),
+      });
+
       // Create enhanced prompt with user comment and NO TEXT policy
       const noTextPolicy =
         "IMPORTANTE: L'immagine non deve contenere testi, parole, scritte o frasi visibili di alcun tipo.";
       const enhancedPrompt = userComment
-        ? `${storyContent}\n\nNote aggiuntive: ${userComment}\n\n${noTextPolicy}`
-        : `${storyContent}\n\n${noTextPolicy}`;
+        ? `${sanitizedContent} Note aggiuntive: ${userComment} ${noTextPolicy}`
+        : `${sanitizedContent} ${noTextPolicy}`;
 
       const requestBody = {
         prompt: enhancedPrompt,
@@ -275,6 +311,14 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       if (!response.ok) {
         const errorText = await response.text();
         console.error("❌ HTTP error:", response.status, errorText);
+        
+        // Specific handling for 502 errors (common with CT stories)
+        if (response.status === 502) {
+          throw new Error(
+            "Errore del server di generazione (502). Il testo potrebbe essere troppo complesso. Riprova tra qualche minuto."
+          );
+        }
+        
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
