@@ -166,8 +166,10 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   };
 
   const handleSketchClick = async (level: 1 | 2) => {
+    console.log("🖍️ handleSketchClick called with level:", level);
     setSelectedSketchLevel(level);
     const storyIdToUse = getReliableStoryId();
+    console.log("🖍️ storyIdToUse:", storyIdToUse);
     
     if (!storyIdToUse) {
       toast({
@@ -181,6 +183,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
     try {
       const amStory = await fantasMiaDB.getAMStoryById(storyIdToUse);
       const agStory = !amStory ? await fantasMiaDB.getAGStoryById(storyIdToUse) : null;
+      console.log("🖍️ amStory:", !!amStory, "agStory:", !!agStory);
 
       if (!amStory && !agStory) {
         toast({
@@ -191,9 +194,11 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
       }
 
       const isSuperuser = userRole === 'superuser' || userRole === 'Superuser';
+      console.log("🖍️ isSuperuser:", isSuperuser, "userRole:", userRole);
       
       if (agStory) {
         if (isSuperuser) {
+          console.log("🖍️ Opening SketchDialog for AG story (superuser)");
           setShowSketchDialog(true);
         } else {
           toast({
@@ -204,6 +209,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
       } else if (amStory) {
         const ownsStory = amStory.ownerProfileId === userId;
         if (isSuperuser || ownsStory) {
+          console.log("🖍️ Opening SketchDialog for AM story");
           setShowSketchDialog(true);
         } else {
           toast({
