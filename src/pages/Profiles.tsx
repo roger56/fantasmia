@@ -21,16 +21,21 @@ const Profiles = () => {
   const [allProfiles, setAllProfiles] = useState<any[]>([]);
   
   useEffect(() => {
-    // Pulisci il profilo corrente quando si torna alla selezione profili
+    // PULIZIA COMPLETA: azzera TUTTE le sessioni quando si torna a /profiles
     clearCurrentProfile();
-    
-    // Pulisci TUTTE le sessioni residue (bridged e superuser)
     AuthBridge.clearBridgedSession();
+    
+    // Pulisci TUTTE le chiavi di sessione possibili
     localStorage.removeItem('superuser-session');
     localStorage.removeItem('superuser-session-expiry');
     localStorage.removeItem('fantasmia_current_user_id');
+    localStorage.removeItem('fantasmia_supabase_session'); // Sessione bridged
+    localStorage.removeItem('current_profile_id');
+    
+    console.log('🧹 Profiles: sessioni pulite, carico lista utenti...');
     
     const users = getUsers();
+    console.log('📋 Utenti trovati:', users.map(u => ({ name: u.name, lastAccess: u.lastAccess })));
     
     // Ordina per ultimo accesso (più recente prima)
     const sortedUsers = [...users].sort((a, b) => {
@@ -39,6 +44,7 @@ const Profiles = () => {
       return dateB - dateA;
     });
     
+    console.log('📋 Utenti ordinati:', sortedUsers.map(u => u.name));
     setProfiles(sortedUsers);
     
     // Add special profiles and new profile option
