@@ -199,14 +199,14 @@ export const checkCompletionConditions = async (groupStoryId: string): Promise<C
     };
   }
   
-  // Check if last contribution contains "felici e contenti" (case-insensitive)
+  // Check if last contribution contains "felici e content" (matches both "felici e contenti" and "felici e contente")
   const lastContribution = contributions[contributions.length - 1];
-  const containsEndPhrase = lastContribution.content.toLowerCase().includes('felici e contenti');
+  const containsEndPhrase = lastContribution.content.toLowerCase().includes('felici e content');
   
   if (!containsEndPhrase) {
     return {
       canComplete: false,
-      reason: 'L\'ultimo contributo deve contenere "felici e contenti"',
+      reason: 'L\'ultimo contributo deve contenere "felici e contenti" o "felici e contente"',
       contributionCount: contributions.length,
       uniqueUsers,
       containsEndPhrase: false
