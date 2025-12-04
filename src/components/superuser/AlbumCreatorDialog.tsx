@@ -69,7 +69,7 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
       const storiesForAlbum: StoryForAlbum[] = [];
       
       for (const story of stories) {
-        let mediaAsset;
+        let mediaAsset: any = undefined;
         if (story.hasImage) {
           mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(story.id);
         }
@@ -394,6 +394,23 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
                   <div className="space-y-2">
                     {stories.map((story, index) => {
                       const pagesAlloc = calculatePagesAllocation(story.mode);
+                      // Check if story has a sketch image
+                      const [mediaInfo, setMediaInfo] = React.useState<{ isSketch: boolean } | null>(null);
+                      
+                      React.useEffect(() => {
+                        const loadMediaInfo = async () => {
+                          if (story.hasImage) {
+                            const media = await fantasMiaDB.getLatestMediaAssetByStoryId(story.id);
+                            if (media?.metadata?.isSketch) {
+                              setMediaInfo({ isSketch: true });
+                            } else {
+                              setMediaInfo({ isSketch: false });
+                            }
+                          }
+                        };
+                        loadMediaInfo();
+                      }, [story.id, story.hasImage]);
+                      
                       return (
                         <div key={story.id} className="flex items-center justify-between p-3 border rounded bg-muted/30">
                           <div className="flex items-center gap-3 flex-1">
@@ -427,8 +444,18 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
                               </p>
                             </div>
                             
-                            <div className={`text-xs px-2 py-1 rounded ${story.hasImage ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                              {story.hasImage ? '✓ Immagine' : '✗ No immagine'}
+                            <div className={`text-xs px-2 py-1 rounded ${
+                              story.hasImage 
+                                ? mediaInfo?.isSketch 
+                                  ? 'bg-orange-100 text-orange-700'
+                                  : 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {story.hasImage 
+                                ? mediaInfo?.isSketch 
+                                  ? '🖍️ Schizzo' 
+                                  : '✓ Immagine'
+                                : '✗ No immagine'}
                             </div>
                           </div>
                         </div>

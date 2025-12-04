@@ -32,6 +32,7 @@ const CopyrightWarningDialog: React.FC<CopyrightWarningDialogProps> = ({
     manga: "Manga",
     acquarello: "Acquarello",
     carboncino: "Carboncino",
+    sketch: "Schizzo da colorare",
   };
 
   const handleConfirm = () => {

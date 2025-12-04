@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Edit, ChevronDown, Sparkles, Loader2, Feather, Palette } from 'lucide-react';
+import { Edit, ChevronDown, Sparkles, Loader2, Feather, Palette, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAILoading } from '@/hooks/useAILoading';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import MediaGenerationDialog from './MediaGenerationDialog';
 import ImageViewerDialog from './ImageViewerDialog';
+import SketchGenerationDialog from './SketchGenerationDialog';
 import { getStoryImage } from '@/utils/userStorage';
-
 interface ModifyMenuProps {
   storyContent: string;
   isEditing: boolean;
@@ -61,6 +61,8 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   const [selectedTextStyle, setSelectedTextStyle] = useState<"ironico" | "fantasy" | "semplice" | "fantasioso">("ironico");
   const [selectedPoetryStyle, setSelectedPoetryStyle] = useState<string>("lirica");
   const [selectedDrawingStyle, setSelectedDrawingStyle] = useState<string>("");
+  const [showSketchDialog, setShowSketchDialog] = useState(false);
+  const [selectedSketchLevel, setSelectedSketchLevel] = useState<1 | 2>(1);
   
   // Loading and result states
   const [isImproving, setIsImproving] = useState(false);
@@ -151,6 +153,62 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
           toast({
             title: "Accesso negato",
             description: "Puoi generare disegni solo per le tue storie"
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error checking story ownership:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile verificare i permessi"
+      });
+    }
+  };
+
+  const handleSketchClick = async (level: 1 | 2) => {
+    setSelectedSketchLevel(level);
+    const storyIdToUse = getReliableStoryId();
+    
+    if (!storyIdToUse) {
+      toast({
+        title: "Errore",
+        description: "ID storia non valido"
+      });
+      return;
+    }
+
+    // Check permissions (same as handleDrawingClick)
+    try {
+      const amStory = await fantasMiaDB.getAMStoryById(storyIdToUse);
+      const agStory = !amStory ? await fantasMiaDB.getAGStoryById(storyIdToUse) : null;
+
+      if (!amStory && !agStory) {
+        toast({
+          title: "Errore",
+          description: "Storia non trovata"
+        });
+        return;
+      }
+
+      const isSuperuser = userRole === 'superuser' || userRole === 'Superuser';
+      
+      if (agStory) {
+        if (isSuperuser) {
+          setShowSketchDialog(true);
+        } else {
+          toast({
+            title: "Accesso negato",
+            description: "Solo il Superuser può generare schizzi per le storie AG"
+          });
+        }
+      } else if (amStory) {
+        const ownsStory = amStory.ownerProfileId === userId;
+        if (isSuperuser || ownsStory) {
+          setShowSketchDialog(true);
+        } else {
+          toast({
+            title: "Accesso negato",
+            description: "Puoi generare schizzi solo per le tue storie"
           });
         }
       }
@@ -418,6 +476,24 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
                   <DropdownMenuItem onClick={() => handleDrawingClick("carboncino")} className="cursor-pointer">
                     Carboncino
                   </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  {/* Submenu Da colorare */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="cursor-pointer">
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Da colorare
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="bg-background border shadow-lg">
+                      <DropdownMenuItem onClick={() => handleSketchClick(1)} className="cursor-pointer">
+                        Livello 1 - Linee spesse (semplice)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleSketchClick(2)} className="cursor-pointer">
+                        Livello 2 - Linee sottili (dettagliato)
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 
@@ -688,6 +764,23 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
               style={existingImage.style}
             />
           )}
+          
+          {/* Sketch Generation Dialog */}
+          <SketchGenerationDialog
+            open={showSketchDialog}
+            onOpenChange={(open) => {
+              setShowSketchDialog(open);
+              if (!open && onMediaUpdate) {
+                onMediaUpdate();
+              }
+            }}
+            storyContent={storyContent}
+            storyTitle={storyTitle}
+            storyId={getReliableStoryId() || ''}
+            userId={userId || (userRole === 'Superuser' ? 'Superuser' : 'superuser')}
+            initialDetailLevel={selectedSketchLevel}
+            onSketchSaved={onMediaUpdate}
+          />
         </>
       )}
       </div>
