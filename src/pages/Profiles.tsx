@@ -24,8 +24,22 @@ const Profiles = () => {
     // Pulisci il profilo corrente quando si torna alla selezione profili
     clearCurrentProfile();
     
+    // Pulisci TUTTE le sessioni residue (bridged e superuser)
+    AuthBridge.clearBridgedSession();
+    localStorage.removeItem('superuser-session');
+    localStorage.removeItem('superuser-session-expiry');
+    localStorage.removeItem('fantasmia_current_user_id');
+    
     const users = getUsers();
-    setProfiles(users);
+    
+    // Ordina per ultimo accesso (più recente prima)
+    const sortedUsers = [...users].sort((a, b) => {
+      const dateA = a.lastAccess ? new Date(a.lastAccess).getTime() : 0;
+      const dateB = b.lastAccess ? new Date(b.lastAccess).getTime() : 0;
+      return dateB - dateA;
+    });
+    
+    setProfiles(sortedUsers);
     
     // Add special profiles and new profile option
     const specialProfiles = [
@@ -45,7 +59,7 @@ const Profiles = () => {
       }
     ];
     
-    setAllProfiles([...users, ...specialProfiles]);
+    setAllProfiles([...sortedUsers, ...specialProfiles]);
   }, []);
 
   const handleProfileSelect = (profileId: string) => {
