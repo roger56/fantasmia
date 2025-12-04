@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -52,6 +52,10 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
   const { toast } = useToast();
   const { showLoading, hideLoading } = useAILoading();
   
+  // Refs to track dialog lifecycle and prevent premature resets
+  const hasOpenedOnce = useRef(false);
+  const isFlowInProgress = useRef(false);
+  
   const [showCopyrightWarning, setShowCopyrightWarning] = useState(false);
   const [showDetailSelection, setShowDetailSelection] = useState(false);
   const [showNotesDialog, setShowNotesDialog] = useState(false);
@@ -63,28 +67,38 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
   const [generatedSketchUrl, setGeneratedSketchUrl] = useState<string | null>(null);
   const [generatedSketchBlob, setGeneratedSketchBlob] = useState<Blob | null>(null);
 
-  // When dialog opens - simplified without initialDetailLevel in deps
+  // When dialog opens - with protection against premature resets
   useEffect(() => {
-    console.log("🖍️ SketchGenerationDialog useEffect: open=", open, "initialDetailLevel=", initialDetailLevel);
+    console.log("🖍️ SketchGenerationDialog useEffect: open=", open, "initialDetailLevel=", initialDetailLevel, "hasOpenedOnce=", hasOpenedOnce.current, "isFlowInProgress=", isFlowInProgress.current);
     
     if (open) {
-      console.log("🖍️ Dialog opening, setting detailLevel and showing copyright warning");
-      // Always set detail level from prop and show copyright warning
-      setDetailLevel(initialDetailLevel);
-      setShowCopyrightWarning(true);
-      console.log("🖍️ showCopyrightWarning set to true");
+      // First time opening - initialize everything
+      if (!hasOpenedOnce.current) {
+        console.log("🖍️ Dialog opening for the first time, setting detailLevel and showing copyright warning");
+        hasOpenedOnce.current = true;
+        isFlowInProgress.current = true;
+        setDetailLevel(initialDetailLevel);
+        setShowCopyrightWarning(true);
+        console.log("🖍️ showCopyrightWarning set to true");
+      }
     } else {
-      // Reset state when closing
-      console.log("🖍️ Dialog closing, resetting all states");
-      setShowCopyrightWarning(false);
-      setShowDetailSelection(false);
-      setShowNotesDialog(false);
-      setShowResultDialog(false);
-      setGeneratedSketchUrl(null);
-      setGeneratedSketchBlob(null);
-      setUserNotes('');
+      // Only reset if we've actually completed or intentionally closed the flow
+      // Don't reset if a sub-dialog is still open
+      if (hasOpenedOnce.current && !showNotesDialog && !showResultDialog && !showCopyrightWarning && !isFlowInProgress.current) {
+        console.log("🖍️ Dialog closing intentionally, resetting all states");
+        hasOpenedOnce.current = false;
+        setShowCopyrightWarning(false);
+        setShowDetailSelection(false);
+        setShowNotesDialog(false);
+        setShowResultDialog(false);
+        setGeneratedSketchUrl(null);
+        setGeneratedSketchBlob(null);
+        setUserNotes('');
+      } else {
+        console.log("🖍️ Skipping reset - flow in progress or sub-dialog open");
+      }
     }
-  }, [open]); // Removed initialDetailLevel from dependencies
+  }, [open]); // Only depend on open
 
   const handleDetailSelected = (level: 1 | 2) => {
     setDetailLevel(level);
@@ -320,6 +334,9 @@ Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : '
 
       onSketchSaved?.();
       setShowResultDialog(false);
+      // Reset refs for successful completion
+      hasOpenedOnce.current = false;
+      isFlowInProgress.current = false;
       onOpenChange(false);
 
     } catch (error) {
@@ -333,6 +350,10 @@ Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : '
   };
 
   const handleDiscard = () => {
+    console.log("🖍️ handleDiscard called - intentional close");
+    // Reset refs for intentional closure
+    hasOpenedOnce.current = false;
+    isFlowInProgress.current = false;
     setShowResultDialog(false);
     setGeneratedSketchUrl(null);
     setGeneratedSketchBlob(null);
@@ -345,9 +366,13 @@ Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : '
       <CopyrightWarningDialog
         open={showCopyrightWarning}
         onOpenChange={(open) => {
+          console.log("🖍️ CopyrightWarningDialog onOpenChange:", open, "showNotesDialog:", showNotesDialog);
           setShowCopyrightWarning(open);
-          // Chiudi il dialog principale solo se NON stiamo mostrando il notes dialog
+          // Chiudi solo se l'utente cancella (non se sta procedendo al notes dialog)
           if (!open && !showNotesDialog) {
+            console.log("🖍️ User cancelled copyright dialog - closing everything");
+            hasOpenedOnce.current = false;
+            isFlowInProgress.current = false;
             onOpenChange(false);
           }
         }}
