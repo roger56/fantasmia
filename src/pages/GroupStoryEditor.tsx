@@ -298,7 +298,7 @@ const GroupStoryEditor = () => {
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Scrivi qui le tue tre righe per continuare la storia...&#10;&#10;Ricorda: solo 3 righe!&#10;&#10;Scrivi 'felici e contenti' per concludere (se ci sono almeno 3 contributi e 2 utenti)."
+                placeholder="Scrivi qui le tue tre righe per continuare la storia...&#10;&#10;Ricorda: solo 3 righe!&#10;&#10;Scrivi 'felici e contenti/e' per concludere (se ci sono almeno 3 contributi e 2 utenti)."
                 className="min-h-[200px] text-base leading-relaxed"
                 disabled={saving}
               />
@@ -368,7 +368,7 @@ const GroupStoryEditor = () => {
                   <li>Ogni utente scrive <strong>solo 3 righe, terminate con il tasto A CAPO</strong></li>
                   <li>Vedi solo l'ultima riga del contributo precedente</li>
                   <li>Non puoi scrivere due volte consecutive</li>
-                  <li>La storia termina quando qualcuno scrive "<strong>felici e contenti</strong>"</li>
+                  <li>La storia termina quando qualcuno scrive "<strong>felici e contenti/e</strong>"</li>
                   <li>Servono almeno <strong>3 contributi</strong> e <strong>2 utenti diversi</strong></li>
                   <li>La storia verrà approvata dal <strong>Superuser</strong> prima della pubblicazione</li>
                 </ul>
