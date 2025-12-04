@@ -346,7 +346,10 @@ Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : '
         open={showCopyrightWarning}
         onOpenChange={(open) => {
           setShowCopyrightWarning(open);
-          if (!open) onOpenChange(false);
+          // Chiudi il dialog principale solo se NON stiamo mostrando il notes dialog
+          if (!open && !showNotesDialog) {
+            onOpenChange(false);
+          }
         }}
         onConfirm={handleCopyrightConfirm}
         selectedStyle="sketch"
