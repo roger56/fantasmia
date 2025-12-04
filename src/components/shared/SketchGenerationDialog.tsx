@@ -63,18 +63,19 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
   const [generatedSketchUrl, setGeneratedSketchUrl] = useState<string | null>(null);
   const [generatedSketchBlob, setGeneratedSketchBlob] = useState<Blob | null>(null);
 
-  // When dialog opens
+  // When dialog opens - simplified without initialDetailLevel in deps
   useEffect(() => {
+    console.log("🖍️ SketchGenerationDialog useEffect: open=", open, "initialDetailLevel=", initialDetailLevel);
+    
     if (open) {
-      // If detail level is pre-selected, skip to copyright warning
-      if (initialDetailLevel) {
-        setDetailLevel(initialDetailLevel);
-        setShowCopyrightWarning(true);
-      } else {
-        setShowDetailSelection(true);
-      }
+      console.log("🖍️ Dialog opening, setting detailLevel and showing copyright warning");
+      // Always set detail level from prop and show copyright warning
+      setDetailLevel(initialDetailLevel);
+      setShowCopyrightWarning(true);
+      console.log("🖍️ showCopyrightWarning set to true");
     } else {
       // Reset state when closing
+      console.log("🖍️ Dialog closing, resetting all states");
       setShowCopyrightWarning(false);
       setShowDetailSelection(false);
       setShowNotesDialog(false);
@@ -83,7 +84,7 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
       setGeneratedSketchBlob(null);
       setUserNotes('');
     }
-  }, [open, initialDetailLevel]);
+  }, [open]); // Removed initialDetailLevel from dependencies
 
   const handleDetailSelected = (level: 1 | 2) => {
     setDetailLevel(level);
@@ -92,6 +93,7 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
   };
 
   const handleCopyrightConfirm = () => {
+    console.log("🖍️ Copyright confirmed, opening notes dialog");
     setShowCopyrightWarning(false);
     setShowNotesDialog(true);
   };
