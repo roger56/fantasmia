@@ -483,15 +483,14 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
                     Carboncino
                   </DropdownMenuItem>
                   
-                  <DropdownMenuSeparator />
-                  
-                  {/* Da colorare - voce singola */}
-                  <DropdownMenuItem onClick={() => handleSketchClick(1)} className="cursor-pointer">
-                    <Pencil className="w-4 h-4 mr-2" />
-                    🖍️ Da colorare
-                  </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
+
+              {/* Da colorare - voce diretta al primo livello per evitare problemi submenu */}
+              <DropdownMenuItem onClick={() => handleSketchClick(1)} className="cursor-pointer">
+                <Pencil className="w-4 h-4 mr-2" />
+                🖍️ DA COLORARE
+              </DropdownMenuItem>
 
               {/* Submenu MIGLIORA TESTO */}
               <DropdownMenuSub>
