@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, X } from 'lucide-react';
+import { Download, X, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImageViewerDialogProps {
@@ -12,6 +12,10 @@ interface ImageViewerDialogProps {
   style?: string;
   imageBlob?: Blob;
   storyId?: string;
+  /** Callback to trigger sketch generation from this image */
+  onCreateSketch?: () => void;
+  /** Whether the current image is already a sketch */
+  isSketch?: boolean;
 }
 
 const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
@@ -21,7 +25,9 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
   storyTitle = "Storia",
   style = "AI Generated",
   imageBlob,
-  storyId
+  storyId,
+  onCreateSketch,
+  isSketch = false
 }) => {
   const { toast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -188,10 +194,20 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
           <div className="flex justify-between items-center pt-4 border-t">
             <div className="space-y-1">
               <p className="text-sm font-medium">{storyTitle}</p>
-              <p className="text-xs text-muted-foreground">Stile: {style}</p>
+              <p className="text-xs text-muted-foreground">
+                {isSketch ? '🖍️ Schizzo da colorare' : `Stile: ${style}`}
+              </p>
             </div>
             
             <div className="flex gap-2">
+              {/* Show "Crea schizzo" button only if not already a sketch and callback provided */}
+              {!isSketch && onCreateSketch && (
+                <Button variant="outline" onClick={onCreateSketch} disabled={imageError}>
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Crea schizzo
+                </Button>
+              )}
+              
               <Button variant="outline" onClick={handleDownload} disabled={imageError}>
                 <Download className="w-4 h-4 mr-2" />
                 Scarica
