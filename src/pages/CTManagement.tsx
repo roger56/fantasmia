@@ -61,7 +61,7 @@ const CTManagement = () => {
       try {
         const auth = await AuthBridge.isAuthenticated();
         if (!auth.authenticated || (auth.userName !== 'superuser' && auth.userName !== 'Superuser')) {
-          navigate('/dashboard');
+          navigate('/superuser');
           return;
         }
 
@@ -194,7 +194,7 @@ const CTManagement = () => {
       <StoryLayout
         title="Gestione Storie CT"
         subtitle="Caricamento..."
-        onBack={() => navigate('/dashboard')}
+        onBack={() => navigate('/superuser')}
         showHomeButton
       >
         <div className="flex items-center justify-center p-12">
@@ -292,7 +292,7 @@ const CTManagement = () => {
       <StoryLayout
         title="Gestione Storie CT"
         subtitle="Continua Tu... - Pannello Superuser"
-        onBack={() => navigate('/dashboard')}
+        onBack={() => navigate('/superuser')}
         showHomeButton
         backgroundColor="bg-gradient-to-br from-violet-50 via-purple-50 to-pink-50"
       >
