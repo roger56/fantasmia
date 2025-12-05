@@ -21,6 +21,11 @@ const Profiles = () => {
   const [allProfiles, setAllProfiles] = useState<any[]>([]);
   
   useEffect(() => {
+    // ✅ FIX URL: Assicura che l'URL sia corretto
+    if (window.location.pathname !== '/profiles') {
+      window.history.replaceState(null, '', '/profiles');
+    }
+    
     // PULIZIA COMPLETA: azzera TUTTE le sessioni quando si torna a /profiles
     clearCurrentProfile();
     AuthBridge.clearBridgedSession();
@@ -29,43 +34,80 @@ const Profiles = () => {
     localStorage.removeItem('superuser-session');
     localStorage.removeItem('superuser-session-expiry');
     localStorage.removeItem('fantasmia_current_user_id');
-    localStorage.removeItem('fantasmia_supabase_session'); // Sessione bridged
+    localStorage.removeItem('fantasmia_supabase_session');
     localStorage.removeItem('current_profile_id');
     
-    console.log('🧹 Profiles: sessioni pulite, carico lista utenti...');
+    console.log('🧹 Profiles: sessioni pulite, avvio sincronizzazione profili...');
     
-    const users = getUsers();
-    console.log('📋 Utenti trovati:', users.map(u => ({ name: u.name, lastAccess: u.lastAccess })));
-    
-    // Ordina per ultimo accesso (più recente prima)
-    const sortedUsers = [...users].sort((a, b) => {
-      const dateA = a.lastAccess ? new Date(a.lastAccess).getTime() : 0;
-      const dateB = b.lastAccess ? new Date(b.lastAccess).getTime() : 0;
-      return dateB - dateA;
-    });
-    
-    console.log('📋 Utenti ordinati:', sortedUsers.map(u => u.name));
-    setProfiles(sortedUsers);
-    
-    // Add special profiles and new profile option
-    const specialProfiles = [
-      {
-        id: 'new-profile',
-        name: 'NUOVO PROFILO',
-        type: 'NEW',
-        icon: User,
-        requiresPassword: false
-      },
-      {
-        id: 'superuser',
-        name: 'Superuser',
-        type: 'SUPERUSER',
-        icon: Shield,
-        requiresPassword: true
+    const syncAndLoadProfiles = async () => {
+      // ✅ SINCRONIZZAZIONE: Pulisci localStorage confrontandolo con IndexedDB
+      try {
+        const { fantasMiaDB } = await import('@/utils/indexedDB');
+        await fantasMiaDB.init();
+        
+        // Ottieni profili REALI da IndexedDB (fonte di verità)
+        const indexedDBProfiles = await fantasMiaDB.getAllProfiles();
+        const validProfileIds = new Set(indexedDBProfiles.map((p: any) => p.id));
+        
+        console.log('📊 Profili in IndexedDB:', indexedDBProfiles.length, indexedDBProfiles.map((p: any) => p.name));
+        
+        // Ottieni profili da localStorage
+        const localStorageUsers = JSON.parse(localStorage.getItem('fantasmia_users') || '[]');
+        console.log('📊 Profili in localStorage:', localStorageUsers.length, localStorageUsers.map((u: any) => u.name));
+        
+        // Filtra: mantieni solo profili che esistono in IndexedDB
+        const cleanedUsers = localStorageUsers.filter((u: any) => validProfileIds.has(u.id));
+        
+        // Se ci sono differenze, aggiorna localStorage
+        if (cleanedUsers.length !== localStorageUsers.length) {
+          const removedCount = localStorageUsers.length - cleanedUsers.length;
+          const removedNames = localStorageUsers
+            .filter((u: any) => !validProfileIds.has(u.id))
+            .map((u: any) => u.name);
+          console.log(`🧹 Rimossi ${removedCount} profili fantasma da localStorage:`, removedNames);
+          localStorage.setItem('fantasmia_users', JSON.stringify(cleanedUsers));
+        } else {
+          console.log('✅ localStorage già sincronizzato con IndexedDB');
+        }
+      } catch (error) {
+        console.warn('⚠️ Errore sincronizzazione profili:', error);
       }
-    ];
+      
+      // Carica profili (ora puliti)
+      const users = getUsers();
+      console.log('📋 Utenti finali:', users.map(u => ({ name: u.name, lastAccess: u.lastAccess })));
+      
+      // Ordina per ultimo accesso (più recente prima)
+      const sortedUsers = [...users].sort((a, b) => {
+        const dateA = a.lastAccess ? new Date(a.lastAccess).getTime() : 0;
+        const dateB = b.lastAccess ? new Date(b.lastAccess).getTime() : 0;
+        return dateB - dateA;
+      });
+      
+      setProfiles(sortedUsers);
+      
+      // Add special profiles
+      const specialProfiles = [
+        {
+          id: 'new-profile',
+          name: 'NUOVO PROFILO',
+          type: 'NEW',
+          icon: User,
+          requiresPassword: false
+        },
+        {
+          id: 'superuser',
+          name: 'Superuser',
+          type: 'SUPERUSER',
+          icon: Shield,
+          requiresPassword: true
+        }
+      ];
+      
+      setAllProfiles([...sortedUsers, ...specialProfiles]);
+    };
     
-    setAllProfiles([...sortedUsers, ...specialProfiles]);
+    syncAndLoadProfiles();
   }, []);
 
   const handleProfileSelect = (profileId: string) => {
