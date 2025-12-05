@@ -204,8 +204,30 @@ const SuperuserUsers = () => {
         await fantasMiaDB.deleteMediaAssetsByStoryId(story.id);
       }
       
-      // Elimina il profilo
+      // Elimina il profilo da IndexedDB
       await fantasMiaDB.deleteProfile(selectedUser.id);
+      
+      // ✅ Sincronizza: elimina anche da localStorage 'fantasmia_users'
+      try {
+        const localUsers = JSON.parse(localStorage.getItem('fantasmia_users') || '[]');
+        const filteredLocalUsers = localUsers.filter((u: any) => u.id !== selectedUser.id);
+        localStorage.setItem('fantasmia_users', JSON.stringify(filteredLocalUsers));
+        console.log('✅ Profilo rimosso da localStorage fantasmia_users');
+      } catch (e) {
+        console.warn('⚠️ Errore pulizia localStorage fantasmia_users:', e);
+      }
+      
+      // ✅ Pulisci archivio storie utente da localStorage
+      localStorage.removeItem(`fantasmia_user_archive_${selectedUser.id}`);
+      
+      // ✅ Forza aggiornamento backup per allineare lo snapshot
+      try {
+        const { persistenceManager } = await import('@/utils/persistenceManager');
+        await persistenceManager.createBackup();
+        console.log('✅ Backup aggiornato dopo cancellazione profilo');
+      } catch (e) {
+        console.warn('⚠️ Errore aggiornamento backup:', e);
+      }
       
       toast({
         title: "Utente eliminato",
