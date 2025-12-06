@@ -15,7 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Palette, Loader2, Download, Bug, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAILoading } from "@/hooks/useAILoading";
-import { CLOUD_ENABLED } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -26,27 +25,74 @@ import CopyrightWarningDialog from "./CopyrightWarningDialog";
 // Sanitize content for image generation API - removes newlines and problematic characters
 const sanitizePromptContent = (content: string): string => {
   let sanitized = content;
-  
+
   // 1. Replace ALL newlines with single spaces (API doesn't need line breaks)
-  sanitized = sanitized.replace(/\n+/g, ' ');
-  
+  sanitized = sanitized.replace(/\n+/g, " ");
+
   // 2. Normalize multiple spaces to single space
-  sanitized = sanitized.replace(/\s{2,}/g, ' ');
-  
+  sanitized = sanitized.replace(/\s{2,}/g, " ");
+
   // 3. Normalize problematic quote characters
   sanitized = sanitized.replace(/[""'']/g, '"');
-  
+
   // 4. Remove control characters
-  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
-  
-  // 5. Truncate if too long (max 2000 chars for image prompt)
+  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+
+  // 5. Truncate if too long (max 2000 chars for generic image prompt)
   const MAX_PROMPT_LENGTH = 2000;
   if (sanitized.length > MAX_PROMPT_LENGTH) {
-    sanitized = sanitized.substring(0, MAX_PROMPT_LENGTH) + '...';
-    console.log('⚠️ Prompt truncated from', content.length, 'to', MAX_PROMPT_LENGTH, 'chars');
+    sanitized = sanitized.substring(0, MAX_PROMPT_LENGTH) + "...";
+    console.log("⚠️ Prompt truncated from", content.length, "to", MAX_PROMPT_LENGTH, "chars");
   }
-  
+
   return sanitized.trim();
+};
+
+/**
+ * Costruisce la descrizione per lo SKETCH "da colorare"
+ * - sanifica il testo
+ * - aggiunge eventuali note dell'utente
+ * - garantisce lunghezza massima 800 caratteri
+ * - se supera 800, fa un mini-riassunto locale spezzando in frasi
+ *
+ * NOTA: se in futuro si vuole un riassunto migliore, qui si può sostituire
+ * con una chiamata alla API /improve-text con istruzione "riassumi in max 800 caratteri".
+ */
+const buildSketchDescription = (
+  storyContent: string,
+  userComment: string,
+  maxLength: number = 800
+): string => {
+  // 1. Sanifica il contenuto base
+  let description = sanitizePromptContent(storyContent);
+
+  // 2. Aggiungi eventuali note dell’utente
+  if (userComment && userComment.trim().length > 0) {
+    description += ` Note aggiuntive: ${userComment.trim()}`;
+  }
+
+  if (description.length <= maxLength) {
+    return description;
+  }
+
+  // 3. Piccolo "riassunto" locale: tieni le prime frasi fino a circa maxLength-20
+  const sentences = description.split(/(?<=[.!?])\s+/);
+  let result = "";
+
+  for (const sentence of sentences) {
+    const candidate = result ? `${result} ${sentence}` : sentence;
+    if (candidate.length > maxLength - 20) {
+      break;
+    }
+    result = candidate;
+  }
+
+  // Se per qualche motivo non abbiamo frasi, taglia secco
+  if (!result) {
+    result = description.substring(0, maxLength - 3);
+  }
+
+  return result.trim() + "...";
 };
 
 export interface MediaButtonProps {
@@ -120,7 +166,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     }
   };
 
-  // Handler for style selection (not used anymore - styles come from dropdown)
+  // Handler for style selection (non più usato: lo stile arriva dal menu a tendina)
   const handleStyleSelected = (style: string) => {
     setSelectedStyle(style.toLowerCase());
     setShowStyleSelection(false);
@@ -173,7 +219,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     }
 
     if (type === "Disegno") {
-      setSelectedStyle(subtype.toLowerCase());
+      setSelectedStyle(subtype.toLowerCase()); // es. "fumetto", "manga", "sketch"
       setShowCopyrightWarning(true);
     } else {
       toast({
@@ -228,9 +274,87 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         throw new Error("User ID is required");
       }
 
+      // *** RAMO SPECIFICO PER SKETCH "DA COLORARE" ***
+      if (style === "sketch") {
+        // Costruisci descrizione sanificata + max 800 caratteri
+        const description = buildSketchDescription(storyContent, userComment, 800);
+        console.log("🖍️ Sketch description length:", description.length);
+
+        if (!description || !description.trim()) {
+          toast({
+            title: "Errore",
+            description: "Testo insufficiente per generare uno sketch da colorare",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Toast informativo
+        toast({
+          title: "Generazione sketch in corso...",
+          description: "Sto creando il disegno da colorare in bianco e nero.",
+          variant: "default",
+        });
+
+        // Timeout per sicurezza
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi
+
+        const sketchApiUrl = "https://fantasmia-ai.vercel.app/api/openai/sketch";
+
+        const response = await fetch(sketchApiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ description }),
+          signal: controller.signal,
+          mode: "cors",
+        });
+
+        clearTimeout(timeoutId);
+
+        console.log("📥 Sketch response status:", response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ Sketch HTTP error:", response.status, errorText);
+          throw new Error(`Errore nella generazione dello sketch (status ${response.status})`);
+        }
+
+        const data = await response.json();
+        console.log("✅ Sketch API response:", data);
+
+        const imageUrl: string | undefined = data.imageUrl;
+        if (!imageUrl) {
+          console.error("❌ No imageUrl in sketch response:", data);
+          throw new Error("La API sketch non ha restituito alcuna immagine");
+        }
+
+        // Mostra anteprima
+        setGeneratedImage(imageUrl);
+        setShowImageDialog(true);
+        setUserComment("");
+
+        // Salva in IndexedDB come per il disegno normale
+        await handleSaveImage(imageUrl);
+
+        toast({
+          title: "Sketch generato e salvato!",
+          description: "Lo sketch da colorare è stato associato alla storia",
+          variant: "default",
+        });
+
+        // Fine ramo SKETCH: esci dalla funzione qui
+        return;
+      }
+
+      // *** RAMO STANDARD: disegno "normale" (fumetto, manga, acquarello, ecc.) ***
+
       // Sanitize content for API - removes newlines and problematic characters
       const sanitizedContent = sanitizePromptContent(storyContent);
-      
+
       console.log("📊 Content sanitization:", {
         originalLength: storyContent.length,
         sanitizedLength: sanitizedContent.length,
@@ -290,8 +414,9 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi
 
-      // CHIAMATA API VERCEL
-      const openAiImageUrl = import.meta.env.VITE_OPENAI_API_URL || "https://fantasmia-ai.vercel.app/api/openai/image";
+      // CHIAMATA API VERCEL STANDARD IMMAGINE
+      const openAiImageUrl =
+        import.meta.env.VITE_OPENAI_API_URL || "https://fantasmia-ai.vercel.app/api/openai/image";
       const response = await fetch(openAiImageUrl, {
         method: "POST",
         headers: {
@@ -311,14 +436,14 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       if (!response.ok) {
         const errorText = await response.text();
         console.error("❌ HTTP error:", response.status, errorText);
-        
+
         // Specific handling for 502 errors (common with CT stories)
         if (response.status === 502) {
           throw new Error(
             "Errore del server di generazione (502). Il testo potrebbe essere troppo complesso. Riprova tra qualche minuto."
           );
         }
-        
+
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -344,8 +469,8 @@ const MediaButton: React.FC<MediaButtonProps> = ({
               statusCode: response.status,
             },
             null,
-            2,
-          ),
+            2
+          )
         );
       }
 
@@ -373,7 +498,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         setUserComment("");
         console.log("✅ Image set successfully from URL");
 
-        // SAVE TO INDEXEDDB AUTOMATICALLY
+        // SAVE TO INDEXEDDB AUTOMATICALLY (gestisce ora anche URL)
         await handleSaveImage(data.image_url);
 
         toast({
@@ -388,8 +513,8 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           data.error?.includes("content policy") || data.detail?.includes("safety system")
             ? "❌ Il contenuto della storia contiene parole non adatte per la generazione di immagini.\n\n🔧 Suggerimenti:\n• Evita riferimenti a violenza, armi o morte\n• Rimuovi parole come 'battaglia', 'guerra', 'sangue'\n• Riformula il testo con termini più neutri"
             : data.error?.includes("Prompt too long")
-              ? "❌ Il testo della storia è troppo lungo per generare un'immagine.\n\n🔧 Suggerimenti:\n• Riduci la lunghezza del testo\n• Seleziona solo la parte più importante della storia"
-              : data.error || "Errore nella generazione dell'immagine";
+            ? "❌ Il testo della storia è troppo lungo per generare un'immagine.\n\n🔧 Suggerimenti:\n• Riduci la lunghezza del testo\n• Seleziona solo la parte più importante della storia"
+            : data.error || "Errore nella generazione dell'immagine";
 
         throw new Error(errorMessage);
       } else {
@@ -444,7 +569,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           "⚠️ Esiste già un disegno associato a questa storia.\n\n" +
             "Vuoi sostituirlo con quello nuovo?\n\n" +
             "✅ OK = Sostituisci il disegno precedente\n" +
-            "❌ Annulla = Mantieni il disegno esistente",
+            "❌ Annulla = Mantieni il disegno esistente"
         );
 
         if (!confirmReplace) {
@@ -461,8 +586,29 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         console.log("🗑️ Existing image deleted:", existingMedia.id);
       }
 
-      // Convert base64 to Blob
-      const [header, base64Data] = imageDataUrl.split(",");
+      let dataUrl = imageDataUrl;
+
+      // Se arriva un URL HTTP (es. dalla /sketch), convertilo in dataURL
+      if (!dataUrl.startsWith("data:")) {
+        console.log("🌐 Converting image URL to dataURL for storage...");
+        const resp = await fetch(dataUrl, { mode: "cors" });
+        if (!resp.ok) {
+          throw new Error("Impossibile scaricare l'immagine da salvare");
+        }
+        const blobFromUrl = await resp.blob();
+        dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === "string") resolve(reader.result);
+            else reject(new Error("Errore nella conversione a data URL"));
+          };
+          reader.onerror = () => reject(new Error("Errore FileReader"));
+          reader.readAsDataURL(blobFromUrl);
+        });
+      }
+
+      // Convert base64 dataURL to Blob
+      const [header, base64Data] = dataUrl.split(",");
       const mimeMatch = header.match(/data:([^;]+)/);
       const mime = mimeMatch ? mimeMatch[1] : "image/png";
 
@@ -504,7 +650,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       window.dispatchEvent(
         new CustomEvent("storyImageSaved", {
           detail: { storyId, storyType },
-        }),
+        })
       );
     } catch (error) {
       console.error("❌ Error saving image to IndexedDB:", error);
@@ -519,7 +665,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const handleDownloadImage = async () => {
     if (!generatedImage) return;
 
-    try {
+    try:
       // Use a proxy or different approach for CORS-protected images
       const response = await fetch(generatedImage, {
         mode: "cors",
@@ -626,6 +772,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
                     >
                       Carboncino
                     </DropdownMenuItem>
+                    {/* QUI dovresti già avere la voce "da colorare" che passa subtype="Sketch" */}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
 
@@ -828,8 +975,6 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Style Selection Dialog - REMOVED: Redundant, style is selected from dropdown menu */}
 
       {/* Copyright Warning Dialog */}
       <CopyrightWarningDialog
