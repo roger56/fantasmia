@@ -58,11 +58,7 @@ const sanitizePromptContent = (content: string): string => {
  * NOTA: se in futuro si vuole un riassunto migliore, qui si può sostituire
  * con una chiamata alla API /improve-text con istruzione "riassumi in max 800 caratteri".
  */
-const buildSketchDescription = (
-  storyContent: string,
-  userComment: string,
-  maxLength: number = 800
-): string => {
+const buildSketchDescription = (storyContent: string, userComment: string, maxLength: number = 800): string => {
   // 1. Sanifica il contenuto base
   let description = sanitizePromptContent(storyContent);
 
@@ -415,8 +411,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi
 
       // CHIAMATA API VERCEL STANDARD IMMAGINE
-      const openAiImageUrl =
-        import.meta.env.VITE_OPENAI_API_URL || "https://fantasmia-ai.vercel.app/api/openai/image";
+      const openAiImageUrl = import.meta.env.VITE_OPENAI_API_URL || "https://fantasmia-ai.vercel.app/api/openai/image";
       const response = await fetch(openAiImageUrl, {
         method: "POST",
         headers: {
@@ -440,7 +435,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         // Specific handling for 502 errors (common with CT stories)
         if (response.status === 502) {
           throw new Error(
-            "Errore del server di generazione (502). Il testo potrebbe essere troppo complesso. Riprova tra qualche minuto."
+            "Errore del server di generazione (502). Il testo potrebbe essere troppo complesso. Riprova tra qualche minuto.",
           );
         }
 
@@ -469,8 +464,8 @@ const MediaButton: React.FC<MediaButtonProps> = ({
               statusCode: response.status,
             },
             null,
-            2
-          )
+            2,
+          ),
         );
       }
 
@@ -513,8 +508,8 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           data.error?.includes("content policy") || data.detail?.includes("safety system")
             ? "❌ Il contenuto della storia contiene parole non adatte per la generazione di immagini.\n\n🔧 Suggerimenti:\n• Evita riferimenti a violenza, armi o morte\n• Rimuovi parole come 'battaglia', 'guerra', 'sangue'\n• Riformula il testo con termini più neutri"
             : data.error?.includes("Prompt too long")
-            ? "❌ Il testo della storia è troppo lungo per generare un'immagine.\n\n🔧 Suggerimenti:\n• Riduci la lunghezza del testo\n• Seleziona solo la parte più importante della storia"
-            : data.error || "Errore nella generazione dell'immagine";
+              ? "❌ Il testo della storia è troppo lungo per generare un'immagine.\n\n🔧 Suggerimenti:\n• Riduci la lunghezza del testo\n• Seleziona solo la parte più importante della storia"
+              : data.error || "Errore nella generazione dell'immagine";
 
         throw new Error(errorMessage);
       } else {
@@ -569,7 +564,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           "⚠️ Esiste già un disegno associato a questa storia.\n\n" +
             "Vuoi sostituirlo con quello nuovo?\n\n" +
             "✅ OK = Sostituisci il disegno precedente\n" +
-            "❌ Annulla = Mantieni il disegno esistente"
+            "❌ Annulla = Mantieni il disegno esistente",
         );
 
         if (!confirmReplace) {
@@ -650,7 +645,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       window.dispatchEvent(
         new CustomEvent("storyImageSaved", {
           detail: { storyId, storyType },
-        })
+        }),
       );
     } catch (error) {
       console.error("❌ Error saving image to IndexedDB:", error);
@@ -665,7 +660,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   const handleDownloadImage = async () => {
     if (!generatedImage) return;
 
-    try:
+    try {
       // Use a proxy or different approach for CORS-protected images
       const response = await fetch(generatedImage, {
         mode: "cors",
