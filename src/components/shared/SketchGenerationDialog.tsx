@@ -145,8 +145,7 @@ Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : '
           Accept: 'application/json',
         },
         body: JSON.stringify({
-          prompt: sketchPrompt,
-          style: 'sketch' // Special style for black and white line art
+          description: sketchPrompt
         }),
         signal: controller.signal,
         mode: 'cors',
@@ -161,11 +160,13 @@ Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : '
       }
 
       const data = await response.json();
-      console.log('✅ Sketch API response:', { hasBase64: !!data.image_base64, hasUrl: !!data.image_url });
+      console.log('✅ Sketch API response:', { hasImageUrl: !!data.imageUrl, hasBase64: !!data.image_base64 });
 
       let imageDataUrl: string | null = null;
 
-      if (data.image_base64) {
+      if (data.imageUrl) {
+        imageDataUrl = data.imageUrl;
+      } else if (data.image_base64) {
         imageDataUrl = `data:image/png;base64,${data.image_base64}`;
       } else if (data.image_url) {
         imageDataUrl = data.image_url;
