@@ -248,21 +248,133 @@ const MediaButton: React.FC<MediaButtonProps> = ({
   };
 
   const handleImageGeneration = async (style: string) => {
-    try {
-      console.log("🚀 Starting image generation...");
-      setIsGenerating(true);
-      showLoading("Generazione immagine in corso...");
-
-      // Validation before sending
-      if (!storyContent || storyContent.trim().length === 0) {
-        console.error("❌ No story content available for image generation");
+  try {
+    console.log("@ Starting image generation...");
+    setIsGenerating(true);
+    showLoading("Generazione immagine in corso...");
+    
+    // Validation before sending
+    if (!storyContent || storyContent.trim().length === 0) {
+      console.error("X No story content available for image generation");
+      toast({
+        title: "Errore",
+        description: "Nessun contenuto della storia disponibile",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Use userId prop or get from state (set by AuthBridge)
+    const userIdToUse = userId || currentUserId;
+    if (!userIdToUse) {
+      throw new Error("User ID is required");
+    }
+    
+    // *** RAMO SPECIFICO PER SKETCH "DA COLORARE" ***
+    if (style === "sketch") {
+      // Costruisci descrizione sanificata + max 800 caratteri
+      const description = buildSketchDescription(storyContent, userComment, 800);
+      console.log("@ Sketch description length:", description.length);
+      
+      if (!description || !description.trim()) {
         toast({
-          title: "Errore",
-          description: "Nessun contenuto della storia disponibile",
+          title: "Errore",  // Correggi "Entrone" a "Errore"
+          description: "Testo insufficiente per generare uno sketch da colorare",
           variant: "destructive",
         });
         return;
       }
+      
+      // Toast informativo
+      toast({
+        title: "Generazione sketch in corso...",
+        description: "Sto creando il disegno da colorare in bianco e nero.",
+        variant: "default",
+      });
+      
+      // Timeout per sicurezza
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi
+      
+      const sketchApiUrl = "https://fantasmia-ai.vercel.app/api/openai/sketch";
+      
+      try {
+        const response = await fetch(sketchApiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ description }),
+          signal: controller.signal,
+          mode: "cors",
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log("⚠ Sketch response status:", response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("✗ Sketch HTTP error:", response.status, errorText);
+          throw new Error(`Errore nella generazione dello sketch (status ${response.status})`);
+        }
+        
+        const data = await response.json();
+        console.log("⚠ Sketch API response:", data);
+        
+        const imageUrl: string | undefined = data.imageUrl;
+        if (!imageUrl) {
+          console.error("✗ No imageUrl in sketch response:", data);
+          throw new Error("La API sketch non ha restituito alcuna immagine");
+        }
+        
+        // Mostra anteprima
+        setGeneratedImage(imageUrl);
+        setShowImageDialog(true);
+        setUserComment("");
+        
+        // Salva in IndexedDB come per il disegno normale
+        await handleSaveImage(imageUrl);
+        
+        toast({
+          title: "Sketch generato e salvato!",
+          description: "Lo sketch da colorare è stato associato alla storia",
+          variant: "default",
+        });
+        
+        // Fine ramo SKETCH: esci dalla funzione qui
+        return;
+        
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        throw fetchError;
+      }
+    }
+    
+    // *** RAMO STANDARD: disegno "normale" (fumetto, manga, acquarello, ecc.) ***
+    // ... resto del codice per gli altri stili ...
+    
+  } catch (error) {
+    console.error("※ Error generating image:", error);
+    
+    // Show error in toast
+    toast({
+      title: "Errore",
+      description: error instanceof Error ? error.message : "Errore nella generazione dell'immagine",
+      variant: "destructive",
+    });
+    
+    // In debug mode, still show the dialog with error info
+    if (isDebugMode) {
+      setShowImageDialog(true);
+    }
+  } finally {
+    console.log("■ Image generation process completed");
+    setIsGenerating(false);
+    hideLoading();
+  }
+};
 
       // Use userId prop or get from state (set by AuthBridge)
       const userIdToUse = userId || currentUserId;
