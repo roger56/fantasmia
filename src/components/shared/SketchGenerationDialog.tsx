@@ -133,12 +133,12 @@ Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : '
 
       console.log('🖍️ Generating sketch with prompt:', sketchPrompt.substring(0, 200) + '...');
 
-      const openAiImageUrl = import.meta.env.VITE_OPENAI_API_URL || 'https://fantasmia-ai.vercel.app/api/openai/image';
+      const sketchApiUrl = 'https://fantasmia-ai.vercel.app/api/openai/sketch';
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-      const response = await fetch(openAiImageUrl, {
+      const response = await fetch(sketchApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
