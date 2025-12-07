@@ -247,7 +247,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     // NON chiamare externalOnOpenChange per permettere il passaggio al comment dialog
   };
 
-  const handleImageGeneration = async (style: string) => {
+const handleImageGeneration = async (style: string) => {  // Aggiungi async qui
   try {
     console.log("@ Starting image generation...");
     setIsGenerating(true);
@@ -261,12 +261,16 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         description: "Nessun contenuto della storia disponibile",
         variant: "destructive",
       });
+      setIsGenerating(false);  // Aggiungi questo
+      hideLoading();  // Aggiungi questo
       return;
     }
     
     // Use userId prop or get from state (set by AuthBridge)
     const userIdToUse = userId || currentUserId;
     if (!userIdToUse) {
+      setIsGenerating(false);
+      hideLoading();
       throw new Error("User ID is required");
     }
     
@@ -278,10 +282,12 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       
       if (!description || !description.trim()) {
         toast({
-          title: "Errore",  // Correggi "Entrone" a "Errore"
+          title: "Errore",
           description: "Testo insufficiente per generare uno sketch da colorare",
           variant: "destructive",
         });
+        setIsGenerating(false);
+        hideLoading();
         return;
       }
       
@@ -312,20 +318,20 @@ const MediaButton: React.FC<MediaButtonProps> = ({
         
         clearTimeout(timeoutId);
         
-        console.log("⚠ Sketch response status:", response.status);
+        console.log("📥 Sketch response status:", response.status);
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("✗ Sketch HTTP error:", response.status, errorText);
+          console.error("❌ Sketch HTTP error:", response.status, errorText);
           throw new Error(`Errore nella generazione dello sketch (status ${response.status})`);
         }
         
         const data = await response.json();
-        console.log("⚠ Sketch API response:", data);
+        console.log("✅ Sketch API response:", data);
         
         const imageUrl: string | undefined = data.imageUrl;
         if (!imageUrl) {
-          console.error("✗ No imageUrl in sketch response:", data);
+          console.error("❌ No imageUrl in sketch response:", data);
           throw new Error("La API sketch non ha restituito alcuna immagine");
         }
         
@@ -343,7 +349,9 @@ const MediaButton: React.FC<MediaButtonProps> = ({
           variant: "default",
         });
         
-        // Fine ramo SKETCH: esci dalla funzione qui
+        // Fine ramo SKETCH
+        setIsGenerating(false);
+        hideLoading();
         return;
         
       } catch (fetchError) {
@@ -353,10 +361,182 @@ const MediaButton: React.FC<MediaButtonProps> = ({
     }
     
     // *** RAMO STANDARD: disegno "normale" (fumetto, manga, acquarello, ecc.) ***
-    // ... resto del codice per gli altri stili ...
+    
+    // Sanitize content for API - removes newlines and problematic characters
+    const sanitizedContent = sanitizePromptContent(storyContent);
+    console.log("📝 Content sanitization:", {
+      originalLength: storyContent.length,
+      sanitizedLength: sanitizedContent.length,
+      hadMultipleNewLines: /\n{3,}/.test(storyContent),
+      hadAnyNewLines: /\n/.test(storyContent),
+    });
+    
+    // Create enhanced prompt with user comment and NO TEXT policy
+    const noTextPolicy = "IMPORTANTE: L'immagine non deve contenere testi, parole, scritte o frasi visibili di alcun tipo.";
+    const enhancedPrompt = userComment
+      ? `${sanitizedContent} Note aggiuntive: ${userComment} ${noTextPolicy}`
+      : `${sanitizedContent} ${noTextPolicy}`;
+    
+    const requestBody = {
+      prompt: enhancedPrompt,
+      style: style,
+      num_images: 1,
+    };
+    
+    console.log("🔍 Current state:", {
+      prompt: enhancedPrompt.substring(0, 100) + "...",
+      style: style,
+      storyId: storyId,
+      isGenerating: isGenerating,
+    });
+    
+    console.log("📤 Sending request to API:", requestBody);
+    
+    if (!enhancedPrompt || !enhancedPrompt.trim()) {
+      console.error("❌ Prompt is empty!");
+      toast({
+        title: "Errore",
+        description: "Inserisci un prompt valido",
+        variant: "destructive",
+      });
+      setIsGenerating(false);
+      hideLoading();
+      return;
+    }
+    
+    if (!style) {
+      console.error("❌ No style selected!");
+      toast({
+        title: "Errore",
+        description: "Seleziona uno stile",
+        variant: "destructive",
+      });
+      setIsGenerating(false);
+      hideLoading();
+      return;
+    }
+    
+    // Show informative message during generation
+    toast({
+      title: "Generazione in corso...",
+      description: "Sto creando l'immagine. Attendere circa 10-15 secondi.",
+      variant: "default",
+    });
+    
+    // Add timeout to fetch
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi
+    
+    // CHIAMATA API VERCEL STANDARD IMMAGINE
+    const openAiImageUrl = import.meta.env.VITE_OPENAI_API_URL || 
+      "https://fantasmia-ai.vercel.app/api/openai/image";
+    
+    const response = await fetch(openAiImageUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+      mode: "cors",
+    });
+    
+    clearTimeout(timeoutId);
+    
+    console.log("📋 Response status:", response.status);
+    console.log("📋 Response headers:", Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ HTTP error:", response.status, errorText);
+      
+      // Specific handling for 502 errors (common with CT stories)
+      if (response.status === 502) {
+        throw new Error(
+          "Errore del server di generazione (502). Il testo potrebbe essere troppo complesso. Riprova tra qualche minuto."
+        );
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log("✅ API response received:", {
+      keys: Object.keys(data),
+      hasImageBase64: !!data.image_base64,
+      imageBase64Length: data.image_base64?.length,
+      hasImageUrl: !!data.image_url,
+      style: data.style,
+      error: data.error,
+    });
+    
+    // Store debug information for Superuser mode
+    if (isDebugMode) {
+      setDebugInfo(
+        JSON.stringify(
+          {
+            response: data,
+            prompt: enhancedPrompt.substring(0, 200) + "...",
+            style: style,
+            timestamp: new Date().toISOString(),
+            statusCode: response.status,
+          },
+          null,
+          2,
+        ),
+      );
+    }
+    
+    // Gestione della risposta - PRIMA base64, POI url come fallback
+    if (data.image_base64) {
+      console.log("🖼️ Creating image from base64...");
+      const base64Image = `data:image/png;base64,${data.image_base64}`;
+      setGeneratedImage(base64Image);
+      setShowImageDialog(true);
+      setUserComment(""); // Reset comment after generation
+      console.log("✅ Image set successfully from base64");
+      
+      // SAVE TO INDEXEDDB AUTOMATICALLY
+      await handleSaveImage(base64Image);
+      
+      toast({
+        title: "Immagine generata e salvata!",
+        description: "Immagine creata e associata alla storia",
+        variant: "default",
+      });
+    } else if (data.image_url) {
+      console.log("🖼️ Using image URL as fallback...");
+      setGeneratedImage(data.image_url);
+      setShowImageDialog(true);
+      setUserComment("");
+      console.log("✅ Image set successfully from URL");
+      
+      // SAVE TO INDEXEDDB AUTOMATICALLY (gestisce ora anche URL)
+      await handleSaveImage(data.image_url);
+      
+      toast({
+        title: "Immagine generata e salvata!",
+        description: "Immagine creata e associata alla storia",
+        variant: "default",
+      });
+    } else if (data.error) {
+      console.error("❌ API returned error:", data.error);
+      
+      const errorMessage = data.error?.includes("content policy") || 
+        data.detail?.includes("safety system")
+        ? "❌ Il contenuto della storia contiene parole non adatte per la generazione di immagini.\n\nSuggerimenti:\n• Evita riferimenti a violenza, armi o morte\n• Rimuovi parole come 'battaglia', 'guerra', 'sangue'\n• Riformula il testo con termini più neutri"
+        : data.error?.includes("Prompt too long")
+        ? "❌ Il testo della storia è troppo lungo per generare un'immagine.\n\nSuggerimenti:\n• Riduci la lunghezza del testo\n• Seleziona solo la parte più importante della storia"
+        : data.error || "Errore nella generazione dell'immagine";
+      
+      throw new Error(errorMessage);
+    } else {
+      console.error("❌ No image data in response:", data);
+      throw new Error("No image data received from API");
+    }
     
   } catch (error) {
-    console.error("※ Error generating image:", error);
+    console.error("💥 Error generating image:", error);
     
     // Show error in toast
     toast({
@@ -370,7 +550,7 @@ const MediaButton: React.FC<MediaButtonProps> = ({
       setShowImageDialog(true);
     }
   } finally {
-    console.log("■ Image generation process completed");
+    console.log("🏁 Image generation process completed");
     setIsGenerating(false);
     hideLoading();
   }
