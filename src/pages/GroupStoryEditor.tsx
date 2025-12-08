@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
+import SpeechToText from '@/components/SpeechToText';
 
 const GroupStoryEditor = () => {
   const navigate = useNavigate();
@@ -110,6 +111,11 @@ const GroupStoryEditor = () => {
     if (tts.isPlaying) return 'Pausa';
     if (tts.isPaused) return 'Riprendi';
     return 'Leggi';
+  };
+
+  // STT handler - appends dictated text to content
+  const handleSpeechResult = (text: string) => {
+    setContent(prev => prev + (prev ? ' ' : '') + text);
   };
 
   const handleSave = async () => {
@@ -295,13 +301,22 @@ const GroupStoryEditor = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Scrivi qui le tue tre righe per continuare la storia...&#10;&#10;Ricorda: solo 3 righe!&#10;&#10;Scrivi 'felici e contenti/e' per concludere (se ci sono almeno 3 contributi e 2 utenti)."
-                className="min-h-[200px] text-base leading-relaxed"
-                disabled={saving}
-              />
+              <div className="flex gap-2">
+                <Textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Scrivi qui le tue tre righe per continuare la storia...&#10;&#10;Ricorda: solo 3 righe!&#10;&#10;Scrivi 'felici e contenti/e' per concludere (se ci sono almeno 3 contributi e 2 utenti)."
+                  className="min-h-[200px] text-base leading-relaxed flex-1"
+                  disabled={saving}
+                />
+                <div className="flex flex-col gap-2">
+                  <SpeechToText 
+                    onResult={handleSpeechResult}
+                    isDisabled={saving}
+                    className="h-auto py-3"
+                  />
+                </div>
+              </div>
 
               {stats.lastContributor === userName && (
                 <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">

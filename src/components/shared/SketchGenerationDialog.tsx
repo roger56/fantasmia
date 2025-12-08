@@ -24,16 +24,15 @@ interface SketchGenerationDialogProps {
   onSketchSaved?: () => void;
 }
 
-// Sanitize content for API
-const sanitizePromptContent = (content: string): string => {
+// Sanitize content for API - MAX 720 chars for scene text only (excludes prompt prefix)
+const sanitizeSceneContent = (content: string, maxLength: number = 720): string => {
   let sanitized = content;
   sanitized = sanitized.replace(/\n+/g, ' ');
   sanitized = sanitized.replace(/\s{2,}/g, ' ');
   sanitized = sanitized.replace(/[""'']/g, '"');
   sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
-  const MAX_PROMPT_LENGTH = 2000;
-  if (sanitized.length > MAX_PROMPT_LENGTH) {
-    sanitized = sanitized.substring(0, MAX_PROMPT_LENGTH) + '...';
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength);
   }
   return sanitized.trim();
 };
@@ -118,20 +117,23 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
     showLoading('Generazione schizzo in corso...');
 
     try {
-      const sanitizedContent = sanitizePromptContent(storyContent);
+      // Fixed prompt prefix (NOT counted in 720 char limit)
+      const promptPrefix = `A clean black and white line drawing, like a coloring book page for a 6-year-old child. The image should have bold, well-defined outlines, no shading, no color, and simple shapes. The style should be playful and easy to color. Show the following scene: `;
       
-      // Build the sketch-specific prompt
-      const detailDescription = detailLevel === 1 
-        ? 'linee spesse e contorni semplici, minimo dettaglio, adatto a bambini piccoli per colorare facilmente'
-        : 'linee sottili e dettagliate, contorni precisi, adatto a bambini più grandi per colorare con precisione';
+      // Scene content - MAX 720 characters
+      const sanitizedStory = sanitizeSceneContent(storyContent);
+      const sceneWithNotes = userNotes 
+        ? `${sanitizedStory}. Additional notes: ${userNotes}` 
+        : sanitizedStory;
       
-      const sketchPrompt = `Crea uno schizzo a contorni in bianco e nero puro, stile line art per colorare. 
-${detailDescription}. 
-L'immagine deve essere SOLO in bianco e nero, senza sfumature di grigio, senza ombreggiature, senza riempimenti.
-IMPORTANTE: L'immagine NON deve contenere testi, parole, scritte, numeri o lettere di alcun tipo.
-Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : ''}`;
+      // Enforce 720 char limit on scene only
+      const finalScene = sceneWithNotes.length > 720 
+        ? sceneWithNotes.substring(0, 720) 
+        : sceneWithNotes;
+      
+      const sketchPrompt = promptPrefix + finalScene;
 
-      console.log('🖍️ Generating sketch with prompt:', sketchPrompt.substring(0, 200) + '...');
+      console.log('🖍️ Generating sketch - scene length:', finalScene.length, 'total prompt length:', sketchPrompt.length);
 
       const sketchApiUrl = 'https://fantasmia-ai.vercel.app/api/openai/sketch';
       
@@ -211,7 +213,15 @@ Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : '
   };
 
   const handleDownload = async () => {
-    if (!generatedSketchUrl) return;
+    // Download does NOT require storyId - only needs the sketch URL
+    if (!generatedSketchUrl) {
+      toast({
+        title: 'Errore',
+        description: 'Schizzo non disponibile per il download',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     try {
       let blobToDownload = generatedSketchBlob;
@@ -235,7 +245,7 @@ Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : '
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${safeFilename}-schizzo-livello${detailLevel}.png`;
+      link.download = `${safeFilename}-schizzo.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -256,10 +266,21 @@ Basato su: ${sanitizedContent}${userNotes ? ` Note aggiuntive: ${userNotes}` : '
   };
 
   const handleSaveAsMainImage = async () => {
-    if (!storyId || !generatedSketchBlob) {
+    console.log('💾 handleSaveAsMainImage - storyId:', storyId, 'hasBlob:', !!generatedSketchBlob);
+    
+    if (!generatedSketchBlob) {
       toast({
         title: 'Errore',
-        description: 'ID storia o schizzo non disponibile',
+        description: 'Schizzo non disponibile per il salvataggio',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (!storyId) {
+      toast({
+        title: 'Errore',
+        description: 'ID storia non disponibile. Prova a scaricare lo schizzo e caricarlo manualmente.',
         variant: 'destructive'
       });
       return;
