@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, BookOpen, Settings } from 'lucide-react';
+import { Users, BookOpen, Settings, Calendar } from 'lucide-react';
 import StoryLayout from '@/components/shared/StoryLayout';
 
 const SuperUser = () => {
@@ -81,6 +81,27 @@ const SuperUser = () => {
                 className="w-full border-violet-300 text-violet-700 hover:bg-violet-50"
               >
                 Partecipa alla Storia
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* NEW: Daily Stories Management */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-amber-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-amber-600" />
+                Racconti del Giorno
+              </CardTitle>
+              <CardDescription>
+                Importa e gestisci i racconti quotidiani per gli utenti
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => navigate('/superuser-daily-stories')}
+                className="w-full bg-amber-600 hover:bg-amber-700"
+              >
+                Gestione Racconti
               </Button>
             </CardContent>
           </Card>

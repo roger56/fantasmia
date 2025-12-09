@@ -112,11 +112,18 @@ interface MediaAsset {
   };
 }
 
+// Daily Story interface
+interface DailyStory {
+  date: string;   // "12 dicembre" - chiave primaria
+  story: string;  // racconto breve ASCII
+  quote: string;  // massima del giorno
+}
+
 class FantasMiaDB {
   private db: IDBDatabase | null = null;
   private readonly dbConfig: DatabaseConfig = {
     name: 'FantasMiaV2',
-    version: 6 // Bump version for group_stories and group_story_contributions stores
+    version: 7 // Bump version for daily_stories store
   };
 
   async init(): Promise<void> {
@@ -150,7 +157,7 @@ class FantasMiaDB {
         }
         
         // VERIFICA CRITICA: controlla che tutti gli stores richiesti esistano
-        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions'];
+        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions', 'daily_stories'];
         const missingStores = requiredStores.filter(
           name => !this.db!.objectStoreNames.contains(name)
         );
@@ -172,7 +179,7 @@ class FantasMiaDB {
         console.log('🔄 IndexedDB upgrade from version', event.oldVersion, 'to', event.newVersion);
 
         // Delete existing stores to recreate with proper indices
-        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions'];
+        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions', 'daily_stories'];
         storeNames.forEach(storeName => {
           if (db.objectStoreNames.contains(storeName)) {
             db.deleteObjectStore(storeName);
@@ -227,6 +234,10 @@ class FantasMiaDB {
         groupContributionStore.createIndex('userId', 'userId', { unique: false });
         groupContributionStore.createIndex('orderIndex', 'orderIndex', { unique: false });
         console.log('✅ Created group_story_contributions store');
+
+        // Daily Stories store (Racconto del Giorno)
+        const dailyStoryStore = db.createObjectStore('daily_stories', { keyPath: 'date' });
+        console.log('✅ Created daily_stories store');
       };
     });
   }
@@ -1207,6 +1218,79 @@ class FantasMiaDB {
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
+  }
+
+  // ============= Daily Stories Management (Racconto del Giorno) =============
+
+  async saveDailyStory(story: DailyStory): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['daily_stories'], 'readwrite');
+    const store = transaction.objectStore('daily_stories');
+    return new Promise((resolve, reject) => {
+      const request = store.put(story);
+      request.onsuccess = () => {
+        console.log('💾 Daily story saved:', story.date);
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getDailyStoryByDate(date: string): Promise<DailyStory | null> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['daily_stories'], 'readonly');
+    const store = transaction.objectStore('daily_stories');
+    const request = store.get(date);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAllDailyStories(): Promise<DailyStory[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['daily_stories'], 'readonly');
+    const store = transaction.objectStore('daily_stories');
+    const request = store.getAll();
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteDailyStory(date: string): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['daily_stories'], 'readwrite');
+    const store = transaction.objectStore('daily_stories');
+    return new Promise((resolve, reject) => {
+      const request = store.delete(date);
+      request.onsuccess = () => {
+        console.log('🗑️ Daily story deleted:', date);
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async importDailyStories(stories: DailyStory[]): Promise<number> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['daily_stories'], 'readwrite');
+    const store = transaction.objectStore('daily_stories');
+    
+    let count = 0;
+    for (const story of stories) {
+      await new Promise<void>((resolve, reject) => {
+        const request = store.put(story);
+        request.onsuccess = () => {
+          count++;
+          resolve();
+        };
+        request.onerror = () => reject(request.error);
+      });
+    }
+    
+    console.log(`📚 Imported ${count} daily stories`);
+    return count;
   }
 }
 
