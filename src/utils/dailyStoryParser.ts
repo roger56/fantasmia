@@ -1,5 +1,5 @@
 // Parser for Daily Stories ASCII file format
-// Format: "gg mese, racconto, massima" or "gg mese, racconto, "massima""
+// Format: "gg mese;racconto;massima" with semicolon separator
 
 const ITALIAN_MONTHS = [
   'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
@@ -11,7 +11,7 @@ const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 export interface DailyStory {
   date: string;   // "12 dicembre"
-  story: string;  // racconto breve ASCII
+  story: string;  // racconto breve
   quote: string;  // massima del giorno
 }
 
@@ -22,32 +22,10 @@ export interface ParseResult {
 }
 
 /**
- * Parse a CSV-like line with proper handling of quoted fields
+ * Parse a line with semicolon separator
  */
-const parseCSVLine = (line: string): string[] => {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    
-    if (char === '"' && !inQuotes) {
-      inQuotes = true;
-    } else if (char === '"' && inQuotes) {
-      inQuotes = false;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  
-  // Push last field
-  result.push(current.trim());
-  
-  return result;
+const parseLine = (line: string): string[] => {
+  return line.split(';').map(field => field.trim());
 };
 
 /**
@@ -70,10 +48,10 @@ const validateItalianDate = (dateStr: string): string | null => {
 };
 
 /**
- * Remove emojis and non-ASCII characters
+ * Sanitize text - keep Italian accented characters
  */
-const sanitizeASCII = (text: string): string => {
-  // Remove emojis and non-ASCII characters, but keep basic punctuation
+const sanitizeText = (text: string): string => {
+  // Remove emojis but keep all standard text including accented letters
   return text
     .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Emoticons
     .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Misc Symbols and Pictographs
@@ -81,7 +59,6 @@ const sanitizeASCII = (text: string): string => {
     .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '') // Flags
     .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Misc symbols
     .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Dingbats
-    .replace(/[^\\x00-\\x7F\\u00C0-\\u00FF\\u0100-\\u017F]/g, '') // Keep Latin Extended
     .trim();
 };
 
@@ -97,12 +74,12 @@ export const parseDailyStoriesFile = (content: string): ParseResult => {
     const lineNum = index + 1;
     
     try {
-      const parts = parseCSVLine(line);
+      const parts = parseLine(line);
       
       if (parts.length < 3) {
         errors.push({ 
           line: lineNum, 
-          message: 'Formato non valido: servono data, racconto, massima separati da virgole' 
+          message: 'Formato non valido: servono data;racconto;massima separati da punto e virgola' 
         });
         return;
       }
@@ -137,10 +114,9 @@ export const parseDailyStoriesFile = (content: string): ParseResult => {
         return;
       }
       
-      // Clean and sanitize text
-      const cleanStory = sanitizeASCII(storyText);
-      // Remove surrounding quotes from quote if present
-      const cleanQuote = sanitizeASCII(quoteText.replace(/^["']|["']$/g, ''));
+      // Clean text
+      const cleanStory = sanitizeText(storyText);
+      const cleanQuote = sanitizeText(quoteText);
       
       stories.push({
         date: validatedDate,
