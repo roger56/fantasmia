@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, X, Pencil } from 'lucide-react';
+import { Download, X, Pencil, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImageViewerDialogProps {
@@ -12,8 +12,6 @@ interface ImageViewerDialogProps {
   style?: string;
   imageBlob?: Blob;
   storyId?: string;
-  /** Callback to trigger sketch generation from this image */
-  onCreateSketch?: () => void;
   /** Whether the current image is already a sketch */
   isSketch?: boolean;
 }
@@ -26,17 +24,23 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
   style = "AI Generated",
   imageBlob,
   storyId,
-  onCreateSketch,
   isSketch = false
 }) => {
   const { toast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  
+  // Sketch generation states
+  const [isGeneratingSketch, setIsGeneratingSketch] = useState(false);
+  const [sketchResult, setSketchResult] = useState<string | null>(null);
+  const [showSketchPreview, setShowSketchPreview] = useState(false);
 
   useEffect(() => {
     if (open) {
       setImageLoaded(false);
       setImageError(false);
+      setSketchResult(null);
+      setShowSketchPreview(false);
     }
   }, [open, imageUrl]);
 
@@ -64,7 +68,6 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
       let blobToDownload = imageBlob;
       
       if (!blobToDownload) {
-        // Fallback: convert imageUrl to blob
         const response = await fetch(imageUrl);
         if (!response.ok) throw new Error('Failed to fetch image for download');
         blobToDownload = await response.blob();
@@ -108,6 +111,55 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
     }
   };
 
+  const handleCreateSketch = async () => {
+    setIsGeneratingSketch(true);
+    try {
+      console.log('🖍️ Generating sketch from image...');
+      
+      const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/image2sketch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Generazione sketch fallita');
+      }
+      
+      const data = await response.json();
+      console.log('✅ Sketch generated successfully');
+      
+      setSketchResult(data.base64);
+      setShowSketchPreview(true);
+    } catch (error) {
+      console.error('❌ Sketch generation error:', error);
+      toast({
+        title: "Errore",
+        description: error instanceof Error ? error.message : "Impossibile generare lo sketch",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingSketch(false);
+    }
+  };
+
+  const handleDownloadSketch = () => {
+    if (!sketchResult) return;
+    
+    const link = document.createElement('a');
+    link.href = sketchResult;
+    link.download = `${createSafeFilename(storyTitle)}-sketch.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Download completato",
+      description: "Sketch salvato con successo"
+    });
+  };
+
   const handleImageLoad = () => {
     console.log('✅ Immagine caricata con successo', { 
       action: 'image-loaded',
@@ -140,6 +192,51 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
     onOpenChange(false);
   };
 
+  // If showing sketch preview
+  if (showSketchPreview && sketchResult) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden" aria-describedby="dlg-desc-sketch-preview">
+          <DialogHeader className="flex flex-row items-center justify-between">
+            <DialogTitle>🖍️ Schizzo da Colorare</DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSketchPreview(false)}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogHeader>
+          <DialogDescription id="dlg-desc-sketch-preview">
+            Schizzo generato dall'immagine. Scaricalo per stamparlo e colorarlo.
+          </DialogDescription>
+          
+          <div className="space-y-4">
+            <div className="text-center">
+              <img 
+                src={sketchResult} 
+                alt="Schizzo da colorare"
+                className="max-w-full max-h-[60vh] w-auto h-auto mx-auto rounded-lg border bg-white"
+                style={{ objectFit: 'contain' }}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowSketchPreview(false)}>
+                Indietro
+              </Button>
+              <Button onClick={handleDownloadSketch}>
+                <Download className="w-4 h-4 mr-2" />
+                Scarica Sketch
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden" aria-describedby="dlg-desc-image-viewer">
@@ -155,7 +252,7 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
           </Button>
         </DialogHeader>
         <DialogDescription id="dlg-desc-image-viewer">
-          Visualizza l'immagine associata alla storia. Puoi scaricarla o eliminarla da qui.
+          Visualizza l'immagine associata alla storia. Puoi scaricarla o convertirla in schizzo da colorare.
         </DialogDescription>
         
         <div className="space-y-4">
@@ -184,7 +281,7 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
                 style={{ 
                   display: imageError ? 'none' : 'block',
                   objectFit: 'contain',
-                  touchAction: 'pinch-zoom' // Enable pinch-to-zoom on mobile/tablet
+                  touchAction: 'pinch-zoom'
                 }}
                 loading="eager"
               />
@@ -200,11 +297,24 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
             </div>
             
             <div className="flex gap-2">
-              {/* Show "Crea schizzo" button only if not already a sketch and callback provided */}
-              {!isSketch && onCreateSketch && (
-                <Button variant="outline" onClick={onCreateSketch} disabled={imageError}>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Crea schizzo
+              {/* Show "Crea schizzo" button only if not already a sketch */}
+              {!isSketch && (
+                <Button 
+                  variant="outline" 
+                  onClick={handleCreateSketch} 
+                  disabled={imageError || isGeneratingSketch}
+                >
+                  {isGeneratingSketch ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generazione...
+                    </>
+                  ) : (
+                    <>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Crea schizzo
+                    </>
+                  )}
                 </Button>
               )}
               
