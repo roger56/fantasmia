@@ -479,18 +479,15 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
                   <DropdownMenuItem onClick={() => handleDrawingClick("acquarello")} className="cursor-pointer">
                     Acquarello
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDrawingClick("carboncino")} className="cursor-pointer">
+                <DropdownMenuItem onClick={() => handleDrawingClick("carboncino")} className="cursor-pointer">
                     Carboncino
                   </DropdownMenuItem>
-                  
+                  <DropdownMenuItem onClick={() => handleSketchClick(1)} className="cursor-pointer">
+                    <Pencil className="w-4 h-4 mr-2" />
+                    🖍️ DA COLORARE
+                  </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
-
-              {/* Da colorare - voce diretta al primo livello per evitare problemi submenu */}
-              <DropdownMenuItem onClick={() => handleSketchClick(1)} className="cursor-pointer">
-                <Pencil className="w-4 h-4 mr-2" />
-                🖍️ DA COLORARE
-              </DropdownMenuItem>
 
               {/* Submenu MIGLIORA TESTO */}
               <DropdownMenuSub>
