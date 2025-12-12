@@ -27,6 +27,7 @@ const UserStoryViewer = () => {
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [mediaAsset, setMediaAsset] = useState<string | null>(null);
+  const [mediaAssetBlob, setMediaAssetBlob] = useState<Blob | undefined>();
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showModifyMenu, setShowModifyMenu] = useState(false);
@@ -140,11 +141,13 @@ const UserStoryViewer = () => {
     try {
       const asset = await fantasMiaDB.getLatestMediaAssetByStoryId(storyId);
       if (asset && asset.data) {
+        const blob = asset.data instanceof Blob ? asset.data : new Blob([asset.data], { type: asset.mime });
+        setMediaAssetBlob(blob);
         const reader = new FileReader();
         reader.onload = () => {
           setMediaAsset(reader.result as string);
         };
-        reader.readAsDataURL(asset.data);
+        reader.readAsDataURL(blob);
       }
     } catch (error) {
       console.error('Error loading media asset:', error);
@@ -465,6 +468,8 @@ const UserStoryViewer = () => {
           imageUrl={mediaAsset}
           storyTitle={storyTitle}
           style="user-generated"
+          imageBlob={mediaAssetBlob}
+          storyId={id}
         />
       )}
 

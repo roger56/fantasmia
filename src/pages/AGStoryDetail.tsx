@@ -45,6 +45,7 @@ const AGStoryDetail = () => {
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [viewerImageUrl, setViewerImageUrl] = useState<string>("");
   const [viewerImageStyle, setViewerImageStyle] = useState<string>("");
+  const [viewerImageBlob, setViewerImageBlob] = useState<Blob | undefined>();
 
   // Unified reading service
   const reading = useStoryReading({
@@ -194,6 +195,7 @@ const AGStoryDetail = () => {
         const blob = new Blob([mediaAsset.data], { type: mediaAsset.mime });
         const url = URL.createObjectURL(blob);
         setViewerImageUrl(url);
+        setViewerImageBlob(blob);
         setViewerImageStyle(mediaAsset.metadata?.style || "Generato da AI");
         setShowImageViewer(true);
         console.log("🖼️ Opening image viewer for story:", story.id);
@@ -220,6 +222,7 @@ const AGStoryDetail = () => {
     }
     setShowImageViewer(false);
     setViewerImageUrl("");
+    setViewerImageBlob(undefined);
     setViewerImageStyle("");
   };
 
@@ -410,6 +413,8 @@ const AGStoryDetail = () => {
           imageUrl={viewerImageUrl}
           storyTitle={story?.title || ""}
           style={viewerImageStyle}
+          imageBlob={viewerImageBlob}
+          storyId={story?.id}
         />
       </div>
     </StoryLayout>
