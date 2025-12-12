@@ -122,42 +122,70 @@ const ImageViewerDialog: React.FC<ImageViewerDialogProps> = ({
     setIsGeneratingSketch(true);
 
     try {
-      console.log("🖍 Generating sketch from image", { imageUrl, storyId });
+      if (!imageUrl) {
+        throw new Error("Nessuna immagine disponibile per generare lo sketch.");
+      }
 
-      const response = await fetch("https://fantasmia-ai.vercel.app/api/openai/image2sketch", {
+      const sketchUrl =
+        import.meta.env.VITE_OPENAI_IMAGE2SKETCH_URL || "https://fantasmia-ai.vercel.app/api/openai/image2sketch";
+
+      console.log("🖍 Generating sketch from image", { sketchUrl, imageUrl, storyId });
+
+      const response = await fetch(sketchUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({ imageUrl }),
+        // includo anche storyId per debugging lato server (non rompe nulla se ignorato)
+        body: JSON.stringify({ imageUrl, storyId }),
         mode: "cors",
       });
 
       console.log("📥 image2sketch status:", response.status);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ image2sketch HTTP error:", response.status, errorText);
-        throw new Error(`Generazione sketch fallita (status ${response.status})`);
+      // Prova sempre a leggere il body (può essere json o testo)
+      const raw = await response.text();
+      let payload: any = null;
+      try {
+        payload = raw ? JSON.parse(raw) : null;
+      } catch {
+        payload = null;
       }
 
-      const data: { success?: boolean; base64?: string; error?: string } = await response.json();
+      if (!response.ok) {
+        // messaggio più utile possibile
+        const serverMsg =
+          payload?.error ||
+          payload?.detail ||
+          (typeof raw === "string" && raw.trim() ? raw : null) ||
+          `Generazione sketch fallita (status ${response.status})`;
 
-      if (!data.base64) {
-        console.error("❌ image2sketch: no base64 in response", data);
-        throw new Error(data.error || "La risposta del server non contiene lo sketch");
+        console.error("❌ image2sketch HTTP error:", response.status, payload ?? raw);
+
+        // 422 = input non valido → messaggio “utente”
+        if (response.status === 422) {
+          throw new Error(`Richiesta non valida: ${serverMsg}`);
+        }
+
+        throw new Error(serverMsg);
+      }
+
+      // qui ok: ci aspettiamo base64
+      const base64 = payload?.base64;
+      if (!base64 || typeof base64 !== "string") {
+        console.error("❌ image2sketch: no base64 in response", payload ?? raw);
+        throw new Error("La risposta del server non contiene lo sketch (base64 mancante).");
       }
 
       console.log("✅ Sketch generated successfully");
 
-      // base64 pronto per preview e download
-      setSketchResult(data.base64);
+      setSketchResult(base64);
       setShowSketchPreview(true);
 
       toast({
         title: "Sketch generato",
-        description: "Ora puoi scaricare lo schizzo da colorare",
+        description: "Ora puoi scaricare lo schizzo da colorare.",
       });
     } catch (error) {
       console.error("❌ Sketch generation error:", error);
