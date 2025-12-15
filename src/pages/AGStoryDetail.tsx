@@ -318,7 +318,14 @@ const AGStoryDetail = () => {
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold text-foreground">{story.title}</h2>
-                <StoryImageIndicator storyId={story.id} className="ml-2" />
+                <StoryImageIndicator 
+                  storyId={story.id} 
+                  className="ml-2"
+                  storyContent={story.content}
+                  canGenerateSketch={true}
+                  userId="superuser"
+                  onSketchSaved={() => loadStory(story.id)}
+                />
               </div>
               <Button variant="outline" size="sm" onClick={openEditDialog}>
                 <Edit className="w-4 h-4 mr-2" />
