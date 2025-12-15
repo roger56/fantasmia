@@ -470,6 +470,10 @@ const UserStoryViewer = () => {
           style="user-generated"
           imageBlob={mediaAssetBlob}
           storyId={id}
+          storyContent={story?.text || ""}
+          userId={story?.ownerProfileId}
+          canGenerateSketch={true}
+          onSketchSaved={() => id && loadMediaAsset(id)}
         />
       )}
 
