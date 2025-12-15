@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Download, Save, X, Loader2, Pencil } from 'lucide-react';
+import { Download, Save, X, Loader2, Pencil, Scissors, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAILoading } from '@/hooks/useAILoading';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import { getStoryById } from '@/lib/storiesRepo';
+import { supabase } from '@/integrations/supabase/client';
 import CopyrightWarningDialog from './CopyrightWarningDialog';
 
 interface SketchGenerationDialogProps {
@@ -69,6 +70,10 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
   
   // Resolved story content - fetched from IndexedDB if prop is empty
   const [resolvedStoryContent, setResolvedStoryContent] = useState<string>('');
+  
+  // Text length warning states
+  const [showTextLengthWarning, setShowTextLengthWarning] = useState(false);
+  const [isAbbreviating, setIsAbbreviating] = useState(false);
 
   // Load story content from IndexedDB if prop is empty
   useEffect(() => {
@@ -123,13 +128,14 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
     } else {
       // Only reset if we've actually completed or intentionally closed the flow
       // Don't reset if a sub-dialog is still open
-      if (hasOpenedOnce.current && !showNotesDialog && !showResultDialog && !showCopyrightWarning && !isFlowInProgress.current) {
+      if (hasOpenedOnce.current && !showNotesDialog && !showResultDialog && !showCopyrightWarning && !showTextLengthWarning && !isFlowInProgress.current) {
         console.log("🖍️ Dialog closing intentionally, resetting all states");
         hasOpenedOnce.current = false;
         setShowCopyrightWarning(false);
         setShowDetailSelection(false);
         setShowNotesDialog(false);
         setShowResultDialog(false);
+        setShowTextLengthWarning(false);
         setGeneratedSketchUrl(null);
         setGeneratedSketchBlob(null);
         setUserNotes('');
@@ -149,7 +155,7 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
   const handleCopyrightConfirm = () => {
     console.log("🖍️ Copyright confirmed, resolvedStoryContent length:", resolvedStoryContent?.length);
     
-    // Validazione contenuto
+    // Validazione contenuto minimo
     if (!resolvedStoryContent || resolvedStoryContent.trim().length < 10) {
       toast({
         title: 'Contenuto insufficiente',
@@ -161,8 +167,67 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
       return;
     }
     
+    // Controlla lunghezza - limite 650 caratteri per lasciare spazio alle note e al prefix
+    const MAX_SCENE_LENGTH = 650;
+    if (resolvedStoryContent.length > MAX_SCENE_LENGTH) {
+      console.log("🖍️ Testo troppo lungo:", resolvedStoryContent.length, "char, mostrando warning");
+      setShowCopyrightWarning(false);
+      setShowTextLengthWarning(true);
+      return;
+    }
+    
     setShowCopyrightWarning(false);
     setShowNotesDialog(true);
+  };
+
+  // Tronca il testo a 600 caratteri
+  const handleTruncateText = () => {
+    console.log("🖍️ Troncamento testo a 600 caratteri");
+    const truncated = resolvedStoryContent.substring(0, 600);
+    setResolvedStoryContent(truncated);
+    setShowTextLengthWarning(false);
+    setShowNotesDialog(true);
+  };
+
+  // Abbrevia il testo usando AI
+  const handleAbbreviateText = async () => {
+    console.log("🖍️ Abbreviazione testo con AI");
+    setIsAbbreviating(true);
+    showLoading('Abbreviazione testo in corso...');
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('improve-text', {
+        body: {
+          storyContent: resolvedStoryContent,
+          style: 'abbrevia'
+        }
+      });
+      
+      if (error) {
+        console.error('❌ Errore abbreviazione:', error);
+        throw error;
+      }
+      
+      if (data?.improvedText) {
+        console.log("✅ Testo abbreviato, nuova lunghezza:", data.improvedText.length);
+        setResolvedStoryContent(data.improvedText);
+        setShowTextLengthWarning(false);
+        setShowNotesDialog(true);
+      } else {
+        throw new Error('Nessun testo abbreviato ricevuto');
+      }
+      
+    } catch (error) {
+      console.error('❌ Errore abbreviazione AI:', error);
+      toast({
+        title: 'Errore',
+        description: 'Impossibile abbreviare il testo. Prova a troncarlo manualmente.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsAbbreviating(false);
+      hideLoading();
+    }
   };
 
   const handleGenerate = async () => {
@@ -513,6 +578,69 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
               </div>
             </div>
           </RadioGroup>
+        </DialogContent>
+      </Dialog>
+
+      {/* Text Length Warning Dialog */}
+      <Dialog open={showTextLengthWarning} onOpenChange={(open) => {
+        setShowTextLengthWarning(open);
+        if (!open) onOpenChange(false);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              ⚠️ Testo troppo lungo
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Il testo della storia contiene <strong>{resolvedStoryContent.length}</strong> caratteri, 
+              ma il limite per generare uno schizzo è di <strong>650 caratteri</strong>.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Come vuoi procedere?
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-3 pt-2">
+            <Button 
+              variant="outline" 
+              onClick={handleTruncateText}
+              className="justify-start"
+            >
+              <Scissors className="w-4 h-4 mr-2" />
+              Tronca il testo a 600 caratteri
+            </Button>
+            
+            <Button 
+              onClick={handleAbbreviateText} 
+              disabled={isAbbreviating}
+              className="justify-start"
+            >
+              {isAbbreviating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Abbreviazione in corso...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Abbrevia con AI (mantiene il senso)
+                </>
+              )}
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setShowTextLengthWarning(false);
+                onOpenChange(false);
+              }}
+            >
+              Annulla
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

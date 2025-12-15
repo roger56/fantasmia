@@ -58,7 +58,8 @@ serve(async (req) => {
       'ironico': 'Riscrivi questa storia in stile ironico e divertente, con battute intelligenti e un tono spiritoso. Mantieni massimo 35 righe e formattazione leggibile.',
       'fantasy': 'Trasforma questa storia in un racconto fantasy epico con elementi magici, creature fantastiche e atmosfere incantate. Mantieni massimo 35 righe e formattazione leggibile.',
       'semplice': 'Riscrivi questa storia in modo semplice e leggero, adatto ai bambini, con linguaggio facile e tono dolce. Mantieni massimo 35 righe e formattazione leggibile.',
-      'fantasioso': 'Arricchisci questa storia con elementi fantasiosi, creativi e coloriti, rendendola più vivace e immaginativa. Mantieni massimo 35 righe e formattazione leggibile.'
+      'fantasioso': 'Arricchisci questa storia con elementi fantasiosi, creativi e coloriti, rendendola più vivace e immaginativa. Mantieni massimo 35 righe e formattazione leggibile.',
+      'abbrevia': 'Riassumi questa storia in modo conciso, mantenendo i punti chiave della trama e i personaggi principali. Il testo risultante DEVE essere assolutamente sotto i 550 caratteri. Scrivi in italiano, in modo fluido e leggibile.'
     };
 
     const systemPrompt = stylePrompts[style as keyof typeof stylePrompts];
