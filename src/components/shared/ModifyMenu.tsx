@@ -754,6 +754,11 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
               imageUrl={existingImage.imageUrl}
               storyTitle={storyTitle}
               style={existingImage.style}
+              storyId={getReliableStoryId() || ''}
+              storyContent={storyContent}
+              userId={userId || (userRole === 'Superuser' ? 'Superuser' : 'superuser')}
+              canGenerateSketch={userRole === 'superuser' || userRole === 'Superuser'}
+              onSketchSaved={onMediaUpdate}
             />
           )}
           
