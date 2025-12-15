@@ -6,9 +6,20 @@ import ImageViewerDialog from './ImageViewerDialog';
 interface StoryImageIndicatorProps {
   storyId: string;
   className?: string;
+  storyContent?: string;
+  canGenerateSketch?: boolean;
+  userId?: string;
+  onSketchSaved?: () => void;
 }
 
-const StoryImageIndicator: React.FC<StoryImageIndicatorProps> = ({ storyId, className = "" }) => {
+const StoryImageIndicator: React.FC<StoryImageIndicatorProps> = ({ 
+  storyId, 
+  className = "",
+  storyContent,
+  canGenerateSketch,
+  userId,
+  onSketchSaved
+}) => {
   const [hasImage, setHasImage] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageStyle, setImageStyle] = useState<string>("Generato da AI");
@@ -78,6 +89,10 @@ const StoryImageIndicator: React.FC<StoryImageIndicatorProps> = ({ storyId, clas
           imageUrl={imageUrl}
           storyId={storyId}
           style={imageStyle}
+          storyContent={storyContent}
+          canGenerateSketch={canGenerateSketch}
+          userId={userId}
+          onSketchSaved={onSketchSaved}
         />
       )}
     </>
