@@ -8,12 +8,13 @@ import { Download, Save, X, Loader2, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAILoading } from '@/hooks/useAILoading';
 import { fantasMiaDB } from '@/utils/indexedDB';
+import { getStoryById } from '@/lib/storiesRepo';
 import CopyrightWarningDialog from './CopyrightWarningDialog';
 
 interface SketchGenerationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  storyContent: string;
+  storyContent?: string;
   storyTitle?: string;
   storyId?: string;
   userId?: string;
@@ -65,6 +66,45 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedSketchUrl, setGeneratedSketchUrl] = useState<string | null>(null);
   const [generatedSketchBlob, setGeneratedSketchBlob] = useState<Blob | null>(null);
+  
+  // Resolved story content - fetched from IndexedDB if prop is empty
+  const [resolvedStoryContent, setResolvedStoryContent] = useState<string>('');
+
+  // Load story content from IndexedDB if prop is empty
+  useEffect(() => {
+    const loadStoryContent = async () => {
+      // Se abbiamo già storyContent valido dal prop, usalo
+      if (storyContent && storyContent.trim().length > 0) {
+        console.log('🖍️ Using storyContent from props, length:', storyContent.length);
+        setResolvedStoryContent(storyContent);
+        return;
+      }
+      
+      // Altrimenti, recupera da IndexedDB usando storyId
+      if (storyId) {
+        console.log('🖍️ storyContent vuoto/mancante, recupero da IndexedDB per storyId:', storyId);
+        try {
+          const story = await getStoryById(storyId);
+          if (story) {
+            // AMStory usa 'text', AGStory usa 'content'
+            const content = 'text' in story ? story.text : ('content' in story ? story.content : '');
+            setResolvedStoryContent(content || '');
+            console.log('🖍️ Contenuto recuperato da IndexedDB, length:', content?.length, 'preview:', content?.substring(0, 50));
+          } else {
+            console.warn('🖍️ Storia non trovata in IndexedDB per storyId:', storyId);
+          }
+        } catch (error) {
+          console.error('🖍️ Errore recupero storia da IndexedDB:', error);
+        }
+      } else {
+        console.warn('🖍️ Nessun storyId disponibile per recuperare il contenuto');
+      }
+    };
+    
+    if (open) {
+      loadStoryContent();
+    }
+  }, [open, storyId, storyContent]);
 
   // When dialog opens - with protection against premature resets
   useEffect(() => {
@@ -93,6 +133,7 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
         setGeneratedSketchUrl(null);
         setGeneratedSketchBlob(null);
         setUserNotes('');
+        setResolvedStoryContent('');
       } else {
         console.log("🖍️ Skipping reset - flow in progress or sub-dialog open");
       }
@@ -106,12 +147,35 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
   };
 
   const handleCopyrightConfirm = () => {
-    console.log("🖍️ Copyright confirmed, opening notes dialog");
+    console.log("🖍️ Copyright confirmed, resolvedStoryContent length:", resolvedStoryContent?.length);
+    
+    // Validazione contenuto
+    if (!resolvedStoryContent || resolvedStoryContent.trim().length < 10) {
+      toast({
+        title: 'Contenuto insufficiente',
+        description: 'La storia deve contenere testo per generare uno schizzo',
+        variant: 'destructive'
+      });
+      setShowCopyrightWarning(false);
+      onOpenChange(false);
+      return;
+    }
+    
     setShowCopyrightWarning(false);
     setShowNotesDialog(true);
   };
 
   const handleGenerate = async () => {
+    // Validazione finale prima della chiamata API
+    if (!resolvedStoryContent || resolvedStoryContent.trim().length < 10) {
+      toast({
+        title: 'Contenuto insufficiente',
+        description: 'La storia deve contenere testo per generare uno schizzo',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     setShowNotesDialog(false);
     setIsGenerating(true);
     showLoading('Generazione schizzo in corso...');
@@ -120,8 +184,8 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
       // Fixed prompt prefix (NOT counted in 720 char limit)
       const promptPrefix = `A clean black and white line drawing, like a coloring book page for a 6-year-old child. The image should have bold, well-defined outlines, no shading, no color, and simple shapes. The style should be playful and easy to color. Show the following scene: `;
       
-      // Scene content - MAX 720 characters
-      const sanitizedStory = sanitizeSceneContent(storyContent);
+      // Scene content - MAX 720 characters - usa resolvedStoryContent
+      const sanitizedStory = sanitizeSceneContent(resolvedStoryContent);
       const sceneWithNotes = userNotes 
         ? `${sanitizedStory}. Additional notes: ${userNotes}` 
         : sanitizedStory;
