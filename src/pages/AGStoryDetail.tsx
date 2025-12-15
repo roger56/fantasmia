@@ -415,6 +415,10 @@ const AGStoryDetail = () => {
           style={viewerImageStyle}
           imageBlob={viewerImageBlob}
           storyId={story?.id}
+          storyContent={story?.content || ""}
+          userId="superuser"
+          canGenerateSketch={true}
+          onSketchSaved={() => loadStory(story?.id)}
         />
       </div>
     </StoryLayout>

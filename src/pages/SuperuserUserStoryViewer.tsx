@@ -430,6 +430,10 @@ const SuperuserUserStoryViewer = () => {
           style="user-generated"
           imageBlob={mediaAssetBlob}
           storyId={id}
+          storyContent={story?.text || ""}
+          userId="superuser"
+          canGenerateSketch={true}
+          onSketchSaved={() => id && loadMediaAsset(id)}
         />
       )}
 
