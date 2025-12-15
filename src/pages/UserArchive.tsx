@@ -17,6 +17,8 @@ const UserArchive = () => {
   const [imageUrl, setImageUrl] = useState<string>('');
   const [currentImageBlob, setCurrentImageBlob] = useState<Blob | null>(null);
   const [selectedStoryTitle, setSelectedStoryTitle] = useState('');
+  const [selectedStoryContent, setSelectedStoryContent] = useState('');
+  const [selectedStoryUserId, setSelectedStoryUserId] = useState('');
 
   useEffect(() => {
     loadUserStories();
@@ -122,7 +124,7 @@ const UserArchive = () => {
     }
   };
 
-  const handleImageClick = async (storyId: string, storyTitle: string, e: React.MouseEvent) => {
+  const handleImageClick = async (storyId: string, storyTitle: string, storyText: string, storyOwnerId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       const { fantasMiaDB } = await import('@/utils/indexedDB');
@@ -134,6 +136,8 @@ const UserArchive = () => {
         setImageUrl(url);
         setCurrentImageBlob(imageBlob);
         setSelectedStoryTitle(storyTitle);
+        setSelectedStoryContent(storyText);
+        setSelectedStoryUserId(storyOwnerId);
         setImageViewerOpen(true);
       }
     } catch (error) {
@@ -149,6 +153,8 @@ const UserArchive = () => {
     }
     setCurrentImageBlob(null);
     setSelectedStoryTitle('');
+    setSelectedStoryContent('');
+    setSelectedStoryUserId('');
   };
 
   if (loading) {
@@ -235,7 +241,7 @@ const UserArchive = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0"
-                                onClick={(e) => handleImageClick(story.id, story.title, e)}
+                                onClick={(e) => handleImageClick(story.id, story.title, story.text || '', story.ownerProfileId || '', e)}
                               >
                                 <Image className="w-4 h-4 text-green-600" />
                               </Button>
@@ -290,7 +296,10 @@ const UserArchive = () => {
         imageUrl={imageUrl}
         imageBlob={currentImageBlob}
         storyTitle={selectedStoryTitle}
-        style=""
+        storyContent={selectedStoryContent}
+        userId={selectedStoryUserId}
+        canGenerateSketch={true}
+        onSketchSaved={loadUserStories}
       />
     </>
   );

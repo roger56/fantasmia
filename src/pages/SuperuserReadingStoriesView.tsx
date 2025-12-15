@@ -35,6 +35,8 @@ const SuperuserReadingStoriesView = () => {
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string>('');
+  const [selectedImageBlob, setSelectedImageBlob] = useState<Blob | null>(null);
+  const [selectedStoryContent, setSelectedStoryContent] = useState<string>('');
   const [modifyMenuOpen, setModifyMenuOpen] = useState<string | null>(null);
   const [selectedStory, setSelectedStory] = useState<AGStory | null>(null);
   
@@ -72,13 +74,16 @@ const SuperuserReadingStoriesView = () => {
     };
   }, []);
 
-  const handleImageClick = async (storyId: string, storyTitle: string) => {
+  const handleImageClick = async (storyId: string, storyTitle: string, storyContent: string) => {
     try {
       const mediaAsset = await fantasMiaDB.getMediaAssetByStoryId(storyId);
       if (mediaAsset && mediaAsset.data) {
-        const url = URL.createObjectURL(mediaAsset.data);
+        const blob = mediaAsset.data instanceof Blob ? mediaAsset.data : new Blob([mediaAsset.data], { type: 'image/webp' });
+        const url = URL.createObjectURL(blob);
         setSelectedImageUrl(url);
+        setSelectedImageBlob(blob);
         setSelectedStoryTitle(storyTitle);
+        setSelectedStoryContent(storyContent);
         setImageViewerOpen(true);
       }
     } catch (error) {
@@ -201,7 +206,7 @@ const SuperuserReadingStoriesView = () => {
 
   const StoryRow = ({ story, onImageClick, onDelete, onTranslate, onRead }: {
     story: AGStory;
-    onImageClick: (id: string, title: string) => void;
+    onImageClick: (id: string, title: string, content: string) => void;
     onDelete: (id: string) => void;
     onTranslate: (story: AGStory, toEnglish: boolean) => void;
     onRead: (story: AGStory) => void;
@@ -225,7 +230,7 @@ const SuperuserReadingStoriesView = () => {
           variant="ghost"
           size="sm"
           className={`p-1 h-8 w-8 ${story.has_image ? 'text-green-600 hover:text-green-700' : 'text-red-600'}`}
-          onClick={() => story.has_image && onImageClick(story.id, story.title)}
+          onClick={() => story.has_image && onImageClick(story.id, story.title, story.content)}
           disabled={!story.has_image}
         >
           <ImageIcon className="w-4 h-4" />
@@ -406,10 +411,23 @@ const SuperuserReadingStoriesView = () => {
       {/* Image Viewer Dialog */}
       <ImageViewerDialog
         open={imageViewerOpen}
-        onOpenChange={setImageViewerOpen}
+        onOpenChange={(open) => {
+          setImageViewerOpen(open);
+          if (!open) {
+            if (selectedImageUrl) URL.revokeObjectURL(selectedImageUrl);
+            setSelectedImageUrl('');
+            setSelectedImageBlob(null);
+            setSelectedStoryTitle('');
+            setSelectedStoryContent('');
+          }
+        }}
         imageUrl={selectedImageUrl}
+        imageBlob={selectedImageBlob}
         storyTitle={selectedStoryTitle}
-        style="Generata"
+        storyContent={selectedStoryContent}
+        userId="superuser"
+        canGenerateSketch={true}
+        onSketchSaved={loadStories}
       />
 
       {/* Modify Menu */}

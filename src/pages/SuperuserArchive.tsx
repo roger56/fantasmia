@@ -60,7 +60,7 @@ const SuperuserArchive = () => {
   const [currentScreen, setCurrentScreen] = useState<1 | 2>(1);
   const [authors, setAuthors] = useState<string[]>([]);
   const [showImageViewer, setShowImageViewer] = useState(false);
-  const [selectedImageData, setSelectedImageData] = useState<{url: string, title: string, style: string} | null>(null);
+  const [selectedImageData, setSelectedImageData] = useState<{url: string, title: string, style: string, content: string} | null>(null);
 
   useEffect(() => {
     const fetchStoriesWithMedia = async () => {
@@ -232,11 +232,13 @@ const SuperuserArchive = () => {
 
   const handleViewImage = (storyId: string, storyTitle: string) => {
     const storyImage = getStoryImage(storyId);
+    const story = stories.find(s => s.id === storyId);
     if (storyImage) {
       setSelectedImageData({
         url: storyImage.imageUrl,
         title: storyTitle,
-        style: storyImage.style
+        style: storyImage.style,
+        content: story?.content || ''
       });
       setShowImageViewer(true);
     }
@@ -688,6 +690,20 @@ const SuperuserArchive = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Image Viewer Dialog */}
+        <ImageViewerDialog
+          open={showImageViewer}
+          onOpenChange={(open) => {
+            setShowImageViewer(open);
+            if (!open) setSelectedImageData(null);
+          }}
+          imageUrl={selectedImageData?.url || ''}
+          storyTitle={selectedImageData?.title || ''}
+          storyContent={selectedImageData?.content || ''}
+          userId="superuser"
+          canGenerateSketch={true}
+        />
       </div>
     </div>
   );

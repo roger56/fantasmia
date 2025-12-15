@@ -24,6 +24,8 @@ const SuperuserAMArchive = () => {
   const [imageUrl, setImageUrl] = useState<string>('');
   const [currentImageBlob, setCurrentImageBlob] = useState<Blob | null>(null);
   const [selectedStoryTitle, setSelectedStoryTitle] = useState('');
+  const [selectedStoryContent, setSelectedStoryContent] = useState('');
+  const [selectedStoryId, setSelectedStoryId] = useState('');
   const [selectedStories, setSelectedStories] = useState<Set<string>>(new Set());
   const [albumDialogOpen, setAlbumDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -178,7 +180,7 @@ const SuperuserAMArchive = () => {
     }
   };
 
-  const handleImageClick = async (storyId: string, storyTitle: string, e: React.MouseEvent) => {
+  const handleImageClick = async (storyId: string, storyTitle: string, storyText: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(storyId);
@@ -189,6 +191,8 @@ const SuperuserAMArchive = () => {
         setImageUrl(url);
         setCurrentImageBlob(imageBlob);
         setSelectedStoryTitle(storyTitle);
+        setSelectedStoryContent(storyText);
+        setSelectedStoryId(storyId);
         setImageViewerOpen(true);
       }
     } catch (error) {
@@ -204,6 +208,8 @@ const SuperuserAMArchive = () => {
     }
     setCurrentImageBlob(null);
     setSelectedStoryTitle('');
+    setSelectedStoryContent('');
+    setSelectedStoryId('');
   };
 
   const toggleStorySelection = (storyId: string) => {
@@ -380,7 +386,7 @@ const SuperuserAMArchive = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0"
-                                onClick={(e) => handleImageClick(story.id, story.title, e)}
+                                onClick={(e) => handleImageClick(story.id, story.title, story.text || '', e)}
                               >
                                 <Image className="w-4 h-4 text-green-600" />
                               </Button>
@@ -435,7 +441,10 @@ const SuperuserAMArchive = () => {
         imageUrl={imageUrl}
         imageBlob={currentImageBlob}
         storyTitle={selectedStoryTitle}
-        style=""
+        storyContent={selectedStoryContent}
+        userId="superuser"
+        canGenerateSketch={true}
+        onSketchSaved={loadStories}
       />
 
       {albumDialogOpen && (
