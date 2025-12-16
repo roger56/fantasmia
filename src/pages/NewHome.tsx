@@ -1,33 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import fantasmiaLogo from '@/assets/fantasmia-logo.png';
-import { AuthBridge } from '@/utils/authBridge';
 
 const NewHome = () => {
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    const checkExistingAuth = async () => {
-      const authStatus = await AuthBridge.isAuthenticated();
-      if (authStatus.authenticated) {
-        // Se già autenticato, redirect a dashboard
-        navigate('/dashboard', { replace: true });
-      } else {
-        setChecking(false);
-      }
-    };
-    checkExistingAuth();
-  }, [navigate]);
-
-  if (checking) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-lg">Caricamento...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
