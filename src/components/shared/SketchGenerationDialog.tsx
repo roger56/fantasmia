@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAILoading } from '@/hooks/useAILoading';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import { getStoryById } from '@/lib/storiesRepo';
-import { supabase } from '@/integrations/supabase/client';
+// Note: Using Vercel API directly, no Supabase import needed for this component
 import CopyrightWarningDialog from './CopyrightWarningDialog';
 
 interface SketchGenerationDialogProps {
@@ -191,31 +191,48 @@ const SketchGenerationDialog: React.FC<SketchGenerationDialogProps> = ({
 
   // Abbrevia il testo usando AI
   const handleAbbreviateText = async () => {
-    console.log("🖍️ Abbreviazione testo con AI");
+    console.log("🖍️ Abbreviazione testo con AI, lunghezza originale:", resolvedStoryContent.length);
     setIsAbbreviating(true);
     showLoading('Abbreviazione testo in corso...');
     
     try {
-      const { data, error } = await supabase.functions.invoke('improve-text', {
-        body: {
-          storyContent: resolvedStoryContent,
-          style: 'abbrevia'
-        }
+      const apiUrl = 'https://fantasmia-ai.vercel.app/api/openai/improve-text';
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input_text: resolvedStoryContent,
+          style: 'abbrevia',
+          language: 'it',
+          max_chars: 600
+        }),
       });
       
-      if (error) {
-        console.error('❌ Errore abbreviazione:', error);
-        throw error;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API error:', response.status, errorText);
+        throw new Error(`API error: ${response.status}`);
       }
       
-      if (data?.improvedText) {
-        console.log("✅ Testo abbreviato, nuova lunghezza:", data.improvedText.length);
-        setResolvedStoryContent(data.improvedText);
-        setShowTextLengthWarning(false);
-        setShowNotesDialog(true);
-      } else {
+      const data = await response.json();
+      const abbreviatedText = data.improvedText || data.result;
+      
+      if (!abbreviatedText) {
         throw new Error('Nessun testo abbreviato ricevuto');
       }
+      
+      console.log("✅ Testo abbreviato, nuova lunghezza:", abbreviatedText.length);
+      setResolvedStoryContent(abbreviatedText);
+      setShowTextLengthWarning(false);
+      setShowNotesDialog(true);
+      
+      toast({
+        title: 'Testo abbreviato',
+        description: `Ridotto da ${resolvedStoryContent.length} a ${abbreviatedText.length} caratteri`,
+      });
       
     } catch (error) {
       console.error('❌ Errore abbreviazione AI:', error);
