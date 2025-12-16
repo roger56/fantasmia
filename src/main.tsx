@@ -4,13 +4,6 @@ import './index.css'
 import { initializeDemoData } from './utils/demoData'
 import { AGDataReset } from './utils/agDataReset'
 
-// ✅ REQUISITO 1: Avvio sempre dalla root /
-// All'avvio/refresh/hot-reload, forza sempre navigazione a /
-if (window.location.pathname !== '/') {
-  console.log('🔄 [startup] Redirect a / da:', window.location.pathname);
-  window.history.replaceState(null, '', '/');
-}
-
 // Initialize demo data
 initializeDemoData();
 
