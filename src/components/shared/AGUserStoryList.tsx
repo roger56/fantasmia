@@ -148,12 +148,13 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
                   stories.map((story) => (
                     <div 
                       key={story.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors gap-4"
+                      className="flex items-center justify-between p-3 md:p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors gap-2 md:gap-4 min-h-[60px]"
                       onClick={() => handleStoryClick(story)}
                     >
+                      {/* ✅ REQUISITO 3: Titolo principale, data secondaria su mobile */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground truncate md:text-base">{story.title}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <h3 className="font-semibold text-foreground text-base md:text-lg leading-tight line-clamp-2">{story.title}</h3>
+                        <p className="text-[10px] md:text-xs text-muted-foreground/70 mt-0.5 hidden sm:block">
                           {new Date(story.created_at).toLocaleDateString('it-IT', {
                             day: '2-digit',
                             month: '2-digit',
@@ -162,7 +163,8 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
                         </p>
                       </div>
                       
-                      <div className="flex items-center space-x-2 flex-shrink-0">
+                      {/* ✅ REQUISITO 4: Azioni compatte e ben spaziate su mobile */}
+                      <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
                         {/* Read button with TTS */}
                         <TooltipProvider>
                           <Tooltip>
@@ -171,7 +173,7 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => handleRead(story, e)}
-                                className="h-9 w-9 p-0"
+                                className="h-8 w-8 md:h-9 md:w-9 p-0"
                               >
                                 {isPlaying && currentStoryId === story.id ? (
                                   isPaused ? (
@@ -203,7 +205,7 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => handleImageClick(story, e)}
-                                className="h-9 w-9 p-0"
+                                className="h-8 w-8 md:h-9 md:w-9 p-0"
                               >
                                 <Image className={`h-4 w-4 ${story.has_image ? 'text-green-600' : 'text-red-600'}`} />
                               </Button>
@@ -222,7 +224,7 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => handleBooksClick(story, e)}
-                                className="h-9 w-9 p-0"
+                                className="h-8 w-8 md:h-9 md:w-9 p-0"
                               >
                                 <BookOpen className="h-4 w-4" />
                               </Button>

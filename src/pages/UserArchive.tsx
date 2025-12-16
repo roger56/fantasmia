@@ -204,27 +204,36 @@ const UserArchive = () => {
                     {stories.map((story) => (
                       <div
                         key={story.id}
-                        className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                        className="p-3 md:p-4 hover:bg-muted/50 transition-colors cursor-pointer"
                         onClick={() => {
                           console.log({ action: "open-user-viewer", id: story.id });
                           navigate(`/user-story-viewer/${story.id}`);
                         }}
                       >
-                        <div className="flex items-center justify-between gap-4">
-                          {/* Title */}
+                        {/* ✅ REQUISITO 3: Layout mobile-first con titolo principale */}
+                        <div className="flex items-center justify-between gap-2 md:gap-4">
+                          {/* Title - elemento principale */}
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-foreground truncate">
+                            <h3 className="font-semibold text-foreground text-base md:text-lg leading-tight line-clamp-2">
                               {story.title}
                             </h3>
+                            {/* Data sotto il titolo su mobile, inline su desktop */}
+                            <p className="text-[10px] md:hidden text-muted-foreground/70 mt-0.5">
+                              {new Date(story.createdAt).toLocaleDateString('it-IT', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              })}
+                            </p>
                           </div>
 
-                          {/* Created by */}
-                          <div className="text-sm text-muted-foreground min-w-0 max-w-[120px]">
+                          {/* Created by - solo desktop */}
+                          <div className="hidden md:block text-sm text-muted-foreground min-w-0 max-w-[120px]">
                             <span className="truncate block">{profileName}</span>
                           </div>
 
-                          {/* Creation date */}
-                          <div className="text-sm text-muted-foreground min-w-[130px]">
+                          {/* Creation date - solo desktop */}
+                          <div className="hidden md:block text-sm text-muted-foreground min-w-[130px]">
                             {new Date(story.createdAt).toLocaleString('it-IT', {
                               day: '2-digit',
                               month: '2-digit',
@@ -234,42 +243,39 @@ const UserArchive = () => {
                             })}
                           </div>
 
-                          {/* Image icon */}
-                          <div className="flex items-center">
+                          {/* ✅ REQUISITO 4: Azioni compatte su mobile */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {/* Image icon */}
                             {story.hasImage ? (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0"
+                                className="h-7 w-7 md:h-8 md:w-8 p-0"
                                 onClick={(e) => handleImageClick(story.id, story.title, story.text || '', story.ownerProfileId || '', e)}
                               >
                                 <Image className="w-4 h-4 text-green-600" />
                               </Button>
                             ) : (
-                              <div className="h-8 w-8 flex items-center justify-center">
+                              <div className="h-7 w-7 md:h-8 md:w-8 flex items-center justify-center">
                                 <ImageOff className="w-4 h-4 text-red-600" />
                               </div>
                             )}
-                          </div>
 
-                          {/* Delete button */}
-                          <div className="flex items-center">
+                            {/* Delete button */}
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              className="h-7 w-7 md:h-8 md:w-8 p-0 text-red-600 hover:text-red-700"
                               onClick={(e) => handleDeleteStory(story.id, e)}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
-                          </div>
 
-                          {/* View button */}
-                          <div className="flex items-center">
+                            {/* View button */}
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0"
+                              className="h-7 w-7 md:h-8 md:w-8 p-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 console.log({ action: "open-user-viewer", id: story.id });

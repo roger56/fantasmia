@@ -19,6 +19,8 @@ const Profiles = () => {
   const [password, setPassword] = useState('');
   const [profiles, setProfiles] = useState<any[]>([]);
   const [allProfiles, setAllProfiles] = useState<any[]>([]);
+  // ✅ REQUISITO 2: Stato di loading bloccante durante caricamento profili
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
   
   useEffect(() => {
     // ✅ FIX URL: Assicura che l'URL sia corretto
@@ -40,6 +42,9 @@ const Profiles = () => {
     console.log('🧹 Profiles: sessioni pulite, avvio sincronizzazione profili...');
     
     const syncAndLoadProfiles = async () => {
+      // ✅ REQUISITO 2: Loading bloccante - inizia
+      setIsLoadingProfiles(true);
+      
       // ✅ SINCRONIZZAZIONE: Pulisci localStorage confrontandolo con IndexedDB
       try {
         const { fantasMiaDB } = await import('@/utils/indexedDB');
@@ -105,6 +110,9 @@ const Profiles = () => {
       ];
       
       setAllProfiles([...sortedUsers, ...specialProfiles]);
+      
+      // ✅ REQUISITO 2: Loading bloccante - fine
+      setIsLoadingProfiles(false);
     };
     
     syncAndLoadProfiles();
@@ -193,6 +201,18 @@ const Profiles = () => {
     }
   };
 
+  // ✅ REQUISITO 2: Schermata di caricamento bloccante
+  if (isLoadingProfiles) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-slate-600">Caricamento profili...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <ProfileIndicator />
