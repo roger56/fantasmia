@@ -48,7 +48,6 @@ interface Album {
     fontFamily: string;
     fontSizeBody: number;
     fontSizeTitles: number;
-    minStoriesForAlbum: number;
     imageStyleDefault: string;
   };
 }

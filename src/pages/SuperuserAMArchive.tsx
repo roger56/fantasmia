@@ -452,18 +452,14 @@ const SuperuserAMArchive = () => {
           open={albumDialogOpen}
           onOpenChange={setAlbumDialogOpen}
           stories={selectedStoriesArray}
-          config={(() => {
-            const saved = localStorage.getItem('fantasmia_album_settings');
-            return saved ? JSON.parse(saved) : {
-              minStoriesForAlbum: 5,
-              pageSize: 'A4-portrait',
-              margins: 20,
-              fontFamily: 'Arial',
-              fontSizeBody: 12,
-              fontSizeTitles: 18,
-              imageStyleDefault: 'fotografico'
-            };
-          })()}
+          config={{
+            pageSize: 'A4-portrait',
+            margins: 20,
+            fontFamily: 'Arial',
+            fontSizeBody: 12,
+            fontSizeTitles: 18,
+            imageStyleDefault: 'fotografico'
+          }}
         />
       )}
     </>
