@@ -3,7 +3,6 @@ import JSZip from 'jszip';
 import { AMStory, MediaAsset, Album } from './indexedDB';
 
 export interface AlbumGenerationConfig {
-  minStoriesForAlbum: number;
   pageSize: string;
   margins: number;
   fontFamily: string;

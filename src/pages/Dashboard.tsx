@@ -156,18 +156,6 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
-              {process.env.NODE_ENV !== 'production' && (
-                <div className="mt-4">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => navigate('/debug-indexeddb')}
-                  >
-                    🔍 Debug IndexedDB
-                  </Button>
-                </div>
-              )}
             </div>
 
             {/* AG - Archivio Generale */}
