@@ -36,6 +36,46 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
   const [progressMessage, setProgressMessage] = useState('');
   const [generatedPdfBlob, setGeneratedPdfBlob] = useState<Blob | null>(null);
   const [generatedZipBlob, setGeneratedZipBlob] = useState<Blob | null>(null);
+  const [estimatedSize, setEstimatedSize] = useState(0);
+  const [isCalculatingSize, setIsCalculatingSize] = useState(false);
+
+  const MAX_SIZE_MB = 10;
+  const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
+  // Calculate estimated size when stories change
+  React.useEffect(() => {
+    const calculateSize = async () => {
+      setIsCalculatingSize(true);
+      let totalSize = 0;
+
+      for (const story of stories) {
+        // Estimate text size
+        const txtContent = `Titolo: ${story.title}\nAutore: ${albumAuthor}\n\nTesto:\n${story.text}`;
+        totalSize += new Blob([txtContent]).size;
+
+        // Add image size if present
+        if (story.hasImage) {
+          try {
+            const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(story.id);
+            if (mediaAsset?.data) {
+              totalSize += mediaAsset.data.size;
+            }
+          } catch (error) {
+            console.error('Error loading media for size calculation:', error);
+          }
+        }
+      }
+
+      setEstimatedSize(totalSize);
+      setIsCalculatingSize(false);
+    };
+
+    if (stories.length > 0) {
+      calculateSize();
+    } else {
+      setEstimatedSize(0);
+    }
+  }, [stories, albumAuthor]);
 
   React.useEffect(() => {
     // Sort stories based on sortOrder
@@ -387,6 +427,49 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
                 </Select>
               </div>
 
+              {/* Size indicator */}
+              <div className="p-4 border rounded-lg bg-muted/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Dimensione stimata album</Label>
+                  <span className={`text-sm font-semibold ${
+                    estimatedSize > MAX_SIZE_BYTES 
+                      ? 'text-red-600' 
+                      : estimatedSize > MAX_SIZE_BYTES * 0.8 
+                        ? 'text-amber-600' 
+                        : 'text-green-600'
+                  }`}>
+                    {isCalculatingSize ? (
+                      <span className="flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Calcolo...
+                      </span>
+                    ) : (
+                      `${(estimatedSize / 1024 / 1024).toFixed(2)} MB / ${MAX_SIZE_MB} MB`
+                    )}
+                  </span>
+                </div>
+                <Progress 
+                  value={Math.min((estimatedSize / MAX_SIZE_BYTES) * 100, 100)} 
+                  className={`h-2 ${
+                    estimatedSize > MAX_SIZE_BYTES 
+                      ? '[&>div]:bg-red-500' 
+                      : estimatedSize > MAX_SIZE_BYTES * 0.8 
+                        ? '[&>div]:bg-amber-500' 
+                        : '[&>div]:bg-green-500'
+                  }`}
+                />
+                {estimatedSize > MAX_SIZE_BYTES && (
+                  <p className="text-xs text-red-600 font-medium">
+                    ⚠️ Limite superato! Rimuovi alcune storie o immagini per procedere.
+                  </p>
+                )}
+                {estimatedSize > MAX_SIZE_BYTES * 0.8 && estimatedSize <= MAX_SIZE_BYTES && (
+                  <p className="text-xs text-amber-600">
+                    ⚡ Attenzione: vicino al limite massimo
+                  </p>
+                )}
+              </div>
+
               {/* Stories preview */}
               <div className="space-y-2">
                 <Label>Storie selezionate ({stories.length})</Label>
@@ -518,22 +601,24 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
               <Button 
                 onClick={handleSendToPrint} 
                 size="lg" 
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                disabled={isGenerating}
+                className={`w-full ${estimatedSize > MAX_SIZE_BYTES ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white`}
+                disabled={isGenerating || estimatedSize > MAX_SIZE_BYTES || isCalculatingSize}
               >
                 {isGenerating ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Invio in corso...
                   </>
+                ) : estimatedSize > MAX_SIZE_BYTES ? (
+                  <>⚠️ Dimensione eccessiva</>
                 ) : (
-                  <>
-                    👉 INVIA ALLA STAMPA
-                  </>
+                  <>👉 INVIA ALLA STAMPA</>
                 )}
               </Button>
               <p className="text-xs text-center text-muted-foreground mt-2">
-                Invia le storie selezionate al centro stampa (solo testi e immagini)
+                {estimatedSize > MAX_SIZE_BYTES 
+                  ? 'Riduci la dimensione dell\'album per procedere'
+                  : 'Invia le storie selezionate al centro stampa (solo testi e immagini)'}
               </p>
             </div>
           )}
