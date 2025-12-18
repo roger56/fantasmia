@@ -327,33 +327,55 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
 
       setProgressMessage('Invio in corso...');
       
-      const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/send_email_ai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
+      // Add timeout with AbortController (30 seconds)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.error('⏰ Request timeout after 30 seconds');
+      }, 30000);
 
-      console.log('📬 Risposta API status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ API Error:', errorText);
-        throw new Error(`Errore API: ${response.status} - ${errorText}`);
+      try {
+        const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/send_email_ai', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        console.log('📬 Risposta API status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ API Error:', errorText);
+          throw new Error(`Errore API: ${response.status} - ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ API Response:', result);
+
+        setProgressMessage('Completato!');
+        setProgress(100);
+
+        toast({
+          title: "✅ Email inviata",
+          description: "La richiesta di stampa è stata inviata con successo al centro raccolta"
+        });
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          console.error('❌ Request aborted due to timeout');
+          toast({
+            title: "Timeout",
+            description: "La richiesta ha impiegato troppo tempo. Riprova più tardi o riduci il numero di storie.",
+            variant: "destructive"
+          });
+        } else {
+          throw fetchError; // Re-throw to be caught by outer catch
+        }
       }
-
-      const result = await response.json();
-      console.log('✅ API Response:', result);
-
-      setProgressMessage('Completato!');
-      setProgress(100);
-
-      toast({
-        title: "✅ Email inviata",
-        description: "La richiesta di stampa è stata inviata con successo al centro raccolta"
-      });
-
     } catch (error) {
       console.error('❌ Errore invio email:', error);
       toast({

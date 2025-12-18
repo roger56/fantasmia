@@ -230,20 +230,16 @@ const SuperuserAMArchive = () => {
     }
   };
 
-  const handleCreateAlbum = async () => {
-    // Get email settings from IndexedDB
-    const emailSettings = await fantasMiaDB.getSystemSettings();
-
-    // Check min/max stories requirement
-    if (selectedStories.size < emailSettings.minStoriesForEmail || selectedStories.size > emailSettings.maxStoriesForEmail) {
+  const handleCreateAlbum = () => {
+    // Nessuna validazione su numero storie - solo dimensione (gestita in AlbumCreatorDialog)
+    if (selectedStories.size === 0) {
       toast({
-        title: "Selezione non valida",
-        description: `Devi selezionare tra ${emailSettings.minStoriesForEmail} e ${emailSettings.maxStoriesForEmail} storie per l'invio`,
+        title: "Nessuna storia selezionata",
+        description: "Seleziona almeno una storia per creare l'album",
         variant: "destructive"
       });
       return;
     }
-
     setAlbumDialogOpen(true);
   };
 
