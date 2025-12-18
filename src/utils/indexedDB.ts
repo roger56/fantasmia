@@ -54,9 +54,10 @@ interface Album {
 
 interface SystemSettings {
   id: 'email_config'; // single document pattern
-  minStoriesForEmail: number;
-  maxStoriesForEmail: number;
   updatedAt: string;
+  // Legacy fields - kept for backward compatibility but no longer used
+  minStoriesForEmail?: number;
+  maxStoriesForEmail?: number;
 }
 
 interface GroupStory {
@@ -1098,8 +1099,6 @@ class FantasMiaDB {
           // Return default values if not found
           const defaults: SystemSettings = {
             id: 'email_config',
-            minStoriesForEmail: 1,
-            maxStoriesForEmail: 2,
             updatedAt: new Date().toISOString()
           };
           resolve(defaults);
