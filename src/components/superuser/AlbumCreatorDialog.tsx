@@ -9,7 +9,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AMStory, fantasMiaDB } from '@/utils/indexedDB';
 import { useToast } from '@/hooks/use-toast';
 import { AlbumPDFGenerator, generateAlbumZIP, calculatePagesAllocation, StoryForAlbum, AlbumGenerationConfig } from '@/utils/albumPdfGenerator';
-import { Download, FileArchive, Loader2, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
+import { Download, FileArchive, Loader2 } from 'lucide-react';
+import StoryPreviewItem from './StoryPreviewItem';
 
 interface AlbumCreatorDialogProps {
   open: boolean;
@@ -497,75 +498,17 @@ const AlbumCreatorDialog: React.FC<AlbumCreatorDialogProps> = ({
                 <Label>Storie selezionate ({stories.length})</Label>
                 <ScrollArea className="h-[300px] border rounded-lg p-4">
                   <div className="space-y-2">
-                    {stories.map((story, index) => {
-                      const pagesAlloc = calculatePagesAllocation(story.mode);
-                      // Check if story has a sketch image
-                      const [mediaInfo, setMediaInfo] = React.useState<{ isSketch: boolean } | null>(null);
-                      
-                      React.useEffect(() => {
-                        const loadMediaInfo = async () => {
-                          if (story.hasImage) {
-                            const media = await fantasMiaDB.getLatestMediaAssetByStoryId(story.id);
-                            if (media?.metadata?.isSketch) {
-                              setMediaInfo({ isSketch: true });
-                            } else {
-                              setMediaInfo({ isSketch: false });
-                            }
-                          }
-                        };
-                        loadMediaInfo();
-                      }, [story.id, story.hasImage]);
-                      
-                      return (
-                        <div key={story.id} className="flex items-center justify-between p-3 border rounded bg-muted/30">
-                          <div className="flex items-center gap-3 flex-1">
-                            {sortOrder === 'manual' && (
-                              <div className="flex flex-col gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => moveStory(index, 'up')}
-                                  disabled={index === 0}
-                                >
-                                  <ArrowUp className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => moveStory(index, 'down')}
-                                  disabled={index === stories.length - 1}
-                                >
-                                  <ArrowDown className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            )}
-                            
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{story.title}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {story.mode} • {pagesAlloc.text} pg testo + {pagesAlloc.image} pg immagine • {story.text.length} caratteri
-                              </p>
-                            </div>
-                            
-                            <div className={`text-xs px-2 py-1 rounded ${
-                              story.hasImage 
-                                ? mediaInfo?.isSketch 
-                                  ? 'bg-orange-100 text-orange-700'
-                                  : 'bg-green-100 text-green-700'
-                                : 'bg-red-100 text-red-700'
-                            }`}>
-                              {story.hasImage 
-                                ? mediaInfo?.isSketch 
-                                  ? '🖍️ Schizzo' 
-                                  : '✓ Immagine'
-                                : '✗ No immagine'}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {stories.map((story, index) => (
+                      <StoryPreviewItem
+                        key={story.id}
+                        story={story}
+                        index={index}
+                        sortOrder={sortOrder}
+                        storiesLength={stories.length}
+                        onMoveUp={(i) => moveStory(i, 'up')}
+                        onMoveDown={(i) => moveStory(i, 'down')}
+                      />
+                    ))}
                   </div>
                 </ScrollArea>
               </div>
