@@ -10,8 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import StoryLayout from '@/components/shared/StoryLayout';
-import AlbumCreatorDialog from '@/components/superuser/AlbumCreatorDialog';
-import { AlbumGenerationConfig } from '@/utils/albumPdfGenerator';
 
 const SuperuserAMArchive = () => {
   const navigate = useNavigate();
@@ -27,7 +25,6 @@ const SuperuserAMArchive = () => {
   const [selectedStoryContent, setSelectedStoryContent] = useState('');
   const [selectedStoryId, setSelectedStoryId] = useState('');
   const [selectedStories, setSelectedStories] = useState<Set<string>>(new Set());
-  const [albumDialogOpen, setAlbumDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -231,7 +228,6 @@ const SuperuserAMArchive = () => {
   };
 
   const handleCreateAlbum = () => {
-    // Nessuna validazione su numero storie - solo dimensione (gestita in AlbumCreatorDialog)
     if (selectedStories.size === 0) {
       toast({
         title: "Nessuna storia selezionata",
@@ -240,7 +236,8 @@ const SuperuserAMArchive = () => {
       });
       return;
     }
-    setAlbumDialogOpen(true);
+    // Navigate to album creator page with selected story IDs
+    navigate('/album-creator', { state: { storyIds: Array.from(selectedStories) } });
   };
 
   const selectedStoriesArray = filteredStories.filter(s => selectedStories.has(s.id));
@@ -443,21 +440,6 @@ const SuperuserAMArchive = () => {
         onSketchSaved={loadStories}
       />
 
-      {albumDialogOpen && (
-        <AlbumCreatorDialog
-          open={albumDialogOpen}
-          onOpenChange={setAlbumDialogOpen}
-          stories={selectedStoriesArray}
-          config={{
-            pageSize: 'A4-portrait',
-            margins: 20,
-            fontFamily: 'Arial',
-            fontSizeBody: 12,
-            fontSizeTitles: 18,
-            imageStyleDefault: 'fotografico'
-          }}
-        />
-      )}
     </>
   );
 };
