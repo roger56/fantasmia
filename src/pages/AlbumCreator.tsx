@@ -507,9 +507,10 @@ const AlbumCreator: React.FC = () => {
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium text-sm truncate">{story.title}</p>
                                   <p className="text-xs text-muted-foreground">
-                                    {story.mode} • {pagesAlloc.text} pg testo + {pagesAlloc.image} pg immagine
+                                    {story.mode}
+                                    <span className="hidden sm:inline"> • {pagesAlloc.text}pg + {pagesAlloc.image}pg img</span>
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-muted-foreground hidden sm:block">
                                     {new Date(story.createdAt).toLocaleDateString('it-IT')}
                                   </p>
                                 </div>

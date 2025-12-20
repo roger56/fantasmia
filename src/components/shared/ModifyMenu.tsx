@@ -454,7 +454,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
                 <ChevronDown className="w-3 h-3 ml-1" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="min-w-[200px] bg-background border shadow-lg z-50" align="start">
+            <DropdownMenuContent className="min-w-[200px] bg-background border shadow-lg z-50" align="start" side="bottom" sideOffset={4} collisionPadding={16}>
               {/* Submenu DISEGNO */}
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer">
