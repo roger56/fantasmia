@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import {
   getGroupStoryStats,
   checkCompletionConditions
 } from '@/lib/groupStoryManager';
+import { fantasMiaDB } from '@/utils/indexedDB';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -24,8 +25,16 @@ import {
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import SpeechToText from '@/components/SpeechToText';
 
+interface LocationState {
+  storyId?: string;
+  createNew?: boolean;
+  showIntro?: boolean;
+}
+
 const GroupStoryEditor = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as LocationState | null;
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,7 +49,8 @@ const GroupStoryEditor = () => {
     uniqueUsers: 0,
     lastContributor: null
   });
-  const [showIntro, setShowIntro] = useState(true);
+  // Show intro only if explicitly requested (when starting a new story)
+  const [showIntro, setShowIntro] = useState(locationState?.showIntro ?? false);
 
   // TTS hook per leggere l'ultima riga
   const tts = useUnifiedTTS();
@@ -58,16 +68,30 @@ const GroupStoryEditor = () => {
         setUserName(auth.userName);
         setIsSuperuser(auth.userName === 'superuser' || auth.userName === 'Superuser');
 
-        // Get or create active group story
-        const activeStory = await getOrCreateActiveGroupStory();
-        setGroupStoryId(activeStory.id);
+        let activeStoryId: string;
+
+        // Check if we have a specific story ID from navigation state
+        if (locationState?.storyId) {
+          // User selected an existing story
+          activeStoryId = locationState.storyId;
+        } else if (locationState?.createNew) {
+          // User wants to create a new story
+          const newStory = await getOrCreateActiveGroupStory();
+          activeStoryId = newStory.id;
+        } else {
+          // Fallback: get or create active story (legacy behavior)
+          const activeStory = await getOrCreateActiveGroupStory();
+          activeStoryId = activeStory.id;
+        }
+
+        setGroupStoryId(activeStoryId);
 
         // Load last line if contributions exist
-        const line = await getLastLine(activeStory.id);
+        const line = await getLastLine(activeStoryId);
         setLastLine(line);
 
         // Load stats
-        const storyStats = await getGroupStoryStats(activeStory.id);
+        const storyStats = await getGroupStoryStats(activeStoryId);
         setStats(storyStats);
 
         setLoading(false);
@@ -83,7 +107,7 @@ const GroupStoryEditor = () => {
     };
 
     initialize();
-  }, [navigate, toast]);
+  }, [navigate, toast, locationState]);
 
   // Stop TTS when unmounting
   useEffect(() => {

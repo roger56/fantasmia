@@ -99,10 +99,10 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* Group Story Creation */}
+              {/* Group Story Creation - Navigate to CT Selector */}
               <Card 
                 className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-violet-300 bg-gradient-to-br from-violet-50 to-purple-50" 
-                onClick={() => navigate('/group-story')}
+                onClick={() => navigate('/ct-selector')}
               >
                 <CardContent className="p-4 text-center">
                   <div className="mb-2 flex justify-center">
@@ -116,7 +116,7 @@ const Dashboard = () => {
                     ))}
                   </div>
                   <h3 className="text-lg font-semibold text-violet-800 mb-1">
-                    Storia di Gruppo
+                    Continua Tu...
                   </h3>
                   <p className="text-violet-600 text-sm">
                     Scrivi una storia insieme agli altri utenti - Modalità collaborativa

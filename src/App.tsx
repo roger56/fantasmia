@@ -52,6 +52,7 @@ import SuperuserReadingStoriesView from "./pages/SuperuserReadingStoriesView";
 import UserNordicMyths from "./pages/UserNordicMyths";
 import UserExplorers from "./pages/UserExplorers";
 import GroupStoryEditor from "./pages/GroupStoryEditor";
+import CTStorySelector from "./pages/CTStorySelector";
 import CTManagement from "./pages/CTManagement";
 import SuperuserDailyStoriesManagement from "./pages/SuperuserDailyStoriesManagement";
 // import ReadingStoryViewer from "./pages/ReadingStoryViewer"; // DEPRECATO: rimosso, usare AGStoryDetail
@@ -116,6 +117,7 @@ const App = () => (
             <Route path="/campbell-editor" element={<CampbellEditor />} />
             <Route path="/css-editor" element={<CSSEditor />} />
             <Route path="/strange-fact-editor" element={<StrangeFactEditor />} />
+            <Route path="/ct-selector" element={<CTStorySelector />} />
             <Route path="/group-story" element={<GroupStoryEditor />} />
             <Route path="/ct-management" element={<CTManagement />} />
             <Route path="/superuser-daily-stories" element={<SuperuserDailyStoriesManagement />} />
