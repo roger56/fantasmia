@@ -259,57 +259,61 @@ const AGStoryDetail = () => {
     >
       <div className="space-y-6">
         {/* Action Menu - Top Bar */}
-        <div className="flex flex-wrap justify-between items-center gap-3 p-4 bg-accent/30 rounded-lg border">
-          <div className="flex flex-wrap gap-2">
-            {/* MEDIA(AI) Menu unificato */}
-            <ModifyMenu
-              storyContent={story.content}
-              storyTitle={story.title}
-              storyId={story.id}
-              isEditing={false}
-              onEditToggle={() => {}}
-              onContentChange={(newContent) => {
-                setStory({ ...story, content: newContent });
-              }}
-              showEditButton={false}
-              userRole="superuser"
-              userId="superuser"
-              onUploadClick={() => setShowUploadDialog(true)}
-              onViewImageClick={handleViewImage}
-              onMediaUpdate={handleMediaUpdate}
-            />
+        <div className="w-full overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-between sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-accent/30 rounded-lg border">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto">
+              {/* MEDIA(AI) Menu unificato */}
+              <ModifyMenu
+                storyContent={story.content}
+                storyTitle={story.title}
+                storyId={story.id}
+                isEditing={false}
+                onEditToggle={() => {}}
+                onContentChange={(newContent) => {
+                  setStory({ ...story, content: newContent });
+                }}
+                showEditButton={false}
+                userRole="superuser"
+                userId="superuser"
+                onUploadClick={() => setShowUploadDialog(true)}
+                onViewImageClick={handleViewImage}
+                onMediaUpdate={handleMediaUpdate}
+              />
 
-            {/* Translation */}
-            <Button
-              variant="outline"
-              onClick={() => reading.initiateTranslation()}
-              disabled={reading.isTranslating}
-              className="flex items-center gap-2"
-            >
-              <Globe className="w-4 h-4" />
-              {reading.getTranslationButtonText()}
-            </Button>
+              {/* Translation */}
+              <Button
+                variant="outline"
+                onClick={() => reading.initiateTranslation()}
+                disabled={reading.isTranslating}
+                size="sm"
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
+                <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{reading.getTranslationButtonText()}</span>
+                <span className="sm:hidden">Traduci</span>
+              </Button>
 
-            {/* TTS */}
-            <Button variant="outline" onClick={handleTTSToggle}>
-              {reading.isPlaying ? (
-                <>
-                  <VolumeX className="w-4 h-4 mr-2" />
-                  {reading.getTTSButtonText()}
-                </>
-              ) : (
-                <>
-                  <Volume2 className="w-4 h-4 mr-2" />
-                  Leggi
-                </>
-              )}
+              {/* TTS */}
+              <Button variant="outline" size="sm" onClick={handleTTSToggle} className="text-xs sm:text-sm">
+                {reading.isPlaying ? (
+                  <>
+                    <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{reading.getTTSButtonText()}</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Leggi</span>
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <Button variant="destructive" size="sm" onClick={handleDelete} className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-center text-xs sm:text-sm">
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Elimina
             </Button>
           </div>
-
-          <Button variant="destructive" onClick={handleDelete} className="flex items-center gap-2">
-            <Trash2 className="w-4 h-4" />
-            Elimina
-          </Button>
         </div>
 
         {/* Story Content with Edit Capability */}

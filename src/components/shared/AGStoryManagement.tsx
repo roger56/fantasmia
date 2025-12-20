@@ -299,7 +299,7 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
                         >
                           {story.title}
                         </button>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-1 hidden sm:block">
                           {new Date(story.created_at).toLocaleDateString('it-IT', {
                             day: '2-digit',
                             month: '2-digit',
@@ -308,7 +308,7 @@ const AGStoryManagement: React.FC<AGStoryManagementProps> = ({ category, title, 
                         </p>
                       </div>
                       
-                      <div className="flex items-center gap-1 ml-4">
+                      <div className="flex items-center gap-0.5 sm:gap-1 ml-2 sm:ml-4 flex-shrink-0">
                         {/* Books Icon */}
                         <Button
                           variant="ghost"

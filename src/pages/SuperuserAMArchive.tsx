@@ -354,15 +354,15 @@ const SuperuserAMArchive = () => {
                             </h3>
                           </div>
 
-                          {/* Created by */}
-                          <div className="text-sm text-muted-foreground min-w-0 max-w-[120px]">
+                          {/* Created by - hidden on mobile */}
+                          <div className="text-sm text-muted-foreground min-w-0 max-w-[120px] hidden md:block">
                             <span className="truncate block">
                               {profileNames[story.ownerProfileId] || `Utente ${story.ownerProfileId.slice(0, 8)}...`}
                             </span>
                           </div>
 
-                          {/* Creation date */}
-                          <div className="text-sm text-muted-foreground min-w-[130px]">
+                          {/* Creation date - hidden on mobile */}
+                          <div className="text-sm text-muted-foreground min-w-[130px] hidden sm:block">
                             {new Date(story.createdAt).toLocaleString('it-IT', {
                               day: '2-digit',
                               month: '2-digit',
