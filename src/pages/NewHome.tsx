@@ -9,13 +9,15 @@ const NewHome = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Navigation Bar */}
-      <nav className="w-full bg-white/90 backdrop-blur-sm border-b border-slate-200 px-6 py-4">
+      <nav className="w-full bg-white/90 backdrop-blur-sm border-b border-slate-200 px-4 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="text-2xl font-bold text-primary">FANTASMIA-V0</div>
-          <div className="hidden md:flex space-x-8">
-            <Button variant="ghost" onClick={() => navigate('/')}>HOME</Button>
-            <Button variant="ghost" onClick={() => navigate('/about')}>ABOUT</Button>
-            <Button variant="ghost" onClick={() => navigate('/profiles')}>PROFILES</Button>
+          <div className="text-xl md:text-2xl font-bold text-primary">FANTASMIA</div>
+          <div className="flex flex-wrap justify-end gap-1 md:gap-2">
+            <Button variant="ghost" size="sm" className="text-xs md:text-sm px-2 md:px-4" onClick={() => navigate('/')}>HOME</Button>
+            <Button variant="ghost" size="sm" className="text-xs md:text-sm px-2 md:px-4" onClick={() => navigate('/about')}>ABOUT</Button>
+            <Button variant="ghost" size="sm" className="text-xs md:text-sm px-2 md:px-4" onClick={() => navigate('/note-legali')}>NOTE LEGALI</Button>
+            <Button variant="ghost" size="sm" className="text-xs md:text-sm px-2 md:px-4" onClick={() => navigate('/privacy')}>PRIVACY</Button>
+            <Button variant="ghost" size="sm" className="text-xs md:text-sm px-2 md:px-4" onClick={() => navigate('/contacts')}>CONTATTI</Button>
           </div>
         </div>
       </nav>

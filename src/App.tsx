@@ -11,6 +11,7 @@ import Company from "./pages/Company";
 import Spare from "./pages/Spare";
 import Privacy from "./pages/Privacy";
 import Contacts from "./pages/Contacts";
+import NoteLegali from "./pages/NoteLegali";
 import TermsAcceptance from "./pages/TermsAcceptance";
 import Dashboard from "./pages/Dashboard";
 import Profiles from "./pages/Profiles";
@@ -93,6 +94,7 @@ const App = () => (
             <Route path="/spare" element={<Spare />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/contacts" element={<Contacts />} />
+            <Route path="/note-legali" element={<NoteLegali />} />
             <Route path="/terms-acceptance" element={<TermsAcceptance />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profiles" element={<Profiles />} />
