@@ -17,21 +17,37 @@ export const usePermanentTranslation = (story: AMStory | null, onStoryUpdate: (u
   });
   const { toast } = useToast();
 
-  // Detect current language based on content
+  // Always return 'italian' as base language since app is natively Italian
+  // The button should ALWAYS show "INGLESE" initially unless English translation was saved
   const getCurrentLanguage = useCallback((): 'italian' | 'english' => {
     if (!story?.text) return 'italian';
     
-    // Simple heuristic: if contains common English words, assume English
+    // Check if we have explicit language metadata saved
+    // For now, assume stories are always in Italian initially
+    // Only detect English if the story was previously translated and saved
     const englishWords = ['the', 'and', 'is', 'in', 'to', 'of', 'a', 'that', 'it', 'with', 'for', 'as', 'was', 'on'];
     const text = story.text.toLowerCase();
-    const englishWordCount = englishWords.filter(word => text.includes(` ${word} `)).length;
     
-    return englishWordCount > 3 ? 'english' : 'italian';
+    // Count English word occurrences with stricter matching
+    let englishWordCount = 0;
+    for (const word of englishWords) {
+      if (text.includes(` ${word} `) || text.startsWith(`${word} `) || text.endsWith(` ${word}`)) {
+        englishWordCount++;
+      }
+    }
+    
+    // Require higher threshold to detect English (at least 5 matches)
+    // This ensures Italian stories stay marked as Italian
+    return englishWordCount >= 5 ? 'english' : 'italian';
   }, [story?.text]);
 
+  // Button text: always ready to translate to the OPPOSITE language
+  // If content is Italian -> show "INGLESE" (ready to translate to English)
+  // If content is English -> show "ITALIANO" (ready to translate back)
   const getButtonText = useCallback(() => {
     if (state.isTranslating) return 'Traduzione...';
-    return getCurrentLanguage() === 'italian' ? 'INGLESE' : 'ITALIANO';
+    const currentLang = getCurrentLanguage();
+    return currentLang === 'italian' ? 'INGLESE' : 'ITALIANO';
   }, [state.isTranslating, getCurrentLanguage]);
 
   const initiateTranslation = useCallback(async () => {

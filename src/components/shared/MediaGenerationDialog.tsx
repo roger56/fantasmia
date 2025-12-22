@@ -556,7 +556,41 @@ const handleImageGeneration = async (style: string) => {  // Aggiungi async qui
   }
 };
 
-  const handleSaveImage = async (imageDataUrl: string) => {
+  // State for pending save confirmation (show preview first, then ask to replace)
+  const [pendingSaveImage, setPendingSaveImage] = useState<string | null>(null);
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
+  const [existingMediaId, setExistingMediaId] = useState<string | null>(null);
+
+  // Check if existing image exists and store for later decision
+  const checkExistingImageAndPrepare = async (imageDataUrl: string) => {
+    if (!storyId) {
+      console.warn("⚠️ No storyId provided, cannot save image");
+      return;
+    }
+
+    try {
+      const { fantasMiaDB } = await import("@/utils/indexedDB");
+      const existingMedia = await fantasMiaDB.getLatestMediaAssetByStoryId(String(storyId));
+      
+      if (existingMedia) {
+        // Store pending image and show confirmation AFTER preview is visible
+        console.log("📦 Existing image found, will ask user after preview");
+        setPendingSaveImage(imageDataUrl);
+        setExistingMediaId(existingMedia.id);
+        // Don't show confirm yet - let user see the preview first
+      } else {
+        // No existing image, save directly
+        await performSaveImage(imageDataUrl, false);
+      }
+    } catch (error) {
+      console.error("❌ Error checking existing image:", error);
+      // Still try to save
+      await performSaveImage(imageDataUrl, false);
+    }
+  };
+
+  // Actually save the image (called after user confirms or if no existing image)
+  const performSaveImage = async (imageDataUrl: string, deleteExisting: boolean) => {
     if (!storyId) {
       console.warn("⚠️ No storyId provided, cannot save image");
       return;
@@ -565,44 +599,21 @@ const handleImageGeneration = async (style: string) => {  // Aggiungi async qui
     try {
       console.log("💾 Saving image to IndexedDB for story:", storyId);
 
-      // Import IndexedDB manager
       const { fantasMiaDB } = await import("@/utils/indexedDB");
 
-      // Detect story type (am or ag)
       const storyType = await fantasMiaDB.detectStoryType(String(storyId));
       if (!storyType) {
         throw new Error("Story not found");
       }
 
-      // Check if image already exists for this story
-      const existingMedia = await fantasMiaDB.getLatestMediaAssetByStoryId(String(storyId));
-
-      if (existingMedia) {
-        // Show confirmation dialog
-        const confirmReplace = confirm(
-          "⚠️ Esiste già un disegno associato a questa storia.\n\n" +
-            "Vuoi sostituirlo con quello nuovo?\n\n" +
-            "✅ OK = Sostituisci il disegno precedente\n" +
-            "❌ Annulla = Mantieni il disegno esistente",
-        );
-
-        if (!confirmReplace) {
-          console.log("🚫 User cancelled image replacement");
-          toast({
-            title: "Operazione annullata",
-            description: "Il disegno esistente è stato mantenuto",
-          });
-          return;
-        }
-
-        // Delete existing media asset
-        await fantasMiaDB.deleteMediaAsset(existingMedia.id);
-        console.log("🗑️ Existing image deleted:", existingMedia.id);
+      // Delete existing if user confirmed
+      if (deleteExisting && existingMediaId) {
+        await fantasMiaDB.deleteMediaAsset(existingMediaId);
+        console.log("🗑️ Existing image deleted:", existingMediaId);
       }
 
       let dataUrl = imageDataUrl;
 
-      // Se arriva un URL HTTP (es. dalla /sketch), convertilo in dataURL
       if (!dataUrl.startsWith("data:")) {
         console.log("🌐 Converting image URL to dataURL for storage...");
         const resp = await fetch(dataUrl, { mode: "cors" });
@@ -621,7 +632,6 @@ const handleImageGeneration = async (style: string) => {  // Aggiungi async qui
         });
       }
 
-      // Convert base64 dataURL to Blob
       const [header, base64Data] = dataUrl.split(",");
       const mimeMatch = header.match(/data:([^;]+)/);
       const mime = mimeMatch ? mimeMatch[1] : "image/png";
@@ -633,7 +643,6 @@ const handleImageGeneration = async (style: string) => {  // Aggiungi async qui
       }
       const blob = new Blob([bytes], { type: mime });
 
-      // Create media asset with style metadata
       const assetId = `${storyId}-openai-${Date.now()}`;
       const asset = {
         id: assetId,
@@ -646,11 +655,10 @@ const handleImageGeneration = async (style: string) => {  // Aggiungi async qui
         createdAt: new Date().toISOString(),
         data: blob,
         metadata: {
-          style: selectedStyle, // Save the actual style name
+          style: selectedStyle,
         },
       };
 
-      // Save media asset and update story flag atomically
       await fantasMiaDB.saveMediaAssetWithStoryUpdate(asset, String(storyId), storyType);
 
       console.log("✅ Image saved to IndexedDB with story update:", {
@@ -660,12 +668,22 @@ const handleImageGeneration = async (style: string) => {  // Aggiungi async qui
         style: selectedStyle,
       });
 
-      // Dispatch custom event to trigger icon refresh
       window.dispatchEvent(
         new CustomEvent("storyImageSaved", {
           detail: { storyId, storyType },
         }),
       );
+
+      toast({
+        title: "Immagine salvata!",
+        description: "L'immagine è stata associata alla storia",
+        variant: "default",
+      });
+
+      // Reset pending state
+      setPendingSaveImage(null);
+      setExistingMediaId(null);
+      setShowReplaceConfirm(false);
     } catch (error) {
       console.error("❌ Error saving image to IndexedDB:", error);
       toast({
@@ -674,6 +692,30 @@ const handleImageGeneration = async (style: string) => {  // Aggiungi async qui
         variant: "default",
       });
     }
+  };
+
+  // Handler for user confirming replacement
+  const handleConfirmReplace = async () => {
+    if (pendingSaveImage) {
+      await performSaveImage(pendingSaveImage, true);
+    }
+    setShowReplaceConfirm(false);
+  };
+
+  // Handler for user keeping existing image
+  const handleKeepExisting = () => {
+    toast({
+      title: "Operazione annullata",
+      description: "Il disegno esistente è stato mantenuto. Puoi scaricare la nuova immagine.",
+    });
+    setPendingSaveImage(null);
+    setExistingMediaId(null);
+    setShowReplaceConfirm(false);
+  };
+
+  // Legacy wrapper for backward compatibility
+  const handleSaveImage = async (imageDataUrl: string) => {
+    await checkExistingImageAndPrepare(imageDataUrl);
   };
 
   const handleDownloadImage = async () => {
@@ -855,7 +897,7 @@ const handleImageGeneration = async (style: string) => {  // Aggiungi async qui
           <DialogHeader>
             <DialogTitle>Immagine Generata - {storyTitle}</DialogTitle>
             <DialogDescription>
-              Visualizza l'immagine generata per la storia. Puoi scaricarla sul tuo dispositivo.
+              Visualizza l'immagine generata per la storia. Puoi scaricarla o salvarla come immagine della storia.
             </DialogDescription>
           </DialogHeader>
 
@@ -866,16 +908,48 @@ const handleImageGeneration = async (style: string) => {  // Aggiungi async qui
                 alt="Immagine generata per la storia"
                 className="max-w-full h-auto rounded-lg shadow-lg"
               />
-              <div className="flex items-center gap-4">
+              
+              {/* Show replace confirmation if there's a pending image and existing media */}
+              {pendingSaveImage && existingMediaId && !showReplaceConfirm && (
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    Esiste già un disegno associato a questa storia. Vuoi sostituirlo con questa nuova immagine?
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <Button onClick={handleDownloadImage} variant="outline" className="flex items-center gap-2">
                   <Download className="w-4 h-4" />
-                  Scarica Immagine
+                  Scarica
                 </Button>
+                
+                {/* Show replace/keep buttons if there's pending save with existing image */}
+                {pendingSaveImage && existingMediaId && (
+                  <>
+                    <Button 
+                      onClick={handleConfirmReplace} 
+                      variant="default" 
+                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                    >
+                      ✅ Sostituisci
+                    </Button>
+                    <Button 
+                      onClick={handleKeepExisting} 
+                      variant="outline" 
+                      className="flex items-center gap-2"
+                    >
+                      ❌ Mantieni precedente
+                    </Button>
+                  </>
+                )}
               </div>
+              
               <div className="text-sm text-muted-foreground text-center">
-                L'immagine è temporanea e verrà persa alla chiusura della pagina.
-                <br />
-                Usa il pulsante "Scarica" per salvarla sul tuo dispositivo (tasto destro per condividere).
+                {pendingSaveImage && existingMediaId 
+                  ? "Scegli se sostituire il disegno esistente o mantenere quello precedente."
+                  : "L'immagine è stata salvata automaticamente come immagine della storia."}
               </div>
             </div>
           ) : (
