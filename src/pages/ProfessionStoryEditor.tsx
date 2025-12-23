@@ -235,7 +235,10 @@ const ProfessionStoryEditor = () => {
                     placeholder="Scrivi qui la tua storia oppure usa il microfono per dettarla..."
                     value={storyText}
                     onChange={(e) => setStoryText(e.target.value)}
-                    className="min-h-48 text-base leading-relaxed"
+                    className="min-h-[5rem] max-h-[40vh] text-base leading-relaxed resize-none overflow-y-auto"
+                    style={{
+                      height: Math.min(Math.max(80, storyText.split('\n').length * 24 + 32), 300) + 'px'
+                    }}
                   />
                   
                   {/* Action Buttons */}

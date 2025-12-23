@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveUser } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
 import { validateUserName, validateUserEmail } from '@/utils/validation';
+import { setCurrentProfileId } from '@/utils/profileManager';
 import HomeButton from '@/components/HomeButton';
 
 const NewProfile = () => {
@@ -97,6 +98,9 @@ const NewProfile = () => {
     } catch (error) {
       console.error('Error saving profile to IndexedDB:', error);
     }
+
+    // ✅ FIX: Imposta current_profile_id in localStorage per IndexedDB/storyManager
+    setCurrentProfileId(newUser.id);
 
     // Bridge new user to Supabase authentication
     AuthBridge.createLocalSupabaseSession(newUser);

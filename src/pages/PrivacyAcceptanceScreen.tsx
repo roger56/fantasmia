@@ -1,16 +1,29 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield } from 'lucide-react';
+import { setCurrentProfileId, getCurrentProfileId } from '@/utils/profileManager';
 
 const PrivacyAcceptanceScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { profileId, profileName } = location.state || {};
 
+  // ✅ FIX: Assicura che current_profile_id sia impostato per NSU appena creati
+  useEffect(() => {
+    if (profileId && !getCurrentProfileId()) {
+      console.log('🔧 PrivacyAcceptance: Impostazione current_profile_id per NSU:', profileId);
+      setCurrentProfileId(profileId);
+    }
+  }, [profileId]);
+
   const handleAccept = () => {
+    // ✅ FIX: Conferma impostazione profilo prima di navigare
+    if (profileId) {
+      setCurrentProfileId(profileId);
+    }
     navigate('/dashboard', { state: { profileId, profileName } });
   };
 
