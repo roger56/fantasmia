@@ -29,7 +29,7 @@ export const saveUserStory = async (storyData: StoryData): Promise<string> => {
     // Questo evita redirect a /profiles per NSU appena creati
     let currentProfileId = getCurrentProfileId();
     
-    // Fallback: cerca il profilo nella sessione AuthBridge se non presente in localStorage
+    // Fallback #1: cerca il profilo nella sessione AuthBridge
     if (!currentProfileId) {
       const { AuthBridge } = await import('./authBridge');
       const authStatus = await AuthBridge.isAuthenticated();
@@ -39,6 +39,17 @@ export const saveUserStory = async (storyData: StoryData): Promise<string> => {
         const { setCurrentProfileId: setProfileId } = await import('./profileManager');
         setProfileId(currentProfileId);
         console.log('🔧 storyManager: Recuperato profileId da AuthBridge:', currentProfileId);
+      }
+    }
+    
+    // Fallback #2: cerca in fantasmia_current_user_id (legacy key usata da AuthBridge)
+    if (!currentProfileId) {
+      const legacyId = localStorage.getItem('fantasmia_current_user_id');
+      if (legacyId) {
+        currentProfileId = legacyId;
+        const { setCurrentProfileId: setProfileId } = await import('./profileManager');
+        setProfileId(currentProfileId);
+        console.log('🔧 storyManager: Recuperato profileId da fantasmia_current_user_id:', currentProfileId);
       }
     }
     
@@ -107,16 +118,26 @@ export const getCurrentUserStories = async (): Promise<AMStory[]> => {
     // ✅ FIX: Usa la stessa logica di saveUserStory per evitare redirect a /profiles
     let currentProfileId = getCurrentProfileId();
     
-    // Fallback: cerca il profilo nella sessione AuthBridge se non presente in localStorage
+    // Fallback #1: cerca il profilo nella sessione AuthBridge
     if (!currentProfileId) {
       const { AuthBridge } = await import('./authBridge');
       const authStatus = await AuthBridge.isAuthenticated();
       if (authStatus.authenticated && authStatus.userId) {
         currentProfileId = authStatus.userId;
-        // Sincronizza con localStorage per le prossime chiamate
         const { setCurrentProfileId: setProfileId } = await import('./profileManager');
         setProfileId(currentProfileId);
         console.log('🔧 storyManager (read): Recuperato profileId da AuthBridge:', currentProfileId);
+      }
+    }
+    
+    // Fallback #2: cerca in fantasmia_current_user_id (legacy key)
+    if (!currentProfileId) {
+      const legacyId = localStorage.getItem('fantasmia_current_user_id');
+      if (legacyId) {
+        currentProfileId = legacyId;
+        const { setCurrentProfileId: setProfileId } = await import('./profileManager');
+        setProfileId(currentProfileId);
+        console.log('🔧 storyManager (read): Recuperato profileId da fantasmia_current_user_id:', currentProfileId);
       }
     }
     
