@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -44,44 +44,40 @@ const SaveDialog: React.FC<SaveDialogProps> = ({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <div className="max-w-2xl mx-auto pt-20">
-        <Card>
-          <CardHeader>
-            <CardTitle>{dialogTitle}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Titolo della storia:</label>
-              <Input
-                type="text"
-                value={storyTitle}
-                onChange={(e) => setStoryTitle(e.target.value)}
-                placeholder={placeholder}
-                autoFocus
-                className="w-full"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSave();
-                  }
-                }}
-              />
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={handleClose}>
-                Annulla
-              </Button>
-              <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
-                {saveButtonText}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="max-w-md mx-auto">
+        <DialogHeader>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <label className="block text-sm font-medium mb-2">Titolo della storia:</label>
+            <Input
+              type="text"
+              value={storyTitle}
+              onChange={(e) => setStoryTitle(e.target.value)}
+              placeholder={placeholder}
+              autoFocus
+              className="w-full"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSave();
+                }
+              }}
+            />
+          </div>
+          <div className="flex gap-3 justify-end pt-2">
+            <Button variant="outline" onClick={handleClose}>
+              Annulla
+            </Button>
+            <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+              {saveButtonText}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

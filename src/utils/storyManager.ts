@@ -25,7 +25,31 @@ const generateUUID = (): string => {
 // Salva storia utente in IndexedDB am_stories
 export const saveUserStory = async (storyData: StoryData): Promise<string> => {
   try {
-    const currentProfileId = requireCurrentProfile();
+    // ✅ FIX: Usa getCurrentProfileId con fallback da AuthBridge invece di requireCurrentProfile
+    // Questo evita redirect a /profiles per NSU appena creati
+    let currentProfileId = getCurrentProfileId();
+    
+    // Fallback: cerca il profilo nella sessione AuthBridge se non presente in localStorage
+    if (!currentProfileId) {
+      const { AuthBridge } = await import('./authBridge');
+      const authStatus = await AuthBridge.isAuthenticated();
+      if (authStatus.authenticated && authStatus.userId) {
+        currentProfileId = authStatus.userId;
+        // Sincronizza con localStorage per le prossime chiamate
+        const { setCurrentProfileId: setProfileId } = await import('./profileManager');
+        setProfileId(currentProfileId);
+        console.log('🔧 storyManager: Recuperato profileId da AuthBridge:', currentProfileId);
+      }
+    }
+    
+    if (!currentProfileId) {
+      toast({
+        title: "Profilo richiesto",
+        description: "Devi avere un profilo attivo per salvare storie",
+        variant: "destructive"
+      });
+      throw new Error('Nessun profilo attivo');
+    }
     
     // Support both text and content fields for compatibility
     const storyText = storyData.text || storyData.content || '';
@@ -80,7 +104,26 @@ export const saveUserStory = async (storyData: StoryData): Promise<string> => {
 // Recupera storie dell'utente corrente da IndexedDB (FILTRATE per sicurezza)
 export const getCurrentUserStories = async (): Promise<AMStory[]> => {
   try {
-    const currentProfileId = requireCurrentProfile();
+    // ✅ FIX: Usa la stessa logica di saveUserStory per evitare redirect a /profiles
+    let currentProfileId = getCurrentProfileId();
+    
+    // Fallback: cerca il profilo nella sessione AuthBridge se non presente in localStorage
+    if (!currentProfileId) {
+      const { AuthBridge } = await import('./authBridge');
+      const authStatus = await AuthBridge.isAuthenticated();
+      if (authStatus.authenticated && authStatus.userId) {
+        currentProfileId = authStatus.userId;
+        // Sincronizza con localStorage per le prossime chiamate
+        const { setCurrentProfileId: setProfileId } = await import('./profileManager');
+        setProfileId(currentProfileId);
+        console.log('🔧 storyManager (read): Recuperato profileId da AuthBridge:', currentProfileId);
+      }
+    }
+    
+    if (!currentProfileId) {
+      console.warn('⚠️ getCurrentUserStories: Nessun profilo attivo');
+      return [];
+    }
     
     // SICUREZZA: Query filtrata per ownerProfileId - VIETATO usare query non filtrate
     const stories = await fantasMiaDB.getAMStoriesByUser(currentProfileId);
