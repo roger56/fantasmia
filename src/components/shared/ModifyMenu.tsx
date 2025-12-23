@@ -13,6 +13,7 @@ import { fantasMiaDB } from '@/utils/indexedDB';
 import MediaGenerationDialog from './MediaGenerationDialog';
 import ImageViewerDialog from './ImageViewerDialog';
 import SketchGenerationDialog from './SketchGenerationDialog';
+import VideoPlayerDialog from './VideoPlayerDialog';
 import { getStoryImage } from '@/utils/userStorage';
 interface ModifyMenuProps {
   storyContent: string;
@@ -63,6 +64,10 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   const [selectedDrawingStyle, setSelectedDrawingStyle] = useState<string>("");
   const [showSketchDialog, setShowSketchDialog] = useState(false);
   const [selectedSketchLevel, setSelectedSketchLevel] = useState<1 | 2>(1);
+  
+  // Video demo states
+  const [showVideoDialog, setShowVideoDialog] = useState(false);
+  const [currentVideoSrc, setCurrentVideoSrc] = useState('');
   
   // Loading and result states
   const [isImproving, setIsImproving] = useState(false);
@@ -252,10 +257,23 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
   };
 
   const handleFilmClick = (type: string) => {
-    toast({ 
-      title: "In sviluppo", 
-      description: `Funzione filmato ${type} in fase di sviluppo` 
-    });
+    // Demo: alterna tra i due video
+    const videos = [
+      '/lovable-uploads/il-calore.mp4',
+      '/lovable-uploads/matita-che-scrive.mp4'
+    ];
+    
+    // Recupera l'ultimo indice usato da localStorage
+    const lastIndex = parseInt(localStorage.getItem('lastDemoVideoIndex') || '1', 10);
+    // Alterna: se era 0 ora usa 1, se era 1 ora usa 0
+    const nextIndex = lastIndex === 0 ? 1 : 0;
+    
+    // Salva il nuovo indice per la prossima volta
+    localStorage.setItem('lastDemoVideoIndex', String(nextIndex));
+    
+    // Imposta il video corrente e apri il dialogo
+    setCurrentVideoSrc(videos[nextIndex]);
+    setShowVideoDialog(true);
   };
 
   const handleVoiceClick = (type: string) => {
@@ -777,6 +795,14 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
             userId={userId || (userRole === 'Superuser' ? 'Superuser' : 'superuser')}
             initialDetailLevel={selectedSketchLevel}
             onSketchSaved={onMediaUpdate}
+          />
+          
+          {/* Video Player Dialog (demo) */}
+          <VideoPlayerDialog
+            open={showVideoDialog}
+            onOpenChange={setShowVideoDialog}
+            videoSrc={currentVideoSrc}
+            title="Anteprima Filmato"
           />
         </>
       )}
