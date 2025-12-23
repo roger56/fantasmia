@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveUser } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
 import { validateUserName, validateUserEmail } from '@/utils/validation';
-import { setCurrentProfileId } from '@/utils/profileManager';
+import { setCurrentProfileId, getCurrentProfileId } from '@/utils/profileManager';
 import HomeButton from '@/components/HomeButton';
 
 const NewProfile = () => {
@@ -102,18 +102,24 @@ const NewProfile = () => {
     // ✅ FIX: Imposta current_profile_id in localStorage per IndexedDB/storyManager
     setCurrentProfileId(newUser.id);
 
-    // Bridge new user to Supabase authentication
-    AuthBridge.createLocalSupabaseSession(newUser);
+    // ✅ FIX: AWAIT la sessione AuthBridge per garantire persistenza su mobile
+    const sessionCreated = await AuthBridge.createLocalSupabaseSession(newUser);
+    console.log('🔧 NewProfile: Sessione AuthBridge creata:', sessionCreated, 'userId:', newUser.id);
+
+    // ✅ FIX: Verifica che il profileId sia correttamente salvato
+    const savedProfileId = getCurrentProfileId();
+    if (savedProfileId !== newUser.id) {
+      console.warn('⚠️ NewProfile: ProfileId mismatch, ri-imposto:', newUser.id);
+      setCurrentProfileId(newUser.id);
+    }
 
     toast({
       title: "Profilo creato!",
       description: `Il profilo ${formData.name} è stato creato con successo`,
     });
 
-    // Navigate to privacy acceptance screen with new profile
-    setTimeout(() => {
-      navigate('/privacy-acceptance', { state: { profileId: newUser.id, profileName: newUser.name } });
-    }, 1500);
+    // ✅ FIX: Naviga immediatamente senza setTimeout (dati già persistiti)
+    navigate('/privacy-acceptance', { state: { profileId: newUser.id, profileName: newUser.name } });
   };
 
   return (
