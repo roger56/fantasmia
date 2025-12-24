@@ -48,24 +48,24 @@ const EditTextDialog: React.FC<EditTextDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl" aria-describedby="dlg-desc-edit-text">
+      <DialogContent className="max-w-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" aria-describedby="dlg-desc-edit-text">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle className="text-slate-900 dark:text-slate-100">{title}</DialogTitle>
         </DialogHeader>
-        <DialogDescription id="dlg-desc-edit-text">
+        <DialogDescription id="dlg-desc-edit-text" className="text-slate-600 dark:text-slate-400">
           Modifica il contenuto del testo della storia.
         </DialogDescription>
 
         <div className="space-y-4">
           {showTitleField && (
             <div>
-              <Label htmlFor="story-title">Titolo della storia</Label>
+              <Label htmlFor="story-title" className="text-slate-700 dark:text-slate-300">Titolo della storia</Label>
               <input
                 id="story-title"
                 type="text"
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
-                className="mt-2 w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                className="mt-2 w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                 placeholder="Inserisci il titolo della storia..."
               />
             </div>

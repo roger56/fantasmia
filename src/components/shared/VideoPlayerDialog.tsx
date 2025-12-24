@@ -14,11 +14,11 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
   open,
   onOpenChange,
   videoSrc,
-  title = "Anteprima Video"
+  title = "Filmato demo"
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
+      <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle className="flex items-center justify-between">
             {title}
@@ -37,7 +37,9 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
             src={videoSrc}
             controls
             autoPlay
-            className="w-full max-h-[70vh] rounded-lg bg-black"
+            playsInline
+            webkit-playsinline="true"
+            className="w-full max-h-[70vh] min-h-[200px] rounded-lg bg-black object-contain"
           >
             Il tuo browser non supporta la riproduzione video.
           </video>
