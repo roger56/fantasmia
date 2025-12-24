@@ -802,7 +802,7 @@ const ModifyMenu: React.FC<ModifyMenuProps> = ({
             open={showVideoDialog}
             onOpenChange={setShowVideoDialog}
             videoSrc={currentVideoSrc}
-            title="Anteprima Filmato"
+            title="Filmato demo"
           />
         </>
       )}

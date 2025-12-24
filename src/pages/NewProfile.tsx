@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, UserPlus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ArrowLeft, UserPlus, ShieldCheck, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveUser } from '@/utils/userStorage';
+import { saveUser, getUsers } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
 import { validateUserName, validateUserEmail } from '@/utils/validation';
+import { verifyPassword } from '@/utils/authSecurity';
 import { setCurrentProfileId, getCurrentProfileId } from '@/utils/profileManager';
 import HomeButton from '@/components/HomeButton';
 
@@ -20,6 +22,12 @@ const NewProfile = () => {
     email: '',
     age: ''
   });
+  
+  // Supervisor confirmation state
+  const [showSupervisorDialog, setShowSupervisorDialog] = useState(false);
+  const [supervisorPassword, setSupervisorPassword] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [pendingUser, setPendingUser] = useState<any>(null);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -59,7 +67,7 @@ const NewProfile = () => {
       return;
     }
 
-    // Create user with password same as name (temporary solution)
+    // Prepare user data
     const newUser = {
       id: Date.now().toString(),
       name: formData.name.trim(),
@@ -70,6 +78,79 @@ const NewProfile = () => {
       unreadMessages: []
     };
 
+    // Store pending user and show supervisor confirmation dialog
+    setPendingUser(newUser);
+    setSupervisorPassword('');
+    setShowSupervisorDialog(true);
+  };
+
+  const handleSupervisorConfirm = async () => {
+    if (!pendingUser) return;
+    
+    setIsVerifying(true);
+    
+    try {
+      // Find the superuser (identified by name 'SuperUser')
+      const users = getUsers();
+      const superuser = users.find(u => u.name === 'SuperUser');
+      
+      if (!superuser) {
+        toast({
+          title: "Errore",
+          description: "Nessun supervisore configurato nel sistema",
+          variant: "destructive"
+        });
+        setIsVerifying(false);
+        return;
+      }
+      
+      // Verify the password
+      // The superuser password might be stored as plain text or hashed
+      let isValid = false;
+      
+      // Try direct comparison first (for plain text passwords)
+      if (superuser.password === supervisorPassword) {
+        isValid = true;
+      } else {
+        // Try bcrypt comparison (for hashed passwords)
+        try {
+          isValid = await verifyPassword(supervisorPassword, superuser.password);
+        } catch {
+          // If bcrypt fails, password format might be incompatible
+          isValid = false;
+        }
+      }
+      
+      if (!isValid) {
+        toast({
+          title: "Password errata",
+          description: "La password del supervisore non è corretta",
+          variant: "destructive"
+        });
+        setSupervisorPassword(''); // Clear the password field
+        setIsVerifying(false);
+        return;
+      }
+      
+      // Password verified! Proceed with profile creation
+      setShowSupervisorDialog(false);
+      setSupervisorPassword(''); // Clear password (not stored)
+      
+      await createProfile(pendingUser);
+      
+    } catch (error) {
+      console.error('Supervisor verification error:', error);
+      toast({
+        title: "Errore verifica",
+        description: "Si è verificato un errore durante la verifica",
+        variant: "destructive"
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const createProfile = async (newUser: any) => {
     saveUser(newUser);
 
     // Save to IndexedDB profiles as well
@@ -99,14 +180,14 @@ const NewProfile = () => {
       console.error('Error saving profile to IndexedDB:', error);
     }
 
-    // ✅ FIX: Imposta current_profile_id in localStorage per IndexedDB/storyManager
+    // Set current profile id
     setCurrentProfileId(newUser.id);
 
-    // ✅ FIX: AWAIT la sessione AuthBridge per garantire persistenza su mobile
+    // Create AuthBridge session
     const sessionCreated = await AuthBridge.createLocalSupabaseSession(newUser);
     console.log('🔧 NewProfile: Sessione AuthBridge creata:', sessionCreated, 'userId:', newUser.id);
 
-    // ✅ FIX: Verifica che il profileId sia correttamente salvato
+    // Verify profile ID was saved correctly
     const savedProfileId = getCurrentProfileId();
     if (savedProfileId !== newUser.id) {
       console.warn('⚠️ NewProfile: ProfileId mismatch, ri-imposto:', newUser.id);
@@ -115,11 +196,17 @@ const NewProfile = () => {
 
     toast({
       title: "Profilo creato!",
-      description: `Il profilo ${formData.name} è stato creato con successo`,
+      description: `Il profilo ${newUser.name} è stato creato con successo`,
     });
 
-    // ✅ FIX: Naviga immediatamente senza setTimeout (dati già persistiti)
+    // Navigate to privacy acceptance screen
     navigate('/privacy-acceptance', { state: { profileId: newUser.id, profileName: newUser.name } });
+  };
+
+  const handleDialogClose = () => {
+    setShowSupervisorDialog(false);
+    setSupervisorPassword('');
+    setPendingUser(null);
   };
 
   return (
@@ -193,6 +280,13 @@ const NewProfile = () => {
               </p>
             </div>
 
+            <div className="bg-amber-50 p-3 rounded-md border border-amber-200">
+              <p className="text-sm text-amber-800 flex items-center">
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                Richiede conferma del supervisore
+              </p>
+            </div>
+
             <div className="flex gap-3 pt-4">
               <Button 
                 onClick={() => navigate('/')}
@@ -211,6 +305,65 @@ const NewProfile = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Supervisor Confirmation Dialog */}
+      <Dialog open={showSupervisorDialog} onOpenChange={handleDialogClose}>
+        <DialogContent className="max-w-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-slate-900 dark:text-slate-100">
+              <ShieldCheck className="w-5 h-5 mr-2 text-amber-600" />
+              Conferma Supervisore
+            </DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-400">
+              Per creare un nuovo profilo è necessaria la conferma del supervisore.
+              Inserisci la password del supervisore per procedere.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Password Supervisore
+            </label>
+            <Input
+              type="password"
+              placeholder="Inserisci la password"
+              value={supervisorPassword}
+              onChange={(e) => setSupervisorPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && supervisorPassword) {
+                  handleSupervisorConfirm();
+                }
+              }}
+              className="bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+              autoFocus
+            />
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleDialogClose}
+              disabled={isVerifying}
+            >
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleSupervisorConfirm}
+              disabled={!supervisorPassword || isVerifying}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {isVerifying ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Verifica...
+                </>
+              ) : (
+                'Conferma'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
