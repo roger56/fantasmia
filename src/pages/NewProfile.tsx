@@ -7,10 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ArrowLeft, UserPlus, ShieldCheck, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { saveUser, getUsers } from '@/utils/userStorage';
+import { saveUser } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
 import { validateUserName, validateUserEmail } from '@/utils/validation';
-import { verifyPassword } from '@/utils/authSecurity';
 import { setCurrentProfileId, getCurrentProfileId } from '@/utils/profileManager';
 import HomeButton from '@/components/HomeButton';
 
@@ -90,36 +89,12 @@ const NewProfile = () => {
     setIsVerifying(true);
     
     try {
-      // Find the superuser (identified by name 'SuperUser')
-      const users = getUsers();
-      const superuser = users.find(u => u.name === 'SuperUser');
+      // La password del supervisore è la stessa usata in Profiles.tsx per il login SU
+      // Al momento è hardcoded a 'ssss' - in futuro potrebbe essere configurabile
+      const SUPERVISOR_PASSWORD = 'ssss';
       
-      if (!superuser) {
-        toast({
-          title: "Errore",
-          description: "Nessun supervisore configurato nel sistema",
-          variant: "destructive"
-        });
-        setIsVerifying(false);
-        return;
-      }
-      
-      // Verify the password
-      // The superuser password might be stored as plain text or hashed
-      let isValid = false;
-      
-      // Try direct comparison first (for plain text passwords)
-      if (superuser.password === supervisorPassword) {
-        isValid = true;
-      } else {
-        // Try bcrypt comparison (for hashed passwords)
-        try {
-          isValid = await verifyPassword(supervisorPassword, superuser.password);
-        } catch {
-          // If bcrypt fails, password format might be incompatible
-          isValid = false;
-        }
-      }
+      // Verifica diretta della password (stessa logica di Profiles.tsx)
+      const isValid = supervisorPassword === SUPERVISOR_PASSWORD;
       
       if (!isValid) {
         toast({
@@ -127,12 +102,12 @@ const NewProfile = () => {
           description: "La password del supervisore non è corretta",
           variant: "destructive"
         });
-        setSupervisorPassword(''); // Clear the password field
+        setSupervisorPassword('');
         setIsVerifying(false);
         return;
       }
       
-      // Password verified! Proceed with profile creation
+      // Password verificata! Procedi con la creazione del profilo
       setShowSupervisorDialog(false);
       setSupervisorPassword(''); // Clear password (not stored)
       
