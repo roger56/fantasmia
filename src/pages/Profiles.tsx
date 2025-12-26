@@ -180,12 +180,12 @@ const Profiles = () => {
         // Bridge the user to Supabase authentication
         AuthBridge.createLocalSupabaseSession(user);
         
-        // Check for unread messages and navigate to home first to show them
+        // Check for unread messages - navigate to dashboard with showMessages flag
         if (user.unreadMessages && user.unreadMessages.length > 0) {
           const messages = user.unreadMessages.filter(m => !m.read);
           if (messages.length > 0) {
-            // Navigate to home with userId to show messages
-            navigate('/home', { state: { userId: user.id, profileName: selectedUser.name } });
+            // Navigate to dashboard with showMessages flag (la Dashboard gestisce tutto)
+            navigate('/dashboard', { state: { userId: user.id, profileName: selectedUser.name, showMessages: true } });
             return;
           }
         }
@@ -201,13 +201,26 @@ const Profiles = () => {
     }
   };
 
-  // ✅ REQUISITO 2: Schermata di caricamento bloccante
+  // ✅ REQUISITO 2: Schermata di caricamento bloccante con ripple/pulse migliorato
   if (isLoadingProfiles) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-slate-600">Caricamento profili...</p>
+          {/* Ripple/pulse effect visibile su mobile */}
+          <div className="relative w-24 h-24 mx-auto mb-6">
+            {/* Outer pulse ring */}
+            <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping"></div>
+            {/* Middle pulse ring */}
+            <div className="absolute inset-2 rounded-full bg-primary/30 animate-pulse"></div>
+            {/* Inner spinning circle */}
+            <div className="absolute inset-4 rounded-full border-4 border-primary/40 border-t-primary animate-spin"></div>
+            {/* Center icon */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <User className="w-8 h-8 text-primary animate-pulse" />
+            </div>
+          </div>
+          <p className="text-lg font-medium text-slate-700 animate-pulse">Caricamento profili...</p>
+          <p className="text-sm text-slate-500 mt-2">Sincronizzazione in corso</p>
         </div>
       </div>
     );
