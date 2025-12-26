@@ -18,21 +18,24 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-        <DialogHeader className="p-4 pb-2">
-          <DialogTitle className="flex items-center justify-between">
+      <DialogContent 
+        className="max-w-4xl w-full p-0 overflow-hidden bg-white text-slate-900 border-slate-200"
+        style={{ colorScheme: 'light' }}
+      >
+        <DialogHeader className="p-4 pb-2 bg-white">
+          <DialogTitle className="flex items-center justify-between text-slate-900">
             {title}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => onOpenChange(false)}
-              className="h-8 w-8"
+              className="h-8 w-8 text-slate-700 hover:text-slate-900 hover:bg-slate-100"
             >
               <X className="h-4 w-4" />
             </Button>
           </DialogTitle>
         </DialogHeader>
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4 bg-white">
           <video
             src={videoSrc}
             controls
@@ -40,6 +43,11 @@ const VideoPlayerDialog: React.FC<VideoPlayerDialogProps> = ({
             playsInline
             webkit-playsinline="true"
             className="w-full max-h-[70vh] min-h-[200px] rounded-lg bg-black object-contain"
+            style={{ 
+              display: 'block',
+              visibility: 'visible',
+              zIndex: 10
+            }}
           >
             Il tuo browser non supporta la riproduzione video.
           </video>

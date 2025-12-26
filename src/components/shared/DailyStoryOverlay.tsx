@@ -365,9 +365,12 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
 
       {/* Image Preview Dialog */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-        <DialogContent className="max-w-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+        <DialogContent 
+          className="max-w-lg bg-white text-slate-900 border-slate-200"
+          style={{ colorScheme: 'light' }}
+        >
           <DialogHeader>
-            <DialogTitle>Disegno del Racconto</DialogTitle>
+            <DialogTitle className="text-slate-900">Disegno del Racconto</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {generatedImage && (
@@ -388,7 +391,7 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
               <Button
                 onClick={() => setShowImageDialog(false)}
                 variant="outline"
-                className="flex-1"
+                className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100"
               >
                 Chiudi
               </Button>
