@@ -283,20 +283,23 @@ const NewProfile = () => {
 
       {/* Supervisor Confirmation Dialog */}
       <Dialog open={showSupervisorDialog} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+        <DialogContent 
+          className="max-w-sm bg-white text-slate-900 border-slate-200"
+          style={{ colorScheme: 'light' }}
+        >
           <DialogHeader>
-            <DialogTitle className="flex items-center text-slate-900 dark:text-slate-100">
+            <DialogTitle className="flex items-center text-slate-900">
               <ShieldCheck className="w-5 h-5 mr-2 text-amber-600" />
               Conferma Supervisore
             </DialogTitle>
-            <DialogDescription className="text-slate-600 dark:text-slate-400">
+            <DialogDescription className="text-slate-600">
               Per creare un nuovo profilo è necessaria la conferma del supervisore.
               Inserisci la password del supervisore per procedere.
             </DialogDescription>
           </DialogHeader>
           
           <div className="py-4">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Password Supervisore
             </label>
             <Input
@@ -309,7 +312,7 @@ const NewProfile = () => {
                   handleSupervisorConfirm();
                 }
               }}
-              className="bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+              className="bg-white text-slate-900 border-slate-300"
               autoFocus
             />
           </div>
@@ -319,6 +322,7 @@ const NewProfile = () => {
               variant="outline" 
               onClick={handleDialogClose}
               disabled={isVerifying}
+              className="border-slate-300 text-slate-700 hover:bg-slate-100"
             >
               Annulla
             </Button>

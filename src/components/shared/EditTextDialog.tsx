@@ -48,30 +48,34 @@ const EditTextDialog: React.FC<EditTextDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" aria-describedby="dlg-desc-edit-text">
+      <DialogContent 
+        className="max-w-2xl bg-white text-slate-900 border-slate-200" 
+        aria-describedby="dlg-desc-edit-text"
+        style={{ colorScheme: 'light' }}
+      >
         <DialogHeader>
-          <DialogTitle className="text-slate-900 dark:text-slate-100">{title}</DialogTitle>
+          <DialogTitle className="text-slate-900">{title}</DialogTitle>
         </DialogHeader>
-        <DialogDescription id="dlg-desc-edit-text" className="text-slate-600 dark:text-slate-400">
+        <DialogDescription id="dlg-desc-edit-text" className="text-slate-600">
           Modifica il contenuto del testo della storia.
         </DialogDescription>
 
         <div className="space-y-4">
           {showTitleField && (
             <div>
-              <Label htmlFor="story-title" className="text-slate-700 dark:text-slate-300">Titolo della storia</Label>
+              <Label htmlFor="story-title" className="text-slate-700">Titolo della storia</Label>
               <input
                 id="story-title"
                 type="text"
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
-                className="mt-2 w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white text-slate-900"
                 placeholder="Inserisci il titolo della storia..."
               />
             </div>
           )}
           <div>
-            <Label htmlFor="story-text">Testo della storia</Label>
+            <Label htmlFor="story-text" className="text-slate-700">Testo della storia</Label>
             <div className="flex gap-2 mt-2">
               <Textarea
                 id="story-text"
@@ -79,6 +83,7 @@ const EditTextDialog: React.FC<EditTextDialogProps> = ({
                 onChange={(e) => setEditedText(e.target.value)}
                 rows={showTitleField ? 10 : 12}
                 placeholder="Scrivi qui il testo della storia..."
+                className="bg-white text-slate-900 border-slate-300"
               />
               <SpeechToText
                 onResult={(transcript) => {
@@ -92,10 +97,10 @@ const EditTextDialog: React.FC<EditTextDialogProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-slate-300 text-slate-700 hover:bg-slate-100">
             Annulla
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} className="bg-primary text-primary-foreground hover:bg-primary/90">
             <Save className="w-4 h-4 mr-2" />
             Salva Modifiche
           </Button>
