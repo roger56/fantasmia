@@ -14,7 +14,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   
   // Daily Story hook for NSU overlay
-  const { showOverlay, dailyStory, handleClose, isLoading: dailyStoryLoading } = useDailyStory();
+  const { showOverlay, dailyStory, handleClose, isLoading: dailyStoryLoading, isInitializing } = useDailyStory();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -59,6 +59,7 @@ const Dashboard = () => {
           isOpen={showOverlay}
           story={dailyStory}
           onClose={handleClose}
+          isInitializing={isInitializing}
         />
       )}
 
