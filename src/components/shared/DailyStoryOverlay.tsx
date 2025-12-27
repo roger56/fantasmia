@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { BookOpen, Volume2, SkipForward, ArrowRight, Pause, Play, Languages, Palette, Download, Loader2 } from 'lucide-react';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { useToast } from '@/hooks/use-toast';
+import { translateToEnglish } from '@/utils/translation';
 import type { DailyStory } from '@/hooks/useDailyStory';
 
 interface DailyStoryOverlayProps {
@@ -73,7 +74,7 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
     }
   }, [isPlaying, isPaused, pause, speak, story.story, showEnglish, translatedText]);
 
-  // Translation handler - uses Vercel API, temporary only
+  // Translation handler - uses Google Translate API, temporary only
   const handleTranslationToggle = useCallback(async () => {
     if (showEnglish) {
       // Switch back to Italian
@@ -89,24 +90,12 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
       return;
     }
     
-    // Translate via Vercel API
+    // Translate via Google Translate API (same as UserStoryViewer)
     setIsTranslating(true);
     try {
-      const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/improve-text', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: story.story,
-          instruction: 'Translate this Italian text to English. Keep the same tone and style. Return only the translation, nothing else.'
-        })
-      });
+      const translated = await translateToEnglish(story.story);
       
-      if (!response.ok) throw new Error('Translation failed');
-      
-      const data = await response.json();
-      const translated = data.improvedText || data.text || '';
-      
-      if (translated) {
+      if (translated && translated !== story.story) {
         setTranslatedText(translated);
         setShowEnglish(true);
         stop(); // Stop TTS when switching language
