@@ -11,6 +11,7 @@ interface DailyStoryOverlayProps {
   isOpen: boolean;
   story: DailyStory;
   onClose: () => void;
+  isInitializing?: boolean;
 }
 
 type Screen = 'initial' | 'story' | 'quote';
@@ -18,7 +19,8 @@ type Screen = 'initial' | 'story' | 'quote';
 const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
   isOpen,
   story,
-  onClose
+  onClose,
+  isInitializing = false
 }) => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('initial');
   const { speak, pause, isPlaying, isPaused, stop } = useUnifiedTTS({ storyId: 'daily-story' });
@@ -192,6 +194,26 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
   }, [generatedImage, story.date, toast]);
 
   if (!isOpen) return null;
+
+  // Show ripple loading during initialization
+  if (isInitializing) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="flex flex-col items-center gap-4">
+          {/* Ripple animation */}
+          <div className="relative w-24 h-24">
+            <div className="absolute inset-0 rounded-full bg-amber-400/30 animate-ping" />
+            <div className="absolute inset-2 rounded-full bg-amber-400/40 animate-ping" style={{ animationDelay: '0.2s' }} />
+            <div className="absolute inset-4 rounded-full bg-amber-400/50 animate-ping" style={{ animationDelay: '0.4s' }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <BookOpen className="w-10 h-10 text-amber-500" />
+            </div>
+          </div>
+          <p className="text-amber-100 text-sm">Caricamento racconti...</p>
+        </div>
+      </div>
+    );
+  }
 
   const displayText = showEnglish && translatedText ? translatedText : story.story;
 

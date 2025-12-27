@@ -23,6 +23,7 @@ export const useDailyStory = () => {
   const [showOverlay, setShowOverlay] = useState(false);
   const [dailyStory, setDailyStory] = useState<DailyStory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     const checkDailyStory = async () => {
@@ -33,6 +34,12 @@ export const useDailyStory = () => {
         console.log('📖 Daily Story: initializing IndexedDB...');
         await fantasMiaDB.init();
         console.log('📖 Daily Story: IndexedDB initialized ✓');
+        
+        // 0.1 Auto-population del bundle
+        console.log('📖 Daily Story: ensuring bundle is loaded...');
+        await fantasMiaDB.ensureDailyStoriesLoaded();
+        console.log('📖 Daily Story: bundle check complete ✓');
+        setIsInitializing(false);
         
         // 1. Verifica se SU → non mostrare MAI
         const authStatus = await AuthBridge.isAuthenticated();
@@ -97,5 +104,5 @@ export const useDailyStory = () => {
     setShowOverlay(false);
   }, []);
 
-  return { showOverlay, dailyStory, handleClose, isLoading };
+  return { showOverlay, dailyStory, handleClose, isLoading, isInitializing };
 };

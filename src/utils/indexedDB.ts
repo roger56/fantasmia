@@ -1290,6 +1290,41 @@ class FantasMiaDB {
     console.log(`📚 Imported ${count} daily stories`);
     return count;
   }
+
+  // ============= Daily Stories Bundle Auto-Population =============
+  
+  async ensureDailyStoriesLoaded(): Promise<void> {
+    const { BUNDLE_VERSION, dailyStoriesBundle } = await import('@/data/dailyStoriesBundle');
+    
+    const storedVersion = localStorage.getItem('daily_stories_bundle_version');
+    
+    if (storedVersion === BUNDLE_VERSION) {
+      console.log('📚 Daily stories bundle already loaded (version:', storedVersion, ')');
+      return;
+    }
+    
+    console.log('📚 Loading daily stories from bundle (version:', BUNDLE_VERSION, ')...');
+    
+    if (!this.db) await this.init();
+    
+    const transaction = this.db!.transaction(['daily_stories'], 'readwrite');
+    const store = transaction.objectStore('daily_stories');
+    
+    let count = 0;
+    for (const story of dailyStoriesBundle) {
+      await new Promise<void>((resolve, reject) => {
+        const request = store.put(story);
+        request.onsuccess = () => {
+          count++;
+          resolve();
+        };
+        request.onerror = () => reject(request.error);
+      });
+    }
+    
+    localStorage.setItem('daily_stories_bundle_version', BUNDLE_VERSION);
+    console.log(`✅ Loaded ${count} daily stories from bundle`);
+  }
 }
 
 // Singleton instance
