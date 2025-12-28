@@ -39,7 +39,9 @@ const Dashboard = () => {
     checkAuth();
   }, [navigate]);
 
-  if (loading || dailyStoryLoading) {
+  // Solo loading della pagina, non aspettare dailyStoryLoading
+  // L'overlay gestisce il suo stato di caricamento internamente
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-lg">Caricamento...</div>
@@ -53,13 +55,13 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* Daily Story Overlay for NSU */}
-      {showOverlay && dailyStory && (
+      {/* Daily Story Overlay for NSU - mostra sempre se loading o overlay attivo */}
+      {(dailyStoryLoading || isInitializing || (showOverlay && dailyStory)) && (
         <DailyStoryOverlay
-          isOpen={showOverlay}
-          story={dailyStory}
+          isOpen={showOverlay || dailyStoryLoading || isInitializing}
+          story={dailyStory || { date: '', story: '', quote: '' }}
           onClose={handleClose}
-          isInitializing={isInitializing}
+          isInitializing={isInitializing || dailyStoryLoading}
         />
       )}
 

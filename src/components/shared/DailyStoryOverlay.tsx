@@ -184,8 +184,8 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
 
   if (!isOpen) return null;
 
-  // Show ripple loading during initialization
-  if (isInitializing) {
+  // Show ripple loading during initialization OR when story is not yet loaded
+  if (isInitializing || !story.story) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
         <div className="flex flex-col items-center gap-4">
@@ -219,11 +219,8 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
                   </div>
                 </div>
                 <CardTitle className="text-xl text-amber-800">
-                  IL RACCONTO DI OGGI
+                  IL RACCONTO DI OGGI — {story.date}
                 </CardTitle>
-                <p className="text-amber-600 font-medium mt-1">
-                  {story.date}
-                </p>
               </CardHeader>
               <CardContent className="space-y-3 pt-4">
                 <Button 
@@ -261,6 +258,7 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
                 <CardTitle className="text-lg text-amber-800">
                   IL RACCONTO DI OGGI — {story.date}
                 </CardTitle>
+                <p className="text-xs text-amber-500 mt-1">Racconto + Massima del giorno</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
