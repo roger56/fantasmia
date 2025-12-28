@@ -10,9 +10,10 @@ const ITALIAN_MONTHS = [
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 export interface DailyStory {
-  date: string;   // "12 dicembre"
+  date: string;   // "12 dicembre" - chiave primaria
   story: string;  // racconto breve
   quote: string;  // massima del giorno
+  source?: 'default' | 'su_import' | 'su_manual';  // precedenza: su_manual > su_import > default
 }
 
 export interface ParseResult {
