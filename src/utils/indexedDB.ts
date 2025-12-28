@@ -117,6 +117,7 @@ interface DailyStory {
   date: string;   // "12 dicembre" - chiave primaria
   story: string;  // racconto breve ASCII
   quote: string;  // massima del giorno
+  source?: 'default' | 'su_import' | 'su_manual';  // precedenza: su_manual > su_import > default
 }
 
 class FantasMiaDB {
@@ -1291,39 +1292,81 @@ class FantasMiaDB {
     return count;
   }
 
-  // ============= Daily Stories Bundle Auto-Population =============
+// ============= Daily Stories Bundle Auto-Population =============
   
   async ensureDailyStoriesLoaded(): Promise<void> {
-    const { BUNDLE_VERSION, dailyStoriesBundle } = await import('@/data/dailyStoriesBundle');
+    const storedVersion = localStorage.getItem('daily_stories_default_version');
+    const DEFAULT_VERSION = '2024.1';
     
-    const storedVersion = localStorage.getItem('daily_stories_bundle_version');
-    
-    if (storedVersion === BUNDLE_VERSION) {
-      console.log('📚 Daily stories bundle already loaded (version:', storedVersion, ')');
+    if (storedVersion === DEFAULT_VERSION) {
+      console.log('📚 Daily stories default already loaded (version:', storedVersion, ')');
       return;
     }
     
-    console.log('📚 Loading daily stories from bundle (version:', BUNDLE_VERSION, ')...');
+    console.log('📚 Loading daily stories from /daily-stories-default.json...');
     
     if (!this.db) await this.init();
     
-    const transaction = this.db!.transaction(['daily_stories'], 'readwrite');
-    const store = transaction.objectStore('daily_stories');
-    
-    let count = 0;
-    for (const story of dailyStoriesBundle) {
-      await new Promise<void>((resolve, reject) => {
-        const request = store.put(story);
-        request.onsuccess = () => {
-          count++;
-          resolve();
-        };
-        request.onerror = () => reject(request.error);
-      });
+    try {
+      // Fetch from public JSON file
+      const response = await fetch('/daily-stories-default.json');
+      if (!response.ok) throw new Error('Failed to fetch default stories');
+      
+      const data = await response.json();
+      const defaultStories: DailyStory[] = data.stories || [];
+      
+      const transaction = this.db!.transaction(['daily_stories'], 'readwrite');
+      const store = transaction.objectStore('daily_stories');
+      
+      let count = 0;
+      for (const story of defaultStories) {
+        // Check if story already exists with higher priority source
+        const existing = await new Promise<DailyStory | null>((resolve) => {
+          const req = store.get(story.date);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        });
+        
+        // Only insert if no existing story or existing is also 'default'
+        if (!existing || existing.source === 'default' || !existing.source) {
+          await new Promise<void>((resolve, reject) => {
+            const request = store.put({ ...story, source: 'default' });
+            request.onsuccess = () => { count++; resolve(); };
+            request.onerror = () => reject(request.error);
+          });
+        }
+      }
+      
+      localStorage.setItem('daily_stories_default_version', DEFAULT_VERSION);
+      console.log(`✅ Loaded ${count} daily stories from default JSON`);
+    } catch (error) {
+      console.warn('⚠️ Could not load default stories from JSON, falling back to bundle:', error);
+      // Fallback to hardcoded bundle
+      const { BUNDLE_VERSION, dailyStoriesBundle } = await import('@/data/dailyStoriesBundle');
+      
+      const transaction = this.db!.transaction(['daily_stories'], 'readwrite');
+      const store = transaction.objectStore('daily_stories');
+      
+      let count = 0;
+      for (const story of dailyStoriesBundle) {
+        const existing = await new Promise<DailyStory | null>((resolve) => {
+          const req = store.get(story.date);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        });
+        
+        if (!existing || existing.source === 'default' || !existing.source) {
+          await new Promise<void>((resolve, reject) => {
+            const request = store.put({ ...story, source: 'default' });
+            request.onsuccess = () => { count++; resolve(); };
+            request.onerror = () => reject(request.error);
+          });
+        }
+      }
+      
+      localStorage.setItem('daily_stories_default_version', BUNDLE_VERSION);
+      console.log(`✅ Loaded ${count} daily stories from bundle fallback`);
     }
-    
-    localStorage.setItem('daily_stories_bundle_version', BUNDLE_VERSION);
-    console.log(`✅ Loaded ${count} daily stories from bundle`);
   }
 }
 
