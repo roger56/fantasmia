@@ -261,45 +261,11 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
                 <p className="text-xs text-amber-500 mt-1">Racconto + Massima del giorno</p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  {/* Story text container */}
-                  <div className="flex-1 bg-white/80 rounded-lg p-4 max-h-[50vh] overflow-y-auto">
-                    <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
-                      {displayText}
-                    </p>
-                  </div>
-                  
-                  {/* Right side buttons: Translation + Drawing */}
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      onClick={handleTranslationToggle}
-                      variant="outline"
-                      size="icon"
-                      className="border-amber-300 text-amber-700 hover:bg-amber-100"
-                      disabled={isTranslating}
-                      title={showEnglish ? "Mostra Italiano" : "Traduci in Inglese"}
-                    >
-                      {isTranslating ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Languages className="w-4 h-4" />
-                      )}
-                    </Button>
-                    <Button
-                      onClick={handleGenerateDrawing}
-                      variant="outline"
-                      size="icon"
-                      className="border-amber-300 text-amber-700 hover:bg-amber-100"
-                      disabled={isGeneratingImage}
-                      title="Genera Disegno"
-                    >
-                      {isGeneratingImage ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Palette className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
+                {/* Story text container */}
+                <div className="bg-white/80 rounded-lg p-4 max-h-[40vh] overflow-y-auto">
+                  <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                    {displayText}
+                  </p>
                 </div>
                 
                 {/* Language indicator */}
@@ -309,11 +275,42 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
                   </p>
                 )}
                 
+                {/* Service buttons row: INGLESE + DISEGNO - prominent and visible */}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleTranslationToggle}
+                    variant="outline"
+                    className="flex-1 border-amber-300 text-amber-700 hover:bg-amber-100 font-medium"
+                    disabled={isTranslating}
+                  >
+                    {isTranslating ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Languages className="w-4 h-4 mr-2" />
+                    )}
+                    {showEnglish ? 'ITALIANO' : 'INGLESE'}
+                  </Button>
+                  <Button
+                    onClick={handleGenerateDrawing}
+                    variant="outline"
+                    className="flex-1 border-amber-300 text-amber-700 hover:bg-amber-100 font-medium"
+                    disabled={isGeneratingImage}
+                  >
+                    {isGeneratingImage ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Palette className="w-4 h-4 mr-2" />
+                    )}
+                    DISEGNO
+                  </Button>
+                </div>
+                
+                {/* Navigation buttons row: ASCOLTA + AVANTI */}
                 <div className="flex gap-2">
                   <Button 
                     onClick={handleTTSToggle}
                     variant="outline"
-                    className="flex-1 border-amber-300 text-amber-700 hover:bg-amber-100"
+                    className="flex-1 border-amber-300 text-amber-700 hover:bg-amber-100 font-medium"
                   >
                     {isPlaying && !isPaused ? (
                       <>
@@ -329,7 +326,7 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
                   </Button>
                   <Button 
                     onClick={handleNextToQuote}
-                    className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                    className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-medium"
                   >
                     AVANTI
                     <ArrowRight className="w-4 h-4 ml-2" />

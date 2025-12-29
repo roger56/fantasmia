@@ -7,8 +7,10 @@ import { AuthBridge } from '@/utils/authBridge';
 import StoryLayout from '@/components/shared/StoryLayout';
 import DailyStoryOverlay from '@/components/shared/DailyStoryOverlay';
 import { useDailyStory } from '@/hooks/useDailyStory';
+import { getCurrentProfileId } from '@/utils/profileManager';
 
 const Dashboard = () => {
+  const profileId = getCurrentProfileId();
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -53,8 +55,9 @@ const Dashboard = () => {
     return null;
   }
 
+  // Key forces re-mount when profile changes → useDailyStory re-executes
   return (
-    <>
+    <React.Fragment key={profileId || 'no-profile'}>
       {/* Daily Story Overlay for NSU - mostra sempre se loading o overlay attivo */}
       {(dailyStoryLoading || isInitializing || (showOverlay && dailyStory)) && (
         <DailyStoryOverlay
@@ -190,7 +193,7 @@ const Dashboard = () => {
           </section>
         </div>
       </StoryLayout>
-    </>
+    </React.Fragment>
   );
 };
 
