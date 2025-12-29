@@ -114,24 +114,45 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
     }
   }, [showEnglish, translatedText, story.story, stop, toast]);
 
-  // Drawing handler - uses Vercel API sketch, not saved
+  // Drawing handler - uses Vercel API /image endpoint with fumetto style
   const handleGenerateDrawing = useCallback(async () => {
     setIsGeneratingImage(true);
     try {
-      const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/sketch', {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      const response = await fetch('https://fantasmia-ai.vercel.app/api/openai/image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           prompt: story.story,
-          style: 'fumetto',
-          detailLevel: 'medium'
-        })
+          style: 'fumetto'
+        }),
+        signal: controller.signal
       });
       
-      if (!response.ok) throw new Error('Image generation failed');
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Image API error:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}`);
+      }
       
       const data = await response.json();
-      const imageUrl = data.imageUrl || data.image || data.url || '';
+      
+      // Handle response: image_base64 or image_url
+      let imageUrl = '';
+      if (data.image_base64) {
+        imageUrl = `data:image/png;base64,${data.image_base64}`;
+      } else if (data.image_url) {
+        imageUrl = data.image_url;
+      } else if (data.imageUrl) {
+        imageUrl = data.imageUrl;
+      }
       
       if (imageUrl) {
         setGeneratedImage(imageUrl);
@@ -139,11 +160,13 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
       } else {
         throw new Error('No image returned');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Image generation error:', error);
       toast({
         title: "Errore generazione",
-        description: "Non è stato possibile generare il disegno",
+        description: error.name === 'AbortError' 
+          ? "Timeout: la generazione ha richiesto troppo tempo"
+          : "Non è stato possibile generare il disegno",
         variant: "destructive"
       });
     } finally {
