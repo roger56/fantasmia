@@ -28,9 +28,10 @@ interface UseConosciLaParolaResult {
   closeOverlay: () => void;
 }
 
-const SESSION_KEY = 'fantasmia_clp_session';
-const ICON_SIZE = 48;
+const SESSION_KEY_PREFIX = 'fantasmia_clp_session';
+const LOGIN_NONCE_KEY = 'fantasmia_login_nonce';
 const SETTINGS_KEY = 'fantasmia_wordgame_settings';
+const ICON_SIZE = 48;
 
 // Default values (can be overridden by SU settings)
 const DEFAULT_ANIMATION_DURATION = 20000; // 20 seconds
@@ -122,20 +123,32 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
     return true;
   }, []);
 
-  // Check if already shown this session
+  const getSessionKey = useCallback((): string => {
+    const profileId = getCurrentProfileId() || 'anonymous';
+    let nonce = sessionStorage.getItem(LOGIN_NONCE_KEY);
+    if (!nonce) {
+      nonce = String(Date.now());
+      sessionStorage.setItem(LOGIN_NONCE_KEY, nonce);
+    }
+    return `${SESSION_KEY_PREFIX}:${profileId}:${nonce}`;
+  }, []);
+
+  // Check if already shown this "login session" (per tab, per profile)
   const isAlreadyShownThisSession = useCallback((): boolean => {
-    const sessionFlag = sessionStorage.getItem(SESSION_KEY);
+    const key = getSessionKey();
+    const sessionFlag = sessionStorage.getItem(key);
     const alreadyShown = sessionFlag === 'true';
     if (alreadyShown) {
-      logWordGame('showIcon', { value: false, reason: 'already_shown_this_session' });
+      logWordGame('showIcon', { value: false, reason: 'already_shown_this_session', sessionKey: key });
     }
     return alreadyShown;
-  }, []);
+  }, [getSessionKey]);
 
   // Mark as shown for this session
   const markAsShown = useCallback(() => {
-    sessionStorage.setItem(SESSION_KEY, 'true');
-  }, []);
+    const key = getSessionKey();
+    sessionStorage.setItem(key, 'true');
+  }, [getSessionKey]);
 
   // Load random word from dictionary with retry logic
   const loadRandomWord = useCallback(async (retryCount = 0): Promise<boolean> => {

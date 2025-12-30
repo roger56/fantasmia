@@ -9,6 +9,8 @@ export const getCurrentProfileId = (): string | null => {
 
 export const setCurrentProfileId = (profileId: string): void => {
   localStorage.setItem('current_profile_id', profileId);
+  // Segna un "nuovo login" (per tab) così le feature one-per-session si riattivano
+  sessionStorage.setItem('fantasmia_login_nonce', String(Date.now()));
 };
 
 export const clearCurrentProfile = (): void => {
