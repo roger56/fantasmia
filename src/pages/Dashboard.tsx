@@ -6,6 +6,7 @@ import { BookOpen, Plus, BookText, Users } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
 import StoryLayout from '@/components/shared/StoryLayout';
 import DailyStoryOverlay from '@/components/shared/DailyStoryOverlay';
+import ConosciLaParola from '@/components/shared/ConosciLaParola';
 import { useDailyStory } from '@/hooks/useDailyStory';
 import { getCurrentProfileId } from '@/utils/profileManager';
 
@@ -58,6 +59,9 @@ const Dashboard = () => {
   // Key forces re-mount when profile changes → useDailyStory re-executes
   return (
     <React.Fragment key={profileId || 'no-profile'}>
+      {/* Conosci la Parola - animated icon + overlay (only for NSU) */}
+      <ConosciLaParola />
+      
       {/* Daily Story Overlay for NSU - mostra sempre se loading o overlay attivo */}
       {(dailyStoryLoading || isInitializing || (showOverlay && dailyStory)) && (
         <DailyStoryOverlay

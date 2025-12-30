@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchDatasetWithVersion } from '@/utils/contentUpdateManager';
+import { getCurrentProfileId, isSuperUser } from '@/utils/profileManager';
 
 interface WordEntry {
   word: string;
@@ -30,7 +31,7 @@ interface UseConosciLaParolaResult {
 const SESSION_KEY = 'fantasmia_clp_session';
 const ICON_SIZE = 48;
 const ANIMATION_DURATION = 20000; // 20 seconds
-const START_DELAY = 120000; // 2 minutes
+const START_DELAY = 5000; // 5 seconds for testing (change to 120000 for production)
 
 export const useConosciLaParola = (): UseConosciLaParolaResult => {
   const [showIcon, setShowIcon] = useState(false);
@@ -46,8 +47,11 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
 
   // Check if user is NSU (not superuser)
   const isNSU = useCallback((): boolean => {
-    const currentProfile = localStorage.getItem('currentProfile');
-    return currentProfile !== 'superuser';
+    const profileId = getCurrentProfileId();
+    if (!profileId) {
+      return false; // No profile = don't show
+    }
+    return !isSuperUser();
   }, []);
 
   // Check if already shown this session
