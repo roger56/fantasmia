@@ -28,7 +28,20 @@ export const getCurrentProfile = () => {
 // Verifica se l'utente corrente è Superuser
 export const isSuperUser = (): boolean => {
   const profile = getCurrentProfile();
-  return profile?.userType === 'superuser' || false;
+  // Supporta sia userType (camelCase) che user_type (snake_case da IndexedDB)
+  const isSU = profile?.userType === 'superuser' || 
+               profile?.user_type === 'superuser' ||
+               profile?.name?.toLowerCase() === 'superuser';
+  
+  console.log('profileManager:isSuperUser', { 
+    profileId: profile?.id, 
+    name: profile?.name,
+    userType: profile?.userType,
+    user_type: profile?.user_type,
+    result: isSU 
+  });
+  
+  return isSU;
 };
 
 // Verifica proprietà storia con controllo per Superuser
