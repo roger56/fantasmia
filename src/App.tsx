@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AILoadingProvider } from "@/hooks/useAILoading";
 import { useContentUpdates } from "@/hooks/useContentUpdates";
 import ContentUpdateOverlay from "@/components/shared/ContentUpdateOverlay";
+import ConosciLaParola from "@/components/shared/ConosciLaParola";
 import NewHome from "./pages/NewHome";
 import About from "./pages/About";
 import Company from "./pages/Company";
@@ -94,6 +95,9 @@ const AppContent = () => {
         updates={updates}
         onDismiss={dismissOverlay}
       />
+      
+      {/* Conosci la Parola - animated icon + overlay (only for NSU) */}
+      <ConosciLaParola />
       
       <BrowserRouter>
         <Routes>
