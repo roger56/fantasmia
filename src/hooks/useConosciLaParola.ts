@@ -30,8 +30,59 @@ interface UseConosciLaParolaResult {
 
 const SESSION_KEY = 'fantasmia_clp_session';
 const ICON_SIZE = 48;
-const ANIMATION_DURATION = 20000; // 20 seconds
-const START_DELAY = 120000; // 2 minutes (production)
+const SETTINGS_KEY = 'fantasmia_wordgame_settings';
+
+// Default values (can be overridden by SU settings)
+const DEFAULT_ANIMATION_DURATION = 20000; // 20 seconds
+const DEFAULT_START_DELAY = 5000; // 5 seconds for TESTING (change to 120000 for production)
+
+// Retry config
+const MAX_DICT_RETRIES = 3;
+const DICT_RETRY_INTERVAL = 2000;
+
+// Logging helper
+const logWordGame = (event: string, data: Record<string, unknown>) => {
+  console.log(`wordgame:${event}`, data);
+};
+
+// Get configurable settings (saved by SU)
+const getWordGameSettings = (): { startDelay: number; animationDuration: number } => {
+  try {
+    const settings = localStorage.getItem(SETTINGS_KEY);
+    if (settings) {
+      const parsed = JSON.parse(settings);
+      return {
+        startDelay: (parsed.startDelay || DEFAULT_START_DELAY / 1000) * 1000,
+        animationDuration: (parsed.animationDuration || DEFAULT_ANIMATION_DURATION / 1000) * 1000
+      };
+    }
+  } catch (e) {
+    console.warn('wordgame:settings parse error', e);
+  }
+  return { startDelay: DEFAULT_START_DELAY, animationDuration: DEFAULT_ANIMATION_DURATION };
+};
+
+// Load external dictionary from /dizionario.txt (optional supplement)
+const loadExternalDictionary = async (): Promise<WordEntry[]> => {
+  try {
+    const response = await fetch('/dizionario.txt');
+    if (response.ok) {
+      const text = await response.text();
+      const entries = text.split('\n')
+        .map(line => line.trim())
+        .filter(line => line && line.includes(';'))
+        .map(line => {
+          const [word, definition] = line.split(';').map(s => s.trim());
+          return { word, definition };
+        });
+      logWordGame('externalDict', { loaded: true, count: entries.length });
+      return entries;
+    }
+  } catch (e) {
+    // File doesn't exist or error - this is OK, it's optional
+  }
+  return [];
+};
 
 export const useConosciLaParola = (): UseConosciLaParolaResult => {
   const [showIcon, setShowIcon] = useState(false);
@@ -44,20 +95,41 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
   const animationRef = useRef<number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
+  const settingsRef = useRef(getWordGameSettings());
 
-  // Check if user is NSU (not superuser)
-  const isNSU = useCallback((): boolean => {
+  // Check if user is NSU (not superuser) with logging
+  const checkIsNSU = useCallback((): boolean => {
     const profileId = getCurrentProfileId();
+    const isSU = isSuperUser();
+    const dailyKey = new Date().toISOString().split('T')[0];
+    
+    logWordGame('init', { 
+      user: profileId, 
+      role: isSU ? 'SU' : 'NSU',
+      dailyKey
+    });
+    
     if (!profileId) {
-      return false; // No profile = don't show
+      logWordGame('showIcon', { value: false, reason: 'no_profile' });
+      return false;
     }
-    return !isSuperUser();
+    
+    if (isSU) {
+      logWordGame('showIcon', { value: false, reason: 'is_superuser' });
+      return false;
+    }
+    
+    return true;
   }, []);
 
   // Check if already shown this session
   const isAlreadyShownThisSession = useCallback((): boolean => {
     const sessionFlag = sessionStorage.getItem(SESSION_KEY);
-    return sessionFlag === 'true';
+    const alreadyShown = sessionFlag === 'true';
+    if (alreadyShown) {
+      logWordGame('showIcon', { value: false, reason: 'already_shown_this_session' });
+    }
+    return alreadyShown;
   }, []);
 
   // Mark as shown for this session
@@ -65,29 +137,62 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
     sessionStorage.setItem(SESSION_KEY, 'true');
   }, []);
 
-  // Load random word from dictionary
-  const loadRandomWord = useCallback(async () => {
+  // Load random word from dictionary with retry logic
+  const loadRandomWord = useCallback(async (retryCount = 0): Promise<boolean> => {
     try {
-      const data = await fetchDatasetWithVersion<WordsData>('conosci_la_parola');
-      if (data && data.words && data.words.length > 0) {
-        const randomIndex = Math.floor(Math.random() * data.words.length);
-        setCurrentWord(data.words[randomIndex]);
+      // Load both sources
+      const [jsonData, externalWords] = await Promise.all([
+        fetchDatasetWithVersion<WordsData>('conosci_la_parola'),
+        loadExternalDictionary()
+      ]);
+      
+      // Combine words from both sources
+      const jsonWords = jsonData?.words || [];
+      const allWords = [...jsonWords, ...externalWords];
+      
+      if (allWords.length > 0) {
+        logWordGame('dict', { 
+          loaded: true, 
+          count: allWords.length,
+          jsonCount: jsonWords.length,
+          externalCount: externalWords.length
+        });
+        const randomIndex = Math.floor(Math.random() * allWords.length);
+        setCurrentWord(allWords[randomIndex]);
         return true;
       }
+      
+      // Retry logic if no words found
+      if (retryCount < MAX_DICT_RETRIES) {
+        logWordGame('dict', { loaded: false, retry: retryCount + 1, maxRetries: MAX_DICT_RETRIES });
+        await new Promise(r => setTimeout(r, DICT_RETRY_INTERVAL));
+        return loadRandomWord(retryCount + 1);
+      }
+      
+      logWordGame('dict', { loaded: false, reason: 'no_words_after_retries' });
+      return false;
     } catch (error) {
-      console.error('ConosciLaParola: Error loading words:', error);
+      // Retry on error
+      if (retryCount < MAX_DICT_RETRIES) {
+        logWordGame('dict', { loaded: false, error: String(error), retry: retryCount + 1 });
+        await new Promise(r => setTimeout(r, DICT_RETRY_INTERVAL));
+        return loadRandomWord(retryCount + 1);
+      }
+      logWordGame('dict', { loaded: false, reason: 'error_after_retries', error: String(error) });
+      return false;
     }
-    return false;
   }, []);
 
   // Animate icon bouncing off edges
   const animate = useCallback(() => {
     const elapsed = Date.now() - startTimeRef.current;
+    const { animationDuration } = settingsRef.current;
     
     // Stop after animation duration
-    if (elapsed >= ANIMATION_DURATION) {
+    if (elapsed >= animationDuration) {
       setShowIcon(false);
       markAsShown();
+      logWordGame('animation', { event: 'ended', reason: 'timeout' });
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
@@ -137,23 +242,38 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
     
     startTimeRef.current = Date.now();
     setShowIcon(true);
+    logWordGame('showIcon', { value: true, reason: 'animation_started' });
     animationRef.current = requestAnimationFrame(animate);
   }, [animate]);
 
   // Initialize on mount
   useEffect(() => {
+    // Reload settings in case they changed
+    settingsRef.current = getWordGameSettings();
+    const { startDelay } = settingsRef.current;
+    
+    logWordGame('settings', { 
+      startDelay: startDelay / 1000 + 's', 
+      animationDuration: settingsRef.current.animationDuration / 1000 + 's' 
+    });
+    
     // Only for NSU, not already shown this session
-    if (!isNSU() || isAlreadyShownThisSession()) {
+    if (!checkIsNSU() || isAlreadyShownThisSession()) {
       return;
     }
 
-    // Load word first
+    logWordGame('showIcon', { value: 'pending', reason: 'loading_dictionary' });
+
+    // Load word first (with retry)
     loadRandomWord().then(success => {
       if (success) {
+        logWordGame('showIcon', { value: 'pending', reason: 'timer_started', delay: startDelay / 1000 + 's' });
         // Start after delay
         timeoutRef.current = setTimeout(() => {
           startAnimation();
-        }, START_DELAY);
+        }, startDelay);
+      } else {
+        logWordGame('showIcon', { value: false, reason: 'dictionary_load_failed' });
       }
     });
 
@@ -165,13 +285,14 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isNSU, isAlreadyShownThisSession, loadRandomWord, startAnimation]);
+  }, [checkIsNSU, isAlreadyShownThisSession, loadRandomWord, startAnimation]);
 
   // Handle icon click
   const handleIconClick = useCallback(() => {
     setShowIcon(false);
     markAsShown();
     setShowOverlay(true);
+    logWordGame('interaction', { event: 'icon_clicked' });
     
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
@@ -183,17 +304,20 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
   const handleYes = useCallback(() => {
     setShowOverlay(false);
     setShowDefinition(false);
+    logWordGame('interaction', { event: 'answer_yes' });
   }, []);
 
   // Handle NO response
   const handleNo = useCallback(() => {
     setShowDefinition(true);
+    logWordGame('interaction', { event: 'answer_no_show_definition' });
   }, []);
 
   // Close overlay (after seeing definition)
   const closeOverlay = useCallback(() => {
     setShowOverlay(false);
     setShowDefinition(false);
+    logWordGame('interaction', { event: 'overlay_closed' });
   }, []);
 
   return {

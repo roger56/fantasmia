@@ -1,15 +1,64 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield } from 'lucide-react';
+import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
+
+const WORDGAME_SETTINGS_KEY = 'fantasmia_wordgame_settings';
+
+interface WordGameSettings {
+  startDelay: number; // in seconds
+  animationDuration: number; // in seconds
+}
 
 const SuperuserSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Word game settings state
+  const [wordGameSettings, setWordGameSettings] = useState<WordGameSettings>({
+    startDelay: 120, // 2 minutes default
+    animationDuration: 20 // 20 seconds default
+  });
+  const [showWordGameSettings, setShowWordGameSettings] = useState(false);
+
+  // Load word game settings on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(WORDGAME_SETTINGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setWordGameSettings({
+          startDelay: parsed.startDelay || 120,
+          animationDuration: parsed.animationDuration || 20
+        });
+      }
+    } catch (e) {
+      console.warn('Error loading word game settings', e);
+    }
+  }, []);
+
+  const handleSaveWordGameSettings = () => {
+    try {
+      localStorage.setItem(WORDGAME_SETTINGS_KEY, JSON.stringify(wordGameSettings));
+      toast({
+        title: "Impostazioni salvate",
+        description: "Le impostazioni della farfalla sono state aggiornate",
+      });
+      setShowWordGameSettings(false);
+    } catch (e) {
+      toast({
+        title: "Errore",
+        description: "Impossibile salvare le impostazioni",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleSettingClick = (settingName: string) => {
     toast({
@@ -56,6 +105,13 @@ const SuperuserSettings = () => {
       showTooltip: false
     },
     {
+      title: 'Conosci la Parola (Farfalla)',
+      description: 'Configura timing e durata dell\'animazione',
+      icon: Sparkles,
+      action: () => setShowWordGameSettings(true),
+      showTooltip: false
+    },
+    {
       title: 'SPARE (funzione futura)',
       description: 'Placeholder per funzionalità future',
       icon: Settings,
@@ -83,6 +139,63 @@ const SuperuserSettings = () => {
             </div>
           </div>
         </div>
+
+        {/* Word Game Settings Panel */}
+        {showWordGameSettings && (
+          <Card className="mb-6 border-2 border-primary/30 bg-primary/5">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                Impostazioni Farfalla "Conosci la Parola"
+              </h3>
+              
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="startDelay">Ritardo apparizione (secondi)</Label>
+                  <Input
+                    id="startDelay"
+                    type="number"
+                    min={5}
+                    max={600}
+                    value={wordGameSettings.startDelay}
+                    onChange={(e) => setWordGameSettings(prev => ({
+                      ...prev,
+                      startDelay: parseInt(e.target.value) || 120
+                    }))}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Tempo di attesa prima che appaia la farfalla (5-600s)</p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="animationDuration">Durata animazione (secondi)</Label>
+                  <Input
+                    id="animationDuration"
+                    type="number"
+                    min={5}
+                    max={120}
+                    value={wordGameSettings.animationDuration}
+                    onChange={(e) => setWordGameSettings(prev => ({
+                      ...prev,
+                      animationDuration: parseInt(e.target.value) || 20
+                    }))}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Per quanto tempo la farfalla rimane visibile (5-120s)</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 mt-4">
+                <Button onClick={handleSaveWordGameSettings}>
+                  Salva impostazioni
+                </Button>
+                <Button variant="outline" onClick={() => setShowWordGameSettings(false)}>
+                  Annulla
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid gap-4 md:grid-cols-2">
           {settingsOptions.map((option, index) => {
