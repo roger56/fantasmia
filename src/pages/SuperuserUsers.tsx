@@ -195,6 +195,7 @@ const SuperuserUsers = () => {
 
     try {
       const { fantasMiaDB } = await import('@/utils/indexedDB');
+      const { deleteProfileFromAllSources } = await import('@/utils/profileSync');
       
       // Elimina tutte le storie dell'utente
       const userStories = await fantasMiaDB.getAMStoriesByOwner(selectedUser.id);
@@ -204,21 +205,8 @@ const SuperuserUsers = () => {
         await fantasMiaDB.deleteMediaAssetsByStoryId(story.id);
       }
       
-      // Elimina il profilo da IndexedDB
-      await fantasMiaDB.deleteProfile(selectedUser.id);
-      
-      // ✅ Sincronizza: elimina anche da localStorage 'fantasmia_users'
-      try {
-        const localUsers = JSON.parse(localStorage.getItem('fantasmia_users') || '[]');
-        const filteredLocalUsers = localUsers.filter((u: any) => u.id !== selectedUser.id);
-        localStorage.setItem('fantasmia_users', JSON.stringify(filteredLocalUsers));
-        console.log('✅ Profilo rimosso da localStorage fantasmia_users');
-      } catch (e) {
-        console.warn('⚠️ Errore pulizia localStorage fantasmia_users:', e);
-      }
-      
-      // ✅ Pulisci archivio storie utente da localStorage
-      localStorage.removeItem(`fantasmia_user_archive_${selectedUser.id}`);
+      // ✅ NUOVA LOGICA: Usa deleteProfileFromAllSources per eliminare da TUTTE le fonti
+      await deleteProfileFromAllSources(selectedUser.id);
       
       // ✅ Forza aggiornamento backup per allineare lo snapshot
       try {

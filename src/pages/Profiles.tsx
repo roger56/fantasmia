@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, User, Lock, Shield, Globe, Home } from 'lucide-react';
-import { getUsers, authenticateUser, markMessagesAsRead } from '@/utils/userStorage';
+import { authenticateUser, markMessagesAsRead } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
 import { setCurrentProfileId, clearCurrentProfile } from '@/utils/profileManager';
+import { loadProfilesUnified, SyncedProfile } from '@/utils/profileSync';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 
@@ -45,71 +46,37 @@ const Profiles = () => {
       // ✅ REQUISITO 2: Loading bloccante - inizia
       setIsLoadingProfiles(true);
       
-      // ✅ SINCRONIZZAZIONE: Pulisci localStorage confrontandolo con IndexedDB
       try {
-        const { fantasMiaDB } = await import('@/utils/indexedDB');
-        await fantasMiaDB.init();
+        // ✅ NUOVA LOGICA: Usa loadProfilesUnified come fonte unica
+        const result = await loadProfilesUnified();
         
-        // Ottieni profili REALI da IndexedDB (fonte di verità)
-        const indexedDBProfiles = await fantasMiaDB.getAllProfiles();
-        const validProfileIds = new Set(indexedDBProfiles.map((p: any) => p.id));
+        console.log('📋 Profiles.tsx: caricati ' + result.count + ' profili da ' + result.source);
         
-        console.log('📊 Profili in IndexedDB:', indexedDBProfiles.length, indexedDBProfiles.map((p: any) => p.name));
+        setProfiles(result.profiles);
         
-        // Ottieni profili da localStorage
-        const localStorageUsers = JSON.parse(localStorage.getItem('fantasmia_users') || '[]');
-        console.log('📊 Profili in localStorage:', localStorageUsers.length, localStorageUsers.map((u: any) => u.name));
+        // Add special profiles
+        const specialProfiles = [
+          {
+            id: 'new-profile',
+            name: 'NUOVO PROFILO',
+            type: 'NEW',
+            icon: User,
+            requiresPassword: false
+          },
+          {
+            id: 'superuser',
+            name: 'Superuser',
+            type: 'SUPERUSER',
+            icon: Shield,
+            requiresPassword: true
+          }
+        ];
         
-        // Filtra: mantieni solo profili che esistono in IndexedDB
-        const cleanedUsers = localStorageUsers.filter((u: any) => validProfileIds.has(u.id));
+        setAllProfiles([...result.profiles, ...specialProfiles]);
         
-        // Se ci sono differenze, aggiorna localStorage
-        if (cleanedUsers.length !== localStorageUsers.length) {
-          const removedCount = localStorageUsers.length - cleanedUsers.length;
-          const removedNames = localStorageUsers
-            .filter((u: any) => !validProfileIds.has(u.id))
-            .map((u: any) => u.name);
-          console.log(`🧹 Rimossi ${removedCount} profili fantasma da localStorage:`, removedNames);
-          localStorage.setItem('fantasmia_users', JSON.stringify(cleanedUsers));
-        } else {
-          console.log('✅ localStorage già sincronizzato con IndexedDB');
-        }
       } catch (error) {
-        console.warn('⚠️ Errore sincronizzazione profili:', error);
+        console.error('❌ Errore caricamento profili:', error);
       }
-      
-      // Carica profili (ora puliti)
-      const users = getUsers();
-      console.log('📋 Utenti finali:', users.map(u => ({ name: u.name, lastAccess: u.lastAccess })));
-      
-      // Ordina per ultimo accesso (più recente prima)
-      const sortedUsers = [...users].sort((a, b) => {
-        const dateA = a.lastAccess ? new Date(a.lastAccess).getTime() : 0;
-        const dateB = b.lastAccess ? new Date(b.lastAccess).getTime() : 0;
-        return dateB - dateA;
-      });
-      
-      setProfiles(sortedUsers);
-      
-      // Add special profiles
-      const specialProfiles = [
-        {
-          id: 'new-profile',
-          name: 'NUOVO PROFILO',
-          type: 'NEW',
-          icon: User,
-          requiresPassword: false
-        },
-        {
-          id: 'superuser',
-          name: 'Superuser',
-          type: 'SUPERUSER',
-          icon: Shield,
-          requiresPassword: true
-        }
-      ];
-      
-      setAllProfiles([...sortedUsers, ...specialProfiles]);
       
       // ✅ REQUISITO 2: Loading bloccante - fine
       setIsLoadingProfiles(false);

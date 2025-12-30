@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ArrowLeft, UserPlus, ShieldCheck, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveUser } from '@/utils/userStorage';
+import { saveProfileToAllSources } from '@/utils/profileSync';
 import { AuthBridge } from '@/utils/authBridge';
 import { validateUserName, validateUserEmail } from '@/utils/validation';
 import { setCurrentProfileId, getCurrentProfileId } from '@/utils/profileManager';
@@ -126,24 +127,18 @@ const NewProfile = () => {
   };
 
   const createProfile = async (newUser: any) => {
-    saveUser(newUser);
-
-    // Save to IndexedDB profiles as well
+    // ✅ NUOVA LOGICA: Usa saveProfileToAllSources per salvare in TUTTE le fonti
     try {
-      const { fantasMiaDB } = await import('@/utils/indexedDB');
-      await fantasMiaDB.init();
-      
-      const profileData = {
+      await saveProfileToAllSources({
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
+        password: newUser.password,
+        age: newUser.age,
         user_type: 'user',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        last_access: new Date().toISOString()
-      };
-      
-      await fantasMiaDB.saveProfile(profileData);
+        lastAccess: new Date().toISOString()
+      });
       
       // Emit event for real-time updates
       window.dispatchEvent(new CustomEvent('profiles:changed', { 
@@ -152,7 +147,7 @@ const NewProfile = () => {
       
       console.info('profiles-write', { id: newUser.id, username: newUser.name, role: 'user' });
     } catch (error) {
-      console.error('Error saving profile to IndexedDB:', error);
+      console.error('Error saving profile:', error);
     }
 
     // Set current profile id
