@@ -31,7 +31,7 @@ interface UseConosciLaParolaResult {
 const SESSION_KEY = 'fantasmia_clp_session';
 const ICON_SIZE = 48;
 const ANIMATION_DURATION = 20000; // 20 seconds
-const START_DELAY = 5000; // 5 seconds for testing (change to 120000 for production)
+const START_DELAY = 120000; // 2 minutes (production)
 
 export const useConosciLaParola = (): UseConosciLaParolaResult => {
   const [showIcon, setShowIcon] = useState(false);
