@@ -1,6 +1,6 @@
 {
   "manifestVersion": "1",
-  "updatedAt": "2025-12-29-1700",
+  "updatedAt": "2025-12-30-0900",
   "datasets": {
     "racconti_del_giorno": {
       "file": "/daily-stories-default.json",
@@ -9,7 +9,7 @@
     },
     "conosci_la_parola": {
       "file": "/conosci-la-parola.json",
-      "version": "2025-12-29-1700",
+      "version": "2025-12-30-0900",
       "label": "Conosci la Parola"
     }
   }
