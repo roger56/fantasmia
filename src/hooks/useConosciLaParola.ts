@@ -1,30 +1,40 @@
 /**
  * Hook per la funzione "Conosci la parola?"
  * Gestisce l'icona animata e il quiz delle parole per utenti NSU
+ * Supporta italiano e inglese con flow multi-step
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchDatasetWithVersion } from '@/utils/contentUpdateManager';
-import { getCurrentProfileId, isSuperUser } from '@/utils/profileManager';
+import { getCurrentProfileId, getCurrentProfile, isSuperUser } from '@/utils/profileManager';
+import { getCustomWordsIT, getCustomWordsEN, WordEntryIT, WordEntryEN } from '@/utils/customWordsManager';
 
-interface WordEntry {
+// Types
+export interface WordEntryItalian {
   word: string;
   definition: string;
 }
 
-interface WordsData {
-  words: WordEntry[];
+export interface WordEntryEnglish {
+  word: string;
+  meaningEN: string;
+  meaningIT: string;
+  translationIT: string;
 }
+
+export type SelectedWord = 
+  | { language: 'it'; entry: WordEntryItalian }
+  | { language: 'en'; entry: WordEntryEnglish };
 
 interface UseConosciLaParolaResult {
   showIcon: boolean;
-  currentWord: WordEntry | null;
+  showLanguageSelector: boolean;
   showOverlay: boolean;
-  showDefinition: boolean;
+  selectedWord: SelectedWord | null;
   iconPosition: { x: number; y: number };
+  activeLanguages: { it: boolean; en: boolean };
   handleIconClick: () => void;
-  handleYes: () => void;
-  handleNo: () => void;
+  handleLanguageSelect: (language: 'it' | 'en') => void;
+  closeLanguageSelector: () => void;
   closeOverlay: () => void;
 }
 
@@ -33,40 +43,69 @@ const LOGIN_NONCE_KEY = 'fantasmia_login_nonce';
 const SETTINGS_KEY = 'fantasmia_wordgame_settings';
 const ICON_SIZE = 48;
 
-// Default values (can be overridden by SU settings)
-const DEFAULT_ANIMATION_DURATION = 20000; // 20 seconds
-const DEFAULT_START_DELAY = 5000; // 5 seconds for TESTING (change to 120000 for production)
-
-// Retry config
-const MAX_DICT_RETRIES = 3;
-const DICT_RETRY_INTERVAL = 2000;
+// Default values
+const DEFAULT_ANIMATION_DURATION = 20000;
+const DEFAULT_START_DELAY = 5000; // 5s for testing
+const DEFAULT_SPEED = 5;
 
 // Logging helper
 const logWordGame = (event: string, data: Record<string, unknown>) => {
   console.log(`wordgame:${event}`, data);
 };
 
+// Settings interface
+interface WordGameSettings {
+  enabled: boolean;
+  startDelay: number;
+  animationDuration: number;
+  speed: number;
+  languageIT: boolean;
+  languageEN: boolean;
+}
+
 // Get configurable settings (saved by SU)
-const getWordGameSettings = (): { startDelay: number; animationDuration: number } => {
+const getWordGameSettings = (): WordGameSettings => {
   try {
     const settings = localStorage.getItem(SETTINGS_KEY);
     if (settings) {
       const parsed = JSON.parse(settings);
       return {
+        enabled: parsed.enabled !== false,
         startDelay: (parsed.startDelay || DEFAULT_START_DELAY / 1000) * 1000,
-        animationDuration: (parsed.animationDuration || DEFAULT_ANIMATION_DURATION / 1000) * 1000
+        animationDuration: (parsed.animationDuration || DEFAULT_ANIMATION_DURATION / 1000) * 1000,
+        speed: parsed.speed || DEFAULT_SPEED,
+        languageIT: parsed.languageIT !== false,
+        languageEN: parsed.languageEN !== false
       };
     }
   } catch (e) {
     console.warn('wordgame:settings parse error', e);
   }
-  return { startDelay: DEFAULT_START_DELAY, animationDuration: DEFAULT_ANIMATION_DURATION };
+  return {
+    enabled: true,
+    startDelay: DEFAULT_START_DELAY,
+    animationDuration: DEFAULT_ANIMATION_DURATION,
+    speed: DEFAULT_SPEED,
+    languageIT: true,
+    languageEN: true
+  };
 };
 
-// Load external dictionary from /dizionario.txt (optional supplement)
-const loadExternalDictionary = async (): Promise<WordEntry[]> => {
+// Calculate speed based on age (if no SU override)
+const getSpeedFromAge = (age: number | undefined): number => {
+  if (!age || age < 6) return DEFAULT_SPEED;
+  const base = 5;
+  const ageBonus = Math.min(5, (age - 6) * 0.5);
+  return Math.min(10, Math.max(1, base + ageBonus));
+};
+
+// Load Italian dictionary
+const loadItalianDictionary = async (): Promise<WordEntryItalian[]> => {
+  const words: WordEntryItalian[] = [];
+  
   try {
-    const response = await fetch('/dizionario.txt');
+    // Load from deployed file
+    const response = await fetch('/dictionaries/dictionary-it.txt');
     if (response.ok) {
       const text = await response.text();
       const entries = text.split('\n')
@@ -76,21 +115,79 @@ const loadExternalDictionary = async (): Promise<WordEntry[]> => {
           const [word, definition] = line.split(';').map(s => s.trim());
           return { word, definition };
         });
-      logWordGame('externalDict', { loaded: true, count: entries.length });
-      return entries;
+      words.push(...entries);
     }
   } catch (e) {
-    // File doesn't exist or error - this is OK, it's optional
+    console.warn('wordgame: error loading IT dictionary', e);
   }
-  return [];
+  
+  // Add custom words from IndexedDB
+  try {
+    const customWords = await getCustomWordsIT();
+    words.push(...customWords);
+  } catch (e) {
+    console.warn('wordgame: error loading custom IT words', e);
+  }
+  
+  logWordGame('dict:it', { count: words.length });
+  return words;
+};
+
+// Load English dictionary
+const loadEnglishDictionary = async (): Promise<WordEntryEnglish[]> => {
+  const words: WordEntryEnglish[] = [];
+  
+  try {
+    // Load from deployed file
+    const response = await fetch('/dictionaries/dictionary-en.txt');
+    if (response.ok) {
+      const text = await response.text();
+      const entries = text.split('\n')
+        .map(line => line.trim())
+        .filter(line => line && line.includes(';'))
+        .map(line => {
+          const parts = line.split(';').map(s => s.trim());
+          if (parts.length >= 4) {
+            return {
+              word: parts[0],
+              meaningEN: parts[1],
+              meaningIT: parts[2],
+              translationIT: parts[3]
+            };
+          }
+          return null;
+        })
+        .filter((entry): entry is WordEntryEnglish => entry !== null);
+      words.push(...entries);
+    }
+  } catch (e) {
+    console.warn('wordgame: error loading EN dictionary', e);
+  }
+  
+  // Add custom words from IndexedDB
+  try {
+    const customWords = await getCustomWordsEN();
+    words.push(...customWords.map(w => ({
+      word: w.word,
+      meaningEN: w.meaningEN,
+      meaningIT: w.meaningIT,
+      translationIT: w.translationIT
+    })));
+  } catch (e) {
+    console.warn('wordgame: error loading custom EN words', e);
+  }
+  
+  logWordGame('dict:en', { count: words.length });
+  return words;
 };
 
 export const useConosciLaParola = (): UseConosciLaParolaResult => {
   const [showIcon, setShowIcon] = useState(false);
-  const [currentWord, setCurrentWord] = useState<WordEntry | null>(null);
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
-  const [showDefinition, setShowDefinition] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [iconPosition, setIconPosition] = useState({ x: 100, y: 100 });
+  const [activeLanguages, setActiveLanguages] = useState({ it: true, en: true });
   
   const velocityRef = useRef({ vx: 2, vy: 1.5 });
   const animationRef = useRef<number | null>(null);
@@ -98,16 +195,14 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
   const startTimeRef = useRef<number>(0);
   const settingsRef = useRef(getWordGameSettings());
 
-  // Check if user is NSU (not superuser) with logging
+  // Check if user is NSU
   const checkIsNSU = useCallback((): boolean => {
     const profileId = getCurrentProfileId();
     const isSU = isSuperUser();
-    const dailyKey = new Date().toISOString().split('T')[0];
     
     logWordGame('init', { 
       user: profileId, 
-      role: isSU ? 'SU' : 'NSU',
-      dailyKey
+      role: isSU ? 'SU' : 'NSU'
     });
     
     if (!profileId) {
@@ -133,75 +228,26 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
     return `${SESSION_KEY_PREFIX}:${profileId}:${nonce}`;
   }, []);
 
-  // Check if already shown this "login session" (per tab, per profile)
   const isAlreadyShownThisSession = useCallback((): boolean => {
     const key = getSessionKey();
     const sessionFlag = sessionStorage.getItem(key);
     const alreadyShown = sessionFlag === 'true';
     if (alreadyShown) {
-      logWordGame('showIcon', { value: false, reason: 'already_shown_this_session', sessionKey: key });
+      logWordGame('showIcon', { value: false, reason: 'already_shown_this_session' });
     }
     return alreadyShown;
   }, [getSessionKey]);
 
-  // Mark as shown for this session
   const markAsShown = useCallback(() => {
     const key = getSessionKey();
     sessionStorage.setItem(key, 'true');
   }, [getSessionKey]);
-
-  // Load random word from dictionary with retry logic
-  const loadRandomWord = useCallback(async (retryCount = 0): Promise<boolean> => {
-    try {
-      // Load both sources
-      const [jsonData, externalWords] = await Promise.all([
-        fetchDatasetWithVersion<WordsData>('conosci_la_parola'),
-        loadExternalDictionary()
-      ]);
-      
-      // Combine words from both sources
-      const jsonWords = jsonData?.words || [];
-      const allWords = [...jsonWords, ...externalWords];
-      
-      if (allWords.length > 0) {
-        logWordGame('dict', { 
-          loaded: true, 
-          count: allWords.length,
-          jsonCount: jsonWords.length,
-          externalCount: externalWords.length
-        });
-        const randomIndex = Math.floor(Math.random() * allWords.length);
-        setCurrentWord(allWords[randomIndex]);
-        return true;
-      }
-      
-      // Retry logic if no words found
-      if (retryCount < MAX_DICT_RETRIES) {
-        logWordGame('dict', { loaded: false, retry: retryCount + 1, maxRetries: MAX_DICT_RETRIES });
-        await new Promise(r => setTimeout(r, DICT_RETRY_INTERVAL));
-        return loadRandomWord(retryCount + 1);
-      }
-      
-      logWordGame('dict', { loaded: false, reason: 'no_words_after_retries' });
-      return false;
-    } catch (error) {
-      // Retry on error
-      if (retryCount < MAX_DICT_RETRIES) {
-        logWordGame('dict', { loaded: false, error: String(error), retry: retryCount + 1 });
-        await new Promise(r => setTimeout(r, DICT_RETRY_INTERVAL));
-        return loadRandomWord(retryCount + 1);
-      }
-      logWordGame('dict', { loaded: false, reason: 'error_after_retries', error: String(error) });
-      return false;
-    }
-  }, []);
 
   // Animate icon bouncing off edges
   const animate = useCallback(() => {
     const elapsed = Date.now() - startTimeRef.current;
     const { animationDuration } = settingsRef.current;
     
-    // Stop after animation duration
     if (elapsed >= animationDuration) {
       setShowIcon(false);
       markAsShown();
@@ -220,9 +266,8 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
       const maxX = window.innerWidth - ICON_SIZE - 20;
       const maxY = window.innerHeight - ICON_SIZE - 20;
       const minX = 20;
-      const minY = 60; // Account for top nav
+      const minY = 60;
       
-      // Bounce off edges
       if (newX <= minX || newX >= maxX) {
         velocityRef.current.vx *= -1;
         newX = Math.max(minX, Math.min(maxX, newX));
@@ -240,55 +285,67 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
 
   // Start the animation
   const startAnimation = useCallback(() => {
-    // Random starting position
     const startX = Math.random() * (window.innerWidth - ICON_SIZE * 2) + ICON_SIZE;
     const startY = Math.random() * (window.innerHeight - ICON_SIZE * 2 - 100) + 100;
     setIconPosition({ x: startX, y: startY });
     
-    // Random direction
+    // Calculate speed
+    const settings = settingsRef.current;
+    const profile = getCurrentProfile();
+    const speed = settings.speed || getSpeedFromAge(profile?.age);
+    const baseSpeed = 0.5 + (speed * 0.3);
+    
     const angle = Math.random() * Math.PI * 2;
-    const speed = 1.5 + Math.random() * 1; // Speed between 1.5 and 2.5
     velocityRef.current = {
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed
+      vx: Math.cos(angle) * baseSpeed,
+      vy: Math.sin(angle) * baseSpeed
     };
     
     startTimeRef.current = Date.now();
     setShowIcon(true);
-    logWordGame('showIcon', { value: true, reason: 'animation_started' });
+    logWordGame('showIcon', { value: true, reason: 'animation_started', speed });
     animationRef.current = requestAnimationFrame(animate);
   }, [animate]);
 
   // Initialize on mount
   useEffect(() => {
-    // Reload settings in case they changed
     settingsRef.current = getWordGameSettings();
-    const { startDelay } = settingsRef.current;
+    const settings = settingsRef.current;
     
-    logWordGame('settings', { 
-      startDelay: startDelay / 1000 + 's', 
-      animationDuration: settingsRef.current.animationDuration / 1000 + 's' 
+    setActiveLanguages({
+      it: settings.languageIT,
+      en: settings.languageEN
     });
     
-    // Only for NSU, not already shown this session
+    logWordGame('settings', { 
+      enabled: settings.enabled,
+      startDelay: settings.startDelay / 1000 + 's',
+      animationDuration: settings.animationDuration / 1000 + 's',
+      speed: settings.speed,
+      languages: { it: settings.languageIT, en: settings.languageEN }
+    });
+    
+    // Check if feature is enabled
+    if (!settings.enabled) {
+      logWordGame('showIcon', { value: false, reason: 'feature_disabled' });
+      return;
+    }
+    
+    // Check if at least one language is active
+    if (!settings.languageIT && !settings.languageEN) {
+      logWordGame('showIcon', { value: false, reason: 'no_languages_active' });
+      return;
+    }
+    
     if (!checkIsNSU() || isAlreadyShownThisSession()) {
       return;
     }
 
-    logWordGame('showIcon', { value: 'pending', reason: 'loading_dictionary' });
-
-    // Load word first (with retry)
-    loadRandomWord().then(success => {
-      if (success) {
-        logWordGame('showIcon', { value: 'pending', reason: 'timer_started', delay: startDelay / 1000 + 's' });
-        // Start after delay
-        timeoutRef.current = setTimeout(() => {
-          startAnimation();
-        }, startDelay);
-      } else {
-        logWordGame('showIcon', { value: false, reason: 'dictionary_load_failed' });
-      }
-    });
+    logWordGame('showIcon', { value: 'pending', reason: 'timer_started', delay: settings.startDelay / 1000 + 's' });
+    
+    timeoutRef.current = setTimeout(() => {
+      startAnimation();
+    }, settings.startDelay);
 
     return () => {
       if (timeoutRef.current) {
@@ -298,50 +355,87 @@ export const useConosciLaParola = (): UseConosciLaParolaResult => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [checkIsNSU, isAlreadyShownThisSession, loadRandomWord, startAnimation]);
+  }, [checkIsNSU, isAlreadyShownThisSession, startAnimation]);
 
-  // Handle icon click
+  // Handle icon click - show language selector
   const handleIconClick = useCallback(() => {
     setShowIcon(false);
     markAsShown();
-    setShowOverlay(true);
     logWordGame('interaction', { event: 'icon_clicked' });
     
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
     }
+    
+    const settings = settingsRef.current;
+    // If only one language active, skip selector
+    if (settings.languageIT && !settings.languageEN) {
+      loadItalianDictionary().then(words => {
+        if (words.length > 0) {
+          const randomWord = words[Math.floor(Math.random() * words.length)];
+          setSelectedWord({ language: 'it', entry: randomWord });
+          setShowOverlay(true);
+        }
+      });
+    } else if (!settings.languageIT && settings.languageEN) {
+      loadEnglishDictionary().then(words => {
+        if (words.length > 0) {
+          const randomWord = words[Math.floor(Math.random() * words.length)];
+          setSelectedWord({ language: 'en', entry: randomWord });
+          setShowOverlay(true);
+        }
+      });
+    } else {
+      setShowLanguageSelector(true);
+    }
   }, [markAsShown]);
 
-  // Handle YES response
-  const handleYes = useCallback(() => {
-    setShowOverlay(false);
-    setShowDefinition(false);
-    logWordGame('interaction', { event: 'answer_yes' });
+  // Handle language selection
+  const handleLanguageSelect = useCallback(async (language: 'it' | 'en') => {
+    setShowLanguageSelector(false);
+    logWordGame('interaction', { event: 'language_selected', language });
+    
+    if (language === 'it') {
+      const words = await loadItalianDictionary();
+      if (words.length > 0) {
+        const randomWord = words[Math.floor(Math.random() * words.length)];
+        setSelectedWord({ language: 'it', entry: randomWord });
+        setShowOverlay(true);
+      }
+    } else {
+      const words = await loadEnglishDictionary();
+      if (words.length > 0) {
+        const randomWord = words[Math.floor(Math.random() * words.length)];
+        setSelectedWord({ language: 'en', entry: randomWord });
+        setShowOverlay(true);
+      }
+    }
   }, []);
 
-  // Handle NO response
-  const handleNo = useCallback(() => {
-    setShowDefinition(true);
-    logWordGame('interaction', { event: 'answer_no_show_definition' });
+  // Close language selector
+  const closeLanguageSelector = useCallback(() => {
+    setShowLanguageSelector(false);
+    logWordGame('interaction', { event: 'language_selector_closed' });
   }, []);
 
-  // Close overlay (after seeing definition)
+  // Close overlay
   const closeOverlay = useCallback(() => {
     setShowOverlay(false);
-    setShowDefinition(false);
+    setSelectedWord(null);
     logWordGame('interaction', { event: 'overlay_closed' });
   }, []);
 
   return {
     showIcon,
-    currentWord,
+    showLanguageSelector,
     showOverlay,
-    showDefinition,
+    selectedWord,
     iconPosition,
+    activeLanguages,
     handleIconClick,
-    handleYes,
-    handleNo,
+    handleLanguageSelect,
+    closeLanguageSelector,
     closeOverlay
   };
 };

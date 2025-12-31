@@ -1,0 +1,25 @@
+RESILIENZA;Capacità di affrontare e superare le difficoltà
+EMPATIA;Capacità di comprendere e condividere i sentimenti degli altri
+SERENDIPITÀ;Scoperta fortunata e inaspettata fatta mentre si cerca qualcos'altro
+EFIMERO;Qualcosa che dura poco tempo, passeggero
+ALTRUISMO;Atteggiamento di chi si preoccupa del bene degli altri
+NOSTALGIA;Desiderio malinconico di qualcosa o qualcuno lontano nel tempo o nello spazio
+MERAVIGLIA;Sensazione di stupore e ammirazione davanti a qualcosa di bello o straordinario
+ARMONIA;Accordo gradevole tra elementi diversi che creano equilibrio
+CORAGGIO;Forza d'animo che permette di affrontare situazioni difficili o pericolose
+GENTILEZZA;Modo di comportarsi con garbo, cortesia e attenzione verso gli altri
+CURIOSITÀ;Desiderio di conoscere, scoprire e imparare cose nuove
+PERSEVERANZA;Costanza nel proseguire verso un obiettivo nonostante le difficoltà
+FANTASIA;Capacità di immaginare cose che non esistono o situazioni diverse dalla realtà
+GRATITUDINE;Sentimento di riconoscenza verso chi ci ha fatto del bene
+SAGGEZZA;Capacità di giudicare e agire con equilibrio e buon senso
+ALLEGRIA;Stato d'animo gioioso e vivace, contentezza
+SINCERITÀ;Qualità di chi esprime i propri pensieri con verità e onestà
+CREATIVITÀ;Capacità di creare idee nuove e originali
+PAZIENZA;Capacità di sopportare con calma attese, difficoltà o fastidi
+LIBERTÀ;Condizione di chi può agire secondo la propria volontà
+AMICIZIA;Legame affettivo tra persone basato su stima e affetto reciproci
+RISPETTO;Considerazione e riguardo verso le persone, le cose e le idee
+ONESTÀ;Qualità di chi agisce con rettitudine e lealtà
+SPERANZA;Fiduciosa attesa di qualcosa di buono che deve accadere
+GENEROSITÀ;Disposizione a donare e condividere con gli altri senza aspettarsi nulla in cambio

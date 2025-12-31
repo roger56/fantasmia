@@ -1,0 +1,25 @@
+BRAVE;Having courage and facing danger without fear;Che dimostra coraggio senza paura;CORAGGIOSO
+RESILIENCE;Ability to recover quickly from difficulties;Capacità di riprendersi rapidamente dalle difficoltà;RESILIENZA
+EMPATHY;Understanding and sharing the feelings of others;Capacità di comprendere e condividere i sentimenti degli altri;EMPATIA
+SERENDIPITY;Finding something good without looking for it;Scoperta fortunata fatta per caso;SERENDIPITÀ
+CURIOSITY;Strong desire to know or learn something;Forte desiderio di conoscere o imparare qualcosa;CURIOSITÀ
+KINDNESS;Quality of being friendly and considerate;Qualità di essere gentile e premuroso;GENTILEZZA
+HARMONY;Agreement and peaceful coexistence;Accordo e coesistenza pacifica;ARMONIA
+COURAGE;Ability to face fear and danger;Capacità di affrontare paura e pericolo;CORAGGIO
+PATIENCE;Ability to wait calmly for something;Capacità di aspettare con calma qualcosa;PAZIENZA
+WISDOM;Quality of having experience and good judgment;Qualità di avere esperienza e buon senso;SAGGEZZA
+FRIENDSHIP;Close relationship between people who like each other;Relazione stretta tra persone che si vogliono bene;AMICIZIA
+HOPE;Feeling that something good will happen;Sentimento che qualcosa di buono accadrà;SPERANZA
+GRATITUDE;Feeling thankful for something;Sentimento di riconoscenza per qualcosa;GRATITUDINE
+CREATIVITY;Ability to use imagination to create new things;Capacità di usare l'immaginazione per creare cose nuove;CREATIVITÀ
+RESPECT;Feeling of admiration for someone;Sentimento di ammirazione per qualcuno;RISPETTO
+FREEDOM;Right to act and speak as you want;Diritto di agire e parlare come si vuole;LIBERTÀ
+JOY;Feeling of great happiness;Sensazione di grande felicità;GIOIA
+HONESTY;Quality of being truthful and sincere;Qualità di essere veritiero e sincero;ONESTÀ
+PERSEVERANCE;Continuing to try despite difficulties;Continuare a provare nonostante le difficoltà;PERSEVERANZA
+GENEROSITY;Willingness to give and share freely;Disposizione a dare e condividere liberamente;GENEROSITÀ
+WONDER;Feeling of amazement and admiration;Sensazione di stupore e ammirazione;MERAVIGLIA
+ADVENTURE;Exciting experience with unknown outcome;Esperienza emozionante con esito sconosciuto;AVVENTURA
+IMAGINATION;Ability to form mental images of things not present;Capacità di formare immagini mentali di cose non presenti;IMMAGINAZIONE
+DISCOVERY;Finding something new or unknown;Trovare qualcosa di nuovo o sconosciuto;SCOPERTA
+TREASURE;Something of great value;Qualcosa di grande valore;TESORO
