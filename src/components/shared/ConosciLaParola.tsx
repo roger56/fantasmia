@@ -1,30 +1,27 @@
 /**
  * Componente principale "Conosci la parola?"
- * Combina l'icona animata e l'overlay
+ * Combina l'icona animata, il selettore lingua e l'overlay
  */
 
 import React from 'react';
 import { useConosciLaParola } from '@/hooks/useConosciLaParola';
 import ConosciLaParolaIcon from './ConosciLaParolaIcon';
 import ConosciLaParolaOverlay from './ConosciLaParolaOverlay';
+import ConosciLaParolaLanguageSelector from './ConosciLaParolaLanguageSelector';
 
 const ConosciLaParola: React.FC = () => {
   const {
     showIcon,
-    currentWord,
+    showLanguageSelector,
     showOverlay,
-    showDefinition,
+    selectedWord,
     iconPosition,
+    activeLanguages,
     handleIconClick,
-    handleYes,
-    handleNo,
+    handleLanguageSelect,
+    closeLanguageSelector,
     closeOverlay
   } = useConosciLaParola();
-
-  // Don't render if no word loaded
-  if (!currentWord) {
-    return null;
-  }
 
   return (
     <>
@@ -36,14 +33,18 @@ const ConosciLaParola: React.FC = () => {
         />
       )}
       
+      {/* Language Selector */}
+      <ConosciLaParolaLanguageSelector
+        isOpen={showLanguageSelector}
+        onSelectLanguage={handleLanguageSelect}
+        onClose={closeLanguageSelector}
+        activeLanguages={activeLanguages}
+      />
+      
       {/* Quiz Overlay */}
       <ConosciLaParolaOverlay
         isOpen={showOverlay}
-        word={currentWord.word}
-        definition={currentWord.definition}
-        showDefinition={showDefinition}
-        onYes={handleYes}
-        onNo={handleNo}
+        selectedWord={selectedWord}
         onClose={closeOverlay}
       />
     </>
