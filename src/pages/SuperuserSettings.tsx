@@ -8,9 +8,11 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield, Sparkles, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
+import { fantasMiaDB } from '@/utils/indexedDB';
 import { 
   addCustomWordIT, 
   addCustomWordEN, 
@@ -42,6 +44,9 @@ const defaultSettings: WordGameSettings = {
   languageEN: true
 };
 
+const DEFAULT_ALBUM_EMAIL = 'quando.ruggero@gmail.com';
+const EMAIL_GMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+
 const SuperuserSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -49,6 +54,11 @@ const SuperuserSettings = () => {
   // Word game settings state
   const [wordGameSettings, setWordGameSettings] = useState<WordGameSettings>(defaultSettings);
   const [showWordGameSettings, setShowWordGameSettings] = useState(false);
+  
+  // Email settings state
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [albumEmail, setAlbumEmail] = useState(DEFAULT_ALBUM_EMAIL);
+  const [emailError, setEmailError] = useState('');
   
   // Custom words state
   const [customWordsIT, setCustomWordsIT] = useState<WordEntryIT[]>([]);
@@ -77,7 +87,22 @@ const SuperuserSettings = () => {
     
     // Load custom words
     loadCustomWords();
+    
+    // Load email settings from IndexedDB
+    loadEmailSettings();
   }, []);
+  
+  const loadEmailSettings = async () => {
+    try {
+      await fantasMiaDB.init();
+      const settings = await fantasMiaDB.getSystemSettings();
+      if (settings.album_default_email) {
+        setAlbumEmail(settings.album_default_email);
+      }
+    } catch (e) {
+      console.warn('Error loading email settings', e);
+    }
+  };
   
   const loadCustomWords = async () => {
     try {
@@ -173,6 +198,40 @@ const SuperuserSettings = () => {
       variant: "default"
     });
   };
+  
+  const handleOpenEmailDialog = () => {
+    setEmailError('');
+    setShowEmailDialog(true);
+  };
+  
+  const handleSaveEmail = async () => {
+    // Validate email
+    if (!EMAIL_GMAIL_REGEX.test(albumEmail)) {
+      setEmailError('Inserisci un indirizzo email valido @gmail.com');
+      return;
+    }
+    
+    try {
+      await fantasMiaDB.init();
+      const currentSettings = await fantasMiaDB.getSystemSettings();
+      await fantasMiaDB.saveSystemSettings({
+        ...currentSettings,
+        album_default_email: albumEmail
+      });
+      
+      setShowEmailDialog(false);
+      toast({
+        title: "Email salvata",
+        description: `L'email predefinita è stata impostata su ${albumEmail}`,
+      });
+    } catch (e) {
+      toast({
+        title: "Errore",
+        description: "Impossibile salvare l'email",
+        variant: "destructive"
+      });
+    }
+  };
 
   const settingsOptions = [
     {
@@ -186,8 +245,8 @@ const SuperuserSettings = () => {
       title: 'Indirizzo email predefinito',
       description: 'Configura l\'email per invii automatici',
       icon: Mail,
-      action: () => handleSettingClick('Indirizzo email predefinito'),
-      showTooltip: true
+      action: handleOpenEmailDialog,
+      showTooltip: false
     },
     {
       title: 'Lingua base del sistema',
@@ -505,6 +564,45 @@ const SuperuserSettings = () => {
             }
           })}
         </div>
+        
+        {/* Email Configuration Dialog */}
+        <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Indirizzo Email Predefinito</DialogTitle>
+              <DialogDescription>
+                Questa email viene usata come destinatario predefinito per l'invio Album.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="albumEmail">Email (solo @gmail.com)</Label>
+                <Input
+                  id="albumEmail"
+                  type="email"
+                  value={albumEmail}
+                  onChange={(e) => {
+                    setAlbumEmail(e.target.value);
+                    setEmailError('');
+                  }}
+                  placeholder="esempio@gmail.com"
+                  className={emailError ? 'border-destructive' : ''}
+                />
+                {emailError && (
+                  <p className="text-sm text-destructive">{emailError}</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowEmailDialog(false)}>
+                Annulla
+              </Button>
+              <Button onClick={handleSaveEmail}>
+                Salva
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

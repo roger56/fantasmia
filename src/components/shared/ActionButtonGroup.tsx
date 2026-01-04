@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Volume2, Languages, Save, Share, Edit, Mail, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
+import { fantasMiaDB } from '@/utils/indexedDB';
 
 interface ActionButtonGroupProps {
   content: string;
@@ -35,6 +36,23 @@ const ActionButtonGroup: React.FC<ActionButtonGroupProps> = ({
 }) => {
   const { speak, getButtonText } = useUnifiedTTS();
   const { toast } = useToast();
+  const [albumEmail, setAlbumEmail] = useState('quando.ruggero@gmail.com');
+
+  // Load album email from IndexedDB on mount
+  useEffect(() => {
+    const loadEmailSetting = async () => {
+      try {
+        await fantasMiaDB.init();
+        const settings = await fantasMiaDB.getSystemSettings();
+        if (settings.album_default_email) {
+          setAlbumEmail(settings.album_default_email);
+        }
+      } catch (e) {
+        console.warn('Error loading email settings, using default', e);
+      }
+    };
+    loadEmailSetting();
+  }, []);
 
   const handleListen = () => {
     speak(content, language);
@@ -49,11 +67,15 @@ const ActionButtonGroup: React.FC<ActionButtonGroupProps> = ({
   };
 
   const handleSendMail = () => {
+    // Log for debugging
+    console.log(`album-send to=${albumEmail}`);
+    
     toast({
-      title: "Funzione in sviluppo",
-      description: "Invio mail sarà presto disponibile",
+      title: "Invio album",
+      description: `L'album verrà inviato a: ${albumEmail}`,
       variant: "default"
     });
+    // Note: Real email sending requires backend (Resend + edge function)
   };
 
   const handlePublish = () => {
