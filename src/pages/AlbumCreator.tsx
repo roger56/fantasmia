@@ -31,6 +31,24 @@ const AlbumCreator: React.FC = () => {
   const [estimatedSize, setEstimatedSize] = useState(0);
   const [isCalculatingSize, setIsCalculatingSize] = useState(false);
   const [mediaInfoMap, setMediaInfoMap] = useState<Record<string, { isSketch: boolean }>>({});
+  const [albumEmail, setAlbumEmail] = useState('quando.ruggero@gmail.com');
+
+  // Load email setting from IndexedDB
+  useEffect(() => {
+    const loadEmailSetting = async () => {
+      try {
+        await fantasMiaDB.init();
+        const settings = await fantasMiaDB.getSystemSettings();
+        if (settings.album_default_email) {
+          setAlbumEmail(settings.album_default_email);
+          console.log('album-email loaded:', settings.album_default_email);
+        }
+      } catch (e) {
+        console.warn('Error loading email settings, using default', e);
+      }
+    };
+    loadEmailSetting();
+  }, []);
 
   const MAX_SIZE_MB = 10;
   const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -331,8 +349,9 @@ const AlbumCreator: React.FC = () => {
         return;
       }
 
+      console.log(`album-send to=${albumEmail}`);
       const payload = {
-        to: 'roger56@fantasmia.it',
+        to: albumEmail,
         subject: `FANTASMIA – Richiesta stampa album: ${albumTitle}`,
         html: `
           <h1>Richiesta stampa album</h1>
