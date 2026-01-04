@@ -58,6 +58,8 @@ interface SystemSettings {
   // Legacy fields - kept for backward compatibility but no longer used
   minStoriesForEmail?: number;
   maxStoriesForEmail?: number;
+  // Album email recipient
+  album_default_email?: string;
 }
 
 interface GroupStory {
