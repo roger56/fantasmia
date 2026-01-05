@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Shuffle, Volume2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Search, Play, Pause, Mic, MicOff, Volume2 } from 'lucide-react';
 import { professions } from '@/data/professions';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { useToast } from '@/hooks/use-toast';
@@ -14,66 +16,86 @@ import SaveDialog from '@/components/SaveDialog';
 
 const ProfessionStoryEditor = () => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedProfession, setSelectedProfession] = useState<string | null>(null);
   const [storyText, setStoryText] = useState('');
   const [storyTitle, setStoryTitle] = useState('');
+  const [isScrolling, setIsScrolling] = useState(true);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [scrollSpeed, setScrollSpeed] = useState(30); // ms between changes, lower = faster
+  const [isListening, setIsListening] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { speak, isPlaying } = useUnifiedTTS();
   const { toast } = useToast();
 
-  // Random selection animation - starts fast and slows down
+  // Auto-scroll functionality
   useEffect(() => {
-    if (!isSelecting) return;
+    let intervalId: NodeJS.Timeout;
     
-    const totalDuration = 3500; // 3.5 seconds total
-    const startTime = Date.now();
-    
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / totalDuration, 1);
-      
-      // Easing function - slows down progressively
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-      
-      // Speed goes from 30ms to 400ms
-      const currentSpeed = 30 + (easeOut * 370);
-      
-      // Update displayed profession
-      setCurrentIndex(Math.floor(Math.random() * professions.length));
-      
-      if (progress < 1) {
-        setTimeout(animate, currentSpeed);
-      } else {
-        // Final selection
-        const finalIndex = Math.floor(Math.random() * professions.length);
-        setSelectedProfession(professions[finalIndex]);
-        setIsSelecting(false);
-        toast({
-          title: "Professione selezionata!",
-          description: professions[finalIndex]
-        });
+    if (isScrolling && scrollAreaRef.current) {
+      intervalId = setInterval(() => {
+        const element = scrollAreaRef.current;
+        if (element) {
+          const scrollTop = element.scrollTop;
+          const scrollHeight = element.scrollHeight;
+          const clientHeight = element.clientHeight;
+          
+          if (scrollTop + clientHeight >= scrollHeight) {
+            // Reset to top when reaching bottom
+            element.scrollTop = 0;
+          } else {
+            element.scrollTop += 3; // Velocità aumentata x3 per scelta casuale
+          }
+        }
+      }, 33); // ~30fps for smooth scrolling
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
       }
     };
-    
-    animate();
-  }, [isSelecting, toast]);
+  }, [isScrolling]);
 
-  // Auto-scroll the list during selection for visual effect
+  // Handle space key press for pause/resume
   useEffect(() => {
-    if (isSelecting && scrollAreaRef.current) {
-      const element = scrollAreaRef.current;
-      const itemHeight = 52; // approximate height of each item
-      element.scrollTop = currentIndex * itemHeight - element.clientHeight / 2 + itemHeight / 2;
-    }
-  }, [currentIndex, isSelecting]);
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !selectedProfession) {
+        e.preventDefault();
+        setIsScrolling(!isScrolling);
+      }
+    };
 
-  const handleStartRandomSelection = () => {
-    setIsSelecting(true);
-    setSelectedProfession(null);
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isScrolling, selectedProfession]);
+
+  const filteredProfessions = professions.filter(profession =>
+    profession.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSearch = () => {
+    const found = professions.find(profession =>
+      profession.toLowerCase() === searchTerm.toLowerCase()
+    );
+    
+    if (found) {
+      setSelectedProfession(found);
+      toast({
+        title: "Professione trovata!",
+        description: `${found} selezionata`
+      });
+    } else {
+      toast({
+        title: "Professione non trovata",
+        description: "Controlla l'ortografia o prova con un altro termine",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleProfessionSelect = (profession: string) => {
+    setSelectedProfession(profession);
+    setIsScrolling(false);
   };
 
   const handleSpeechResult = (text: string) => {
@@ -132,53 +154,69 @@ const ProfessionStoryEditor = () => {
       <ProfileIndicator />
       <StoryLayout
         title="Cosa farei se fossi un..."
-        subtitle="Lascia che il destino scelga la tua professione!"
+        subtitle="Scegli una professione e racconta la tua storia"
         onBack={() => navigate('/create-story')}
         showHomeButton={true}
       >
         <div className="max-w-4xl mx-auto space-y-6">
           {!selectedProfession ? (
             <>
-              {/* Professions List - Visual Display Only */}
+              {/* Search Section */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-center">Lista Professioni</CardTitle>
+                  <CardTitle>Cerca una professione</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Scrivi qui la professione..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                      className="text-lg"
+                    />
+                    <Button onClick={handleSearch} className="flex items-center gap-2">
+                      <Search className="w-4 h-4" />
+                      Cerca
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Professions List */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Lista Professioni</CardTitle>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsScrolling(!isScrolling)}
+                      className="flex items-center gap-2"
+                    >
+                      {isScrolling ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      {isScrolling ? 'Ferma' : 'Riprendi'}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Premi SPAZIO per fermare/riprendere lo scorrimento
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div 
                     ref={scrollAreaRef}
-                    className="h-64 overflow-hidden bg-background border border-border rounded-lg p-4"
+                    className="h-64 overflow-auto bg-white border border-gray-300 rounded-lg p-4"
                   >
                     <div className="space-y-2">
-                      {professions.map((profession, index) => (
+                      {(searchTerm ? filteredProfessions : professions).map((profession, index) => (
                         <div
                           key={index}
-                          className={`p-3 border rounded text-lg font-medium transition-all duration-100 ${
-                            isSelecting && index === currentIndex
-                              ? 'bg-primary text-primary-foreground border-primary scale-105'
-                              : 'border-border bg-card'
-                          }`}
+                          className="p-3 border border-gray-200 rounded cursor-pointer hover:bg-gray-50 transition-colors text-lg font-medium"
+                          onClick={() => handleProfessionSelect(profession)}
                         >
                           {profession}
                         </div>
                       ))}
                     </div>
-                  </div>
-                  
-                  {/* Random Selection Button */}
-                  <div className="text-center mt-6">
-                    <Button 
-                      onClick={handleStartRandomSelection}
-                      disabled={isSelecting}
-                      size="lg"
-                      className="gap-2 text-lg px-8 py-6"
-                    >
-                      <Shuffle className={`w-5 h-5 ${isSelecting ? 'animate-spin' : ''}`} />
-                      {isSelecting ? 'Scegliendo...' : 'Scegli casualmente!'}
-                    </Button>
-                    <p className="text-sm text-muted-foreground mt-3">
-                      Premi il pulsante e lascia che il destino scelga per te!
-                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -222,13 +260,14 @@ const ProfessionStoryEditor = () => {
                     </Button>
                   </div>
 
-                  {/* Back to random selection */}
+                  {/* Back to professions */}
                   <div className="text-center pt-4">
                     <Button
                       variant="ghost"
                       onClick={() => {
                         setSelectedProfession(null);
                         setStoryText('');
+                        setIsScrolling(true);
                       }}
                     >
                       Scegli altra professione
