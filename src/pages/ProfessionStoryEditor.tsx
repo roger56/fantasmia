@@ -14,6 +14,8 @@ import StoryLayout from '@/components/shared/StoryLayout';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import SaveDialog from '@/components/SaveDialog';
 
+const PROFESSION_SETTINGS_KEY = 'fantasmia_profession_settings';
+
 const ProfessionStoryEditor = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,15 +25,50 @@ const ProfessionStoryEditor = () => {
   const [isScrolling, setIsScrolling] = useState(true);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [scrollSpeed, setScrollSpeed] = useState(5); // default speed (1-10)
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { speak, isPlaying } = useUnifiedTTS();
   const { toast } = useToast();
 
-  // Auto-scroll functionality
+  // Load rotation speed from settings or calculate from age
+  useEffect(() => {
+    const loadSpeed = () => {
+      try {
+        // First try to load from SU settings
+        const savedSettings = localStorage.getItem(PROFESSION_SETTINGS_KEY);
+        if (savedSettings) {
+          const parsed = JSON.parse(savedSettings);
+          if (parsed.rotationSpeed) {
+            setScrollSpeed(parsed.rotationSpeed);
+            console.log('profession-speed loaded from settings:', parsed.rotationSpeed);
+            return;
+          }
+        }
+        
+        // Otherwise calculate from NSU age
+        const profileJson = localStorage.getItem('fantasmia_current_profile');
+        if (profileJson) {
+          const profile = JSON.parse(profileJson);
+          const age = profile.age || 5;
+          const calculatedSpeed = Math.min(5 + Math.max(0, age - 5) * 2, 10);
+          setScrollSpeed(calculatedSpeed);
+          console.log('profession-speed calculated from age:', calculatedSpeed);
+        }
+      } catch (e) {
+        console.warn('Error loading profession speed settings', e);
+      }
+    };
+    loadSpeed();
+  }, []);
+
+  // Auto-scroll functionality with dynamic speed
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
     
     if (isScrolling && scrollAreaRef.current) {
+      // Convert speed 1-10 to pixels per frame (1 = 1px, 10 = 8px)
+      const pixelsPerFrame = Math.max(1, scrollSpeed * 0.8);
+      
       intervalId = setInterval(() => {
         const element = scrollAreaRef.current;
         if (element) {
@@ -43,7 +80,7 @@ const ProfessionStoryEditor = () => {
             // Reset to top when reaching bottom
             element.scrollTop = 0;
           } else {
-            element.scrollTop += 3; // Velocità aumentata x3 per scelta casuale
+            element.scrollTop += pixelsPerFrame;
           }
         }
       }, 33); // ~30fps for smooth scrolling
@@ -54,20 +91,43 @@ const ProfessionStoryEditor = () => {
         clearInterval(intervalId);
       }
     };
-  }, [isScrolling]);
+  }, [isScrolling, scrollSpeed]);
 
-  // Handle space key press for pause/resume
+  // Handle any key press to stop scrolling (random selection behavior)
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !selectedProfession) {
+      if (!selectedProfession && isScrolling) {
         e.preventDefault();
-        setIsScrolling(!isScrolling);
+        setIsScrolling(false);
+        
+        // Select the profession currently visible in the center
+        const element = scrollAreaRef.current;
+        if (element) {
+          const items = element.querySelectorAll('[data-profession]');
+          const containerRect = element.getBoundingClientRect();
+          const centerY = containerRect.top + containerRect.height / 2;
+          
+          for (const item of items) {
+            const rect = item.getBoundingClientRect();
+            if (rect.top <= centerY && rect.bottom >= centerY) {
+              const profession = item.getAttribute('data-profession');
+              if (profession) {
+                setSelectedProfession(profession);
+                toast({
+                  title: "Professione selezionata!",
+                  description: `${profession} - Inizia a scrivere la tua storia`
+                });
+              }
+              break;
+            }
+          }
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isScrolling, selectedProfession]);
+  }, [isScrolling, selectedProfession, toast]);
 
   const filteredProfessions = professions.filter(profession =>
     profession.toLowerCase().includes(searchTerm.toLowerCase())
@@ -198,7 +258,7 @@ const ProfessionStoryEditor = () => {
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Premi SPAZIO per fermare/riprendere lo scorrimento
+                    Premi un tasto qualsiasi per fermare e selezionare
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -210,6 +270,7 @@ const ProfessionStoryEditor = () => {
                       {(searchTerm ? filteredProfessions : professions).map((profession, index) => (
                         <div
                           key={index}
+                          data-profession={profession}
                           className="p-3 border border-gray-200 rounded cursor-pointer hover:bg-gray-50 transition-colors text-lg font-medium"
                           onClick={() => handleProfessionSelect(profession)}
                         >
