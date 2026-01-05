@@ -9,7 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield, Sparkles, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield, Sparkles, Plus, Trash2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import { fantasMiaDB } from '@/utils/indexedDB';
@@ -25,6 +25,7 @@ import {
 } from '@/utils/customWordsManager';
 
 const WORDGAME_SETTINGS_KEY = 'fantasmia_wordgame_settings';
+const PROFESSION_SETTINGS_KEY = 'fantasmia_profession_settings';
 
 interface WordGameSettings {
   enabled: boolean;
@@ -35,6 +36,10 @@ interface WordGameSettings {
   languageEN: boolean;
 }
 
+interface ProfessionSettings {
+  rotationSpeed: number; // 1-10
+}
+
 const defaultSettings: WordGameSettings = {
   enabled: true,
   startDelay: 120,
@@ -42,6 +47,10 @@ const defaultSettings: WordGameSettings = {
   speed: 5,
   languageIT: true,
   languageEN: true
+};
+
+const defaultProfessionSettings: ProfessionSettings = {
+  rotationSpeed: 5
 };
 
 const DEFAULT_ALBUM_EMAIL = 'quando.ruggero@gmail.com';
@@ -55,6 +64,10 @@ const SuperuserSettings = () => {
   const [wordGameSettings, setWordGameSettings] = useState<WordGameSettings>(defaultSettings);
   const [showWordGameSettings, setShowWordGameSettings] = useState(false);
   
+  // Profession settings state
+  const [professionSettings, setProfessionSettings] = useState<ProfessionSettings>(defaultProfessionSettings);
+  const [showProfessionSettings, setShowProfessionSettings] = useState(false);
+  
   // Email settings state
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [albumEmail, setAlbumEmail] = useState(DEFAULT_ALBUM_EMAIL);
@@ -65,6 +78,22 @@ const SuperuserSettings = () => {
   const [customWordsEN, setCustomWordsEN] = useState<WordEntryEN[]>([]);
   const [newWordIT, setNewWordIT] = useState({ word: '', definition: '' });
   const [newWordEN, setNewWordEN] = useState({ word: '', meaningEN: '', meaningIT: '', translationIT: '' });
+
+  // Calculate default speed based on NSU age
+  const calculateDefaultSpeedFromAge = (): number => {
+    try {
+      const profileJson = localStorage.getItem('fantasmia_current_profile');
+      if (profileJson) {
+        const profile = JSON.parse(profileJson);
+        const age = profile.age || 5;
+        // Base = 5, +2 per year above 5, max 10
+        return Math.min(5 + Math.max(0, age - 5) * 2, 10);
+      }
+    } catch (e) {
+      console.warn('Error calculating age-based speed', e);
+    }
+    return 5;
+  };
 
   // Load settings and custom words on mount
   useEffect(() => {
@@ -83,6 +112,24 @@ const SuperuserSettings = () => {
       }
     } catch (e) {
       console.warn('Error loading word game settings', e);
+    }
+    
+    // Load profession settings
+    try {
+      const savedProf = localStorage.getItem(PROFESSION_SETTINGS_KEY);
+      if (savedProf) {
+        const parsed = JSON.parse(savedProf);
+        setProfessionSettings({
+          rotationSpeed: parsed.rotationSpeed || calculateDefaultSpeedFromAge()
+        });
+      } else {
+        // Set default based on age
+        setProfessionSettings({
+          rotationSpeed: calculateDefaultSpeedFromAge()
+        });
+      }
+    } catch (e) {
+      console.warn('Error loading profession settings', e);
     }
     
     // Load custom words
@@ -121,6 +168,22 @@ const SuperuserSettings = () => {
       toast({
         title: "Impostazioni salvate",
         description: "Le impostazioni della farfalla sono state aggiornate",
+      });
+    } catch (e) {
+      toast({
+        title: "Errore",
+        description: "Impossibile salvare le impostazioni",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleSaveProfessionSettings = () => {
+    try {
+      localStorage.setItem(PROFESSION_SETTINGS_KEY, JSON.stringify(professionSettings));
+      toast({
+        title: "Impostazioni salvate",
+        description: "La velocità di rotazione professioni è stata aggiornata",
       });
     } catch (e) {
       toast({
@@ -274,6 +337,13 @@ const SuperuserSettings = () => {
       description: 'Configura timing, velocità e gestisci parole',
       icon: Sparkles,
       action: () => setShowWordGameSettings(true),
+      showTooltip: false
+    },
+    {
+      title: 'Velocità rotazione professioni',
+      description: 'Configura la velocità di scorrimento della lista professioni',
+      icon: Users,
+      action: () => setShowProfessionSettings(true),
       showTooltip: false
     },
     {
@@ -513,57 +583,114 @@ const SuperuserSettings = () => {
           </Card>
         )}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {settingsOptions.map((option, index) => {
-            const IconComponent = option.icon;
-            
-            if (option.showTooltip) {
-              return (
-                <TooltipProvider key={index}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Card 
-                        className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-slate-300"
-                        onClick={option.action}
-                      >
-                        <CardContent className="p-6 flex items-center">
-                          <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mr-4">
-                            <IconComponent className="w-6 h-6 text-slate-700" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-slate-800">{option.title}</h3>
-                            <p className="text-slate-600 text-sm">{option.description}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>IN VIA DI SVILUPPO</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              );
-            } else {
-              return (
-                <Card 
-                  key={index}
-                  className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-slate-300"
-                  onClick={option.action}
-                >
-                  <CardContent className="p-6 flex items-center">
-                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mr-4">
-                      <IconComponent className="w-6 h-6 text-slate-700" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-slate-800">{option.title}</h3>
-                      <p className="text-slate-600 text-sm">{option.description}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            }
-          })}
-        </div>
+        {/* Profession Settings Panel */}
+        {showProfessionSettings && (
+          <Card className="mb-6 border-2 border-primary/30 bg-primary/5">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Velocità Rotazione Professioni
+                </h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowProfessionSettings(false)}>
+                  ✕
+                </Button>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <Label>Velocità rotazione: {professionSettings.rotationSpeed}</Label>
+                  <Slider
+                    value={[professionSettings.rotationSpeed]}
+                    onValueChange={(value) => setProfessionSettings(prev => ({ ...prev, rotationSpeed: value[0] }))}
+                    min={1}
+                    max={10}
+                    step={1}
+                    className="mt-2"
+                  />
+                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                    <span>1 = molto lento</span>
+                    <span>10 = molto veloce</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Il valore di default è calcolato automaticamente in base all'età del profilo NSU (base 5, +2 per anno).
+                  </p>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveProfessionSettings} className="flex-1">
+                    Salva impostazioni
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      const defaultSpeed = calculateDefaultSpeedFromAge();
+                      setProfessionSettings({ rotationSpeed: defaultSpeed });
+                      toast({ title: "Reset", description: `Velocità reimpostata al default (${defaultSpeed})` });
+                    }}
+                  >
+                    Reset default
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Settings Grid - Only show when no panel is open */}
+        {!showWordGameSettings && !showProfessionSettings && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {settingsOptions.map((option, index) => {
+              const IconComponent = option.icon;
+              
+              if (option.showTooltip) {
+                return (
+                  <TooltipProvider key={index}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Card 
+                          className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-slate-300"
+                          onClick={option.action}
+                        >
+                          <CardContent className="p-6 flex items-center">
+                            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mr-4">
+                              <IconComponent className="w-6 h-6 text-slate-700" />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="text-lg font-semibold text-slate-800">{option.title}</h3>
+                              <p className="text-slate-600 text-sm">{option.description}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>IN VIA DI SVILUPPO</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              } else {
+                return (
+                  <Card 
+                    key={index}
+                    className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-slate-300"
+                    onClick={option.action}
+                  >
+                    <CardContent className="p-6 flex items-center">
+                      <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mr-4">
+                        <IconComponent className="w-6 h-6 text-slate-700" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-slate-800">{option.title}</h3>
+                        <p className="text-slate-600 text-sm">{option.description}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+            })}
+          </div>
+        )}
         
         {/* Email Configuration Dialog */}
         <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
