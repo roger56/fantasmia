@@ -492,11 +492,27 @@ class FantasMiaDB {
         return;
       }
       const { version } = await versionResponse.json();
+      console.log('seed-ag: remote version =', version);
       
       // 2. Compare with stored version
       const storedVersion = localStorage.getItem('ag_seed_version');
+      console.log('seed-ag: local version =', storedVersion);
+      
       if (storedVersion === version) {
-        console.log('seed-ag: skipped (up-to-date)', version);
+        // Verifica che le storie esistano effettivamente
+        const allStories = await this.getAllAGStories();
+        const seedCount = allStories.filter(s => s.source === 'seed').length;
+        const manualCount = allStories.filter(s => s.source !== 'seed').length;
+        console.log('seed-ag: existing stories - seed:', seedCount, ', manual:', manualCount);
+        
+        // Se non ci sono storie seed, forza re-import
+        if (seedCount === 0) {
+          console.log('seed-ag: NO seed stories found, forcing re-import');
+          localStorage.removeItem('ag_seed_version');
+          return this.ensureAGSeedStoriesLoaded(); // Retry ricorsivo
+        }
+        
+        console.log('seed-ag: skipped (up-to-date)');
         return;
       }
       
@@ -504,11 +520,12 @@ class FantasMiaDB {
       const storiesResponse = await fetch('/ag-seed.json');
       if (!storiesResponse.ok) throw new Error('Failed to fetch seed stories');
       const { stories } = await storiesResponse.json();
+      console.log('seed-ag: fetched', stories.length, 'stories from JSON');
       
-      // 4. Delete existing seed stories
+      // 4. Delete ONLY existing seed stories (manual are preserved)
       const deleted = await this.deleteAGStoriesBySource('seed');
       if (deleted > 0) {
-        console.log(`seed-ag: deleted ${deleted} existing seed stories`);
+        console.log(`seed-ag: deleted ${deleted} existing seed stories (manual preserved)`);
       }
       
       // 5. Insert new seed stories
@@ -537,7 +554,13 @@ class FantasMiaDB {
       
       // 6. Save version
       localStorage.setItem('ag_seed_version', version);
-      console.log(`seed-ag: imported ${count}`);
+      console.log(`seed-ag: imported ${count} seed stories`);
+      
+      // 7. Verifica finale
+      const finalStories = await this.getAllAGStories();
+      const finalSeedCount = finalStories.filter(s => s.source === 'seed').length;
+      const finalManualCount = finalStories.filter(s => s.source !== 'seed').length;
+      console.log('seed-ag: verification - seed:', finalSeedCount, ', manual:', finalManualCount);
       
     } catch (error) {
       console.warn('seed-ag: error', error);
