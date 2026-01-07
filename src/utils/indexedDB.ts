@@ -94,6 +94,10 @@ interface AGStory {
   updated_at: string;
   has_image: boolean;
   language?: string;
+  // Seed story fields
+  source?: 'manual' | 'seed';
+  topic?: string;
+  ageRange?: string;
 }
 
 interface MediaAsset {
@@ -434,6 +438,94 @@ class FantasMiaDB {
     const transaction = this.db!.transaction(['ag_stories'], 'readwrite');
     const store = transaction.objectStore('ag_stories');
     await store.delete(storyId);
+  }
+
+  // AG Seed Stories Management
+  async deleteAGStoriesBySource(source: string): Promise<number> {
+    if (!this.db) await this.init();
+    
+    const transaction = this.db!.transaction(['ag_stories'], 'readwrite');
+    const store = transaction.objectStore('ag_stories');
+    const allStories = await new Promise<AGStory[]>((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    
+    const seedStories = allStories.filter(s => s.source === source);
+    
+    for (const story of seedStories) {
+      await new Promise<void>((resolve, reject) => {
+        const request = store.delete(story.id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+    
+    return seedStories.length;
+  }
+
+  async ensureAGSeedStoriesLoaded(): Promise<void> {
+    console.log('seed-ag: start');
+    
+    try {
+      // 1. Fetch version
+      const versionResponse = await fetch('/ag-seed-version.json');
+      if (!versionResponse.ok) {
+        console.log('seed-ag: version file not found, skipping');
+        return;
+      }
+      const { version } = await versionResponse.json();
+      
+      // 2. Compare with stored version
+      const storedVersion = localStorage.getItem('ag_seed_version');
+      if (storedVersion === version) {
+        console.log('seed-ag: skipped (up-to-date)', version);
+        return;
+      }
+      
+      // 3. Fetch stories
+      const storiesResponse = await fetch('/ag-seed.json');
+      if (!storiesResponse.ok) throw new Error('Failed to fetch seed stories');
+      const { stories } = await storiesResponse.json();
+      
+      // 4. Delete existing seed stories
+      const deleted = await this.deleteAGStoriesBySource('seed');
+      if (deleted > 0) {
+        console.log(`seed-ag: deleted ${deleted} existing seed stories`);
+      }
+      
+      // 5. Insert new seed stories
+      const now = new Date().toISOString();
+      let count = 0;
+      
+      for (const story of stories) {
+        const agStory: AGStory = {
+          id: story.id,
+          title: story.title,
+          content: story.content,
+          category: story.category || 'world',
+          created_by: 'superuser',
+          created_at: now,
+          updated_at: now,
+          has_image: false,
+          language: story.language || 'it',
+          source: 'seed',
+          topic: story.topic,
+          ageRange: story.ageRange
+        };
+        
+        await this.saveAGStory(agStory);
+        count++;
+      }
+      
+      // 6. Save version
+      localStorage.setItem('ag_seed_version', version);
+      console.log(`seed-ag: imported ${count}`);
+      
+    } catch (error) {
+      console.warn('seed-ag: error', error);
+    }
   }
 
   // Media Assets Management
@@ -1415,6 +1507,10 @@ fantasMiaDB.init()
     console.log('🔄 Starting migration of existing media assets without Blob...');
     console.log('✅ Migration completed: 0 assets restored from originalUrl (remote fetch disabled)');
     
+    // Load AG seed stories
+    return fantasMiaDB.ensureAGSeedStoriesLoaded();
+  })
+  .then(() => {
     // Initialize persistence manager after all migrations
     return import('./persistenceManager').then(({ persistenceManager }) => {
       return persistenceManager.initialize();
