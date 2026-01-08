@@ -549,11 +549,14 @@ class FantasMiaDB {
       let count = 0;
       
       for (const story of stories) {
+        const mappedCategory = this.mapTopicToCategory(story.topic);
+        console.log(`seed-ag: mapping "${story.id}" topic="${story.topic}" → category="${mappedCategory}"`);
+        
         const agStory: AGStory = {
           id: story.id,
           title: story.title,
           content: story.content,
-          category: this.mapTopicToCategory(story.topic),
+          category: mappedCategory,
           created_by: 'superuser',
           created_at: now,
           updated_at: now,
@@ -572,11 +575,20 @@ class FantasMiaDB {
       localStorage.setItem('ag_seed_version', version);
       console.log(`seed-ag: imported ${count} seed stories`);
       
-      // 7. Verifica finale
+      // 7. Verifica finale con distribuzione per categoria
       const finalStories = await this.getAllAGStories();
-      const finalSeedCount = finalStories.filter(s => s.source === 'seed').length;
-      const finalManualCount = finalStories.filter(s => s.source !== 'seed').length;
-      console.log('seed-ag: verification - seed:', finalSeedCount, ', manual:', finalManualCount);
+      const seedStories = finalStories.filter(s => s.source === 'seed');
+      const manualStories = finalStories.filter(s => s.source !== 'seed');
+      
+      const distribution = {
+        world: seedStories.filter(s => s.category === 'world').length,
+        science: seedStories.filter(s => s.category === 'science').length,
+        greek_myths: seedStories.filter(s => s.category === 'greek_myths').length,
+        nordic_myths: seedStories.filter(s => s.category === 'nordic_myths').length,
+        explorers: seedStories.filter(s => s.category === 'explorers').length
+      };
+      console.log('seed-ag: distribution by category:', distribution);
+      console.log('seed-ag: verification - seed:', seedStories.length, ', manual:', manualStories.length);
       
     } catch (error) {
       console.warn('seed-ag: error', error);
