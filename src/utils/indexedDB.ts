@@ -126,22 +126,11 @@ interface DailyStory {
   source?: 'default' | 'su_import' | 'su_manual';  // precedenza: su_manual > su_import > default
 }
 
-// AIROTS FairyTale Template interface
-export interface AirotsFairyTale {
-  id: string;
-  title: string;
-  topic: string;
-  language: string;
-  ageRange: string;
-  source: 'seed' | 'admin';
-  sentences: string[];  // 6 frasi per favola
-}
-
 class FantasMiaDB {
   private db: IDBDatabase | null = null;
   private readonly dbConfig: DatabaseConfig = {
     name: 'FantasMiaV2',
-    version: 8 // Bump version for airots_templates store
+    version: 7 // Bump version for daily_stories store
   };
 
   async init(): Promise<void> {
@@ -175,7 +164,7 @@ class FantasMiaDB {
         }
         
         // VERIFICA CRITICA: controlla che tutti gli stores richiesti esistano
-        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions', 'daily_stories', 'airots_templates'];
+        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions', 'daily_stories'];
         const missingStores = requiredStores.filter(
           name => !this.db!.objectStoreNames.contains(name)
         );
@@ -197,7 +186,7 @@ class FantasMiaDB {
         console.log('🔄 IndexedDB upgrade from version', event.oldVersion, 'to', event.newVersion);
 
         // Delete existing stores to recreate with proper indices
-        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions', 'daily_stories', 'airots_templates'];
+        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions', 'daily_stories'];
         storeNames.forEach(storeName => {
           if (db.objectStoreNames.contains(storeName)) {
             db.deleteObjectStore(storeName);
@@ -256,11 +245,6 @@ class FantasMiaDB {
         // Daily Stories store (Racconto del Giorno)
         const dailyStoryStore = db.createObjectStore('daily_stories', { keyPath: 'date' });
         console.log('✅ Created daily_stories store');
-
-        // AIROTS Templates store
-        const airotsStore = db.createObjectStore('airots_templates', { keyPath: 'id' });
-        airotsStore.createIndex('title', 'title', { unique: false });
-        console.log('✅ Created airots_templates store');
       };
     });
   }
@@ -481,22 +465,6 @@ class FantasMiaDB {
     return seedStories.length;
   }
 
-  // Helper function per mappare topic -> category
-  private mapTopicToCategory(topic?: string): 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers' {
-    if (!topic) return 'world';
-    
-    const topicLower = topic.toLowerCase();
-    
-    if (topicLower === 'esplorazioni') return 'explorers';
-    if (topicLower === 'mitologia greca') return 'greek_myths';
-    if (topicLower === 'mitologia nordica') return 'nordic_myths';
-    if (topicLower === 'fisica') return 'science';
-    if (topicLower === 'fiabe') return 'world';
-    
-    // Fallback
-    return 'world';
-  }
-
   async ensureAGSeedStoriesLoaded(): Promise<void> {
     console.log('seed-ag: start');
     
@@ -508,27 +476,11 @@ class FantasMiaDB {
         return;
       }
       const { version } = await versionResponse.json();
-      console.log('seed-ag: remote version =', version);
       
       // 2. Compare with stored version
       const storedVersion = localStorage.getItem('ag_seed_version');
-      console.log('seed-ag: local version =', storedVersion);
-      
       if (storedVersion === version) {
-        // Verifica che le storie esistano effettivamente
-        const allStories = await this.getAllAGStories();
-        const seedCount = allStories.filter(s => s.source === 'seed').length;
-        const manualCount = allStories.filter(s => s.source !== 'seed').length;
-        console.log('seed-ag: existing stories - seed:', seedCount, ', manual:', manualCount);
-        
-        // Se non ci sono storie seed, forza re-import
-        if (seedCount === 0) {
-          console.log('seed-ag: NO seed stories found, forcing re-import');
-          localStorage.removeItem('ag_seed_version');
-          return this.ensureAGSeedStoriesLoaded(); // Retry ricorsivo
-        }
-        
-        console.log('seed-ag: skipped (up-to-date)');
+        console.log('seed-ag: skipped (up-to-date)', version);
         return;
       }
       
@@ -536,12 +488,11 @@ class FantasMiaDB {
       const storiesResponse = await fetch('/ag-seed.json');
       if (!storiesResponse.ok) throw new Error('Failed to fetch seed stories');
       const { stories } = await storiesResponse.json();
-      console.log('seed-ag: fetched', stories.length, 'stories from JSON');
       
-      // 4. Delete ONLY existing seed stories (manual are preserved)
+      // 4. Delete existing seed stories
       const deleted = await this.deleteAGStoriesBySource('seed');
       if (deleted > 0) {
-        console.log(`seed-ag: deleted ${deleted} existing seed stories (manual preserved)`);
+        console.log(`seed-ag: deleted ${deleted} existing seed stories`);
       }
       
       // 5. Insert new seed stories
@@ -549,14 +500,11 @@ class FantasMiaDB {
       let count = 0;
       
       for (const story of stories) {
-        const mappedCategory = this.mapTopicToCategory(story.topic);
-        console.log(`seed-ag: mapping "${story.id}" topic="${story.topic}" → category="${mappedCategory}"`);
-        
         const agStory: AGStory = {
           id: story.id,
           title: story.title,
           content: story.content,
-          category: mappedCategory,
+          category: story.category || 'world',
           created_by: 'superuser',
           created_at: now,
           updated_at: now,
@@ -573,106 +521,11 @@ class FantasMiaDB {
       
       // 6. Save version
       localStorage.setItem('ag_seed_version', version);
-      console.log(`seed-ag: imported ${count} seed stories`);
-      
-      // 7. Verifica finale con distribuzione per categoria
-      const finalStories = await this.getAllAGStories();
-      const seedStories = finalStories.filter(s => s.source === 'seed');
-      const manualStories = finalStories.filter(s => s.source !== 'seed');
-      
-      const distribution = {
-        world: seedStories.filter(s => s.category === 'world').length,
-        science: seedStories.filter(s => s.category === 'science').length,
-        greek_myths: seedStories.filter(s => s.category === 'greek_myths').length,
-        nordic_myths: seedStories.filter(s => s.category === 'nordic_myths').length,
-        explorers: seedStories.filter(s => s.category === 'explorers').length
-      };
-      console.log('seed-ag: distribution by category:', distribution);
-      console.log('seed-ag: verification - seed:', seedStories.length, ', manual:', manualStories.length);
+      console.log(`seed-ag: imported ${count}`);
       
     } catch (error) {
       console.warn('seed-ag: error', error);
     }
-  }
-
-  // AIROTS Seed Templates Management
-  async ensureAirotsSeedLoaded(): Promise<void> {
-    console.log('seed-airots: start');
-    
-    try {
-      // 1. Fetch version
-      const versionResponse = await fetch('/airots-seed-version.json');
-      if (!versionResponse.ok) {
-        console.log('seed-airots: version file not found, skipping');
-        return;
-      }
-      const { version } = await versionResponse.json();
-      
-      // 2. Compare with stored version
-      const storedVersion = localStorage.getItem('airots_seed_version');
-      if (storedVersion === version) {
-        console.log('seed-airots: skipped (up-to-date)', version);
-        return;
-      }
-      
-      // 3. Fetch templates
-      const templatesResponse = await fetch('/airots-seed.json');
-      if (!templatesResponse.ok) throw new Error('Failed to fetch AIROTS templates');
-      const { fairyTales } = await templatesResponse.json();
-      
-      // 4. Clear existing templates
-      await this.clearAirotsTemplates();
-      
-      // 5. Insert new templates
-      let count = 0;
-      for (const template of fairyTales) {
-        await this.saveAirotsTemplate(template);
-        count++;
-      }
-      
-      // 6. Save version
-      localStorage.setItem('airots_seed_version', version);
-      console.log(`seed-airots: imported ${count} templates`);
-      
-    } catch (error) {
-      console.warn('seed-airots: error', error);
-    }
-  }
-
-  async saveAirotsTemplate(template: AirotsFairyTale): Promise<void> {
-    if (!this.db) await this.init();
-    const transaction = this.db!.transaction(['airots_templates'], 'readwrite');
-    const store = transaction.objectStore('airots_templates');
-    return new Promise((resolve, reject) => {
-      const request = store.put(template);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async getAirotsTemplates(): Promise<AirotsFairyTale[]> {
-    if (!this.db) await this.init();
-    const transaction = this.db!.transaction(['airots_templates'], 'readonly');
-    const store = transaction.objectStore('airots_templates');
-    const request = store.getAll();
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async clearAirotsTemplates(): Promise<void> {
-    if (!this.db) await this.init();
-    const transaction = this.db!.transaction(['airots_templates'], 'readwrite');
-    const store = transaction.objectStore('airots_templates');
-    return new Promise((resolve, reject) => {
-      const request = store.clear();
-      request.onsuccess = () => {
-        console.log('seed-airots: cleared existing templates');
-        resolve();
-      };
-      request.onerror = () => reject(request.error);
-    });
   }
 
   // Media Assets Management
@@ -1656,10 +1509,6 @@ fantasMiaDB.init()
     
     // Load AG seed stories
     return fantasMiaDB.ensureAGSeedStoriesLoaded();
-  })
-  .then(() => {
-    // Load AIROTS seed templates
-    return fantasMiaDB.ensureAirotsSeedLoaded();
   })
   .then(() => {
     // Initialize persistence manager after all migrations
