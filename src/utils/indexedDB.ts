@@ -130,7 +130,7 @@ class FantasMiaDB {
   private db: IDBDatabase | null = null;
   private readonly dbConfig: DatabaseConfig = {
     name: 'FantasMiaV2',
-    version: 7 // Bump version for daily_stories store
+    version: 9 // Bump version to fix VersionError (v8 existed in some browsers)
   };
 
   async init(): Promise<void> {
@@ -1472,9 +1472,17 @@ fantasMiaDB.init()
   .catch(async (error) => {
     console.error('❌ Database initialization failed:', error);
     
-    // Auto-recovery: gestisce sia stores mancanti che version mismatch
-    if (error.message?.includes('Missing stores') || error.message?.includes('Version mismatch')) {
-      console.log('🔄 Attempting automatic recovery...');
+    // Auto-recovery: gestisce stores mancanti, version mismatch E VersionError
+    const errorStr = String(error);
+    const isRecoverableError = 
+      error.message?.includes('Missing stores') || 
+      error.message?.includes('Version mismatch') ||
+      error?.name === 'VersionError' ||
+      errorStr.includes('VersionError') ||
+      errorStr.includes('less than the existing version');
+    
+    if (isRecoverableError) {
+      console.log('🔄 Attempting automatic recovery (VersionError or schema mismatch)...');
       console.log('⚠️ This will DELETE all local data and recreate the database');
       
       try {
