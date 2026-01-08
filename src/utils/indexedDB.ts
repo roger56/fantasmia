@@ -481,6 +481,22 @@ class FantasMiaDB {
     return seedStories.length;
   }
 
+  // Helper function per mappare topic -> category
+  private mapTopicToCategory(topic?: string): 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers' {
+    if (!topic) return 'world';
+    
+    const topicLower = topic.toLowerCase();
+    
+    if (topicLower === 'esplorazioni') return 'explorers';
+    if (topicLower === 'mitologia greca') return 'greek_myths';
+    if (topicLower === 'mitologia nordica') return 'nordic_myths';
+    if (topicLower === 'fisica') return 'science';
+    if (topicLower === 'fiabe') return 'world';
+    
+    // Fallback
+    return 'world';
+  }
+
   async ensureAGSeedStoriesLoaded(): Promise<void> {
     console.log('seed-ag: start');
     
@@ -537,7 +553,7 @@ class FantasMiaDB {
           id: story.id,
           title: story.title,
           content: story.content,
-          category: story.category || 'world',
+          category: this.mapTopicToCategory(story.topic),
           created_by: 'superuser',
           created_at: now,
           updated_at: now,
