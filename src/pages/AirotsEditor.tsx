@@ -1,14 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ArrowRight, Home, Save, Volume2, Share, Edit, Languages } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, Save, Volume2, Share, Edit, Languages, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStoryBridge } from '@/utils/storyBridge';
 import { translateToEnglish, translateToItalian } from '@/utils/translation';
 import SpeechToText from '@/components/SpeechToText';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+
+interface AirotsStory {
+  id: string;
+  title: string;
+  phases: string[];
+}
 
 const AirotsEditor = () => {
   const navigate = useNavigate();
@@ -28,41 +34,39 @@ const AirotsEditor = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [language, setLanguage] = useState<'italian' | 'english'>('italian');
   const [isTranslating, setIsTranslating] = useState(false);
+  const [fairyTales, setFairyTales] = useState<Record<string, string[]>>({});
+  const [isLoadingStories, setIsLoadingStories] = useState(true);
 
-  const fairyTales = {
-    "POLLICINO": [
-      "In un tempo di miseria, un taglialegna e sua moglie decidono di abbandonare nel bosco i loro sette figli, tra cui il più piccolo e astuto: Pollicino.",
-      "Pollicino, sospettando l'abbandono, lascia una scia di briciole per ritrovare la strada. Ma gli uccelli le mangiano e i fratellini si perdono.",
-      "I bambini trovano rifugio in una casa che scoprono essere di un orco che mangia i bambini. La moglie dell'orco li nasconde, ma l'orco li scopre.",
-      "Pollicino inganna l'orco scambiando i berretti dei fratelli con le corone delle figlie dell'orco, che durante la notte uccide per errore le sue figlie.",
-      "Pollicino ruba all'orco i suoi stivali magici che permettono di fare passi enormi e fugge con i fratelli.",
-      "Pollicino usa gli stivali per fare fortuna, diventa messaggero del re e torna a casa ricco, salvando la famiglia dalla miseria."
-    ],
-    "CAPPUCCETTO ROSSO": [
-      "Una bambina soprannominata Cappuccetto Rosso riceve dalla mamma il compito di portare una cesta di cibo alla nonna malata, attraversando il bosco.",
-      "Nel bosco incontra un lupo furbo che la distrae con domande e le suggerisce due strade: lei prende quella più lunga, mentre il lupo sceglie la più corta.",
-      "Il lupo arriva per primo a casa della nonna, la mangia e si traveste con i suoi vestiti per ingannare Cappuccetto Rosso.",
-      "Quando la bambina arriva, trova il lupo travestito e nota stranezze (\"Che occhi grandi hai…\"). Alla fine il lupo la divora.",
-      "Un cacciatore o un boscaiolo entra nella casa, uccide il lupo e salva Cappuccetto Rosso e la nonna, ancora vive nella pancia del lupo.",
-      "Cappuccetto Rosso promette di non disubbidire più alla mamma e di non parlare con gli sconosciuti."
-    ],
-    "CENERENTOLA": [
-      "Cenerentola vive con la matrigna e le sorellastre che la trattano come una serva, facendole fare tutti i lavori di casa.",
-      "Il re organizza un grande ballo per trovare una sposa al principe, ma Cenerentola non può andarci perché la matrigna le proibisce di partecipare.",
-      "Una fata madrina appare e, con la magia, trasforma una zucca in carrozza e dona a Cenerentola un vestito meraviglioso e scarpette di cristallo. Ma l'incantesimo finirà a mezzanotte.",
-      "Al ballo, il principe rimane incantato da Cenerentola. Ma allo scoccare della mezzanotte, lei scappa di corsa e perde una scarpetta.",
-      "Il principe cerca in tutto il regno la ragazza che può calzare la scarpetta. Le sorellastre provano, ma solo Cenerentola riesce a infilarla.",
-      "Cenerentola sposa il principe e va a vivere felice con lui, lasciando per sempre la casa della matrigna."
-    ],
-    "BIANCANEVE": [
-      "La regina cattiva, invidiosa della bellezza di Biancaneve, ordina al cacciatore di ucciderla. Lui la risparmia e la lascia fuggire nel bosco.",
-      "Biancaneve trova rifugio nella casa di sette nani e si prende cura della loro casa, vivendo serena.",
-      "La regina, scoperto che Biancaneve è viva, la inganna più volte con travestimenti: un corpetto stretto, un pettine avvelenato e infine una mela avvelenata.",
-      "Biancaneve morde la mela avvelenata e cade in un sonno profondo, creduta morta dai nani che la pongono in una bara di vetro.",
-      "Un principe, vedendola, se ne innamora e la bacia. Grazie a quel bacio, Biancaneve si risveglia.",
-      "Biancaneve e il principe si sposano. La regina viene punita e la storia si conclude con un matrimonio felice."
-    ]
-  };
+  // Carica le storie AIROTS dal file JSON deployato
+  useEffect(() => {
+    const loadAirotsStories = async () => {
+      try {
+        const response = await fetch('/airots-seed.json');
+        if (!response.ok) throw new Error('Failed to fetch AIROTS seed');
+        const data = await response.json();
+        
+        // Trasforma array in oggetto { TITOLO: [fasi] } per compatibilità
+        const tales: Record<string, string[]> = {};
+        data.stories.forEach((story: AirotsStory) => {
+          tales[story.title] = story.phases;
+        });
+        
+        setFairyTales(tales);
+        console.log('✅ AIROTS seed caricato:', Object.keys(tales).length, 'storie');
+      } catch (error) {
+        console.error('❌ Errore caricamento storie AIROTS:', error);
+        toast({
+          title: "Errore",
+          description: "Impossibile caricare le storie AIROTS",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingStories(false);
+      }
+    };
+    
+    loadAirotsStories();
+  }, [toast]);
 
   const handleStart = () => {
     setShowIntro(false);
@@ -299,18 +303,25 @@ const AirotsEditor = () => {
               <p className="text-sm text-slate-600 mb-4">
                 Seleziona una storia classica da trasformare "al contrario":
               </p>
-              <div className="grid gap-3">
-                {Object.keys(fairyTales).map((fairyTale) => (
-                  <Button 
-                    key={fairyTale} 
-                    onClick={() => handleFairyTaleSelection(fairyTale)}
-                    variant="outline"
-                    className="text-left justify-start p-4 h-auto"
-                  >
-                    {fairyTale}
-                  </Button>
-                ))}
-              </div>
+              {isLoadingStories ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                  <span>Caricamento storie...</span>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {Object.keys(fairyTales).map((fairyTale) => (
+                    <Button 
+                      key={fairyTale} 
+                      onClick={() => handleFairyTaleSelection(fairyTale)}
+                      variant="outline"
+                      className="text-left justify-start p-4 h-auto"
+                    >
+                      {fairyTale}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
