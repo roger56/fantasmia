@@ -479,23 +479,34 @@ class FantasMiaDB {
       
       // 2. Compare with stored version
       const storedVersion = localStorage.getItem('ag_seed_version');
+      
+      // 3. Self-healing: check if seed stories actually exist in DB
+      let seedCount = 0;
       if (storedVersion === version) {
-        console.log('seed-ag: skipped (up-to-date)', version);
-        return;
+        // Version matches, but let's verify data is actually there
+        const allStories = await this.getAllAGStories();
+        seedCount = allStories.filter(s => s.source === 'seed').length;
+        
+        if (seedCount > 0) {
+          console.log('seed-ag: skipped (up-to-date)', version, `(${seedCount} seeds present)`);
+          return;
+        }
+        // Data is missing despite version match - proceed with reimport
+        console.log('seed-ag: up-to-date but missing seed data -> reimport');
       }
       
-      // 3. Fetch stories
+      // 4. Fetch stories
       const storiesResponse = await fetch('/ag-seed.json');
       if (!storiesResponse.ok) throw new Error('Failed to fetch seed stories');
       const { stories } = await storiesResponse.json();
       
-      // 4. Delete existing seed stories
+      // 5. Delete existing seed stories (if any)
       const deleted = await this.deleteAGStoriesBySource('seed');
       if (deleted > 0) {
         console.log(`seed-ag: deleted ${deleted} existing seed stories`);
       }
       
-      // 5. Insert new seed stories
+      // 6. Insert new seed stories
       const now = new Date().toISOString();
       let count = 0;
       
@@ -519,7 +530,7 @@ class FantasMiaDB {
         count++;
       }
       
-      // 6. Save version
+      // 7. Save version
       localStorage.setItem('ag_seed_version', version);
       console.log(`seed-ag: imported ${count}`);
       
@@ -1085,6 +1096,10 @@ class FantasMiaDB {
       this.db.close();
       this.db = null;
     }
+    
+    // Clear seed version keys to force reimport on next launch
+    localStorage.removeItem('ag_seed_version');
+    console.log('🧹 Cleared ag_seed_version from localStorage');
     
     // Delete database completely
     return new Promise((resolve, reject) => {
