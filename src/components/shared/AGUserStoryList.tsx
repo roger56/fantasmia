@@ -46,6 +46,10 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
   const loadStories = async () => {
     try {
       await fantasMiaDB.init();
+      // CRITICAL: Ensure seed stories are loaded BEFORE reading
+      await fantasMiaDB.ensureAGSeedStoriesLoaded();
+      console.log('AGUserStoryList: seed loaded, now reading stories for category:', category);
+      
       const allStories = await fantasMiaDB.getAllAGStories();
       const categoryStories = allStories
         .filter(story => story.category === category)
@@ -53,6 +57,7 @@ const AGUserStoryList: React.FC<AGUserStoryListProps> = ({ category, title, subt
           ...story,
           language: story.language || 'italian'
         }));
+      console.log('AGUserStoryList: loaded', categoryStories.length, 'stories for category:', category);
       setStories(categoryStories);
     } catch (error) {
       console.error('Error loading stories:', error);
