@@ -469,8 +469,11 @@ class FantasMiaDB {
     console.log('seed-ag: start');
     
     try {
-      // 1. Fetch version
-      const versionResponse = await fetch('/ag-seed-version.json');
+      // 1. Fetch version (no-cache to avoid stale data)
+      const versionResponse = await fetch('/ag-seed-version.json', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       if (!versionResponse.ok) {
         console.log('seed-ag: version file not found, skipping');
         return;
@@ -495,8 +498,11 @@ class FantasMiaDB {
         console.log('seed-ag: up-to-date but missing seed data -> reimport');
       }
       
-      // 4. Fetch stories
-      const storiesResponse = await fetch('/ag-seed.json');
+      // 4. Fetch stories (no-cache to avoid stale data)
+      const storiesResponse = await fetch('/ag-seed.json', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       if (!storiesResponse.ok) throw new Error('Failed to fetch seed stories');
       const { stories } = await storiesResponse.json();
       

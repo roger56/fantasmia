@@ -165,10 +165,14 @@ export const clearCachesAndReload = async (updates: ContentUpdate[]): Promise<vo
       }
     }
     
-    // 3. Salva le nuove versioni PRIMA del reload
+    // 3. Pulisci le chiavi seed per forzare reimport dopo reload
+    localStorage.removeItem('ag_seed_version');
+    console.log('ContentUpdateManager: Cleared ag_seed_version');
+    
+    // 4. Salva le nuove versioni PRIMA del reload
     markVersionsAccepted(updates);
     
-    // 4. Reload della pagina
+    // 5. Reload della pagina
     console.log('ContentUpdateManager: Reloading page...');
     window.location.reload();
     
