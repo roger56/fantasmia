@@ -51,7 +51,7 @@ const ContentUpdateOverlay: React.FC<ContentUpdateOverlayProps> = ({
         
         <CardContent className="space-y-4">
           <p className="text-slate-600 text-center text-sm">
-            Alcuni contenuti sono stati aggiornati. Per vederli serve aggiornare l'app.
+            Alcuni contenuti sono stati aggiornati, incluse le storie dell'Archivio Generale. Per vederli serve aggiornare l'app.
           </p>
           
           {/* Lista dataset aggiornati */}

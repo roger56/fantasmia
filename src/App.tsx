@@ -1,4 +1,4 @@
-
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,7 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AILoadingProvider } from "@/hooks/useAILoading";
 import { useContentUpdates } from "@/hooks/useContentUpdates";
+import { useRuntimeVersionCheck } from "@/hooks/useRuntimeVersionCheck";
 import ContentUpdateOverlay from "@/components/shared/ContentUpdateOverlay";
+import RuntimeUpdateOverlay from "@/components/shared/RuntimeUpdateOverlay";
+import BootstrapLoadingOverlay from "@/components/shared/BootstrapLoadingOverlay";
+import { fantasMiaDB } from "@/utils/indexedDB";
 import NewHome from "./pages/NewHome";
 import About from "./pages/About";
 import Company from "./pages/Company";
@@ -85,6 +89,46 @@ initImageMigration();
 // Inner component that uses hooks
 const AppContent = () => {
   const { showUpdateOverlay, updates, dismissOverlay } = useContentUpdates();
+  const { isCheckingVersion, needsUpdate, isUpdating, timeoutReached, startUpdate } = useRuntimeVersionCheck();
+  const [appReady, setAppReady] = useState(false);
+
+  // Bootstrap: ensure DB and seed stories are ready before rendering app
+  useEffect(() => {
+    const bootstrap = async () => {
+      // Don't bootstrap if we need an update (will reload anyway)
+      if (needsUpdate || isCheckingVersion) return;
+      
+      try {
+        console.log('App: Bootstrap starting...');
+        await fantasMiaDB.init();
+        await fantasMiaDB.ensureAGSeedStoriesLoaded();
+        console.log('App: Bootstrap complete, app ready');
+        setAppReady(true);
+      } catch (error) {
+        console.error('App: Bootstrap error:', error);
+        // Still mark as ready to avoid blocking forever
+        setAppReady(true);
+      }
+    };
+    
+    bootstrap();
+  }, [needsUpdate, isCheckingVersion]);
+
+  // Show blocking update overlay if new version detected
+  if (needsUpdate) {
+    return (
+      <RuntimeUpdateOverlay
+        isUpdating={isUpdating}
+        timeoutReached={timeoutReached}
+        onStartUpdate={startUpdate}
+      />
+    );
+  }
+
+  // Show loading overlay while checking version or bootstrapping
+  if (isCheckingVersion || !appReady) {
+    return <BootstrapLoadingOverlay message="Caricamento..." />;
+  }
   
   return (
     <>
