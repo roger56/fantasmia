@@ -13,7 +13,6 @@ interface UseRuntimeVersionCheckResult {
   startUpdate: () => Promise<void>;
 }
 
-const STORAGE_KEY_DATE = 'fantasmia_last_runtime_check_date';
 const STORAGE_KEY_BUILD = 'fantasmia_last_build_id';
 
 export const useRuntimeVersionCheck = (): UseRuntimeVersionCheckResult => {
@@ -21,10 +20,6 @@ export const useRuntimeVersionCheck = (): UseRuntimeVersionCheckResult => {
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
-
-  const getTodayDate = (): string => {
-    return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  };
 
   const clearCachesAndSW = async (): Promise<void> => {
     console.log('RuntimeVersionCheck: Clearing caches and SW...');
@@ -79,7 +74,6 @@ export const useRuntimeVersionCheck = (): UseRuntimeVersionCheckResult => {
       if (response.ok) {
         const { buildId } = await response.json();
         localStorage.setItem(STORAGE_KEY_BUILD, buildId);
-        localStorage.setItem(STORAGE_KEY_DATE, getTodayDate());
       }
       
       clearTimeout(timeoutId);
@@ -97,18 +91,7 @@ export const useRuntimeVersionCheck = (): UseRuntimeVersionCheckResult => {
   useEffect(() => {
     const checkVersion = async () => {
       try {
-        const today = getTodayDate();
-        const lastCheckDate = localStorage.getItem(STORAGE_KEY_DATE);
-        
-        // If already checked today, skip
-        if (lastCheckDate === today) {
-          console.log('RuntimeVersionCheck: Already checked today, skipping');
-          setIsCheckingVersion(false);
-          setNeedsUpdate(false);
-          return;
-        }
-
-        // Fetch runtime version
+        // Always fetch and compare buildId on every app opening
         const response = await fetch('/runtime-version.json', {
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache' }
@@ -132,9 +115,8 @@ export const useRuntimeVersionCheck = (): UseRuntimeVersionCheckResult => {
           setNeedsUpdate(true);
           setIsCheckingVersion(false);
         } else {
-          // Same version - update check date and proceed
+          // Same version - proceed normally
           console.log('RuntimeVersionCheck: Same version, proceeding');
-          localStorage.setItem(STORAGE_KEY_DATE, today);
           setNeedsUpdate(false);
           setIsCheckingVersion(false);
         }
