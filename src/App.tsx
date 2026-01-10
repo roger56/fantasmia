@@ -7,10 +7,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AILoadingProvider } from "@/hooks/useAILoading";
 import { useContentUpdates } from "@/hooks/useContentUpdates";
 import { useRuntimeVersionCheck } from "@/hooks/useRuntimeVersionCheck";
+import { useAdminHotkey } from "@/hooks/useAdminHotkey";
 import ContentUpdateOverlay from "@/components/shared/ContentUpdateOverlay";
 import RuntimeUpdateOverlay from "@/components/shared/RuntimeUpdateOverlay";
 import BootstrapLoadingOverlay from "@/components/shared/BootstrapLoadingOverlay";
 import { fantasMiaDB } from "@/utils/indexedDB";
+import AdminLogin from "./pages/admin/AdminLogin";
 import NewHome from "./pages/NewHome";
 import About from "./pages/About";
 import Company from "./pages/Company";
@@ -83,6 +85,12 @@ import { initImageMigration } from "./utils/imageMigration";
 
 const queryClient = new QueryClient();
 
+// Admin hotkey listener component (must be inside BrowserRouter)
+const AdminHotkeyListener = () => {
+  useAdminHotkey();
+  return null;
+};
+
 // Initialize image migration on app startup
 initImageMigration();
 
@@ -140,6 +148,7 @@ const AppContent = () => {
       />
       
       <BrowserRouter>
+        <AdminHotkeyListener />
         <Routes>
           <Route path="/" element={<NewHome />} />
           <Route path="/about" element={<About />} />
@@ -212,6 +221,10 @@ const AppContent = () => {
           <Route path="/ag-explorers" element={<AGExplorers />} />
           <Route path="/ag-story-detail-su/:id" element={<AGStoryDetail />} />
           <Route path="/debug-indexdb" element={<DebugIndexedDB />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
