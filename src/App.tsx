@@ -13,6 +13,8 @@ import RuntimeUpdateOverlay from "@/components/shared/RuntimeUpdateOverlay";
 import BootstrapLoadingOverlay from "@/components/shared/BootstrapLoadingOverlay";
 import { fantasMiaDB } from "@/utils/indexedDB";
 import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminGuard from "@/components/admin/AdminGuard";
 import NewHome from "./pages/NewHome";
 import About from "./pages/About";
 import Company from "./pages/Company";
@@ -224,6 +226,11 @@ const AppContent = () => {
           
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={
+            <AdminGuard>
+              <AdminDashboard />
+            </AdminGuard>
+          } />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

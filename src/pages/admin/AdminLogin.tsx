@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import { adminLogin } from '@/lib/adminAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ADMIN_AUTH_KEY } from '@/components/admin/AdminGuard';
 
 const AdminLogin = () => {
   const [password, setPassword] = useState('');
@@ -20,6 +21,7 @@ const AdminLogin = () => {
     setIsLoading(true);
     try {
       await adminLogin(password);
+      sessionStorage.setItem(ADMIN_AUTH_KEY, '1');
       navigate('/admin');
     } catch (error) {
       toast({
