@@ -344,13 +344,13 @@ const AdminSUUsers = () => {
               <Label>Tipo Organizzazione (opzionale)</Label>
               <Select
                 value={formData.organizationType || ''}
-                onValueChange={(value) => setFormData({ ...formData, organizationType: value })}
+                onValueChange={(value) => setFormData({ ...formData, organizationType: value === 'none' ? '' : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona tipo..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nessuna</SelectItem>
+                  <SelectItem value="none">Nessuna</SelectItem>
                   {orgTypes.map((type) => (
                     <SelectItem key={type.id} value={type.name}>
                       {type.name}
