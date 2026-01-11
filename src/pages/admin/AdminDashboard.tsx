@@ -1,84 +1,150 @@
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Home, Shield } from 'lucide-react';
-import { ADMIN_AUTH_KEY } from '@/components/admin/AdminGuard';
-import { adminLogout } from '@/lib/adminAuth';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Users, 
+  Building2, 
+  Grid3x3, 
+  FileText, 
+  Settings, 
+  BookOpen, 
+  Calendar,
+  Sparkles
+} from 'lucide-react';
+import AdminLayout from '@/components/admin/AdminLayout';
+
+interface DashboardCard {
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  path: string;
+  badge?: string;
+  badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline';
+}
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const handleLogout = async () => {
-    // Cancella flag locale
-    sessionStorage.removeItem(ADMIN_AUTH_KEY);
-    
-    // Tenta logout API (opzionale, non blocca se fallisce)
-    try {
-      await adminLogout();
-    } catch {
-      // Ignora errori - l'importante è che il flag locale sia cancellato
+  const governanceCards: DashboardCard[] = [
+    {
+      title: 'Gestione SuperUser (SU)',
+      description: 'Crea, modifica e gestisci gli account SuperUser',
+      icon: Users,
+      path: '/admin/su-users'
+    },
+    {
+      title: 'Tipi Organizzazione',
+      description: 'Gestisci la lista dei tipi di organizzazione',
+      icon: Building2,
+      path: '/admin/org-types'
+    },
+    {
+      title: 'Matrice Funzioni',
+      description: 'Configura le funzioni disponibili per contratto',
+      icon: Grid3x3,
+      path: '/admin/features-matrix',
+      badge: 'DEMO',
+      badgeVariant: 'secondary'
+    },
+    {
+      title: 'Contratti 3F',
+      description: 'Visualizza i piani Free, Family, Fantasy',
+      icon: FileText,
+      path: '/admin/contracts-3f'
+    },
+    {
+      title: 'Impostazioni ADMIN',
+      description: 'Modifica password ADMIN',
+      icon: Settings,
+      path: '/admin/settings'
     }
+  ];
 
-    toast({
-      title: 'Logout effettuato',
-      description: "Sei uscito dall'area admin"
-    });
+  const toolsCards: DashboardCard[] = [
+    {
+      title: 'Storie AG (gestore)',
+      description: 'Gestione storie pubbliche per categoria',
+      icon: BookOpen,
+      path: '/admin/stories'
+    },
+    {
+      title: 'Racconti del Giorno',
+      description: 'Importa e gestisci i racconti quotidiani',
+      icon: Calendar,
+      path: '/admin/daily-stories'
+    },
+    {
+      title: 'Farfalla + Dizionari',
+      description: 'Impostazioni farfalla e parole personalizzate',
+      icon: Sparkles,
+      path: '/admin/system-settings'
+    }
+  ];
 
-    navigate('/');
+  const renderCard = (card: DashboardCard) => {
+    const IconComponent = card.icon;
+    return (
+      <Card 
+        key={card.path}
+        className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-emerald-400 bg-white"
+        onClick={() => navigate(card.path)}
+      >
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
+              <IconComponent className="w-6 h-6 text-emerald-700" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-lg font-semibold text-emerald-900 truncate">
+                  {card.title}
+                </h3>
+                {card.badge && (
+                  <Badge variant={card.badgeVariant || 'secondary'} className="text-xs">
+                    {card.badge}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-emerald-700 text-sm">{card.description}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-100 flex flex-col">
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2 text-amber-700">
-            <Shield className="h-5 w-5" />
-            <span className="font-semibold">Area ADMIN</span>
+    <AdminLayout 
+      title="Dashboard Amministratore"
+      subtitle="Console di gestione sistema Fantasmia"
+    >
+      <div className="space-y-8">
+        {/* Governance Section */}
+        <section>
+          <h2 className="text-xl font-bold text-emerald-800 mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Governance
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {governanceCards.map(renderCard)}
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="flex items-center gap-2"
-            >
-              <Home className="h-4 w-4" />
-              Home
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-red-600 hover:text-red-700"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Content */}
-      <div className="flex-1 flex items-center justify-center pt-20 px-4">
-        <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <CardTitle className="text-center text-2xl flex items-center justify-center gap-2">
-              <Shield className="h-6 w-6 text-amber-600" />
-              Dashboard Amministratore
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center text-gray-600">
-            <p>Benvenuto nell'area di amministrazione.</p>
-            <p className="mt-2 text-sm">
-              Questa pagina verrà ampliata con le funzionalità admin.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Tools Section */}
+        <section>
+          <h2 className="text-xl font-bold text-emerald-800 mb-4 flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Strumenti (copie indipendenti)
+          </h2>
+          <p className="text-sm text-emerald-600 mb-4">
+            Queste sono copie indipendenti degli strumenti SU, modificabili senza impatti sulla webapp.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {toolsCards.map(renderCard)}
+          </div>
+        </section>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 
