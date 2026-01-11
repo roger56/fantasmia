@@ -8,11 +8,11 @@ const AdminStoryTypeSelection = () => {
   const navigate = useNavigate();
 
   const storyTypes = [
-    { title: 'Storie di Lettura', description: 'Gestione storie del mondo', icon: BookOpen, path: '/ag-reading-stories' },
-    { title: 'Storie di Scienza', description: 'Gestione storie scientifiche', icon: Atom, path: '/ag-science-stories' },
-    { title: 'I Miti Greci', description: 'Gestione miti greci', icon: Sparkles, path: '/ag-greek-myths' },
-    { title: 'I Miti del Nord', description: 'Gestione miti nordici', icon: Mountain, path: '/ag-nordic-myths' },
-    { title: 'I Grandi Esploratori', description: 'Gestione storie di esploratori', icon: Compass, path: '/ag-explorers' },
+    { title: 'Storie di Lettura', description: 'Gestione storie del mondo', icon: BookOpen, path: '/admin/ag-reading-stories' },
+    { title: 'Storie di Scienza', description: 'Gestione storie scientifiche', icon: Atom, path: '/admin/ag-science-stories' },
+    { title: 'I Miti Greci', description: 'Gestione miti greci', icon: Sparkles, path: '/admin/ag-greek-myths' },
+    { title: 'I Miti del Nord', description: 'Gestione miti nordici', icon: Mountain, path: '/admin/ag-nordic-myths' },
+    { title: 'I Grandi Esploratori', description: 'Gestione storie di esploratori', icon: Compass, path: '/admin/ag-explorers' },
   ];
 
   return (

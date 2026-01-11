@@ -23,6 +23,11 @@ import AdminSettingsPage from "./pages/admin/AdminSettings";
 import AdminStoryTypeSelection from "./pages/admin/AdminStoryTypeSelection";
 import AdminDailyStories from "./pages/admin/AdminDailyStories";
 import AdminSystemSettings from "./pages/admin/AdminSystemSettings";
+import AdminAGReadingStories from "./pages/admin/AdminAGReadingStories";
+import AdminAGScienceStories from "./pages/admin/AdminAGScienceStories";
+import AdminAGGreekMyths from "./pages/admin/AdminAGGreekMyths";
+import AdminAGNordicMyths from "./pages/admin/AdminAGNordicMyths";
+import AdminAGExplorers from "./pages/admin/AdminAGExplorers";
 import NewHome from "./pages/NewHome";
 import About from "./pages/About";
 import Company from "./pages/Company";
@@ -277,6 +282,31 @@ const AppContent = () => {
           <Route path="/admin/system-settings" element={
             <AdminGuard>
               <AdminSystemSettings />
+            </AdminGuard>
+          } />
+          <Route path="/admin/ag-reading-stories" element={
+            <AdminGuard>
+              <AdminAGReadingStories />
+            </AdminGuard>
+          } />
+          <Route path="/admin/ag-science-stories" element={
+            <AdminGuard>
+              <AdminAGScienceStories />
+            </AdminGuard>
+          } />
+          <Route path="/admin/ag-greek-myths" element={
+            <AdminGuard>
+              <AdminAGGreekMyths />
+            </AdminGuard>
+          } />
+          <Route path="/admin/ag-nordic-myths" element={
+            <AdminGuard>
+              <AdminAGNordicMyths />
+            </AdminGuard>
+          } />
+          <Route path="/admin/ag-explorers" element={
+            <AdminGuard>
+              <AdminAGExplorers />
             </AdminGuard>
           } />
           
