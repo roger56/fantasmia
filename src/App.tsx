@@ -239,6 +239,46 @@ const AppContent = () => {
               <AdminDashboard />
             </AdminGuard>
           } />
+          <Route path="/admin/su-users" element={
+            <AdminGuard>
+              <AdminSUUsers />
+            </AdminGuard>
+          } />
+          <Route path="/admin/org-types" element={
+            <AdminGuard>
+              <AdminOrgTypes />
+            </AdminGuard>
+          } />
+          <Route path="/admin/features-matrix" element={
+            <AdminGuard>
+              <AdminFeaturesMatrix />
+            </AdminGuard>
+          } />
+          <Route path="/admin/contracts-3f" element={
+            <AdminGuard>
+              <AdminContracts3F />
+            </AdminGuard>
+          } />
+          <Route path="/admin/settings" element={
+            <AdminGuard>
+              <AdminSettingsPage />
+            </AdminGuard>
+          } />
+          <Route path="/admin/stories" element={
+            <AdminGuard>
+              <AdminStoryTypeSelection />
+            </AdminGuard>
+          } />
+          <Route path="/admin/daily-stories" element={
+            <AdminGuard>
+              <AdminDailyStories />
+            </AdminGuard>
+          } />
+          <Route path="/admin/system-settings" element={
+            <AdminGuard>
+              <AdminSystemSettings />
+            </AdminGuard>
+          } />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
