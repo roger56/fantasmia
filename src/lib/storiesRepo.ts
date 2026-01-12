@@ -1,7 +1,8 @@
 // Stories Repository - Repository centralizzato per tutte le operazioni sulle storie
 // Usa SOLO IndexedDB, nessun accesso rete o Supabase
+// Gestisce: AM (Archivio Magico), AG (Archivio Generale - seed), AS (Archivio Superuser - locale)
 
-import { fantasMiaDB, AMStory, AGStory, MediaAsset } from '@/utils/indexedDB';
+import { fantasMiaDB, AMStory, AGStory, ASStory, MediaAsset } from '@/utils/indexedDB';
 import { requireCurrentProfile } from '@/utils/profileManager';
 import { toast } from '@/hooks/use-toast';
 
@@ -363,6 +364,227 @@ export const deleteStory = async (id: string): Promise<boolean> => {
   }
 };
 
+// ============= AS STORY OPERATIONS (Archivio Superuser - locale) =============
+
+/**
+ * Crea una storia AS (locale del Superuser)
+ * @param profileId ID del profilo SU proprietario
+ * @param payload Dati della storia
+ * @returns ID della storia creata
+ */
+export const createASStory = async (profileId: string, payload: StoryPayload): Promise<string> => {
+  console.log('📦 IndexedDB mode OK → Nessuna chiamata Supabase (createASStory)');
+  
+  try {
+    const content = payload.content || payload.text || '';
+    if (!content.trim()) {
+      throw new Error('Il testo della storia non può essere vuoto');
+    }
+
+    const story: ASStory = {
+      id: payload.id || generateUUID(),
+      title: payload.title,
+      content: content,
+      category: payload.category || 'world',
+      created_by: profileId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      has_image: payload.hasImage || false,
+      language: 'it',
+      source: 'local'
+    };
+
+    await fantasMiaDB.saveASStory(story);
+    
+    console.log('✅ Storia AS creata:', story.id);
+    
+    // Emit eventi per aggiornamento UI
+    window.dispatchEvent(new CustomEvent('as-story-updated', { 
+      detail: { storyId: story.id, action: 'created' } 
+    }));
+    window.dispatchEvent(new CustomEvent('as:changed'));
+    
+    return story.id;
+  } catch (error) {
+    console.error('❌ Errore createASStory:', error);
+    throw error;
+  }
+};
+
+/**
+ * Aggiorna una storia AS esistente
+ * @param id ID della storia AS
+ * @param payload Nuovi dati
+ * @returns true se l'aggiornamento è riuscito
+ */
+export const updateASStory = async (id: string, payload: Partial<StoryPayload>): Promise<boolean> => {
+  console.log('📦 IndexedDB mode OK → Nessuna chiamata Supabase (updateASStory)');
+  
+  try {
+    const asStory = await fantasMiaDB.getASStoryById(id);
+    
+    if (!asStory) {
+      throw new Error(`Storia AS ${id} non trovata`);
+    }
+    
+    const content = payload.content || payload.text;
+    const updatedStory: ASStory = {
+      ...asStory,
+      ...(payload.title && { title: payload.title }),
+      ...(content && { content: content }),
+      ...(payload.category && { category: payload.category }),
+      ...(payload.hasImage !== undefined && { has_image: payload.hasImage }),
+      updated_at: new Date().toISOString()
+    };
+    
+    await fantasMiaDB.saveASStory(updatedStory);
+    window.dispatchEvent(new CustomEvent('as-story-updated', { 
+      detail: { storyId: id, action: 'updated' } 
+    }));
+    window.dispatchEvent(new CustomEvent('as:changed'));
+    console.log('✅ Storia AS aggiornata:', id);
+    return true;
+  } catch (error) {
+    console.error('❌ Errore updateASStory:', error);
+    throw error;
+  }
+};
+
+/**
+ * Elimina una storia AS
+ * @param id ID della storia AS
+ * @returns true se l'eliminazione è riuscita
+ */
+export const deleteASStory = async (id: string): Promise<boolean> => {
+  console.log('📦 IndexedDB mode OK → Nessuna chiamata Supabase (deleteASStory)');
+  
+  try {
+    const asStory = await fantasMiaDB.getASStoryById(id);
+    if (!asStory) {
+      throw new Error(`Storia AS ${id} non trovata`);
+    }
+    
+    await fantasMiaDB.deleteASStory(id);
+    window.dispatchEvent(new CustomEvent('as-story-updated', { 
+      detail: { storyId: id, action: 'deleted' } 
+    }));
+    window.dispatchEvent(new CustomEvent('as:changed'));
+    console.log('✅ Storia AS eliminata:', id);
+    return true;
+  } catch (error) {
+    console.error('❌ Errore deleteASStory:', error);
+    throw error;
+  }
+};
+
+/**
+ * Lista tutte le storie AS
+ * @returns Array di storie AS
+ */
+export const listASStories = async (): Promise<ASStory[]> => {
+  console.log('📦 IndexedDB mode OK → Nessuna chiamata Supabase (listASStories)');
+  
+  try {
+    const stories = await fantasMiaDB.getAllASStories();
+    console.log('📖 Lista AS storie:', stories.length);
+    return stories;
+  } catch (error) {
+    console.error('❌ Errore listASStories:', error);
+    return [];
+  }
+};
+
+/**
+ * Lista storie AS per categoria
+ * @param category Categoria di storia
+ * @returns Array di storie AS filtrate
+ */
+export const listASStoriesByCategory = async (category: 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers'): Promise<ASStory[]> => {
+  console.log('📦 IndexedDB mode OK → Nessuna chiamata Supabase (listASStoriesByCategory)');
+  
+  try {
+    const stories = await fantasMiaDB.getASStoriesByCategory(category);
+    console.log('📖 Lista AS storie per categoria:', { category, count: stories.length });
+    return stories;
+  } catch (error) {
+    console.error('❌ Errore listASStoriesByCategory:', error);
+    return [];
+  }
+};
+
+/**
+ * Recupera una storia AS per ID
+ * @param id ID della storia
+ * @returns Storia AS o null
+ */
+export const getASStoryById = async (id: string): Promise<ASStory | null> => {
+  console.log('📦 IndexedDB mode OK → Nessuna chiamata Supabase (getASStoryById)');
+  
+  try {
+    return await fantasMiaDB.getASStoryById(id);
+  } catch (error) {
+    console.error('❌ Errore getASStoryById:', error);
+    return null;
+  }
+};
+
+/**
+ * Copia una storia AG in AS per modifica locale
+ * @param agStoryId ID della storia AG da copiare
+ * @param suProfileId ID del profilo SU che copia
+ * @returns ID della nuova storia AS
+ */
+export const copyAGtoAS = async (agStoryId: string, suProfileId: string): Promise<string> => {
+  console.log('📦 IndexedDB mode OK → Nessuna chiamata Supabase (copyAGtoAS)');
+  
+  try {
+    const agStory = await fantasMiaDB.getAGStoryById(agStoryId);
+    if (!agStory) {
+      throw new Error(`Storia AG ${agStoryId} non trovata`);
+    }
+
+    const asStory: ASStory = {
+      id: generateUUID(),
+      title: agStory.title + ' (copia)',
+      content: agStory.content,
+      category: agStory.category,
+      created_by: suProfileId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      has_image: false, // Non copiamo l'immagine, andrà rigenerata
+      language: agStory.language || 'it',
+      source: 'local',
+      topic: agStory.topic,
+      ageRange: agStory.ageRange,
+      copied_from_ag_id: agStoryId
+    };
+
+    await fantasMiaDB.saveASStory(asStory);
+    
+    console.log('✅ Storia AG copiata in AS:', { from: agStoryId, to: asStory.id });
+    
+    window.dispatchEvent(new CustomEvent('as-story-updated', { 
+      detail: { storyId: asStory.id, action: 'created' } 
+    }));
+    window.dispatchEvent(new CustomEvent('as:changed'));
+    
+    return asStory.id;
+  } catch (error) {
+    console.error('❌ Errore copyAGtoAS:', error);
+    throw error;
+  }
+};
+
+/**
+ * Conta le storie AS per categoria
+ * @param category Categoria di storia
+ * @returns Numero di storie
+ */
+export const countASStoriesByCategory = async (category: 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers'): Promise<number> => {
+  const stories = await listASStoriesByCategory(category);
+  return stories.length;
+};
+
 // ============= UTILITY FUNCTIONS =============
 
 /**
@@ -377,7 +599,7 @@ export const storyHasImage = async (storyId: string): Promise<boolean> => {
   // Check hasImage flag for AM stories
   if ('hasImage' in story) return story.hasImage;
   
-  // Check has_image flag for AG stories
+  // Check has_image flag for AG/AS stories
   if ('has_image' in story) return story.has_image;
   
   return false;
