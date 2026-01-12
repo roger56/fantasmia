@@ -100,6 +100,24 @@ interface AGStory {
   ageRange?: string;
 }
 
+// AS Story interface (Archivio Superuser - storie locali SU)
+interface ASStory {
+  id: string;
+  title: string;
+  content: string;
+  category: 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers';
+  created_by: string; // ID del SU che l'ha creata
+  created_at: string;
+  updated_at: string;
+  has_image: boolean;
+  language?: string;
+  source: 'local'; // sempre 'local' per AS
+  topic?: string;
+  ageRange?: string;
+  // Campo opzionale per tracciare se copiata da AG
+  copied_from_ag_id?: string;
+}
+
 interface MediaAsset {
   id: string;
   storyId: string;
@@ -130,7 +148,7 @@ class FantasMiaDB {
   private db: IDBDatabase | null = null;
   private readonly dbConfig: DatabaseConfig = {
     name: 'FantasMiaV2',
-    version: 9 // Bump version to fix VersionError (v8 existed in some browsers)
+    version: 10 // Bump version for su_stories store (AS - Archivio Superuser)
   };
 
   async init(): Promise<void> {
@@ -164,7 +182,7 @@ class FantasMiaDB {
         }
         
         // VERIFICA CRITICA: controlla che tutti gli stores richiesti esistano
-        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions', 'daily_stories'];
+        const requiredStores = ['profiles', 'am_stories', 'ag_stories', 'su_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions', 'daily_stories'];
         const missingStores = requiredStores.filter(
           name => !this.db!.objectStoreNames.contains(name)
         );
@@ -186,7 +204,7 @@ class FantasMiaDB {
         console.log('🔄 IndexedDB upgrade from version', event.oldVersion, 'to', event.newVersion);
 
         // Delete existing stores to recreate with proper indices
-        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions', 'daily_stories'];
+        const storeNames = ['profiles', 'am_stories', 'ag_stories', 'su_stories', 'media_assets', 'albums', 'system_settings', 'group_stories', 'group_story_contributions', 'daily_stories'];
         storeNames.forEach(storeName => {
           if (db.objectStoreNames.contains(storeName)) {
             db.deleteObjectStore(storeName);
@@ -210,6 +228,13 @@ class FantasMiaDB {
         agStore.createIndex('category', 'category', { unique: false });
         agStore.createIndex('updated_at', 'updated_at', { unique: false });
         console.log('✅ Created ag_stories store');
+
+        // SU Stories store (Archivio Superuser - storie locali SU)
+        const suStore = db.createObjectStore('su_stories', { keyPath: 'id' });
+        suStore.createIndex('category', 'category', { unique: false });
+        suStore.createIndex('updated_at', 'updated_at', { unique: false });
+        suStore.createIndex('created_by', 'created_by', { unique: false });
+        console.log('✅ Created su_stories store');
 
         // Media Assets store
         const mediaStore = db.createObjectStore('media_assets', { keyPath: 'id' });
@@ -439,6 +464,84 @@ class FantasMiaDB {
     const store = transaction.objectStore('ag_stories');
     await store.delete(storyId);
   }
+
+  // ============= AS Stories Management (Archivio Superuser - storie locali SU) =============
+
+  async saveASStory(story: ASStory): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['su_stories'], 'readwrite');
+    const store = transaction.objectStore('su_stories');
+    return new Promise((resolve, reject) => {
+      const request = store.put(story);
+      request.onsuccess = () => {
+        console.log('💾 AS story saved:', { id: story.id, title: story.title });
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getASStoriesByCategory(category: 'world' | 'science' | 'greek_myths' | 'nordic_myths' | 'explorers'): Promise<ASStory[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['su_stories'], 'readonly');
+    const store = transaction.objectStore('su_stories');
+    const index = store.index('category');
+    const request = index.getAll(category);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getASStoryById(storyId: string): Promise<ASStory | null> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['su_stories'], 'readonly');
+    const store = transaction.objectStore('su_stories');
+    const request = store.get(storyId);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAllASStories(): Promise<ASStory[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['su_stories'], 'readonly');
+    const store = transaction.objectStore('su_stories');
+    const request = store.getAll();
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteASStory(storyId: string): Promise<void> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['su_stories'], 'readwrite');
+    const store = transaction.objectStore('su_stories');
+    return new Promise((resolve, reject) => {
+      const request = store.delete(storyId);
+      request.onsuccess = () => {
+        console.log('🗑️ AS story deleted:', storyId);
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getASStoriesByCreator(createdBy: string): Promise<ASStory[]> {
+    if (!this.db) await this.init();
+    const transaction = this.db!.transaction(['su_stories'], 'readonly');
+    const store = transaction.objectStore('su_stories');
+    const index = store.index('created_by');
+    const request = index.getAll(createdBy);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // NOTA: Non esiste clearAllASStories - AS non deve MAI essere pulito da update
 
   // AG Seed Stories Management
   async deleteAGStoriesBySource(source: string): Promise<number> {
@@ -1547,4 +1650,4 @@ fantasMiaDB.init()
   })
   .catch(console.error);
 
-export type { Profile, AMStory, AGStory, MediaAsset, Album, SystemSettings };
+export type { Profile, AMStory, AGStory, ASStory, MediaAsset, Album, SystemSettings };
