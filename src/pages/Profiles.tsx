@@ -1,17 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, User, Lock, Shield, Globe, Home } from 'lucide-react';
-import { authenticateUser, markMessagesAsRead } from '@/utils/userStorage';
+import { ArrowLeft, User, Lock, Shield, Home } from 'lucide-react';
+import { authenticateUser } from '@/utils/userStorage';
 import { AuthBridge } from '@/utils/authBridge';
 import { setCurrentProfileId, clearCurrentProfile } from '@/utils/profileManager';
 import { loadProfilesUnified, SyncedProfile } from '@/utils/profileSync';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import { authenticateNSU, cleanupExpiredProfiles, cleanupInactiveProfiles } from '@/utils/nsuManager';
 
 const Profiles = () => {
   const navigate = useNavigate();
@@ -54,15 +54,9 @@ const Profiles = () => {
         
         setProfiles(result.profiles);
         
-        // Add special profiles
+        // Add special profiles - REMOVED 'new-profile' as per NSU management requirements
+        // NSU creation now happens ONLY via Superuser panel
         const specialProfiles = [
-          {
-            id: 'new-profile',
-            name: 'NUOVO PROFILO',
-            type: 'NEW',
-            icon: User,
-            requiresPassword: false
-          },
           {
             id: 'superuser',
             name: 'Superuser',
@@ -88,15 +82,10 @@ const Profiles = () => {
   const handleProfileSelect = (profileId: string) => {
     setSelectedProfile(profileId);
     setPassword('');
-    
-    // Handle direct access for NEW PROFILE
-    if (profileId === 'new-profile') {
-      navigate('/terms-acceptance');
-      return;
-    }
+    // No more direct access for new-profile - removed
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!password.trim()) {
       toast({
         title: "Errore",
@@ -126,6 +115,17 @@ const Profiles = () => {
         };
         AuthBridge.createLocalSupabaseSession(superuserProfile);
         
+        // Garbage collection: cleanup expired and inactive profiles
+        try {
+          const cleanedExpired = await cleanupExpiredProfiles();
+          const cleanedInactive = await cleanupInactiveProfiles('superuser');
+          if (cleanedExpired > 0 || cleanedInactive > 0) {
+            console.log(`🧹 GC: rimossi ${cleanedExpired} scaduti, ${cleanedInactive} inattivi`);
+          }
+        } catch (e) {
+          console.warn('GC error:', e);
+        }
+        
         navigate('/superuser');
       } else {
         toast({
@@ -137,33 +137,64 @@ const Profiles = () => {
       return;
     }
     
+    // NSU Authentication with new system
     const selectedUser = profiles.find(p => p.id === selectedProfile);
     if (selectedUser) {
-      const user = authenticateUser(selectedUser.name, password);
-      if (user) {
+      // Try new NSU authentication first
+      const result = await authenticateNSU(selectedUser.id, password);
+      
+      if (result.success && result.profile) {
+        // Check if password change is required
+        if (result.needsPasswordChange) {
+          navigate('/change-password', { 
+            state: { 
+              profileId: result.profile.id, 
+              profile: result.profile 
+            } 
+          });
+          return;
+        }
+        
         // Set as current profile for IndexedDB
-        setCurrentProfileId(user.id);
+        setCurrentProfileId(result.profile.id);
         
         // Bridge the user to Supabase authentication
-        AuthBridge.createLocalSupabaseSession(user);
-        
-        // Check for unread messages - navigate to dashboard with showMessages flag
-        if (user.unreadMessages && user.unreadMessages.length > 0) {
-          const messages = user.unreadMessages.filter(m => !m.read);
-          if (messages.length > 0) {
-            // Navigate to dashboard with showMessages flag (la Dashboard gestisce tutto)
-            navigate('/dashboard', { state: { userId: user.id, profileName: selectedUser.name, showMessages: true } });
-            return;
-          }
-        }
-        // If no messages, go to dashboard
-        navigate('/dashboard', { state: { profileId: selectedProfile, profileName: selectedUser.name } });
-      } else {
-        toast({
-          title: "Errore",
-          description: "Password non corretta",
-          variant: "destructive",
+        AuthBridge.createLocalSupabaseSession({
+          id: result.profile.id,
+          name: result.profile.name,
+          password: password,
+          age: 10
         });
+        
+        navigate('/dashboard', { 
+          state: { 
+            profileId: selectedProfile, 
+            profileName: selectedUser.name 
+          } 
+        });
+      } else {
+        // Fallback to legacy authentication for old profiles
+        const user = authenticateUser(selectedUser.name, password);
+        if (user) {
+          setCurrentProfileId(user.id);
+          AuthBridge.createLocalSupabaseSession(user);
+          
+          // Check for unread messages
+          if (user.unreadMessages && user.unreadMessages.length > 0) {
+            const messages = user.unreadMessages.filter(m => !m.read);
+            if (messages.length > 0) {
+              navigate('/dashboard', { state: { userId: user.id, profileName: selectedUser.name, showMessages: true } });
+              return;
+            }
+          }
+          navigate('/dashboard', { state: { profileId: selectedProfile, profileName: selectedUser.name } });
+        } else {
+          toast({
+            title: "Errore",
+            description: result.error || "Password non corretta",
+            variant: "destructive",
+          });
+        }
       }
     }
   };

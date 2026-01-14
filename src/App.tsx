@@ -82,6 +82,8 @@ import SuperuserDailyStoriesManagement from "./pages/SuperuserDailyStoriesManage
 // import ReadingStoryViewer from "./pages/ReadingStoryViewer"; // DEPRECATO: rimosso, usare AGStoryDetail
 import UserArchive from "./pages/UserArchive";
 import StoryTypeSelection from "./pages/StoryTypeSelection";
+import ChangePassword from "./pages/ChangePassword";
+import NSUManagementPage from "./pages/NSUManagementPage";
 // import ScienceStoryViewer from "./pages/ScienceStoryViewer"; // DEPRECATO: rimosso, usare AGStoryDetail
 import AGReadingStories from "./pages/AGReadingStories";
 import AGScienceStories from "./pages/AGScienceStories";
@@ -199,6 +201,8 @@ const AppContent = () => {
           <Route path="/ct-selector" element={<CTStorySelector />} />
           <Route path="/group-story" element={<GroupStoryEditor />} />
           <Route path="/ct-management" element={<CTManagement />} />
+          <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/superuser-nsu-management" element={<NSUManagementPage />} />
           <Route path="/superuser-daily-stories" element={<SuperuserDailyStoriesManagement />} />
           <Route path="/story-type-selection" element={<StoryTypeSelection />} />
           <Route path="/reading-stories" element={<ReadingStories />} />
