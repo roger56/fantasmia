@@ -15,6 +15,13 @@ interface Profile {
   user_type?: string;
   password_hash?: string;
   updated_at?: string;
+  // NSU-specific fields
+  created_by_su_id?: string;
+  status?: 'active' | 'disabled';
+  expires_at?: string;
+  force_password_change?: boolean;
+  last_login_at?: string;
+  notes?: string;
 }
 
 interface AMStory {
