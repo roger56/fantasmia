@@ -52,6 +52,7 @@ import {
   Key,
   Calendar,
   Clock,
+  Zap,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PasswordRevealCard from '@/components/shared/PasswordRevealCard';
@@ -90,6 +91,7 @@ const NSUManagement: React.FC = () => {
   const [newNsuName, setNewNsuName] = useState('');
   const [newNsuPassword, setNewNsuPassword] = useState('');
   const [isTemporary, setIsTemporary] = useState(false);
+  const [isOneTime, setIsOneTime] = useState(false);
   const [expiryDays, setExpiryDays] = useState(7);
   const [notes, setNotes] = useState('');
   const [useGeneratedPassword, setUseGeneratedPassword] = useState(true);
@@ -145,8 +147,9 @@ const NSUManagement: React.FC = () => {
       const payload: CreateNSUPayload = {
         name: newNsuName.trim(),
         password: useGeneratedPassword ? undefined : newNsuPassword,
-        isTemporary,
-        expiryDays: isTemporary ? expiryDays : undefined,
+        isTemporary: isOneTime ? false : isTemporary,
+        expiryDays: isTemporary && !isOneTime ? expiryDays : undefined,
+        isOneTime,
         notes: notes.trim() || undefined,
       };
 
@@ -166,6 +169,7 @@ const NSUManagement: React.FC = () => {
       setNewNsuName('');
       setNewNsuPassword('');
       setIsTemporary(false);
+      setIsOneTime(false);
       setExpiryDays(7);
       setNotes('');
       setUseGeneratedPassword(true);
@@ -365,15 +369,23 @@ const NSUManagement: React.FC = () => {
                   <TableRow key={nsu.id} className={isExpired(nsu) ? 'opacity-50' : ''}>
                     <TableCell className="font-medium">{nsu.name}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          nsu.status === 'active' && !isExpired(nsu)
-                            ? 'default'
-                            : 'secondary'
-                        }
-                      >
-                        {isExpired(nsu) ? 'Scaduto' : nsu.status === 'active' ? 'Attivo' : 'Disabilitato'}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge
+                          variant={
+                            nsu.status === 'active' && !isExpired(nsu)
+                              ? 'default'
+                              : 'secondary'
+                          }
+                        >
+                          {isExpired(nsu) ? 'Scaduto' : nsu.status === 'active' ? 'Attivo' : 'Disabilitato'}
+                        </Badge>
+                        {(nsu as any).is_one_time && (
+                          <Badge variant="outline" className="text-orange-600 border-orange-300">
+                            <Zap className="h-3 w-3 mr-1" />
+                            One-time
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       {formatDate(nsu.last_login_at || nsu.last_access)}
@@ -476,19 +488,38 @@ const NSUManagement: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="temporary">Profilo temporaneo</Label>
+                <Label htmlFor="one-time">Accesso singolo (one-time)</Label>
                 <p className="text-xs text-muted-foreground">
-                  Il profilo scadrà automaticamente
+                  Il profilo sarà disabilitato dopo il primo login
                 </p>
               </div>
               <Switch
-                id="temporary"
-                checked={isTemporary}
-                onCheckedChange={setIsTemporary}
+                id="one-time"
+                checked={isOneTime}
+                onCheckedChange={(checked) => {
+                  setIsOneTime(checked);
+                  if (checked) setIsTemporary(false);
+                }}
               />
             </div>
 
-            {isTemporary && (
+            {!isOneTime && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="temporary">Profilo temporaneo</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Il profilo scadrà automaticamente
+                  </p>
+                </div>
+                <Switch
+                  id="temporary"
+                  checked={isTemporary}
+                  onCheckedChange={setIsTemporary}
+                />
+              </div>
+            )}
+
+            {isTemporary && !isOneTime && (
               <div>
                 <Label htmlFor="expiry-days">Giorni di validità</Label>
                 <Input

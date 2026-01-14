@@ -37,6 +37,7 @@ export interface ExtendedProfile {
   force_password_change?: boolean;
   last_login_at?: string;
   notes?: string;
+  is_one_time?: boolean;  // If true, profile is disabled after first successful login
 }
 
 export interface CreateNSUPayload {
@@ -44,6 +45,7 @@ export interface CreateNSUPayload {
   password?: string;
   isTemporary?: boolean;
   expiryDays?: number;
+  isOneTime?: boolean;  // Create a one-time use profile
   notes?: string;
 }
 
@@ -190,7 +192,8 @@ export const createNSU = async (
     status: 'active',
     expires_at: expiresAt,
     force_password_change: wasGenerated,
-    notes: payload.notes
+    notes: payload.notes,
+    is_one_time: payload.isOneTime || false
   };
   
   // 6. Save to IndexedDB
@@ -291,6 +294,18 @@ export const authenticateNSU = async (
     status: profile.status || 'active'
   };
   await fantasMiaDB.saveProfile(updatedProfile as any);
+  
+  // Handle one-time NSU: disable after first successful login
+  if ((profile as any).is_one_time === true) {
+    console.log('⚡ One-time NSU login - disabling after use:', profile.id, profile.name);
+    const disabledProfile = {
+      ...updatedProfile,
+      status: 'disabled' as const,
+      expires_at: new Date().toISOString(), // Expire immediately for GC
+      notes: (updatedProfile.notes || '') + ' [One-time: usato]'
+    };
+    await fantasMiaDB.saveProfile(disabledProfile as any);
+  }
   
   return {
     success: true,
