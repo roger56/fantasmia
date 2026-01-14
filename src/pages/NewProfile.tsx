@@ -1,36 +1,42 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { ArrowLeft, UserPlus, ShieldCheck, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { saveUser } from '@/utils/userStorage';
-import { saveProfileToAllSources } from '@/utils/profileSync';
-import { AuthBridge } from '@/utils/authBridge';
-import { validateUserName, validateUserEmail } from '@/utils/validation';
-import { setCurrentProfileId, getCurrentProfileId } from '@/utils/profileManager';
-import HomeButton from '@/components/HomeButton';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { ArrowLeft, UserPlus, ShieldCheck, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { saveUser } from "@/utils/userStorage";
+import { saveProfileToAllSources } from "@/utils/profileSync";
+import { AuthBridge } from "@/utils/authBridge";
+import { validateUserName, validateUserEmail } from "@/utils/validation";
+import { setCurrentProfileId, getCurrentProfileId } from "@/utils/profileManager";
+import HomeButton from "@/components/HomeButton";
 
 const NewProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    age: ''
+    name: "",
+    email: "",
+    age: "",
   });
-  
+
   // Supervisor confirmation state
   const [showSupervisorDialog, setShowSupervisorDialog] = useState(false);
-  const [supervisorPassword, setSupervisorPassword] = useState('');
+  const [supervisorPassword, setSupervisorPassword] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [pendingUser, setPendingUser] = useState<any>(null);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async () => {
@@ -40,7 +46,7 @@ const NewProfile = () => {
       toast({
         title: "Nome non valido",
         description: nameError,
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -51,7 +57,7 @@ const NewProfile = () => {
       toast({
         title: "Email non valida",
         description: emailError,
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -62,7 +68,7 @@ const NewProfile = () => {
       toast({
         title: "Età non valida",
         description: "Inserisci un'età valida tra 1 e 120 anni",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -75,51 +81,50 @@ const NewProfile = () => {
       age: parseInt(formData.age),
       password: formData.name.trim(), // Password same as name
       lastAccess: new Date().toISOString(),
-      unreadMessages: []
+      unreadMessages: [],
     };
 
     // Store pending user and show supervisor confirmation dialog
     setPendingUser(newUser);
-    setSupervisorPassword('');
+    setSupervisorPassword("");
     setShowSupervisorDialog(true);
   };
 
   const handleSupervisorConfirm = async () => {
     if (!pendingUser) return;
-    
+
     setIsVerifying(true);
-    
+
     try {
       // La password del supervisore è la stessa usata in Profiles.tsx per il login SU
       // Al momento è hardcoded a 'ssss' - in futuro potrebbe essere configurabile
-      const SUPERVISOR_PASSWORD = 'ssss';
-      
+      const SUPERVISOR_PASSWORD = "ssss";
+
       // Verifica diretta della password (stessa logica di Profiles.tsx)
       const isValid = supervisorPassword === SUPERVISOR_PASSWORD;
-      
+
       if (!isValid) {
         toast({
           title: "Password errata",
           description: "La password del supervisore non è corretta",
-          variant: "destructive"
+          variant: "destructive",
         });
-        setSupervisorPassword('');
+        setSupervisorPassword("");
         setIsVerifying(false);
         return;
       }
-      
+
       // Password verificata! Procedi con la creazione del profilo
       setShowSupervisorDialog(false);
-      setSupervisorPassword(''); // Clear password (not stored)
-      
+      setSupervisorPassword(""); // Clear password (not stored)
+
       await createProfile(pendingUser);
-      
     } catch (error) {
-      console.error('Supervisor verification error:', error);
+      console.error("Supervisor verification error:", error);
       toast({
         title: "Errore verifica",
         description: "Si è verificato un errore durante la verifica",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsVerifying(false);
@@ -135,19 +140,21 @@ const NewProfile = () => {
         email: newUser.email,
         password: newUser.password,
         age: newUser.age,
-        user_type: 'user',
+        user_type: "user",
         created_at: new Date().toISOString(),
-        lastAccess: new Date().toISOString()
+        lastAccess: new Date().toISOString(),
       });
-      
+
       // Emit event for real-time updates
-      window.dispatchEvent(new CustomEvent('profiles:changed', { 
-        detail: { id: newUser.id, username: newUser.name, role: 'user' } 
-      }));
-      
-      console.info('profiles-write', { id: newUser.id, username: newUser.name, role: 'user' });
+      window.dispatchEvent(
+        new CustomEvent("profiles:changed", {
+          detail: { id: newUser.id, username: newUser.name, role: "user" },
+        }),
+      );
+
+      console.info("profiles-write", { id: newUser.id, username: newUser.name, role: "user" });
     } catch (error) {
-      console.error('Error saving profile:', error);
+      console.error("Error saving profile:", error);
     }
 
     // Set current profile id
@@ -155,12 +162,12 @@ const NewProfile = () => {
 
     // Create AuthBridge session
     const sessionCreated = await AuthBridge.createLocalSupabaseSession(newUser);
-    console.log('🔧 NewProfile: Sessione AuthBridge creata:', sessionCreated, 'userId:', newUser.id);
+    console.log("🔧 NewProfile: Sessione AuthBridge creata:", sessionCreated, "userId:", newUser.id);
 
     // Verify profile ID was saved correctly
     const savedProfileId = getCurrentProfileId();
     if (savedProfileId !== newUser.id) {
-      console.warn('⚠️ NewProfile: ProfileId mismatch, ri-imposto:', newUser.id);
+      console.warn("⚠️ NewProfile: ProfileId mismatch, ri-imposto:", newUser.id);
       setCurrentProfileId(newUser.id);
     }
 
@@ -170,12 +177,12 @@ const NewProfile = () => {
     });
 
     // Navigate to privacy acceptance screen
-    navigate('/privacy-acceptance', { state: { profileId: newUser.id, profileName: newUser.name } });
+    navigate("/privacy-acceptance", { state: { profileId: newUser.id, profileName: newUser.name } });
   };
 
   const handleDialogClose = () => {
     setShowSupervisorDialog(false);
-    setSupervisorPassword('');
+    setSupervisorPassword("");
     setPendingUser(null);
   };
 
@@ -185,11 +192,7 @@ const NewProfile = () => {
       <div className="max-w-md mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6 pt-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/')}
-            className="mr-4"
-          >
+          <Button variant="ghost" onClick={() => navigate("/")} className="mr-4">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-bold text-slate-800">Nuovo Profilo</h1>
@@ -204,27 +207,23 @@ const NewProfile = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Nome Profilo
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Nome Profilo</label>
               <Input
                 type="text"
                 placeholder="Inserisci il nome"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => handleInputChange("name", e.target.value)}
                 className="text-lg"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Età *
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Età *</label>
               <Input
                 type="number"
                 placeholder="Inserisci l'età"
                 value={formData.age}
-                onChange={(e) => handleInputChange('age', e.target.value)}
+                onChange={(e) => handleInputChange("age", e.target.value)}
                 className="text-lg"
                 min="1"
                 max="120"
@@ -232,22 +231,18 @@ const NewProfile = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Email (facoltativo)
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Email (facoltativo)</label>
               <Input
                 type="email"
                 placeholder="Inserisci l'email"
                 value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                onChange={(e) => handleInputChange("email", e.target.value)}
                 className="text-lg"
               />
             </div>
 
             <div className="bg-blue-50 p-3 rounded-md">
-              <p className="text-sm text-blue-800">
-                La password sarà uguale al nome del profilo
-              </p>
+              <p className="text-sm text-blue-800">La password è definita dal Superuser</p>
             </div>
 
             <div className="bg-amber-50 p-3 rounded-md border border-amber-200">
@@ -258,17 +253,10 @@ const NewProfile = () => {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button 
-                onClick={() => navigate('/')}
-                variant="outline"
-                className="flex-1"
-              >
+              <Button onClick={() => navigate("/")} variant="outline" className="flex-1">
                 Annulla
               </Button>
-              <Button 
-                onClick={handleSubmit}
-                className="flex-1"
-              >
+              <Button onClick={handleSubmit} className="flex-1">
                 Crea Profilo
               </Button>
             </div>
@@ -278,32 +266,27 @@ const NewProfile = () => {
 
       {/* Supervisor Confirmation Dialog */}
       <Dialog open={showSupervisorDialog} onOpenChange={handleDialogClose}>
-        <DialogContent 
-          className="max-w-sm bg-white text-slate-900 border-slate-200"
-          style={{ colorScheme: 'light' }}
-        >
+        <DialogContent className="max-w-sm bg-white text-slate-900 border-slate-200" style={{ colorScheme: "light" }}>
           <DialogHeader>
             <DialogTitle className="flex items-center text-slate-900">
               <ShieldCheck className="w-5 h-5 mr-2 text-amber-600" />
               Conferma Supervisore
             </DialogTitle>
             <DialogDescription className="text-slate-600">
-              Per creare un nuovo profilo è necessaria la conferma del supervisore.
-              Inserisci la password del supervisore per procedere.
+              Per creare un nuovo profilo è necessaria la conferma del supervisore. Inserisci la password del
+              supervisore per procedere.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Password Supervisore
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Password Supervisore</label>
             <Input
               type="password"
               placeholder="Inserisci la password"
               value={supervisorPassword}
               onChange={(e) => setSupervisorPassword(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && supervisorPassword) {
+                if (e.key === "Enter" && supervisorPassword) {
                   handleSupervisorConfirm();
                 }
               }}
@@ -313,15 +296,15 @@ const NewProfile = () => {
           </div>
 
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleDialogClose}
               disabled={isVerifying}
               className="border-slate-300 text-slate-700 hover:bg-slate-100"
             >
               Annulla
             </Button>
-            <Button 
+            <Button
               onClick={handleSupervisorConfirm}
               disabled={!supervisorPassword || isVerifying}
               className="bg-amber-600 hover:bg-amber-700 text-white"
@@ -332,7 +315,7 @@ const NewProfile = () => {
                   Verifica...
                 </>
               ) : (
-                'Conferma'
+                "Conferma"
               )}
             </Button>
           </DialogFooter>
