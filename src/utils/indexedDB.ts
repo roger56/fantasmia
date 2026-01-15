@@ -22,6 +22,8 @@ interface Profile {
   force_password_change?: boolean;
   last_login_at?: string;
   notes?: string;
+  // One-time token fields
+  is_one_time_token?: boolean;
 }
 
 interface AMStory {

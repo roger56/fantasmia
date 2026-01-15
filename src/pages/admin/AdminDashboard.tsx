@@ -9,7 +9,8 @@ import {
   Settings, 
   BookOpen, 
   Calendar,
-  Sparkles
+  Sparkles,
+  Link
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 
@@ -57,6 +58,14 @@ const AdminDashboard = () => {
       description: 'Modifica password ADMIN',
       icon: Settings,
       path: '/admin/settings'
+    },
+    {
+      title: 'NSU One-Time Links',
+      description: 'Crea link di accesso temporaneo per ospiti',
+      icon: Link,
+      path: '/admin/one-time-links',
+      badge: 'DEMO',
+      badgeVariant: 'secondary'
     }
   ];
 

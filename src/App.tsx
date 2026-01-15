@@ -8,9 +8,11 @@ import { AILoadingProvider } from "@/hooks/useAILoading";
 import { useContentUpdates } from "@/hooks/useContentUpdates";
 import { useRuntimeVersionCheck } from "@/hooks/useRuntimeVersionCheck";
 import { useAdminHotkey } from "@/hooks/useAdminHotkey";
+import { useOneTimeSessionCheck } from "@/hooks/useOneTimeSessionCheck";
 import ContentUpdateOverlay from "@/components/shared/ContentUpdateOverlay";
 import RuntimeUpdateOverlay from "@/components/shared/RuntimeUpdateOverlay";
 import BootstrapLoadingOverlay from "@/components/shared/BootstrapLoadingOverlay";
+import OneTimeSessionBanner from "@/components/shared/OneTimeSessionBanner";
 import { fantasMiaDB } from "@/utils/indexedDB";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -95,6 +97,8 @@ import UserGreekMyths from "./pages/UserGreekMyths";
 import UserScienceStories from "./pages/UserScienceStories";
 import UserReadingStories from "./pages/UserReadingStories";
 import AGUserStoryDetail from "./components/shared/AGUserStoryDetail";
+import OneTimeAccess from "./pages/OneTimeAccess";
+import AdminOneTimeLinks from "./pages/admin/AdminOneTimeLinks";
 
 import DebugIndexedDB from "./pages/DebugIndexedDB";
 import NotFound from "./pages/NotFound";
@@ -110,6 +114,12 @@ const AdminHotkeyListener = () => {
 
 // Initialize image migration on app startup
 initImageMigration();
+
+// One-time session check wrapper (must be inside BrowserRouter)
+const OneTimeSessionChecker = () => {
+  useOneTimeSessionCheck();
+  return null;
+};
 
 // Inner component that uses hooks
 const AppContent = () => {
@@ -166,8 +176,11 @@ const AppContent = () => {
       
       <BrowserRouter>
         <AdminHotkeyListener />
+        <OneTimeSessionChecker />
+        <OneTimeSessionBanner />
         <Routes>
           <Route path="/" element={<NewHome />} />
+          <Route path="/one-time" element={<OneTimeAccess />} />
           <Route path="/about" element={<About />} />
           <Route path="/company" element={<Company />} />
           <Route path="/spare" element={<Spare />} />
@@ -311,6 +324,11 @@ const AppContent = () => {
           <Route path="/admin/ag-explorers" element={
             <AdminGuard>
               <AdminAGExplorers />
+            </AdminGuard>
+          } />
+          <Route path="/admin/one-time-links" element={
+            <AdminGuard>
+              <AdminOneTimeLinks />
             </AdminGuard>
           } />
           
