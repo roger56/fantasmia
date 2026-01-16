@@ -2,6 +2,7 @@
 // Handles token-based NSU one-time access via Vercel API
 
 import { fantasMiaDB } from './indexedDB';
+import { getAdminToken } from '@/lib/adminAuth';
 
 // ============= INTERFACES =============
 
@@ -99,11 +100,19 @@ export async function createOneTimeLink(
     return { success: false, error: 'Username deve essere tra 2 e 30 caratteri' };
   }
 
+  // Get admin JWT token for Bearer authentication
+  const adminToken = getAdminToken();
+  if (!adminToken) {
+    return { success: false, error: 'Sessione admin non valida. Effettua nuovamente il login.' };
+  }
+
   try {
     const response = await fetch(CREATE_LINK_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',  // Importante: invia cookie admin_session
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`
+      },
       body: JSON.stringify({ ttl_h: ttlHours, username, label })
     });
 
