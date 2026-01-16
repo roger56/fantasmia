@@ -10,6 +10,7 @@ import ConosciLaParola from '@/components/shared/ConosciLaParola';
 import { useDailyStory } from '@/hooks/useDailyStory';
 import { getCurrentProfileId } from '@/utils/profileManager';
 import { useOneTimeSessionCheck } from '@/hooks/useOneTimeSessionCheck';
+import { useOTModeGuard } from '@/hooks/useOTModeGuard';
 
 const Dashboard = () => {
   const profileId = getCurrentProfileId();
@@ -19,6 +20,9 @@ const Dashboard = () => {
   
   // One-time session check
   const { isOneTimeSession } = useOneTimeSessionCheck();
+  
+  // OT Mode guard per navigazione sicura
+  const { safeNavigateBack } = useOTModeGuard();
   
   // Daily Story hook for NSU overlay
   const { showOverlay, dailyStory, handleClose, isLoading: dailyStoryLoading, isInitializing } = useDailyStory();
@@ -87,7 +91,7 @@ const Dashboard = () => {
       <StoryLayout
         title="Fantas-Mia V2"
         subtitle="Dashboard utente"
-        onBack={() => navigate('/profiles')}
+        onBack={safeNavigateBack}
         showHomeButton={true}
         backgroundColor="bg-gradient-to-br from-blue-50 via-purple-50 to-slate-50"
       >

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import { useOTModeGuard } from '@/hooks/useOTModeGuard';
 
 interface StoryLayoutProps {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ const StoryLayout: React.FC<StoryLayoutProps> = ({
   backgroundColor = "bg-gradient-to-br from-slate-50 to-slate-100"
 }) => {
   const navigate = useNavigate();
+  const { safeNavigateHome } = useOTModeGuard();
 
   return (
     <div className={`min-h-screen ${backgroundColor} relative`}>
@@ -58,11 +60,11 @@ const StoryLayout: React.FC<StoryLayoutProps> = ({
             </div>
           )}
           
-          {/* Pulsante Home - in alto a destra */}
+          {/* Pulsante Home - in alto a destra (usa safeNavigateHome per OT mode) */}
           {showHomeButton && (
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/profiles')}
+              onClick={safeNavigateHome}
               className="fixed top-3 md:top-4 right-3 md:right-4 bg-white shadow-md hover:shadow-lg z-50 h-8 w-8 md:h-10 md:w-10 p-0"
               size="icon"
             >

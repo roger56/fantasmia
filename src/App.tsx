@@ -99,6 +99,7 @@ import UserReadingStories from "./pages/UserReadingStories";
 import AGUserStoryDetail from "./components/shared/AGUserStoryDetail";
 import OneTimeAccess from "./pages/OneTimeAccess";
 import AdminOneTimeLinks from "./pages/admin/AdminOneTimeLinks";
+import OTRouteGuard from "./components/shared/OTRouteGuard";
 
 import DebugIndexedDB from "./pages/DebugIndexedDB";
 import NotFound from "./pages/NotFound";
@@ -178,6 +179,7 @@ const AppContent = () => {
         <AdminHotkeyListener />
         <OneTimeSessionChecker />
         <OneTimeSessionBanner />
+        <OTRouteGuard>
         <Routes>
           <Route path="/" element={<NewHome />} />
           <Route path="/one-time" element={<OneTimeAccess />} />
@@ -335,6 +337,7 @@ const AppContent = () => {
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </OTRouteGuard>
       </BrowserRouter>
     </>
   );
