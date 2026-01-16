@@ -112,18 +112,25 @@ export const loadProfilesUnified = async (): Promise<ProfileLoadResult> => {
       source = 'localstorage';
     }
     
+    // 🛡️ FILTRO OT: Escludiamo i profili one-time dal risultato
+    // Questi non devono MAI apparire nella lista profili standard
+    const nonOTProfiles = finalProfiles.filter(p => 
+      !p.id.startsWith('onetime_') && 
+      !(p as any).is_one_time_token
+    );
+    
     // Ordina per ultimo accesso (più recente prima)
-    finalProfiles.sort((a, b) => {
+    nonOTProfiles.sort((a, b) => {
       const dateA = a.lastAccess ? new Date(a.lastAccess).getTime() : 0;
       const dateB = b.lastAccess ? new Date(b.lastAccess).getTime() : 0;
       return dateB - dateA;
     });
     
     const result: ProfileLoadResult = {
-      profiles: finalProfiles,
+      profiles: nonOTProfiles,
       source,
-      count: finalProfiles.length,
-      ids: finalProfiles.map(p => p.id)
+      count: nonOTProfiles.length,
+      ids: nonOTProfiles.map(p => p.id)
     };
     
     // LOG DIAGNOSTICO RICHIESTO

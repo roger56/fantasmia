@@ -12,6 +12,7 @@ import { loadProfilesUnified, SyncedProfile } from '@/utils/profileSync';
 import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import { authenticateNSU, cleanupExpiredProfiles, cleanupInactiveProfiles } from '@/utils/nsuManager';
+import { getOneTimeSession, isOneTimeSessionActive } from '@/utils/oneTimeTokenManager';
 
 const Profiles = () => {
   const navigate = useNavigate();
@@ -24,6 +25,19 @@ const Profiles = () => {
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
   
   useEffect(() => {
+    // 🛡️ GUARD OT MODE: Se in sessione one-time, redirect immediato a dashboard
+    const otSession = getOneTimeSession();
+    if (otSession && isOneTimeSessionActive()) {
+      console.log('🛡️ Profiles: OT session detected, redirecting to dashboard');
+      toast({
+        title: "Accesso non consentito",
+        description: "La selezione profili non è disponibile in accesso temporaneo",
+        variant: "destructive"
+      });
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+    
     // ✅ FIX URL: Assicura che l'URL sia corretto
     if (window.location.pathname !== '/profiles') {
       window.history.replaceState(null, '', '/profiles');
@@ -50,9 +64,15 @@ const Profiles = () => {
         // ✅ NUOVA LOGICA: Usa loadProfilesUnified come fonte unica
         const result = await loadProfilesUnified();
         
-        console.log('📋 Profiles.tsx: caricati ' + result.count + ' profili da ' + result.source);
+        // 🛡️ FILTRO OT: Escludiamo tutti i profili one-time dalla lista
+        const filteredProfiles = result.profiles.filter(p => 
+          !p.id.startsWith('onetime_') && 
+          !(p as any).is_one_time_token
+        );
         
-        setProfiles(result.profiles);
+        console.log('📋 Profiles.tsx: caricati ' + filteredProfiles.length + ' profili (esclusi OT) da ' + result.source);
+        
+        setProfiles(filteredProfiles);
         
         // Add special profiles - REMOVED 'new-profile' as per NSU management requirements
         // NSU creation now happens ONLY via Superuser panel
@@ -66,7 +86,7 @@ const Profiles = () => {
           }
         ];
         
-        setAllProfiles([...result.profiles, ...specialProfiles]);
+        setAllProfiles([...filteredProfiles, ...specialProfiles]);
         
       } catch (error) {
         console.error('❌ Errore caricamento profili:', error);

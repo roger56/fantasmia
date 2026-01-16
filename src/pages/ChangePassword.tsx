@@ -17,6 +17,7 @@ import {
 import { setCurrentProfileId } from '@/utils/profileManager';
 import { AuthBridge } from '@/utils/authBridge';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
+import { getOneTimeSession, isOneTimeSessionActive } from '@/utils/oneTimeTokenManager';
 
 interface PasswordRequirements {
   minLength: boolean;
@@ -49,12 +50,25 @@ const ChangePassword: React.FC = () => {
     hasSpecialChar: false,
   });
 
-  // Redirect if no profile
+  // 🛡️ GUARD OT MODE: Blocca completamente utenti one-time
   useEffect(() => {
+    const otSession = getOneTimeSession();
+    if (otSession && isOneTimeSessionActive()) {
+      console.log('🛡️ ChangePassword: OT session detected, blocking access');
+      toast({
+        title: "Operazione non disponibile",
+        description: "Il cambio password non è disponibile in accesso temporaneo",
+        variant: "destructive"
+      });
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+    
+    // Redirect if no profile
     if (!profileId) {
       navigate('/profiles');
     }
-  }, [profileId, navigate]);
+  }, [profileId, navigate, toast]);
 
   // Update requirements as user types
   useEffect(() => {
