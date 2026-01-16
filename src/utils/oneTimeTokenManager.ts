@@ -36,6 +36,36 @@ export interface CreateLinkResult {
 const CREATE_LINK_URL = 'https://fantasmia-ai.vercel.app/api/openai/create-link-one-time';
 const CLAIM_LINK_URL = 'https://fantasmia-ai.vercel.app/api/openai/claim-link-one-time';
 const SESSION_STORAGE_KEY = 'fantasmia_onetime_session';
+const LOCAL_STORAGE_KEY_PREFIX = 'fantasmia_onetime_';
+
+// ============= HELPER: Token Storage Key =============
+
+function getTokenStorageKey(token: string): string {
+  // Usa primi 16 caratteri del token come chiave stabile
+  const tokenHash = token.substring(0, 16).replace(/[^a-zA-Z0-9]/g, '');
+  return `${LOCAL_STORAGE_KEY_PREFIX}${tokenHash}`;
+}
+
+// ============= HELPER: Get Existing Session =============
+
+function getExistingSession(token: string): OneTimeTokenSession | null {
+  try {
+    const key = getTokenStorageKey(token);
+    const stored = localStorage.getItem(key);
+    if (!stored) return null;
+    
+    const session = JSON.parse(stored) as OneTimeTokenSession;
+    // Verifica che non sia scaduta
+    if (new Date(session.expiresAt) <= new Date()) {
+      localStorage.removeItem(key);
+      console.log('🕐 Sessione one-time scaduta, rimossa da localStorage');
+      return null;
+    }
+    return session;
+  } catch {
+    return null;
+  }
+}
 
 // ============= CLAIM TOKEN =============
 
@@ -44,6 +74,16 @@ export async function claimOneTimeToken(token: string): Promise<ClaimResult> {
     return { success: false, error: 'Token mancante', errorCode: 'TOKEN_MISSING' };
   }
 
+  // ✅ Verifica se esiste già una sessione valida per questo token (localStorage)
+  const existingSession = getExistingSession(token);
+  if (existingSession) {
+    console.log('♻️ Riutilizzo sessione one-time esistente, scade:', existingSession.expiresAt);
+    // Sincronizza anche sessionStorage per compatibilità hook
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(existingSession));
+    return { success: true, session: existingSession };
+  }
+
+  // Nessuna sessione esistente → procedi con claim API
   try {
     const response = await fetch(CLAIM_LINK_URL, {
       method: 'POST',
@@ -74,7 +114,12 @@ export async function claimOneTimeToken(token: string): Promise<ClaimResult> {
       profileId
     };
 
-    // Salva in sessionStorage (non localStorage - dura solo la sessione browser)
+    // ✅ Salva in localStorage (persistente tra tab e refresh)
+    const storageKey = getTokenStorageKey(token);
+    localStorage.setItem(storageKey, JSON.stringify(session));
+    console.log('💾 Sessione one-time salvata in localStorage, scade:', session.expiresAt);
+
+    // Mantieni anche sessionStorage per compatibilità
     sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
 
     return { success: true, session };
@@ -142,9 +187,36 @@ export async function createOneTimeLink(
 
 export function getOneTimeSession(): OneTimeTokenSession | null {
   try {
-    const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
-    if (!stored) return null;
-    return JSON.parse(stored);
+    // Prima controlla sessionStorage (più veloce)
+    let stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (stored) {
+      const session = JSON.parse(stored) as OneTimeTokenSession;
+      if (new Date(session.expiresAt) > new Date()) {
+        return session;
+      }
+      // Sessione scaduta, rimuovi
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+    
+    // Fallback: cerca in localStorage tutte le sessioni onetime_
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(LOCAL_STORAGE_KEY_PREFIX)) {
+        const data = localStorage.getItem(key);
+        if (data) {
+          const session = JSON.parse(data) as OneTimeTokenSession;
+          if (new Date(session.expiresAt) > new Date()) {
+            // Sincronizza in sessionStorage per accesso veloce
+            sessionStorage.setItem(SESSION_STORAGE_KEY, data);
+            return session;
+          } else {
+            // Pulisci sessione scaduta
+            localStorage.removeItem(key);
+          }
+        }
+      }
+    }
+    return null;
   } catch {
     return null;
   }
@@ -173,7 +245,21 @@ export async function clearOneTimeSession(): Promise<void> {
   // Pulisci sessionStorage
   sessionStorage.removeItem(SESSION_STORAGE_KEY);
   
-  // Pulisci anche localStorage per compatibilita
+  // ✅ Pulisci tutte le sessioni one-time da localStorage
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(LOCAL_STORAGE_KEY_PREFIX)) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+  
+  if (keysToRemove.length > 0) {
+    console.log('🧹 Pulite', keysToRemove.length, 'sessioni one-time da localStorage');
+  }
+  
+  // Pulisci anche chiavi legacy per compatibilita
   localStorage.removeItem('fantasmia_supabase_session');
   localStorage.removeItem('fantasmia_current_user_id');
 }

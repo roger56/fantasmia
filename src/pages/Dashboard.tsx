@@ -2,19 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Plus, BookText, Users } from 'lucide-react';
+import { BookOpen, Plus, BookText, Users, Loader2 } from 'lucide-react';
 import { AuthBridge } from '@/utils/authBridge';
 import StoryLayout from '@/components/shared/StoryLayout';
 import DailyStoryOverlay from '@/components/shared/DailyStoryOverlay';
 import ConosciLaParola from '@/components/shared/ConosciLaParola';
 import { useDailyStory } from '@/hooks/useDailyStory';
 import { getCurrentProfileId } from '@/utils/profileManager';
+import { useOneTimeSessionCheck } from '@/hooks/useOneTimeSessionCheck';
 
 const Dashboard = () => {
   const profileId = getCurrentProfileId();
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  
+  // One-time session check
+  const { isOneTimeSession } = useOneTimeSessionCheck();
   
   // Daily Story hook for NSU overlay
   const { showOverlay, dailyStory, handleClose, isLoading: dailyStoryLoading, isInitializing } = useDailyStory();
@@ -61,6 +65,14 @@ const Dashboard = () => {
     <React.Fragment key={profileId || 'no-profile'}>
       {/* Conosci la Parola - animated icon + overlay (only for NSU) */}
       <ConosciLaParola />
+      
+      {/* Indicatore caricamento racconti per utenti one-time */}
+      {isInitializing && isOneTimeSession && !showOverlay && (
+        <div className="fixed bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 z-40 border border-purple-200">
+          <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+          <span className="text-sm text-slate-700">Caricamento racconti del giorno...</span>
+        </div>
+      )}
       
       {/* Daily Story Overlay for NSU - mostra sempre se loading o overlay attivo */}
       {(dailyStoryLoading || isInitializing || (showOverlay && dailyStory)) && (
