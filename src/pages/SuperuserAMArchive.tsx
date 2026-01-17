@@ -10,9 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import StoryLayout from '@/components/shared/StoryLayout';
+import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
 
 const SuperuserAMArchive = () => {
   const navigate = useNavigate();
+  const { isChecking, isAuthorized } = useSuperuserGuard();
   const [stories, setStories] = useState<AMStory[]>([]);
   const [filteredStories, setFilteredStories] = useState<AMStory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -241,6 +243,15 @@ const SuperuserAMArchive = () => {
   };
 
   const selectedStoriesArray = filteredStories.filter(s => selectedStories.has(s.id));
+
+  // 🛡️ SECURITY: Spinner durante check autorizzazione
+  if (isChecking || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -23,6 +23,7 @@ import {
   WordEntryIT,
   WordEntryEN 
 } from '@/utils/customWordsManager';
+import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
 
 const WORDGAME_SETTINGS_KEY = 'fantasmia_wordgame_settings';
 const PROFESSION_SETTINGS_KEY = 'fantasmia_profession_settings';
@@ -59,6 +60,7 @@ const EMAIL_GMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
 const SuperuserSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isChecking, isAuthorized } = useSuperuserGuard();
   
   // Word game settings state
   const [wordGameSettings, setWordGameSettings] = useState<WordGameSettings>(defaultSettings);
@@ -354,6 +356,15 @@ const SuperuserSettings = () => {
       showTooltip: true
     }
   ];
+
+  // 🛡️ SECURITY: Spinner durante check autorizzazione
+  if (isChecking || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">

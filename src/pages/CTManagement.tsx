@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
 
 interface GroupStoryWithDetails {
   id: string;
@@ -48,6 +49,7 @@ interface GroupStoryWithDetails {
 const CTManagement = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isChecking, isAuthorized } = useSuperuserGuard();
   const [loading, setLoading] = useState(true);
   const [stories, setStories] = useState<GroupStoryWithDetails[]>([]);
   const [selectedStory, setSelectedStory] = useState<GroupStoryWithDetails | null>(null);
@@ -188,6 +190,15 @@ const CTManagement = () => {
   const inProgressStories = stories.filter(s => s.status === 'in_progress');
   const pendingStories = stories.filter(s => s.status === 'pending_approval');
   const completedStories = stories.filter(s => s.status === 'completed');
+
+  // 🛡️ SECURITY: Spinner durante check autorizzazione
+  if (isChecking || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   if (loading) {
     return (

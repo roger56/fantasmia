@@ -9,10 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 import { getUsers, updateUser } from '@/utils/userStorage';
 import bcrypt from 'bcryptjs';
 import HomeButton from '@/components/HomeButton';
+import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
 
 const SuperuserPasswordChange = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isChecking, isAuthorized } = useSuperuserGuard();
   
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -112,6 +114,15 @@ const SuperuserPasswordChange = () => {
       setIsLoading(false);
     }
   };
+
+  // 🛡️ SECURITY: Spinner durante check autorizzazione
+  if (isChecking || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
