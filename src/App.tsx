@@ -99,7 +99,8 @@ import UserReadingStories from "./pages/UserReadingStories";
 import AGUserStoryDetail from "./components/shared/AGUserStoryDetail";
 import OneTimeAccess from "./pages/OneTimeAccess";
 import AdminOneTimeLinks from "./pages/admin/AdminOneTimeLinks";
-import OTRouteGuard from "./components/shared/OTRouteGuard";
+import ProtectedRouteGuard from "./components/shared/ProtectedRouteGuard";
+import { usePopstateGuard } from "./hooks/usePopstateGuard";
 
 import DebugIndexedDB from "./pages/DebugIndexedDB";
 import NotFound from "./pages/NotFound";
@@ -110,6 +111,12 @@ const queryClient = new QueryClient();
 // Admin hotkey listener component (must be inside BrowserRouter)
 const AdminHotkeyListener = () => {
   useAdminHotkey();
+  return null;
+};
+
+// Global security guard for popstate (browser back/forward)
+const GlobalSecurityGuard = () => {
+  usePopstateGuard();
   return null;
 };
 
@@ -176,10 +183,11 @@ const AppContent = () => {
       />
       
       <BrowserRouter>
+        <GlobalSecurityGuard />
         <AdminHotkeyListener />
         <OneTimeSessionChecker />
         <OneTimeSessionBanner />
-        <OTRouteGuard>
+        <ProtectedRouteGuard>
         <Routes>
           <Route path="/" element={<NewHome />} />
           <Route path="/one-time" element={<OneTimeAccess />} />
@@ -337,7 +345,7 @@ const AppContent = () => {
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        </OTRouteGuard>
+        </ProtectedRouteGuard>
       </BrowserRouter>
     </>
   );

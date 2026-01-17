@@ -1,12 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, BookOpen, Settings, Calendar, UserCog } from 'lucide-react';
 import StoryLayout from '@/components/shared/StoryLayout';
+import { isSuperUser } from '@/utils/profileManager';
+import { toast } from '@/hooks/use-toast';
 
 const SuperUser = () => {
   const navigate = useNavigate();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    const checkAccess = () => {
+      const isSU = isSuperUser();
+      
+      if (!isSU) {
+        console.log('🚫 SuperUser: access denied for non-superuser');
+        toast({
+          title: "Accesso negato",
+          description: "Devi essere Superuser per accedere a questa sezione",
+          variant: "destructive"
+        });
+        navigate('/', { replace: true });
+        window.history.replaceState(null, '', '/');
+        return;
+      }
+      
+      setIsAuthorized(true);
+      setIsChecking(false);
+    };
+
+    checkAccess();
+  }, [navigate]);
+
+  // Mostra SOLO spinner durante il check - mai UI protetta
+  if (isChecking || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <StoryLayout
