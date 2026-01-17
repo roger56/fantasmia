@@ -262,6 +262,10 @@ export async function clearOneTimeSession(): Promise<void> {
   // Pulisci anche chiavi legacy per compatibilita
   localStorage.removeItem('fantasmia_supabase_session');
   localStorage.removeItem('fantasmia_current_user_id');
+  
+  // 🛡️ SECURITY: Pulisci history e redirect per evitare back a pagine protette
+  window.history.replaceState(null, '', '/');
+  console.log('🛡️ History cleaned after OT session clear');
 }
 
 // ============= TEMPORARY PROFILE HELPERS =============

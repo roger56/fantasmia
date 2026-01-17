@@ -38,10 +38,8 @@ const Profiles = () => {
       return;
     }
     
-    // ✅ FIX URL: Assicura che l'URL sia corretto
-    if (window.location.pathname !== '/profiles') {
-      window.history.replaceState(null, '', '/profiles');
-    }
+    // 🛡️ SECURITY: Pulisci history aggressivamente per evitare back verso pagine protette
+    window.history.replaceState(null, '', '/profiles');
     
     // PULIZIA COMPLETA: azzera TUTTE le sessioni quando si torna a /profiles
     clearCurrentProfile();
