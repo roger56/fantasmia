@@ -13,6 +13,7 @@ import { Copy, Eye, Key, Trash2, ChevronDown, Users, Search, RefreshCw, ChevronL
 import { toast } from '@/hooks/use-toast';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { hashPassword, generateSecurePassword, isPasswordStrong } from '@/utils/authSecurity';
+import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
 
 interface UserProfile {
   id: string;
@@ -32,6 +33,7 @@ interface PasswordResetData {
 
 const SuperuserUsers = () => {
   const navigate = useNavigate();
+  const { isChecking, isAuthorized } = useSuperuserGuard();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -293,6 +295,15 @@ const SuperuserUsers = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
+
+  // 🛡️ SECURITY: Spinner durante check autorizzazione
+  if (isChecking || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   if (loading) {
     return (

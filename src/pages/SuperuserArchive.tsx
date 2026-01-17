@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import HomeButton from '@/components/HomeButton';
 import ProfileIndicator from '@/components/shared/ProfileIndicator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
 
 interface StoryWithMedia {
   id: string;
@@ -50,6 +51,7 @@ const SuperuserArchive = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { isChecking, isAuthorized } = useSuperuserGuard();
   const [stories, setStories] = useState<StoryWithMedia[]>([]);
   const [filteredStories, setFilteredStories] = useState<StoryWithMedia[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -471,6 +473,15 @@ const SuperuserArchive = () => {
       </Drawer>
     );
   };
+
+  // 🛡️ SECURITY: Spinner durante check autorizzazione
+  if (isChecking || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">

@@ -7,10 +7,12 @@ import { ArrowLeft, CreditCard, TrendingUp, AlertTriangle } from 'lucide-react';
 import { CLOUD_ENABLED, supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
+import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
 
 const SuperuserPaymentSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isChecking, isAuthorized } = useSuperuserGuard();
   const [totalCost, setTotalCost] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -53,6 +55,15 @@ const SuperuserPaymentSettings = () => {
       return () => clearInterval(interval);
     }
   }, [toast]);
+
+  // 🛡️ SECURITY: Spinner durante check autorizzazione
+  if (isChecking || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">

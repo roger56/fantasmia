@@ -25,10 +25,12 @@ import StoryLayout from '@/components/shared/StoryLayout';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import { parseDailyStoriesFile, validateDailyStory, type DailyStory } from '@/utils/dailyStoryParser';
 import { useToast } from '@/hooks/use-toast';
+import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
 
 const SuperuserDailyStoriesManagement = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isChecking, isAuthorized } = useSuperuserGuard();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [stories, setStories] = useState<DailyStory[]>([]);
@@ -163,6 +165,15 @@ const SuperuserDailyStoriesManagement = () => {
       toast({ title: 'Errore', description: 'Importazione fallita', variant: 'destructive' });
     }
   };
+
+  // 🛡️ SECURITY: Spinner durante check autorizzazione
+  if (isChecking || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <StoryLayout
