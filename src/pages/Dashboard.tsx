@@ -25,7 +25,7 @@ const Dashboard = () => {
   const { safeNavigateBack } = useOTModeGuard();
   
   // Daily Story hook for NSU overlay
-  const { showOverlay, dailyStory, handleClose, isLoading: dailyStoryLoading, isInitializing } = useDailyStory();
+  const { showOverlay, dailyStory, handleClose, isLoading: dailyStoryLoading, isInitializing, hasTimedOut } = useDailyStory();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -79,12 +79,13 @@ const Dashboard = () => {
       )}
       
       {/* Daily Story Overlay for NSU - mostra sempre se loading o overlay attivo */}
-      {(dailyStoryLoading || isInitializing || (showOverlay && dailyStory)) && (
+      {(dailyStoryLoading || isInitializing || hasTimedOut || (showOverlay && dailyStory)) && (
         <DailyStoryOverlay
-          isOpen={showOverlay || dailyStoryLoading || isInitializing}
+          isOpen={showOverlay || dailyStoryLoading || isInitializing || hasTimedOut}
           story={dailyStory || { date: '', story: '', quote: '' }}
           onClose={handleClose}
           isInitializing={isInitializing || dailyStoryLoading}
+          hasTimedOut={hasTimedOut}
         />
       )}
 
