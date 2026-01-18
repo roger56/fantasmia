@@ -13,6 +13,7 @@ interface DailyStoryOverlayProps {
   story: DailyStory;
   onClose: () => void;
   isInitializing?: boolean;
+  hasTimedOut?: boolean;
 }
 
 type Screen = 'initial' | 'story' | 'quote';
@@ -21,7 +22,8 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
   isOpen,
   story,
   onClose,
-  isInitializing = false
+  isInitializing = false,
+  hasTimedOut = false
 }) => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('initial');
   const { speak, pause, isPlaying, isPaused, stop } = useUnifiedTTS({ storyId: 'daily-story' });
@@ -207,8 +209,35 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
 
   if (!isOpen) return null;
 
+  // Show timeout message if loading failed after 15 seconds
+  if (hasTimedOut && !story?.story) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+        <Card className="w-full max-w-md mx-4 shadow-2xl border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
+          <CardContent className="pt-8 pb-6 text-center space-y-4">
+            <div className="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center">
+              <BookOpen className="w-8 h-8 text-amber-600" />
+            </div>
+            <p className="text-amber-700 font-medium">
+              Racconti del giorno non disponibili al momento
+            </p>
+            <p className="text-sm text-amber-600">
+              Riprova più tardi
+            </p>
+            <Button 
+              onClick={onClose}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              Continua
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Show ripple loading during initialization OR when story is not yet loaded
-  if (isInitializing || !story.story) {
+  if (isInitializing || !story?.story) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
         <div className="flex flex-col items-center gap-4">

@@ -122,6 +122,11 @@ export async function claimOneTimeToken(token: string): Promise<ClaimResult> {
     // Mantieni anche sessionStorage per compatibilità
     sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
 
+    // Pre-load daily stories in background (non-blocking) for faster OT experience
+    fantasMiaDB.ensureDailyStoriesLoaded().catch(err => {
+      console.warn('OT: Pre-load daily stories failed (non-blocking):', err);
+    });
+
     return { success: true, session };
   } catch (error) {
     console.error('Claim error:', error);

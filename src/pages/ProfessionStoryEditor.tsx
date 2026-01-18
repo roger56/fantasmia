@@ -4,9 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Play, Pause, Mic, MicOff, Volume2 } from 'lucide-react';
-import { professions } from '@/data/professions';
+import { Search, Play, Pause, Volume2 } from 'lucide-react';
+import { professions, getProfessionDisplay, Profession } from '@/data/professions';
 import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
 import { useToast } from '@/hooks/use-toast';
 import SpeechToText from '@/components/SpeechToText';
@@ -24,7 +23,6 @@ const ProfessionStoryEditor = () => {
   const [storyTitle, setStoryTitle] = useState('');
   const [isScrolling, setIsScrolling] = useState(true);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(5); // default speed (1-10)
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { speak, isPlaying } = useUnifiedTTS();
@@ -129,20 +127,27 @@ const ProfessionStoryEditor = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [isScrolling, selectedProfession, toast]);
 
+  // Filter professions based on search term (searches both M and F)
   const filteredProfessions = professions.filter(profession =>
-    profession.toLowerCase().includes(searchTerm.toLowerCase())
+    profession.maschile.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    profession.femminile.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSearch = () => {
     const found = professions.find(profession =>
-      profession.toLowerCase() === searchTerm.toLowerCase()
+      profession.maschile.toLowerCase() === searchTerm.toLowerCase() ||
+      profession.femminile.toLowerCase() === searchTerm.toLowerCase()
     );
     
     if (found) {
-      setSelectedProfession(found);
+      // Set the specific gender version that was searched
+      const selectedVersion = found.maschile.toLowerCase() === searchTerm.toLowerCase() 
+        ? found.maschile 
+        : found.femminile;
+      setSelectedProfession(selectedVersion);
       toast({
         title: "Professione trovata!",
-        description: `${found} selezionata`
+        description: `${selectedVersion} selezionata`
       });
     } else {
       toast({
@@ -209,6 +214,51 @@ const ProfessionStoryEditor = () => {
     }
   };
 
+  // Render profession item with both genders or click to select specific one
+  const renderProfessionItem = (profession: Profession, index: number) => {
+    const displayText = getProfessionDisplay(profession);
+    const hasBothGenders = profession.maschile !== profession.femminile;
+    
+    return (
+      <div
+        key={index}
+        data-profession={profession.maschile}
+        className="p-3 border border-border rounded cursor-pointer hover:bg-muted transition-colors"
+      >
+        {hasBothGenders ? (
+          <div className="flex justify-between items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleProfessionSelect(profession.maschile);
+              }}
+              className="flex-1 text-left text-lg font-medium hover:text-primary transition-colors py-1 px-2 rounded hover:bg-primary/10"
+            >
+              {profession.maschile}
+            </button>
+            <span className="text-muted-foreground">/</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleProfessionSelect(profession.femminile);
+              }}
+              className="flex-1 text-right text-lg font-medium hover:text-primary transition-colors py-1 px-2 rounded hover:bg-primary/10"
+            >
+              {profession.femminile}
+            </button>
+          </div>
+        ) : (
+          <div 
+            className="text-lg font-medium text-center"
+            onClick={() => handleProfessionSelect(profession.maschile)}
+          >
+            {profession.maschile}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <ProfileIndicator />
@@ -258,25 +308,18 @@ const ProfessionStoryEditor = () => {
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Premi un tasto qualsiasi per fermare e selezionare
+                    Premi un tasto qualsiasi per fermare e selezionare • Clicca su M o F per scegliere il genere
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div 
                     ref={scrollAreaRef}
-                    className="h-64 overflow-auto bg-white border border-gray-300 rounded-lg p-4"
+                    className="h-64 overflow-auto bg-card border border-border rounded-lg p-4"
                   >
                     <div className="space-y-2">
-                      {(searchTerm ? filteredProfessions : professions).map((profession, index) => (
-                        <div
-                          key={index}
-                          data-profession={profession}
-                          className="p-3 border border-gray-200 rounded cursor-pointer hover:bg-gray-50 transition-colors text-lg font-medium"
-                          onClick={() => handleProfessionSelect(profession)}
-                        >
-                          {profession}
-                        </div>
-                      ))}
+                      {(searchTerm ? filteredProfessions : professions).map((profession, index) => 
+                        renderProfessionItem(profession, index)
+                      )}
                     </div>
                   </div>
                 </CardContent>

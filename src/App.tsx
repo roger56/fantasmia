@@ -144,7 +144,11 @@ const AppContent = () => {
       try {
         console.log('App: Bootstrap starting...');
         await fantasMiaDB.init();
-        await fantasMiaDB.ensureAGSeedStoriesLoaded();
+        // Load both AG seed stories and daily stories in parallel
+        await Promise.all([
+          fantasMiaDB.ensureAGSeedStoriesLoaded(),
+          fantasMiaDB.ensureDailyStoriesLoaded()
+        ]);
         console.log('App: Bootstrap complete, app ready');
         setAppReady(true);
       } catch (error) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import { AuthBridge } from '@/utils/authBridge';
 import { getCurrentProfileId } from '@/utils/profileManager';
@@ -7,6 +7,9 @@ const ITALIAN_MONTHS = [
   'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
   'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'
 ];
+
+// Timeout for loading daily stories (15 seconds)
+const LOAD_TIMEOUT_MS = 15000;
 
 export interface DailyStory {
   date: string;   // "12 dicembre" - chiave primaria
@@ -32,7 +35,28 @@ export const useDailyStory = () => {
   const [dailyStory, setDailyStory] = useState<DailyStory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [hasTimedOut, setHasTimedOut] = useState(false);
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Timeout effect - if still initializing after 15s, mark as timed out
+  useEffect(() => {
+    if (isInitializing && !hasTimedOut) {
+      timeoutRef.current = setTimeout(() => {
+        console.log('📖 Daily Story: ⏱️ Timeout reached (15s)');
+        setHasTimedOut(true);
+        setIsInitializing(false);
+        setIsLoading(false);
+      }, LOAD_TIMEOUT_MS);
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [isInitializing, hasTimedOut]);
 
   useEffect(() => {
     const checkDailyStory = async () => {
@@ -48,6 +72,12 @@ export const useDailyStory = () => {
         console.log('📖 Daily Story: ensuring bundle is loaded...');
         await fantasMiaDB.ensureDailyStoriesLoaded();
         console.log('📖 Daily Story: bundle check complete ✓');
+        
+        // Clear timeout since we loaded successfully
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
         setIsInitializing(false);
         
         // 0.2 Rimuovi vecchia chiave globale (migrazione)
@@ -93,7 +123,7 @@ export const useDailyStory = () => {
 
         // 5. Cerca racconto in IndexedDB
         const story = await fantasMiaDB.getDailyStoryByDate(today);
-        console.log('📖 Daily Story: query result =', story ? 'FOUND' : 'NOT FOUND', story);
+        console.log('📖 Daily Story: query result =', story ? 'FOUND' : 'NOT FOUND');
 
         // 6. Se esiste → mostra overlay
         if (story) {
@@ -102,16 +132,6 @@ export const useDailyStory = () => {
           setShowOverlay(true);
         } else {
           console.log('📖 Daily Story: ❌ No story found for today:', today);
-          // Debug: lista tutte le storie disponibili
-          try {
-            const allStories = await fantasMiaDB.getAllDailyStories();
-            console.log('📖 Daily Story: Available stories count:', allStories?.length || 0);
-            if (allStories && allStories.length > 0) {
-              console.log('📖 Daily Story: First 5 dates:', allStories.slice(0, 5).map((s: any) => s.date));
-            }
-          } catch (e) {
-            console.log('📖 Daily Story: Could not list all stories:', e);
-          }
         }
       } catch (error) {
         console.error('❌ Daily Story check error:', error);
@@ -134,5 +154,5 @@ export const useDailyStory = () => {
     setShowOverlay(false);
   }, [currentProfileId]);
 
-  return { showOverlay, dailyStory, handleClose, isLoading, isInitializing };
+  return { showOverlay, dailyStory, handleClose, isLoading, isInitializing, hasTimedOut };
 };
