@@ -133,6 +133,18 @@ const Profiles = () => {
         };
         AuthBridge.createLocalSupabaseSession(superuserProfile);
         
+        // Salva il profilo Superuser in fantasmia_users e imposta come profilo corrente
+        const users = JSON.parse(localStorage.getItem('fantasmia_users') || '[]');
+        const existingSU = users.find((u: any) => u.id === 'superuser');
+        if (!existingSU) {
+          users.push({
+            ...superuserProfile,
+            userType: 'superuser'
+          });
+          localStorage.setItem('fantasmia_users', JSON.stringify(users));
+        }
+        setCurrentProfileId('superuser');
+        
         // Garbage collection: cleanup expired and inactive profiles
         try {
           const cleanedExpired = await cleanupExpiredProfiles();
