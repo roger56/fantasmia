@@ -191,7 +191,7 @@ export const createNSU = async (
     created_by_su_id: suId,
     status: 'active',
     expires_at: expiresAt,
-    force_password_change: wasGenerated,
+    force_password_change: false, // Demo mode: mai richiedere cambio password
     notes: payload.notes,
     is_one_time: payload.isOneTime || false
   };
@@ -252,22 +252,50 @@ export const authenticateNSU = async (
     };
   }
   
-  // Password verification
+  // ============= DEMO MODE: Password semplificata =============
+  // Password attesa: username + "-1" (case-insensitive)
+  const expectedDemoPassword = profile.name.toLowerCase() + "-1";
+  const isDemoPasswordMatch = password.toLowerCase() === expectedDemoPassword;
+  
+  if (isDemoPasswordMatch) {
+    rateLimiter.recordAttempt(profileId, true);
+    
+    // Update last login
+    const updatedProfile = {
+      ...profile,
+      last_login_at: new Date().toISOString(),
+      last_access: new Date().toISOString(),
+      status: profile.status || 'active'
+    };
+    await fantasMiaDB.saveProfile(updatedProfile as any);
+    
+    // Handle one-time NSU: disable after first successful login
+    if ((profile as any).is_one_time === true) {
+      console.log('⚡ One-time NSU login - disabling after use:', profile.id, profile.name);
+      const disabledProfile = {
+        ...updatedProfile,
+        status: 'disabled' as const,
+        expires_at: new Date().toISOString(),
+        notes: (updatedProfile.notes || '') + ' [One-time: usato]'
+      };
+      await fantasMiaDB.saveProfile(disabledProfile as any);
+    }
+    
+    console.log('✅ Demo login successful for:', profile.name);
+    return {
+      success: true,
+      profile: updatedProfile,
+      needsPasswordChange: false // Mai richiedere cambio password in demo mode
+    };
+  }
+  
+  // Password verification (fallback per password custom impostate dal SU)
   const passwordHash = profile.password_hash;
   
   if (!passwordHash) {
-    // LAZY MIGRATION: password = name (legacy profiles)
-    const legacyMatch = password.toLowerCase() === profile.name.toLowerCase();
-    if (legacyMatch) {
-      rateLimiter.recordAttempt(profileId, true);
-      return {
-        success: true,
-        profile: { ...profile, status: profile.status || 'active' },
-        needsPasswordChange: true
-      };
-    }
+    // LAZY MIGRATION: password = name (legacy profiles) - reset silenzioso
     rateLimiter.recordAttempt(profileId, false);
-    return { success: false, error: 'Password non corretta' };
+    return { success: false, error: 'Password non corretta. Usa: ' + profile.name.toLowerCase() + '-1' };
   }
   
   // Bcrypt verification

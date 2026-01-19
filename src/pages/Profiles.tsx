@@ -162,16 +162,16 @@ const Profiles = () => {
       const result = await authenticateNSU(selectedUser.id, password);
       
       if (result.success && result.profile) {
-        // Check if password change is required
-        if (result.needsPasswordChange) {
-          navigate('/change-password', { 
-            state: { 
-              profileId: result.profile.id, 
-              profile: result.profile 
-            } 
-          });
-          return;
-        }
+        // DEMO MODE: Disabilitato redirect a cambio password
+        // if (result.needsPasswordChange) {
+        //   navigate('/change-password', { 
+        //     state: { 
+        //       profileId: result.profile.id, 
+        //       profile: result.profile 
+        //     } 
+        //   });
+        //   return;
+        // }
         
         // Set as current profile for IndexedDB
         setCurrentProfileId(result.profile.id);
@@ -334,6 +334,14 @@ const Profiles = () => {
                   className="text-lg"
                   onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                 />
+                {/* DEMO MODE: Hint password per profili NSU */}
+                {selectedProfile && selectedProfile !== 'superuser' && (
+                  <div className="text-sm text-blue-600 mt-2 bg-blue-50 p-2 rounded">
+                    💡 La tua password è: <strong>
+                      {profiles.find(p => p.id === selectedProfile)?.name.toLowerCase()}-1
+                    </strong>
+                  </div>
+                )}
               </div>
               <div className="flex gap-3">
                 <Button 
