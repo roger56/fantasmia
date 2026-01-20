@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Upload, Edit, Trash2, Eye, BookOpen } from 'lucide-react';
+import { Plus, Upload, Edit, Trash2, Eye, BookOpen, RefreshCw } from 'lucide-react';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import { parseDailyStoriesFile, validateDailyStory, type DailyStory } from '@/utils/dailyStoryParser';
@@ -53,7 +53,20 @@ const SuperuserDailyStoriesManagement = () => {
   const loadStories = useCallback(async () => {
     try {
       setLoading(true);
-      const allStories = await fantasMiaDB.getAllDailyStories();
+      
+      // Assicura che il DB sia inizializzato
+      await fantasMiaDB.init();
+      
+      let allStories = await fantasMiaDB.getAllDailyStories();
+      
+      // Se vuoto, forza il caricamento dei default
+      if (allStories.length === 0) {
+        console.log('📚 No stories found, forcing reload of defaults...');
+        localStorage.removeItem('daily_stories_default_version');
+        await fantasMiaDB.ensureDailyStoriesLoaded();
+        allStories = await fantasMiaDB.getAllDailyStories();
+      }
+      
       // Sort by date (parse month name)
       const MONTHS = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
         'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
@@ -73,6 +86,23 @@ const SuperuserDailyStoriesManagement = () => {
       setLoading(false);
     }
   }, [toast]);
+
+  const handleForceReload = async () => {
+    if (!confirm('Questo sovrascriverà tutti i racconti con i valori di default. Continuare?')) return;
+    
+    try {
+      setLoading(true);
+      localStorage.removeItem('daily_stories_default_version');
+      await fantasMiaDB.ensureDailyStoriesLoaded();
+      await loadStories();
+      toast({ title: 'Completato', description: 'Racconti di default ricaricati' });
+    } catch (error) {
+      console.error('Error reloading defaults:', error);
+      toast({ title: 'Errore', description: 'Impossibile ricaricare', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadStories();
@@ -195,6 +225,14 @@ const SuperuserDailyStoriesManagement = () => {
           >
             <Upload className="w-4 h-4 mr-2" />
             Importa da File
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleForceReload}
+            className="border-red-300 text-red-700 hover:bg-red-50"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Ricarica Default
           </Button>
           <input
             ref={fileInputRef}
