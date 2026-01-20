@@ -1525,9 +1525,17 @@ class FantasMiaDB {
     const storedVersion = localStorage.getItem('daily_stories_default_version');
     const DEFAULT_VERSION = '2024.1';
     
+    console.log('📚 ensureDailyStoriesLoaded called', { storedVersion, DEFAULT_VERSION });
+    
     if (storedVersion === DEFAULT_VERSION) {
-      console.log('📚 Daily stories default already loaded (version:', storedVersion, ')');
-      return;
+      // Verifica che i dati esistano davvero in IndexedDB
+      if (!this.db) await this.init();
+      const existingStories = await this.getAllDailyStories();
+      if (existingStories.length > 0) {
+        console.log('📚 Daily stories already loaded:', existingStories.length, 'stories');
+        return;
+      }
+      console.log('⚠️ Version matches but no stories found in IndexedDB, forcing reload...');
     }
     
     console.log('📚 Loading daily stories from /daily-stories-default.json...');
