@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Globe, Volume2, VolumeX, Trash2, Edit } from "lucide-react";
+import { Globe, Volume2, VolumeX, Trash2, Edit, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import SpeechToText from "@/components/SpeechToText";
 import { fantasMiaDB } from "@/utils/indexedDB";
@@ -87,9 +88,15 @@ const AGStoryDetail = () => {
     try {
       const agStory = await fantasMiaDB.getAGStoryById(storyId);
       if (agStory) {
-        setStory(agStory);
+        // Default su inglese se disponibile, altrimenti mantieni lingua corrente
+        const hasEnglishVersion = agStory.language === 'english';
+        const storyWithLang = {
+          ...agStory,
+          language: hasEnglishVersion ? 'english' : (agStory.language || 'italian')
+        };
+        setStory(storyWithLang);
         setEditedStory({ title: agStory.title, content: agStory.content });
-        console.log("📖 Loaded AG story:", { id: storyId, title: agStory.title });
+        console.log("📖 Loaded AG story:", { id: storyId, title: agStory.title, language: storyWithLang.language });
       } else {
         toast({
           title: "Errore",
@@ -315,6 +322,16 @@ const AGStoryDetail = () => {
             </Button>
           </div>
         </div>
+
+        {/* Avviso sulla possibile perdita di traduzione - solo in modalità inglese */}
+        {story.language === 'english' && (
+          <Alert variant="default" className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
+              ⚠️ La traduzione in inglese potrebbe andare persa in caso di aggiornamento della storia da parte dell'amministratore.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Story Content with Edit Capability */}
         <Card>

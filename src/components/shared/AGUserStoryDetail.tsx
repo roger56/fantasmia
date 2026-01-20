@@ -4,7 +4,8 @@ import StoryLayout from '@/components/shared/StoryLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Volume2, VolumeX, Globe, Image, BookOpen } from 'lucide-react';
+import { Volume2, VolumeX, Globe, Image, BookOpen, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
 import { useStoryReading } from '@/hooks/useStoryReading';
@@ -77,9 +78,11 @@ const AGUserStoryDetail: React.FC = () => {
       const agStory = await fantasMiaDB.getAGStoryById(id);
       
       if (agStory) {
+        // Default su inglese se disponibile, altrimenti fallback italiano
+        const hasEnglishVersion = agStory.language === 'english';
         setStory({
           ...agStory,
-          language: agStory.language || 'italian'
+          language: hasEnglishVersion ? 'english' : (agStory.language || 'italian')
         });
         loadMediaAsset(id);
       } else {
@@ -209,6 +212,16 @@ const AGUserStoryDetail: React.FC = () => {
         </div>
       }
     >
+      {/* Avviso sulla possibile perdita di traduzione - solo in modalità inglese */}
+      {story.language === 'english' && (
+        <Alert variant="default" className="mb-4 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
+            ⚠️ La traduzione in inglese potrebbe andare persa in caso di aggiornamento della storia da parte dell'amministratore.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Card>
         <CardContent className="p-8">
           <ScrollArea className="h-[500px]">
