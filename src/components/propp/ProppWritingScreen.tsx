@@ -52,27 +52,31 @@ const ProppWritingScreen: React.FC<ProppWritingScreenProps> = ({
         </div>
         
         {/* Action buttons moved to top */}
-        <div className="flex gap-3 justify-center mb-6">
+        <div className="flex flex-wrap gap-2 justify-center mb-6">
           {canGoBack && (
-            <Button onClick={onBack} variant="outline" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Indietro
+            <Button onClick={onBack} variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Indietro</span>
+              <span className="sm:hidden">←</span>
             </Button>
           )}
           <Button 
             onClick={onContinue} 
             disabled={!currentParagraph.trim()}
             size="sm"
+            className="text-xs sm:text-sm px-2 sm:px-3"
           >
             {isLastCluster ? (
               <>
-                <FileText className="w-4 h-4 mr-2" />
-                Fine Storia
+                <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Fine Storia</span>
+                <span className="sm:hidden">🏁 Fine</span>
               </>
             ) : (
               <>
-                <ArrowRight className="w-4 h-4 mr-2" />
-                Continua
+                <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Continua</span>
+                <span className="sm:hidden">→</span>
               </>
             )}
           </Button>

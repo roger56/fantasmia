@@ -239,21 +239,21 @@ const ProppFreeWritingScreen: React.FC<ProppFreeWritingScreenProps> = ({
           </Card>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" onClick={onFinishStory}>
-              🏁 Fine Storia
+          <div className="grid grid-cols-2 gap-2 safe-area-bottom">
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={onFinishStory}>
+              🏁 <span className="hidden sm:inline ml-1">Fine Storia</span><span className="sm:hidden ml-1">Fine</span>
             </Button>
-            <Button variant="outline" onClick={onSuspend}>
-              <Pause className="w-4 h-4 mr-2" />
-              Sospendi
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={onSuspend}>
+              <Pause className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <span className="hidden sm:inline">Sospendi</span>
             </Button>
-            <Button variant="outline" onClick={onSave}>
-              <Save className="w-4 h-4 mr-2" />
-              Salva
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={onSave}>
+              <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <span className="hidden sm:inline">Salva</span>
             </Button>
-            <Button variant="outline" onClick={onExit}>
-              <Home className="w-4 h-4 mr-2" />
-              Home
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={onExit}>
+              <Home className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <span className="hidden sm:inline">Home</span>
             </Button>
           </div>
         </div>

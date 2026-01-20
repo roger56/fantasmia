@@ -87,34 +87,39 @@ const ActionButtonGroup: React.FC<ActionButtonGroupProps> = ({
   };
 
   return (
-    <div className={`flex flex-wrap gap-3 ${className}`}>
-      <Button onClick={handleListen} variant="outline">
-        <Volume2 className="w-4 h-4 mr-2" />
-        {getButtonText()}
+    <div className={`flex flex-wrap gap-2 ${className}`}>
+      <Button onClick={handleListen} variant="outline" size="sm" className="text-xs sm:text-sm">
+        <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+        <span className="hidden xs:inline">{getButtonText()}</span>
+        <span className="xs:hidden">🔊</span>
       </Button>
       
       {showTranslate && onLanguageToggle && (
         <Button 
           variant="outline" 
+          size="sm"
+          className="text-xs sm:text-sm"
           onClick={onLanguageToggle}
           disabled={isTranslating}
         >
-          <Languages className="w-4 h-4 mr-2" />
-          {isTranslating ? 'Traduzione...' : (language === 'italian' ? 'ENGLISH' : 'ITALIANO')}
+          <Languages className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          {isTranslating ? '...' : (language === 'italian' ? 'EN' : 'IT')}
         </Button>
       )}
       
       {showEdit && onEdit && (
-        <Button variant="outline" onClick={onEdit}>
-          <Edit className="w-4 h-4 mr-2" />
-          MODIFICA
+        <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={onEdit}>
+          <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">MODIFICA</span>
+          <span className="sm:hidden">✏️</span>
         </Button>
       )}
       
       {showSave && onSave && (
-        <Button variant="outline" onClick={onSave}>
-          <Save className="w-4 h-4 mr-2" />
-          SALVA
+        <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={onSave}>
+          <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">SALVA</span>
+          <span className="sm:hidden">💾</span>
         </Button>
       )}
       
@@ -122,9 +127,10 @@ const ActionButtonGroup: React.FC<ActionButtonGroupProps> = ({
         <TooltipProvider>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Share className="w-4 h-4 mr-2" />
-                CONDIVIDI
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                <Share className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">CONDIVIDI</span>
+                <span className="sm:hidden">📤</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 bg-white border shadow-lg z-50">

@@ -206,29 +206,34 @@ const CSSFinalScreen: React.FC<CSSFinalScreenProps> = ({
             />
 
             {/* Action buttons */}
-            <div className="flex flex-wrap gap-3 pt-4">
-              <Button onClick={handleListen} variant="outline">
-                <Volume2 className="w-4 h-4 mr-2" />
-                {getButtonText()}
+            <div className="flex flex-wrap gap-2 pt-4 safe-area-bottom">
+              <Button onClick={handleListen} variant="outline" size="sm" className="text-xs sm:text-sm">
+                <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{getButtonText()}</span>
+                <span className="sm:hidden">🔊</span>
               </Button>
               
               <Button 
                 variant="outline" 
+                size="sm"
+                className="text-xs sm:text-sm"
                 onClick={onLanguageToggle}
                 disabled={isTranslating}
               >
-                <Languages className="w-4 h-4 mr-2" />
-                {isTranslating ? 'Traduzione...' : (language === 'italian' ? 'ENGLISH' : 'ITALIANO')}
+                <Languages className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                {isTranslating ? '...' : (language === 'italian' ? 'EN' : 'IT')}
               </Button>
               
-              <Button variant="outline" onClick={handleShare}>
-                <Share className="w-4 h-4 mr-2" />
-                CONDIVIDI
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={handleShare}>
+                <Share className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">CONDIVIDI</span>
+                <span className="sm:hidden">📤</span>
               </Button>
               
-              <Button onClick={handleSaveClick} className="bg-green-600 hover:bg-green-700">
-                <Save className="w-4 h-4 mr-2" />
-                SALVA
+              <Button onClick={handleSaveClick} size="sm" className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm">
+                <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">SALVA</span>
+                <span className="sm:hidden">💾</span>
               </Button>
             </div>
           </CardContent>

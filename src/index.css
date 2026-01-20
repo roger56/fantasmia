@@ -108,3 +108,33 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile safe-area support for command bars */
+@layer utilities {
+  .safe-area-bottom {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+  
+  .safe-area-bottom-lg {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Mobile action bar wrapper with proper spacing */
+  .mobile-action-bar {
+    @apply flex flex-wrap gap-2 justify-center;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Responsive button sizing for mobile */
+  .mobile-action-bar > button,
+  .mobile-action-bar > div > button {
+    @apply text-xs px-2 py-1.5;
+  }
+
+  @screen sm {
+    .mobile-action-bar > button,
+    .mobile-action-bar > div > button {
+      @apply text-sm px-3 py-2;
+    }
+  }
+}

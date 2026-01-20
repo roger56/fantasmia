@@ -82,23 +82,25 @@ const CSSGuidedQuestionsScreen: React.FC<CSSGuidedQuestionsScreenProps> = ({
       backgroundColor="bg-gradient-to-br from-purple-50 to-blue-50"
       headerContent={
         <>
-          <div className="text-sm text-slate-500 mb-3">
-            {phases.filter(p => p.answer.trim()).length} risposte date
+          <div className="text-xs sm:text-sm text-slate-500 mb-2">
+            {phases.filter(p => p.answer.trim()).length} risposte
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={handleSkip} variant="outline" size="sm">
-              <SkipForward className="w-4 h-4 mr-2" />
-              Salta
+          <div className="flex flex-wrap gap-2 items-center">
+            <Button onClick={handleSkip} variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+              <SkipForward className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Salta</span>
+              <span className="sm:hidden">⏭️</span>
             </Button>
             
-            <Button onClick={handleNext} size="sm" className="bg-purple-600 hover:bg-purple-700">
-              <ArrowRight className="w-4 h-4 mr-2" />
+            <Button onClick={handleNext} size="sm" className="bg-purple-600 hover:bg-purple-700 text-xs sm:text-sm px-2 sm:px-3">
+              <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               {currentQuestionIndex < guidedQuestions.length - 1 ? 'Avanti' : 'Finisci'}
             </Button>
             
             {phases.filter(p => p.answer.trim()).length >= 3 && (
-              <Button onClick={onFinish} variant="outline" size="sm" className="bg-green-600 hover:bg-green-700 text-white">
-                Finisci Storia
+              <Button onClick={onFinish} variant="outline" size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm px-2 sm:px-3">
+                <span className="hidden sm:inline">Finisci Storia</span>
+                <span className="sm:hidden">✅ Fine</span>
               </Button>
             )}
             
