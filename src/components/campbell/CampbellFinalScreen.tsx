@@ -169,30 +169,34 @@ const CampbellFinalScreen: React.FC<CampbellFinalScreenProps> = ({
         />
 
         {/* Action buttons */}
-        <div className="flex flex-wrap gap-3 justify-center">
-          <Button onClick={handleListen} className="bg-blue-600 hover:bg-blue-700">
-            <Volume2 className="w-4 h-4 mr-2" />
-            {getButtonText()}
+        <div className="flex flex-wrap gap-2 justify-center safe-area-bottom">
+          <Button onClick={handleListen} size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm px-3 sm:px-4">
+            <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">{getButtonText()}</span>
+            <span className="sm:hidden">🔊</span>
           </Button>
           
-          <Button variant="outline" onClick={onLanguageToggle}>
-            <Languages className="w-4 h-4 mr-2" />
-            {language === 'italian' ? 'ENGLISH' : 'ITALIANO'}
+          <Button variant="outline" size="sm" className="text-xs sm:text-sm px-3 sm:px-4" onClick={onLanguageToggle}>
+            <Languages className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            {language === 'italian' ? 'EN' : 'IT'}
           </Button>
           
-          <Button variant="outline" onClick={handleEditClick}>
-            <Edit className="w-4 h-4 mr-2" />
-            MODIFICA
+          <Button variant="outline" size="sm" className="text-xs sm:text-sm px-3 sm:px-4" onClick={handleEditClick}>
+            <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">MODIFICA</span>
+            <span className="sm:hidden">✏️</span>
           </Button>
           
-          <Button variant="outline" onClick={handleSaveClick}>
-            <Save className="w-4 h-4 mr-2" />
-            SALVA
+          <Button variant="outline" size="sm" className="text-xs sm:text-sm px-3 sm:px-4" onClick={handleSaveClick}>
+            <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">SALVA</span>
+            <span className="sm:hidden">💾</span>
           </Button>
           
-          <Button variant="outline" onClick={handleShare}>
-            <Share className="w-4 h-4 mr-2" />
-            CONDIVIDI
+          <Button variant="outline" size="sm" className="text-xs sm:text-sm px-3 sm:px-4" onClick={handleShare}>
+            <Share className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">CONDIVIDI</span>
+            <span className="sm:hidden">📤</span>
           </Button>
         </div>
       </div>

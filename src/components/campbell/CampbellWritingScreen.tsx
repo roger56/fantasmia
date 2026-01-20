@@ -82,9 +82,10 @@ const CampbellWritingScreen: React.FC<CampbellWritingScreenProps> = ({
       subtitle={card.description}
       onBack={onBack}
       headerContent={
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={handleContinue} size="sm" className="bg-blue-600 hover:bg-blue-700">
-            Continua
+        <div className="flex flex-wrap gap-2 items-center">
+          <Button onClick={handleContinue} size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm px-2 sm:px-3">
+            <span className="hidden sm:inline">Continua</span>
+            <span className="sm:hidden">→</span>
           </Button>
           
           <ActionButtonGroup

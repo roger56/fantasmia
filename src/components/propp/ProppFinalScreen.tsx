@@ -103,46 +103,41 @@ const ProppFinalScreen: React.FC<ProppFinalScreenProps> = ({
               className="mb-6"
             />
 
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Button onClick={onSave} className="px-6" disabled={!storyTitle.trim()}>
-                <Save className="w-4 h-4 mr-2" />
+            <div className="flex flex-wrap gap-2 justify-center safe-area-bottom">
+              <Button onClick={onSave} size="sm" className="text-xs sm:text-sm px-3 sm:px-6" disabled={!storyTitle.trim()}>
+                <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Salva
               </Button>
               <Button 
                 onClick={handleTranslateClick} 
                 variant="outline" 
-                className="px-6" 
+                size="sm"
+                className="text-xs sm:text-sm px-3 sm:px-6" 
                 disabled={isTranslating || !finalStory.trim()}
               >
-                <Globe className="w-4 h-4 mr-2" />
-                {getButtonText()}
+                <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{getButtonText()}</span>
+                <span className="sm:hidden">🌐</span>
               </Button>
               <Button
                 onClick={handleCopyToClipboard}
                 variant="outline" 
-                className="px-6"
+                size="sm"
+                className="text-xs sm:text-sm px-3 sm:px-6"
                 disabled={!finalStory.trim()}
               >
-                <FileText className="w-4 h-4 mr-2" />
-                Copia
+                <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Copia</span>
+                <span className="sm:hidden">📋</span>
               </Button>
               <Button 
                 onClick={() => navigate('/create-story', { state: { profileId, profileName } })} 
                 variant="outline" 
-                className="px-6"
+                size="sm"
+                className="text-xs sm:text-sm px-3 sm:px-6"
               >
-                Nuova Storia
-              </Button>
-              {/* POST-SAVE: Isolato per implementazione futura */}
-              <Button 
-                onClick={() => toast({
-                  title: "📁 Archivio",
-                  description: "Funzione archivio sarà disponibile presto",
-                })}
-                variant="outline" 
-                className="px-6"
-              >
-                Archivio (WIP)
+                <span className="hidden sm:inline">Nuova Storia</span>
+                <span className="sm:hidden">➕ Nuova</span>
               </Button>
             </div>
           </CardContent>
