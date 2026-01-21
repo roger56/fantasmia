@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Globe, Volume2, VolumeX, Trash2, Edit, AlertTriangle } from "lucide-react";
+import { Globe, Volume2, VolumeX, Trash2, Edit, AlertTriangle, Download, ImageMinus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import SpeechToText from "@/components/SpeechToText";
@@ -19,6 +19,7 @@ import RecommendedBooksDialog from "@/components/shared/RecommendedBooksDialog";
 import StoryImageIndicator from "@/components/shared/StoryImageIndicator";
 import ImageViewerDialog from "@/components/shared/ImageViewerDialog";
 import ModifyMenu from "@/components/shared/ModifyMenu";
+import { downloadMediaAsset } from "@/utils/mediaDownload";
 
 interface AGStory {
   id: string;
@@ -47,6 +48,7 @@ const AGStoryDetail = () => {
   const [viewerImageUrl, setViewerImageUrl] = useState<string>("");
   const [viewerImageStyle, setViewerImageStyle] = useState<string>("");
   const [viewerImageBlob, setViewerImageBlob] = useState<Blob | undefined>();
+  const [hasMediaAsset, setHasMediaAsset] = useState(false);
 
   // Unified reading service
   const reading = useStoryReading({
@@ -96,7 +98,12 @@ const AGStoryDetail = () => {
         };
         setStory(storyWithLang);
         setEditedStory({ title: agStory.title, content: agStory.content });
-        console.log("📖 Loaded AG story:", { id: storyId, title: agStory.title, language: storyWithLang.language });
+        
+        // Check if media asset exists
+        const mediaAsset = await fantasMiaDB.getLatestMediaAssetByStoryId(storyId);
+        setHasMediaAsset(!!mediaAsset);
+        
+        console.log("📖 Loaded AG story:", { id: storyId, title: agStory.title, language: storyWithLang.language, hasMedia: !!mediaAsset });
       } else {
         toast({
           title: "Errore",
@@ -233,6 +240,43 @@ const AGStoryDetail = () => {
     setViewerImageStyle("");
   };
 
+  const handleRemoveImage = async () => {
+    if (!story) return;
+    if (!confirm("Vuoi rimuovere l'immagine associata a questa storia?")) return;
+
+    try {
+      await fantasMiaDB.deleteMediaAssetsByStoryId(story.id);
+      await fantasMiaDB.saveAGStory({ ...story, has_image: false });
+      setHasMediaAsset(false);
+      toast({
+        title: "Immagine rimossa",
+        description: "L'immagine è stata eliminata dalla storia",
+      });
+      console.log("🗑️ Image removed from story:", story.id);
+    } catch (error) {
+      console.error("❌ Error removing image:", error);
+      toast({
+        title: "Errore",
+        description: "Errore durante la rimozione dell'immagine",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    if (!story) return;
+    const success = await downloadMediaAsset(story.id, story.title);
+    if (success) {
+      toast({ title: "Download avviato" });
+    } else {
+      toast({
+        title: "Nessuna immagine",
+        description: "Non c'è un'immagine da scaricare",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getCategoryRoute = (category: string) => {
     const categoryRoutes: Record<string, string> = {
       explorers: "/ag-explorers",
@@ -333,6 +377,24 @@ const AGStoryDetail = () => {
           </Alert>
         )}
 
+        {/* Avviso sulla possibile perdita di media */}
+        {hasMediaAsset && (
+          <Alert variant="default" className="border-orange-300 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-700">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800 dark:text-orange-200 text-sm flex flex-wrap items-center gap-2">
+              <span>⚠️ I disegni associati alle storie AG potrebbero andare persi in caso di aggiornamento dell'Archivio Generale.</span>
+              <Button variant="link" size="sm" onClick={handleDownloadImage} className="p-0 h-auto text-orange-700 dark:text-orange-300 underline">
+                Salva in locale
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Nota sulla persistenza locale */}
+        <p className="text-xs text-muted-foreground italic text-center">
+          I media caricati sono visibili solo su questo dispositivo.
+        </p>
+
         {/* Story Content with Edit Capability */}
         <Card>
           <CardContent className="p-6">
@@ -348,10 +410,24 @@ const AGStoryDetail = () => {
                   onSketchSaved={() => loadStory(story.id)}
                 />
               </div>
-              <Button variant="outline" size="sm" onClick={openEditDialog}>
-                <Edit className="w-4 h-4 mr-2" />
-                Modifica
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={openEditDialog}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Modifica
+                </Button>
+                {hasMediaAsset && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={handleDownloadImage}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Scarica
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive">
+                      <ImageMinus className="w-4 h-4 mr-2" />
+                      Rimuovi
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
             <ScrollArea className="h-[550px]">
               <div className="prose prose-slate max-w-none dark:prose-invert">
