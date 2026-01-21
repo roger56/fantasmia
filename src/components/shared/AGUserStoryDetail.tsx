@@ -4,7 +4,7 @@ import StoryLayout from '@/components/shared/StoryLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Volume2, VolumeX, Globe, Image, BookOpen, AlertTriangle } from 'lucide-react';
+import { Volume2, VolumeX, Globe, BookOpen, AlertTriangle, Download, Image as ImageIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { fantasMiaDB } from '@/utils/indexedDB';
@@ -12,7 +12,7 @@ import { useStoryReading } from '@/hooks/useStoryReading';
 import TranslationPreview from '@/components/shared/TranslationPreview';
 import ImageViewerDialog from '@/components/shared/ImageViewerDialog';
 import RecommendedBooksDialog from '@/components/shared/RecommendedBooksDialog';
-import StoryImageIndicator from '@/components/shared/StoryImageIndicator';
+import { downloadMediaAsset } from '@/utils/mediaDownload';
 
 interface AGStory {
   id: string;
@@ -134,6 +134,20 @@ const AGUserStoryDetail: React.FC = () => {
     }
   };
 
+  const handleDownloadImage = async () => {
+    if (!story) return;
+    const success = await downloadMediaAsset(story.id, story.title);
+    if (success) {
+      toast({ title: "Download avviato" });
+    } else {
+      toast({
+        title: "Nessuna immagine",
+        description: "Non c'è un'immagine da scaricare",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleBack = () => {
     navigate('/story-type-selection');
   };
@@ -163,7 +177,7 @@ const AGUserStoryDetail: React.FC = () => {
       title={story.title}
       onBack={handleBack}
       headerContent={
-      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {/* Read Button */}
           <Button
             variant="ghost"
@@ -196,8 +210,18 @@ const AGUserStoryDetail: React.FC = () => {
             {reading.getTranslationButtonText()}
           </Button>
 
-          {/* Image Indicator */}
-          <StoryImageIndicator storyId={story.id} className="cursor-pointer" />
+          {/* View Image Button (if media exists) */}
+          {mediaAsset && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleImageClick}
+              className="flex items-center gap-2"
+            >
+              <ImageIcon className="h-4 w-4" />
+              Immagine
+            </Button>
+          )}
 
           {/* Books Button */}
           <Button
@@ -221,10 +245,40 @@ const AGUserStoryDetail: React.FC = () => {
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Avviso sulla possibile perdita di media + Download */}
+      {mediaAsset && (
+        <Alert variant="default" className="mb-4 border-orange-300 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-700">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-800 dark:text-orange-200 text-sm flex flex-wrap items-center gap-2">
+            <span>⚠️ Questo disegno potrebbe andare perso in caso di aggiornamento.</span>
+            <Button variant="link" size="sm" onClick={handleDownloadImage} className="p-0 h-auto text-orange-700 dark:text-orange-300 underline">
+              <Download className="h-3 w-3 mr-1" />
+              Salva in locale
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Thumbnail immagine (se presente) */}
+      {mediaAsset && (
+        <div className="mb-4 flex flex-col items-center gap-2">
+          <img
+            src={mediaAsset}
+            alt="Illustrazione storia"
+            className="max-w-full h-48 object-contain rounded-lg border cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+            onClick={handleImageClick}
+          />
+          <Button variant="outline" size="sm" onClick={handleDownloadImage}>
+            <Download className="w-4 h-4 mr-1" />
+            Scarica immagine
+          </Button>
+        </div>
+      )}
       
       <Card>
         <CardContent className="p-8">
-          <ScrollArea className="h-[500px]">
+          <ScrollArea className="h-[400px]">
             <p className="text-lg leading-relaxed whitespace-pre-wrap">
               {story.content}
             </p>
