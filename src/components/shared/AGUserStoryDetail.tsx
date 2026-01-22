@@ -78,11 +78,10 @@ const AGUserStoryDetail: React.FC = () => {
       const agStory = await fantasMiaDB.getAGStoryById(id);
       
       if (agStory) {
-        // Default su inglese se disponibile, altrimenti fallback italiano
-        const hasEnglishVersion = agStory.language === 'english';
+        // Lingua iniziale sempre italiano - pulsante mostrerà "INGLESE" come invito
         setStory({
           ...agStory,
-          language: hasEnglishVersion ? 'english' : (agStory.language || 'italian')
+          language: 'italian'
         });
         loadMediaAsset(id);
       } else {
