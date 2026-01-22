@@ -35,8 +35,89 @@ export interface CreateLinkResult {
 
 const CREATE_LINK_URL = 'https://fantasmia-ai.vercel.app/api/openai/create-link-one-time';
 const CLAIM_LINK_URL = 'https://fantasmia-ai.vercel.app/api/openai/claim-link-one-time';
+const SEND_EMAIL_URL = 'https://fantasmia-ai.vercel.app/api/openai/send_email_ai';
 const SESSION_STORAGE_KEY = 'fantasmia_onetime_session';
 const LOCAL_STORAGE_KEY_PREFIX = 'fantasmia_onetime_';
+
+// ============= OT ACTIVATION EMAIL NOTIFICATION =============
+
+async function sendOTActivationNotification(
+  session: OneTimeTokenSession,
+  createdBySu?: string
+): Promise<void> {
+  try {
+    // Recupera email destinatario da IndexedDB settings
+    await fantasMiaDB.init();
+    const settings = await fantasMiaDB.getSystemSettings();
+    const recipientEmail = settings.album_default_email;
+    
+    if (!recipientEmail) {
+      console.log('📧 OT Notification: nessuna email configurata in settings, skip');
+      return;
+    }
+
+    const timestamp = new Date().toLocaleString('it-IT', {
+      dateStyle: 'full',
+      timeStyle: 'medium'
+    });
+
+    const htmlBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #7c3aed;">🔗 Link One-Time Attivato</h2>
+        <p>Un link di accesso One-Time è stato utilizzato per la prima volta.</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr style="background: #f3f4f6;">
+            <td style="padding: 10px; border: 1px solid #e5e7eb;"><strong>Data/Ora</strong></td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${timestamp}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;"><strong>Utente OT</strong></td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${session.username}</td>
+          </tr>
+          <tr style="background: #f3f4f6;">
+            <td style="padding: 10px; border: 1px solid #e5e7eb;"><strong>ID Profilo</strong></td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;"><code>${session.profileId}</code></td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;"><strong>Scadenza sessione</strong></td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${new Date(session.expiresAt).toLocaleString('it-IT')}</td>
+          </tr>
+          <tr style="background: #f3f4f6;">
+            <td style="padding: 10px; border: 1px solid #e5e7eb;"><strong>Durata (TTL)</strong></td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${session.ttlHours} ore</td>
+          </tr>
+          ${createdBySu ? `
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;"><strong>Creato da SU</strong></td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${createdBySu}</td>
+          </tr>
+          ` : ''}
+        </table>
+        <p style="color: #6b7280; font-size: 12px;">Questa è una notifica automatica di FantasMia.</p>
+      </div>
+    `;
+
+    const payload = {
+      to: recipientEmail,
+      subject: `🔗 FantasMia: Link OT attivato - ${session.username}`,
+      html: htmlBody
+    };
+
+    const response = await fetch(SEND_EMAIL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      console.log('📧 OT Notification: email inviata a', recipientEmail);
+    } else {
+      console.warn('📧 OT Notification: risposta non ok', response.status);
+    }
+  } catch (error) {
+    console.error('📧 OT Notification: errore invio email', error);
+  }
+}
 
 // ============= HELPER: Token Storage Key =============
 
@@ -130,6 +211,11 @@ export async function claimOneTimeToken(token: string): Promise<ClaimResult> {
     // Pre-load daily stories in background (non-blocking) for faster OT experience
     fantasMiaDB.ensureDailyStoriesLoaded().catch(err => {
       console.warn('OT: Pre-load daily stories failed (non-blocking):', err);
+    });
+
+    // 📧 Invia notifica email al primo utilizzo del link OT (non-blocking)
+    sendOTActivationNotification(session, data.created_by_su).catch(err => {
+      console.warn('OT: Notifica email fallita (non-blocking):', err);
     });
 
     return { success: true, session };
