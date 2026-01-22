@@ -244,10 +244,10 @@ export const authenticateNSU = async (profileId: string, password: string): Prom
     };
   }
 
-  // ============= DEMO MODE: Password semplificata =============
-  // Password attesa: username + "-1" (case-insensitive)
-  const expectedDemoPassword = profile.name.toLowerCase() + "  ";
-  const isDemoPasswordMatch = password.toLowerCase() === expectedDemoPassword;
+  // ============= PASSWORD NSU: Due spazi standard =============
+  // Password standard per tutti gli NSU: "  " (due spazi)
+  const STANDARD_NSU_PASSWORD = "  ";
+  const isDemoPasswordMatch = password === STANDARD_NSU_PASSWORD;
 
   if (isDemoPasswordMatch) {
     rateLimiter.recordAttempt(profileId, true);
@@ -285,9 +285,9 @@ export const authenticateNSU = async (profileId: string, password: string): Prom
   const passwordHash = profile.password_hash;
 
   if (!passwordHash) {
-    // LAZY MIGRATION: password = name (legacy profiles) - reset silenzioso
+    // Nessun password_hash: verifica con password standard
     rateLimiter.recordAttempt(profileId, false);
-    return { success: false, error: "Password non corretta. Usa: " + profile.name.toLowerCase() + "-1" };
+    return { success: false, error: "Password non corretta" };
   }
 
   // Bcrypt verification

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, BookOpen, Settings, Calendar, UserCog } from 'lucide-react';
+import { Users, BookOpen, Settings, Calendar } from 'lucide-react';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { isSuperUser } from '@/utils/profileManager';
 import { toast } from '@/hooks/use-toast';
@@ -163,26 +163,6 @@ const SuperUser = () => {
             </CardContent>
           </Card>
 
-          {/* NEW: NSU Management Card */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-indigo-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCog className="w-5 h-5 text-indigo-600" />
-                Gestione NSU
-              </CardTitle>
-              <CardDescription>
-                Crea e gestisci profili utente con password dedicate
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => navigate('/superuser-nsu-management')}
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
-              >
-                Gestione NSU
-              </Button>
-            </CardContent>
-          </Card>
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
