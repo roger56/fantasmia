@@ -90,11 +90,10 @@ const AGStoryDetail = () => {
     try {
       const agStory = await fantasMiaDB.getAGStoryById(storyId);
       if (agStory) {
-        // Default su inglese se disponibile, altrimenti mantieni lingua corrente
-        const hasEnglishVersion = agStory.language === 'english';
+        // Lingua iniziale sempre italiano - pulsante mostrerà "INGLESE" come invito
         const storyWithLang = {
           ...agStory,
-          language: hasEnglishVersion ? 'english' : (agStory.language || 'italian')
+          language: 'italian'
         };
         setStory(storyWithLang);
         setEditedStory({ title: agStory.title, content: agStory.content });
