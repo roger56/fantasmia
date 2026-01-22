@@ -104,10 +104,11 @@ const Profiles = () => {
   };
 
   const handleLogin = async () => {
-    if (!password.trim()) {
+    // Permetti password di soli spazi (es. "  ") - controllo lunghezza invece di trim
+    if (password.length < 2) {
       toast({
         title: "Errore",
-        description: "Inserisci la password",
+        description: "Inserisci la password (almeno 2 caratteri)",
         variant: "destructive",
       });
       return;
@@ -337,10 +338,10 @@ const Profiles = () => {
                   className="text-lg"
                   onKeyPress={(e) => e.key === "Enter" && handleLogin()}
                 />
-                {/* DEMO MODE: Hint password per profili NSU */}
+                {/* Hint password per profili NSU */}
                 {selectedProfile && selectedProfile !== "superuser" && (
                   <div className="text-sm text-blue-600 mt-2 bg-blue-50 p-2 rounded">
-                    💡 La tua password è da chiedere al Superuser
+                    💡 Digita la password fornita dal Superuser (2 caratteri)
                   </div>
                 )}
               </div>
@@ -348,7 +349,7 @@ const Profiles = () => {
                 <Button onClick={() => setSelectedProfile(null)} variant="outline" className="flex-1">
                   Indietro
                 </Button>
-                <Button onClick={handleLogin} disabled={!password.trim()} className="flex-1">
+                <Button onClick={handleLogin} disabled={password.length < 2} className="flex-1">
                   Accedi
                 </Button>
               </div>

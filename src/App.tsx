@@ -85,7 +85,7 @@ import SuperuserDailyStoriesManagement from "./pages/SuperuserDailyStoriesManage
 import UserArchive from "./pages/UserArchive";
 import StoryTypeSelection from "./pages/StoryTypeSelection";
 import ChangePassword from "./pages/ChangePassword";
-import NSUManagementPage from "./pages/NSUManagementPage";
+// NSUManagementPage rimosso - funzionalità integrate in SuperuserUsers
 // import ScienceStoryViewer from "./pages/ScienceStoryViewer"; // DEPRECATO: rimosso, usare AGStoryDetail
 import AGReadingStories from "./pages/AGReadingStories";
 import AGScienceStories from "./pages/AGScienceStories";
@@ -229,7 +229,7 @@ const AppContent = () => {
           <Route path="/group-story" element={<GroupStoryEditor />} />
           <Route path="/ct-management" element={<CTManagement />} />
           <Route path="/change-password" element={<ChangePassword />} />
-          <Route path="/superuser-nsu-management" element={<NSUManagementPage />} />
+          {/* Route /superuser-nsu-management rimossa - funzionalità in /superuser-users */}
           <Route path="/superuser-daily-stories" element={<SuperuserDailyStoriesManagement />} />
           <Route path="/story-type-selection" element={<StoryTypeSelection />} />
           <Route path="/reading-stories" element={<ReadingStories />} />

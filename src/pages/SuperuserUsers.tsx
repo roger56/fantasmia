@@ -9,11 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Copy, Eye, Key, Trash2, ChevronDown, Users, Search, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Copy, Eye, Key, Trash2, ChevronDown, Users, Search, RefreshCw, ChevronLeft, ChevronRight, UserPlus, ToggleLeft, ToggleRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import StoryLayout from '@/components/shared/StoryLayout';
 import { hashPassword, generateSecurePassword, isPasswordStrong } from '@/utils/authSecurity';
 import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
+import { enableNSU, disableNSU } from '@/utils/nsuManager';
 
 interface UserProfile {
   id: string;
@@ -23,6 +24,7 @@ interface UserProfile {
   created_at: string;
   storyCount: number;
   stories: Array<{ id: string; title: string }>;
+  status?: 'active' | 'disabled';
 }
 
 interface PasswordResetData {
@@ -41,6 +43,9 @@ const SuperuserUsers = () => {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const [passwordData, setPasswordData] = useState<PasswordResetData>({
     password: '',
     confirmPassword: '',
@@ -81,7 +86,8 @@ const SuperuserUsers = () => {
             user_type: profile.user_type || 'user',
             created_at: profile.created_at || new Date().toISOString(),
             storyCount: stories.length,
-            stories: storyTitles
+            stories: storyTitles,
+            status: (profile as any).status || 'active'
           };
         })
       );
@@ -97,6 +103,112 @@ const SuperuserUsers = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ============= NUOVA FUNZIONE: Crea Utente NSU =============
+  const handleCreateUser = async () => {
+    if (!newUserName.trim()) {
+      toast({
+        title: "Errore",
+        description: "Inserisci un nome per l'utente",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Controlla duplicati
+    const existingUser = users.find(u => u.name.toLowerCase() === newUserName.trim().toLowerCase());
+    if (existingUser) {
+      toast({
+        title: "Errore",
+        description: `Esiste già un utente con nome "${newUserName}"`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const { fantasMiaDB } = await import('@/utils/indexedDB');
+      
+      // Password standard NSU: due spazi
+      const STANDARD_NSU_PASSWORD = "  ";
+      const passwordHash = await hashPassword(STANDARD_NSU_PASSWORD);
+      
+      const now = new Date().toISOString();
+      const newProfile = {
+        id: crypto.randomUUID(),
+        name: newUserName.trim(),
+        created_at: now,
+        last_access: now,
+        user_type: 'user' as const,
+        password_hash: passwordHash,
+        status: 'active' as const,
+        created_by_su_id: 'superuser'
+      };
+      
+      await fantasMiaDB.saveProfile(newProfile);
+      
+      toast({
+        title: "Utente creato",
+        description: `Utente "${newUserName}" creato con successo. Password: due spazi`,
+      });
+      
+      setShowCreateModal(false);
+      setNewUserName('');
+      await loadUsers();
+      
+      window.dispatchEvent(new CustomEvent('users:changed'));
+      window.dispatchEvent(new CustomEvent('profiles:changed'));
+      
+    } catch (error) {
+      console.error('❌ Errore creazione utente:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile creare l'utente",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // ============= Toggle status utente =============
+  const handleToggleStatus = async (user: UserProfile) => {
+    if (user.user_type === 'superuser') {
+      toast({
+        title: "Operazione non consentita",
+        description: "Non è possibile modificare lo stato di un superuser",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const newStatus = user.status === 'active' ? 'disabled' : 'active';
+      
+      if (newStatus === 'disabled') {
+        await disableNSU(user.id);
+      } else {
+        await enableNSU(user.id);
+      }
+      
+      toast({
+        title: newStatus === 'active' ? "Utente abilitato" : "Utente disabilitato",
+        description: `${user.name} è ora ${newStatus === 'active' ? 'attivo' : 'disabilitato'}`,
+      });
+      
+      await loadUsers();
+      window.dispatchEvent(new CustomEvent('users:changed'));
+      
+    } catch (error) {
+      console.error('❌ Errore toggle status:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile modificare lo stato dell'utente",
+        variant: "destructive"
+      });
     }
   };
 
@@ -328,13 +440,21 @@ const SuperuserUsers = () => {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Lista Utenti
-            </CardTitle>
-            <CardDescription>
-              Gestisci password, visualizza storie ed elimina utenti
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Lista Utenti
+                </CardTitle>
+                <CardDescription>
+                  Gestisci password, visualizza storie ed elimina utenti
+                </CardDescription>
+              </div>
+              <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                Aggiungi Utente
+              </Button>
+            </div>
             
             {/* Search and controls */}
             <div className="flex gap-2 mt-4">
@@ -362,7 +482,7 @@ const SuperuserUsers = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead>Stato</TableHead>
                   <TableHead>Ruolo</TableHead>
                   <TableHead>Creato il</TableHead>
                   <TableHead>Storie</TableHead>
@@ -373,17 +493,21 @@ const SuperuserUsers = () => {
                 {paginatedUsers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      {searchTerm ? `Nessun utente trovato per "${searchTerm}"` : 'Nessun utente registrato'}
+                      {searchTerm ? `Nessun utente trovato per "${searchTerm}"` : 'Nessun utente registrato. Clicca "Aggiungi Utente" per crearne uno.'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   paginatedUsers.map((user) => (
-                    <TableRow key={user.id}>
+                    <TableRow key={user.id} className={user.status === 'disabled' ? 'opacity-50' : ''}>
                       <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email || 'Non specificata'}</TableCell>
                       <TableCell>
-                        <Badge variant={user.user_type === 'superuser' ? 'default' : 'secondary'}>
-                          {user.user_type}
+                        <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                          {user.status === 'active' ? 'Attivo' : 'Disabilitato'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.user_type === 'superuser' ? 'default' : 'outline'}>
+                          {user.user_type === 'superuser' ? 'SU' : 'NSU'}
                         </Badge>
                       </TableCell>
                       <TableCell>{formatDate(user.created_at)}</TableCell>
@@ -392,6 +516,21 @@ const SuperuserUsers = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                          {/* Toggle Status */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleStatus(user)}
+                            disabled={user.user_type === 'superuser'}
+                            title={user.status === 'active' ? 'Disabilita' : 'Abilita'}
+                          >
+                            {user.status === 'active' ? (
+                              <ToggleRight className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <ToggleLeft className="w-4 h-4 text-gray-400" />
+                            )}
+                          </Button>
+                          
                           <Button
                             variant="outline"
                             size="sm"
@@ -594,6 +733,47 @@ const SuperuserUsers = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Create User Modal */}
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Aggiungi Utente</DialogTitle>
+              <DialogDescription>
+                Crea un nuovo utente NSU. La password standard è: due spazi (premere 2 volte la barra spaziatrice).
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-user-name">Nome utente</Label>
+                <Input
+                  id="new-user-name"
+                  placeholder="Nome del nuovo utente"
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleCreateUser()}
+                />
+              </div>
+              
+              <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                💡 <strong>Password standard:</strong> L'utente accederà digitando due spazi (barra spaziatrice × 2)
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+                Annulla
+              </Button>
+              <Button 
+                onClick={handleCreateUser}
+                disabled={!newUserName.trim() || isCreating}
+              >
+                {isCreating ? 'Creazione...' : 'Crea Utente'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </StoryLayout>
   );
