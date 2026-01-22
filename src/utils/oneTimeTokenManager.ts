@@ -3,7 +3,7 @@
 
 import { fantasMiaDB } from './indexedDB';
 import { getAdminToken } from '@/lib/adminAuth';
-
+import { setCurrentProfileId } from './profileManager';
 // ============= INTERFACES =============
 
 export interface OneTimeTokenSession {
@@ -80,6 +80,8 @@ export async function claimOneTimeToken(token: string): Promise<ClaimResult> {
     console.log('♻️ Riutilizzo sessione one-time esistente, scade:', existingSession.expiresAt);
     // Sincronizza anche sessionStorage per compatibilità hook
     sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(existingSession));
+    // ✅ Imposta profilo corrente per daily stories e altre feature
+    setCurrentProfileId(existingSession.profileId);
     return { success: true, session: existingSession };
   }
 
@@ -121,6 +123,9 @@ export async function claimOneTimeToken(token: string): Promise<ClaimResult> {
 
     // Mantieni anche sessionStorage per compatibilità
     sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+    
+    // ✅ Imposta profilo corrente per daily stories e altre feature
+    setCurrentProfileId(profileId);
 
     // Pre-load daily stories in background (non-blocking) for faster OT experience
     fantasMiaDB.ensureDailyStoriesLoaded().catch(err => {
