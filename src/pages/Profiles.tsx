@@ -25,15 +25,24 @@ const Profiles = () => {
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
 
   useEffect(() => {
-    // 🛡️ GUARD OT MODE: Se in sessione one-time, redirect immediato a dashboard
+    // ✅ NUOVO FLUSSO OT: Se sessione OT attiva, salta selezione profilo/password
+    // e vai direttamente a dashboard (accesso automatico)
     const otSession = getOneTimeSession();
     if (otSession && isOneTimeSessionActive()) {
-      console.log("🛡️ Profiles: OT session detected, redirecting to dashboard");
-      toast({
-        title: "Accesso non consentito",
-        description: "La selezione profili non è disponibile in accesso temporaneo",
-        variant: "destructive",
+      console.log("🚀 Profiles: OT session detected, auto-login to dashboard");
+      
+      // Crea/assicura sessione locale per compatibilità app
+      AuthBridge.createLocalSupabaseSession({
+        id: otSession.profileId,
+        name: otSession.username,
+        password: '', // Nessuna password per OT
+        age: 10
       });
+      
+      // Imposta profilo corrente
+      setCurrentProfileId(otSession.profileId);
+      
+      // Naviga direttamente a dashboard senza selezione/password
       navigate("/dashboard", { replace: true });
       return;
     }

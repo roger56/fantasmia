@@ -40,8 +40,9 @@ const OneTimeAccess = () => {
         // Rimuovi token da URL (sicurezza: non deve restare in cronologia)
         window.history.replaceState({}, '', '/');
         
-        // Redirect a dashboard dopo breve delay
-        setTimeout(() => navigate('/dashboard'), 500);
+        // ✅ NUOVO FLUSSO OT: Redirect a HOME (/) invece di dashboard
+        // L'utente può navigare liberamente e poi accedere via "Accedi ai profili"
+        setTimeout(() => navigate('/'), 500);
       } else {
         // Mappa errori a stati UI
         switch (result.errorCode) {
