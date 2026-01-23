@@ -13,7 +13,6 @@ const SUPERUSER_ONLY_ROUTES = [
   '/superuser-settings',
   '/superuser-password-change',
   '/superuser-payment-settings',
-  '/superuser-nsu-management',
   '/superuser-daily-stories',
   '/superuser-story-type-selection',
   '/superuser-archive',

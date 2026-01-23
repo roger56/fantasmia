@@ -14,8 +14,7 @@ const BLOCKED_ROUTES_IN_OT = [
   '/superuser',
   '/superuser-users',
   '/superuser-settings',
-  '/superuser-password-change',
-  '/superuser-nsu-management'
+  '/superuser-password-change'
 ];
 
 interface OTRouteGuardProps {
