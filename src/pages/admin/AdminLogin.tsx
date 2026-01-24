@@ -60,7 +60,8 @@ const AdminLogin = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* SECURITY: passwords must never be stored client-side */}
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
               <Input
                 type="password"
                 placeholder="Password"
@@ -68,6 +69,7 @@ const AdminLogin = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
                 autoFocus
+                autoComplete="new-password"
               />
               <Button 
                 type="submit" 

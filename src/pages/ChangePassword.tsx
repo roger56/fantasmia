@@ -226,6 +226,7 @@ const ChangePassword: React.FC = () => {
               <div className="space-y-2">
                 <Label htmlFor="new-password">Nuova password</Label>
                 <div className="relative">
+                  {/* SECURITY: passwords must never be stored client-side */}
                   <Input
                     id="new-password"
                     type={showPassword ? 'text' : 'password'}
@@ -233,6 +234,7 @@ const ChangePassword: React.FC = () => {
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Inserisci nuova password"
                     className="pr-10"
+                    autoComplete="new-password"
                   />
                   <Button
                     type="button"
@@ -276,6 +278,7 @@ const ChangePassword: React.FC = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Conferma la password"
                     className="pr-10"
+                    autoComplete="new-password"
                   />
                   <Button
                     type="button"
