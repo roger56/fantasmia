@@ -659,6 +659,7 @@ const SuperuserUsers = () => {
                 </div>
               )}
 
+              {/* SECURITY: passwords must never be stored client-side */}
               <div className="space-y-2">
                 <Label htmlFor="manual-password">Oppure imposta manualmente:</Label>
                 <Input
@@ -671,6 +672,7 @@ const SuperuserUsers = () => {
                     confirmPassword: prev.confirmPassword,
                     isGenerated: false
                   }))}
+                  autoComplete="new-password"
                 />
               </div>
 
@@ -686,6 +688,7 @@ const SuperuserUsers = () => {
                       ...prev,
                       confirmPassword: e.target.value
                     }))}
+                    autoComplete="new-password"
                   />
                 </div>
               )}

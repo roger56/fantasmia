@@ -156,6 +156,7 @@ const SuperuserPasswordChange = () => {
             <div className="space-y-2">
               <Label htmlFor="current-password">Password Attuale</Label>
               <div className="relative">
+                {/* SECURITY: passwords must never be stored client-side */}
                 <Input
                   id="current-password"
                   type={showCurrentPassword ? "text" : "password"}
@@ -163,6 +164,7 @@ const SuperuserPasswordChange = () => {
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Inserisci la password attuale"
                   className="pr-10"
+                  autoComplete="new-password"
                 />
                 <Button
                   type="button"
@@ -191,6 +193,7 @@ const SuperuserPasswordChange = () => {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Inserisci la nuova password (min. 6 caratteri)"
                   className="pr-10"
+                  autoComplete="new-password"
                 />
                 <Button
                   type="button"
@@ -219,6 +222,7 @@ const SuperuserPasswordChange = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Conferma la nuova password"
                   className="pr-10"
+                  autoComplete="new-password"
                 />
                 <Button
                   type="button"

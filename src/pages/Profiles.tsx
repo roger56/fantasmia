@@ -339,6 +339,7 @@ const Profiles = () => {
                 <p className="text-slate-600 mb-4">
                   Profilo selezionato: <strong>{allProfiles.find((p) => p.id === selectedProfile)?.name}</strong>
                 </p>
+                {/* SECURITY: passwords must never be stored client-side */}
                 <Input
                   type="password"
                   placeholder="Password"
@@ -346,6 +347,7 @@ const Profiles = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="text-lg"
                   onKeyPress={(e) => e.key === "Enter" && handleLogin()}
+                  autoComplete="new-password"
                 />
                 {/* Hint password per profili NSU */}
                 {selectedProfile && selectedProfile !== "superuser" && (

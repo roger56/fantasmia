@@ -280,6 +280,7 @@ const NewProfile = () => {
 
           <div className="py-4">
             <label className="block text-sm font-medium text-slate-700 mb-2">Password Supervisore</label>
+            {/* SECURITY: passwords must never be stored client-side */}
             <Input
               type="password"
               placeholder="Inserisci la password"
@@ -292,6 +293,7 @@ const NewProfile = () => {
               }}
               className="bg-white text-slate-900 border-slate-300"
               autoFocus
+              autoComplete="new-password"
             />
           </div>
 
