@@ -40,20 +40,29 @@ const SESSION_STORAGE_KEY = 'fantasmia_onetime_session';
 const LOCAL_STORAGE_KEY_PREFIX = 'fantasmia_onetime_';
 
 // ============= OT ACTIVATION EMAIL NOTIFICATION =============
+// SECURITY: Email di fallback hardcoded per garantire notifica anche quando
+// IndexedDB del browser OT è vuoto (l'utente OT non ha le settings del SU)
+const FALLBACK_NOTIFICATION_EMAIL = 'quando.ruggero@gmail.com';
 
 async function sendOTActivationNotification(
   session: OneTimeTokenSession,
   createdBySu?: string
 ): Promise<void> {
   try {
-    // Recupera email destinatario da IndexedDB settings
-    await fantasMiaDB.init();
-    const settings = await fantasMiaDB.getSystemSettings();
-    const recipientEmail = settings.album_default_email;
+    // Tenta di recuperare email da IndexedDB (potrebbe essere vuoto nel browser OT)
+    let recipientEmail: string | undefined;
+    try {
+      await fantasMiaDB.init();
+      const settings = await fantasMiaDB.getSystemSettings();
+      recipientEmail = settings.album_default_email;
+    } catch {
+      console.log('📧 OT Notification: IndexedDB non disponibile, uso fallback');
+    }
     
+    // Usa fallback se nessuna email configurata
     if (!recipientEmail) {
-      console.log('📧 OT Notification: nessuna email configurata in settings, skip');
-      return;
+      recipientEmail = FALLBACK_NOTIFICATION_EMAIL;
+      console.log('📧 OT Notification: uso email fallback:', recipientEmail);
     }
 
     const timestamp = new Date().toLocaleString('it-IT', {
