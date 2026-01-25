@@ -9,7 +9,8 @@ import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield, Sparkles, Plus, Trash2, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield, Sparkles, Plus, Trash2, Users, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import { fantasMiaDB } from '@/utils/indexedDB';
@@ -24,6 +25,7 @@ import {
   WordEntryEN 
 } from '@/utils/customWordsManager';
 import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
+import { tts } from '@/utils/tts';
 
 const WORDGAME_SETTINGS_KEY = 'fantasmia_wordgame_settings';
 const PROFESSION_SETTINGS_KEY = 'fantasmia_profession_settings';
@@ -69,6 +71,12 @@ const SuperuserSettings = () => {
   // Profession settings state
   const [professionSettings, setProfessionSettings] = useState<ProfessionSettings>(defaultProfessionSettings);
   const [showProfessionSettings, setShowProfessionSettings] = useState(false);
+  
+  // TTS Voice settings state
+  const [showTTSSettings, setShowTTSSettings] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>('');
+  const [ttsRate, setTtsRate] = useState(0.97);
   
   // Email settings state
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -139,6 +147,25 @@ const SuperuserSettings = () => {
     
     // Load email settings from IndexedDB
     loadEmailSettings();
+    
+    // Load TTS settings
+    const unsubscribeVoices = tts.onVoicesReady((voices, selected) => {
+      // Filtra voci italiane prima
+      const italianVoices = voices.filter(v => v.lang.toLowerCase().startsWith('it'));
+      const otherVoices = voices.filter(v => !v.lang.toLowerCase().startsWith('it'));
+      setAvailableVoices([...italianVoices, ...otherVoices]);
+      if (selected) {
+        setSelectedVoiceURI(selected.voiceURI);
+      }
+    });
+    
+    // Load TTS params
+    const params = tts.getParams();
+    setTtsRate(params.rate);
+    
+    return () => {
+      unsubscribeVoices();
+    };
   }, []);
   
   const loadEmailSettings = async () => {
@@ -346,6 +373,13 @@ const SuperuserSettings = () => {
       description: 'Configura la velocità di scorrimento della lista professioni',
       icon: Users,
       action: () => setShowProfessionSettings(true),
+      showTooltip: false
+    },
+    {
+      title: 'Voce di lettura Fantasmia',
+      description: 'Configura voce e velocità della lettura vocale',
+      icon: Volume2,
+      action: () => setShowTTSSettings(true),
       showTooltip: false
     },
     {
@@ -648,8 +682,113 @@ const SuperuserSettings = () => {
           </Card>
         )}
 
+        {/* TTS Voice Settings Panel */}
+        {showTTSSettings && (
+          <Card className="mb-6 border-2 border-blue-300/50 bg-blue-50/30">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <Volume2 className="w-5 h-5 text-blue-600" />
+                  Voce di Lettura Fantasmia
+                </h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowTTSSettings(false)}>
+                  ✕
+                </Button>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Voice selection */}
+                <div>
+                  <Label htmlFor="voice-select">Voce</Label>
+                  <Select 
+                    value={selectedVoiceURI} 
+                    onValueChange={(value) => {
+                      setSelectedVoiceURI(value);
+                      tts.setVoiceByURI(value);
+                    }}
+                  >
+                    <SelectTrigger className="w-full mt-1 bg-white">
+                      <SelectValue placeholder="Seleziona una voce" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      {availableVoices.length === 0 ? (
+                        <SelectItem value="loading" disabled>Caricamento voci...</SelectItem>
+                      ) : (
+                        availableVoices.map((voice) => (
+                          <SelectItem key={voice.voiceURI} value={voice.voiceURI}>
+                            {voice.lang.startsWith('it') ? '🇮🇹 ' : '🌐 '}
+                            {voice.name} ({voice.lang})
+                            {voice.localService ? ' ⚡' : ''}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Le voci italiane 🇮🇹 sono mostrate per prime. ⚡ = voce locale (più veloce)
+                  </p>
+                </div>
+                
+                {/* Speed slider */}
+                <div>
+                  <Label>Velocità: {ttsRate.toFixed(2)}</Label>
+                  <Slider
+                    value={[ttsRate]}
+                    onValueChange={(value) => {
+                      setTtsRate(value[0]);
+                      tts.setParams({ newRate: value[0] });
+                    }}
+                    min={0.90}
+                    max={1.10}
+                    step={0.01}
+                    className="mt-2"
+                  />
+                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                    <span>0.90 = più lento</span>
+                    <span>1.10 = più veloce</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Default: 0.97 (leggermente rallentato per bambini 6-10 anni)
+                  </p>
+                </div>
+                
+                {/* Test button */}
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => tts.speak("Ciao! Questa è la voce di Fantasmia.")}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Volume2 className="w-4 h-4 mr-2" />
+                    Prova voce
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => tts.stop()}
+                  >
+                    Ferma
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setTtsRate(0.97);
+                      tts.setParams({ newRate: 0.97 });
+                      toast({ title: "Reset", description: "Velocità reimpostata a 0.97" });
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </div>
+                
+                <p className="text-xs text-slate-500 text-center">
+                  Le preferenze vengono salvate automaticamente
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Settings Grid - Only show when no panel is open */}
-        {!showWordGameSettings && !showProfessionSettings && (
+        {!showWordGameSettings && !showProfessionSettings && !showTTSSettings && (
           <div className="grid gap-4 md:grid-cols-2">
             {settingsOptions.map((option, index) => {
               const IconComponent = option.icon;

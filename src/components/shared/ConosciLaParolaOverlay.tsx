@@ -6,7 +6,7 @@
  * Step 5: Chiusura
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { BookOpen, Volume2, ArrowRight, Check } from 'lucide-react';
 import type { SelectedWord } from '@/hooks/useConosciLaParola';
+import { tts, TTSStateInfo } from '@/utils/tts';
 
 interface ConosciLaParolaOverlayProps {
   isOpen: boolean;
@@ -32,25 +33,24 @@ const ConosciLaParolaOverlay: React.FC<ConosciLaParolaOverlayProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Reset step when opening
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       setCurrentStep(1);
     }
   }, [isOpen]);
 
-  // TTS function
+  // Sottoscrizione allo stato TTS
+  useEffect(() => {
+    const unsubscribe = tts.onStateChange((info: TTSStateInfo) => {
+      setIsSpeaking(info.state === 'speaking');
+    });
+    return unsubscribe;
+  }, []);
+
+  // TTS function usando il nuovo controller con chunking
   const speakWord = useCallback(() => {
     if (!selectedWord) return;
-    
-    setIsSpeaking(true);
-    const utterance = new SpeechSynthesisUtterance(selectedWord.entry.word);
-    utterance.lang = selectedWord.language === 'it' ? 'it-IT' : 'en-US';
-    utterance.rate = 0.9;
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    tts.speak(selectedWord.entry.word);
   }, [selectedWord]);
 
   const handleNextStep = useCallback(() => {
