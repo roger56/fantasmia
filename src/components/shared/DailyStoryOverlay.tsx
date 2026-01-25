@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BookOpen, Volume2, SkipForward, ArrowRight, Pause, Play, Languages, Palette, Download, Loader2 } from 'lucide-react';
-import { useUnifiedTTS } from '@/hooks/useUnifiedTTS';
+import { tts, TTSStateInfo, TTSState } from '@/utils/tts';
 import { useToast } from '@/hooks/use-toast';
 import { translateToEnglish } from '@/utils/translation';
 import type { DailyStory } from '@/hooks/useDailyStory';
@@ -26,7 +26,18 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
   hasTimedOut = false
 }) => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('initial');
-  const { speak, pause, isPlaying, isPaused, stop } = useUnifiedTTS({ storyId: 'daily-story' });
+  const [ttsState, setTtsState] = useState<TTSState>('idle');
+  
+  // Sottoscrizione allo stato TTS
+  useEffect(() => {
+    const unsubscribe = tts.onStateChange((info: TTSStateInfo) => {
+      setTtsState(info.state);
+    });
+    return unsubscribe;
+  }, []);
+  
+  const isPlaying = ttsState === 'speaking';
+  const isPaused = ttsState === 'paused';
   const { toast } = useToast();
   
   // Translation state (temporary, not persisted)
@@ -46,49 +57,50 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
   const handleListen = useCallback(() => {
     setCurrentScreen('story');
     setTimeout(() => {
-      speak(story.story, 'italian', 'daily-story');
+      tts.speak(story.story);
     }, 300);
-  }, [speak, story.story]);
+  }, [story.story]);
 
   const handleSkip = useCallback(() => {
-    stop();
+    tts.stop();
     onClose();
-  }, [stop, onClose]);
+  }, [onClose]);
 
   const handleNextToQuote = useCallback(() => {
-    stop();
+    tts.stop();
     setCurrentScreen('quote');
-  }, [stop]);
+  }, []);
 
   const handleFinish = useCallback(() => {
-    stop();
+    tts.stop();
     onClose();
-  }, [stop, onClose]);
+  }, [onClose]);
 
   const handleTTSToggle = useCallback(() => {
     const textToRead = showEnglish && translatedText ? translatedText : story.story;
-    const language = showEnglish && translatedText ? 'english' : 'italian';
     
     if (isPlaying && !isPaused) {
-      pause();
+      tts.pause();
+    } else if (isPaused) {
+      tts.resume();
     } else {
-      speak(textToRead, language, 'daily-story');
+      tts.speak(textToRead);
     }
-  }, [isPlaying, isPaused, pause, speak, story.story, showEnglish, translatedText]);
+  }, [isPlaying, isPaused, story.story, showEnglish, translatedText]);
 
   // Translation handler - uses Google Translate API, temporary only
   const handleTranslationToggle = useCallback(async () => {
     if (showEnglish) {
       // Switch back to Italian
       setShowEnglish(false);
-      stop(); // Stop TTS when switching language
+      tts.stop(); // Stop TTS when switching language
       return;
     }
     
     // If we already have translation, just show it
     if (translatedText) {
       setShowEnglish(true);
-      stop();
+      tts.stop();
       return;
     }
     
@@ -100,7 +112,7 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
       if (translated && translated !== story.story) {
         setTranslatedText(translated);
         setShowEnglish(true);
-        stop(); // Stop TTS when switching language
+        tts.stop(); // Stop TTS when switching language
       } else {
         throw new Error('Empty translation');
       }
@@ -114,7 +126,7 @@ const DailyStoryOverlay: React.FC<DailyStoryOverlayProps> = ({
     } finally {
       setIsTranslating(false);
     }
-  }, [showEnglish, translatedText, story.story, stop, toast]);
+  }, [showEnglish, translatedText, story.story, toast]);
 
   // Drawing handler - uses Vercel API /image endpoint with fumetto style
   const handleGenerateDrawing = useCallback(async () => {

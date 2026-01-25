@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Info, Volume2, VolumeX } from 'lucide-react';
 import {
   Tooltip,
@@ -6,6 +6,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+import { tts, TTSStateInfo } from '@/utils/tts';
 
 interface StoryModeTooltipProps {
   text: string;
@@ -15,25 +16,23 @@ interface StoryModeTooltipProps {
 const StoryModeTooltip: React.FC<StoryModeTooltipProps> = ({ text, modeId }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
+  // Sottoscrizione allo stato TTS per aggiornare l'UI
+  useEffect(() => {
+    const unsubscribe = tts.onStateChange((info: TTSStateInfo) => {
+      setIsSpeaking(info.state === 'speaking');
+    });
+    return unsubscribe;
+  }, []);
+
   const handleSpeak = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
 
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+      tts.stop();
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'it-IT';
-    utterance.rate = 0.9;
-    utterance.pitch = 1.1;
-
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
-    setIsSpeaking(true);
+    tts.speak(text);
   };
 
   const handleTooltipClick = (e: React.MouseEvent) => {
