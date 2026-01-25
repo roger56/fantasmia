@@ -53,6 +53,22 @@ const ConosciLaParolaOverlay: React.FC<ConosciLaParolaOverlayProps> = ({
     tts.speak(selectedWord.entry.word);
   }, [selectedWord]);
 
+  // TTS function per leggere il significato
+  const speakMeaning = useCallback(() => {
+    if (!selectedWord) return;
+    
+    const isItalianLang = selectedWord.language === 'it';
+    if (isItalianLang) {
+      const definition = (selectedWord.entry as { definition: string }).definition;
+      tts.speak(definition);
+    } else {
+      const enEntry = selectedWord.entry as { meaningIT: string; meaningEN: string };
+      // Step 2: leggi meaningIT, Step 3: leggi meaningEN
+      const textToSpeak = currentStep === 2 ? enEntry.meaningIT : enEntry.meaningEN;
+      tts.speak(textToSpeak);
+    }
+  }, [selectedWord, currentStep]);
+
   const handleNextStep = useCallback(() => {
     if (currentStep < 5) {
       setCurrentStep(prev => prev + 1);
@@ -98,10 +114,24 @@ const ConosciLaParolaOverlay: React.FC<ConosciLaParolaOverlayProps> = ({
                 <p className="text-2xl font-bold text-primary uppercase mb-4">{entry.word}</p>
               </div>
               <div className="bg-muted/50 rounded-lg p-4">
-                <p className="text-sm text-muted-foreground mb-1">Significato:</p>
-                <p className="text-foreground font-medium text-lg">
-                  {(entry as { definition: string }).definition}
-                </p>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground mb-1">Significato:</p>
+                    <p className="text-foreground font-medium text-lg">
+                      {(entry as { definition: string }).definition}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={speakMeaning}
+                    disabled={isSpeaking}
+                    className="h-10 w-10 flex-shrink-0"
+                    aria-label="Ascolta significato"
+                  >
+                    <Volume2 className={`w-5 h-5 ${isSpeaking ? 'animate-pulse text-primary' : ''}`} />
+                  </Button>
+                </div>
               </div>
             </div>
           );
@@ -149,9 +179,21 @@ const ConosciLaParolaOverlay: React.FC<ConosciLaParolaOverlayProps> = ({
                 <p className="text-2xl font-bold text-primary uppercase mb-4">{enEntry.word}</p>
               </div>
               <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">🇮🇹 Significato in italiano:</p>
-                  <p className="text-foreground font-medium">{enEntry.meaningIT}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground mb-1">🇮🇹 Significato in italiano:</p>
+                    <p className="text-foreground font-medium">{enEntry.meaningIT}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={speakMeaning}
+                    disabled={isSpeaking}
+                    className="h-10 w-10 flex-shrink-0"
+                    aria-label="Ascolta significato"
+                  >
+                    <Volume2 className={`w-5 h-5 ${isSpeaking ? 'animate-pulse text-primary' : ''}`} />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -167,9 +209,21 @@ const ConosciLaParolaOverlay: React.FC<ConosciLaParolaOverlayProps> = ({
                   <p className="text-sm text-muted-foreground mb-1">🇮🇹 Significato in italiano:</p>
                   <p className="text-foreground font-medium">{enEntry.meaningIT}</p>
                 </div>
-                <div className="border-t border-border pt-3">
-                  <p className="text-sm text-muted-foreground mb-1">🇬🇧 Meaning in English:</p>
-                  <p className="text-foreground font-medium">{enEntry.meaningEN}</p>
+                <div className="border-t border-border pt-3 flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground mb-1">🇬🇧 Meaning in English:</p>
+                    <p className="text-foreground font-medium">{enEntry.meaningEN}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={speakMeaning}
+                    disabled={isSpeaking}
+                    className="h-10 w-10 flex-shrink-0"
+                    aria-label="Ascolta significato"
+                  >
+                    <Volume2 className={`w-5 h-5 ${isSpeaking ? 'animate-pulse text-primary' : ''}`} />
+                  </Button>
                 </div>
               </div>
             </div>

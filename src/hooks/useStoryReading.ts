@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { translateStory, detectLanguage, TranslationResult } from '@/lib/i18n/storyTranslation';
-import { readingService } from '@/lib/tts/readingService';
+import { tts, TTSStateInfo } from '@/utils/tts';
 import { fantasMiaDB } from '@/utils/indexedDB';
 
 interface Story {
@@ -26,13 +26,14 @@ export const useStoryReading = ({ story, onStoryUpdate, storyType }: UseStoryRea
   const [isTranslating, setIsTranslating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [pendingTranslation, setPendingTranslation] = useState<TranslationResult | null>(null);
-  const [ttsState, setTTSState] = useState(readingService.getState());
+  const [ttsState, setTTSState] = useState<TTSStateInfo>({ state: 'idle', idx: 0, total: 0 });
+  const [currentStoryId, setCurrentStoryId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Subscribe to TTS state changes
   useEffect(() => {
-    const unsubscribe = readingService.subscribe(() => {
-      setTTSState(readingService.getState());
+    const unsubscribe = tts.onStateChange((info: TTSStateInfo) => {
+      setTTSState(info);
     });
     return unsubscribe;
   }, []);
@@ -60,11 +61,11 @@ export const useStoryReading = ({ story, onStoryUpdate, storyType }: UseStoryRea
 
   // Get TTS button text
   const getTTSButtonText = useCallback(() => {
-    const isThisStory = story && readingService.isReadingStory(story.id);
-    if (isThisStory && ttsState.isPaused) return 'Riprendi';
-    if (isThisStory && ttsState.isPlaying) return 'Pausa';
+    const isThisStory = story && currentStoryId === story.id;
+    if (isThisStory && ttsState.state === 'paused') return 'Riprendi';
+    if (isThisStory && ttsState.state === 'speaking') return 'Pausa';
     return 'Leggi';
-  }, [story, ttsState]);
+  }, [story, ttsState, currentStoryId]);
 
   // Initiate translation
   const initiateTranslation = useCallback(async () => {
@@ -172,16 +173,30 @@ export const useStoryReading = ({ story, onStoryUpdate, storyType }: UseStoryRea
     setShowPreview(false);
   }, []);
 
-  // Play/pause TTS
+  // Play/pause TTS - uses unified tts singleton with chunking + voice preferences
   const toggleTTS = useCallback(() => {
     if (!story) return;
 
     try {
+      const isThisStory = currentStoryId === story.id;
+      
+      // If already speaking this story, toggle pause/resume
+      if (isThisStory && ttsState.state === 'speaking') {
+        tts.pause();
+        return;
+      }
+      
+      if (isThisStory && ttsState.state === 'paused') {
+        tts.resume();
+        return;
+      }
+      
+      // Start new reading
+      tts.stop();
       const content = getContent();
       const fullText = `${story.title}. ${content}`;
-      const language = getCurrentLanguage();
-
-      readingService.play(fullText, story.id, language);
+      setCurrentStoryId(story.id);
+      tts.speak(fullText);
     } catch (error) {
       toast({
         title: 'Errore TTS',
@@ -189,11 +204,12 @@ export const useStoryReading = ({ story, onStoryUpdate, storyType }: UseStoryRea
         variant: 'destructive',
       });
     }
-  }, [story, getContent, getCurrentLanguage, toast]);
+  }, [story, getContent, currentStoryId, ttsState, toast]);
 
   // Stop TTS
   const stopTTS = useCallback(() => {
-    readingService.stop();
+    tts.stop();
+    setCurrentStoryId(null);
   }, []);
 
   return {
@@ -208,8 +224,8 @@ export const useStoryReading = ({ story, onStoryUpdate, storyType }: UseStoryRea
     cancelTranslation,
 
     // TTS state
-    isPlaying: ttsState.isPlaying && story && readingService.isReadingStory(story.id),
-    isPaused: ttsState.isPaused,
+    isPlaying: ttsState.state === 'speaking' && story && currentStoryId === story.id,
+    isPaused: ttsState.state === 'paused',
     getTTSButtonText,
     toggleTTS,
     stopTTS,
