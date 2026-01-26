@@ -35,7 +35,7 @@ export const useUnifiedTTS = (options: UseUnifiedTTSOptions = {}) => {
     setCurrentStoryId(state.currentStoryId);
     setCurrentLanguage(state.currentLanguage);
 
-    return unsubscribe;
+    return () => { unsubscribe(); };
   }, []);
 
   const speak = useCallback((
