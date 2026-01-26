@@ -1,6 +1,6 @@
 {
-  "manifestVersion": "2",
-  "updatedAt": "2026-01-09-1600",
+  "manifestVersion": "3",
+  "updatedAt": "2026-01-26-1800",
   "datasets": {
     "racconti_del_giorno": {
       "file": "/daily-stories-default.json",
@@ -21,6 +21,11 @@
       "file": "/airots-seed.json",
       "version": "2026-01-09-01",
       "label": "Storie AIROTS"
+    },
+    "tts_settings": {
+      "file": "/tts-settings.json",
+      "version": "1.0.0",
+      "label": "Impostazioni TTS consigliate"
     }
   }
 }
