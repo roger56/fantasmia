@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-01-26T00:00:00Z",
+  "defaults": {
+    "italian": {
+      "rate": 0.94,
+      "pitch": 1.0,
+      "volume": 1.0,
+      "lang": "it-IT"
+    },
+    "english": {
+      "rate": 1.0,
+      "pitch": 1.0,
+      "volume": 1.0,
+      "lang": "en-US"
+    }
+  },
+  "voicePreferences": {
+    "it-IT": ["Microsoft Elsa", "Google italiano", "Italian"],
+    "en-US": ["Google US English", "Microsoft", "English"]
+  }
+}

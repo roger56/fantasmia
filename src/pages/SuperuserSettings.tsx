@@ -26,6 +26,7 @@ import {
 } from '@/utils/customWordsManager';
 import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
 import { tts } from '@/utils/tts';
+import { restoreRecommendedSettings, getTTSSettingsVersion } from '@/utils/ttsSettingsManager';
 
 const WORDGAME_SETTINGS_KEY = 'fantasmia_wordgame_settings';
 const PROFESSION_SETTINGS_KEY = 'fantasmia_profession_settings';
@@ -76,7 +77,8 @@ const SuperuserSettings = () => {
   const [showTTSSettings, setShowTTSSettings] = useState(false);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>('');
-  const [ttsRate, setTtsRate] = useState(0.97);
+  const [ttsRate, setTtsRate] = useState(0.94);
+  const [ttsSettingsVersion, setTtsSettingsVersion] = useState<string | null>(null);
   
   // Email settings state
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -162,6 +164,11 @@ const SuperuserSettings = () => {
     // Load TTS params
     const params = tts.getParams();
     setTtsRate(params.rate);
+    
+    // Load TTS archive version
+    getTTSSettingsVersion().then(version => {
+      setTtsSettingsVersion(version);
+    });
     
     return () => {
       unsubscribeVoices();
@@ -748,12 +755,13 @@ const SuperuserSettings = () => {
                     <span>1.10 = più veloce</span>
                   </div>
                   <p className="text-xs text-slate-500 mt-2">
-                    Default: 0.97 (leggermente rallentato per bambini 6-10 anni)
+                    Default consigliato: 0.94 (leggermente rallentato per bambini 6-10 anni)
+                    {ttsSettingsVersion && <span className="ml-2 text-blue-500">(Archivio v{ttsSettingsVersion})</span>}
                   </p>
                 </div>
                 
                 {/* Test button */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button 
                     onClick={() => tts.speak("Ciao! Questa è la voce di Fantasmia.")}
                     className="flex-1 bg-blue-600 hover:bg-blue-700"
@@ -767,20 +775,26 @@ const SuperuserSettings = () => {
                   >
                     Ferma
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setTtsRate(0.97);
-                      tts.setParams({ newRate: 0.97 });
-                      toast({ title: "Reset", description: "Velocità reimpostata a 0.97" });
-                    }}
-                  >
-                    Reset
-                  </Button>
                 </div>
                 
+                {/* Restore recommended button */}
+                <Button 
+                  variant="secondary"
+                  className="w-full bg-green-100 hover:bg-green-200 text-green-800 border border-green-300"
+                  onClick={async () => {
+                    const settings = await restoreRecommendedSettings(tts.setParams);
+                    setTtsRate(settings.rate);
+                    toast({ 
+                      title: "Valori ripristinati", 
+                      description: `Velocità reimpostata a ${settings.rate} (valori consigliati dall'archivio)` 
+                    });
+                  }}
+                >
+                  ↻ Ripristina valori consigliati
+                </Button>
+                
                 <p className="text-xs text-slate-500 text-center">
-                  Le preferenze vengono salvate automaticamente
+                  Le preferenze vengono salvate automaticamente. Puoi ripristinare i valori consigliati in qualsiasi momento.
                 </p>
               </div>
             </CardContent>

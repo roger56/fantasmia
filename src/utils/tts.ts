@@ -1,15 +1,24 @@
 /**
  * Singleton TTS Controller per Fantasmia
  * Configurato con valori ottimali per bambini 6-10 anni:
- * - Velocità leggermente ridotta (0.97) per migliore comprensione
+ * - Velocità da archivio TTS_SETTINGS (default 0.94) o fallback 0.97
  * - Lingua italiana di default
  * - Chunking automatico per testi lunghi
  */
 
 import { createTTSController, TTSController, TTSState, TTSStateInfo } from "./tts_speechsynthesis";
+import { 
+  getLocalTTSSettings, 
+  saveLocalTTSSettings, 
+  markAsUserModified,
+  isUserModified,
+  fetchTTSSettingsArchive,
+  LocalTTSSettings
+} from "./ttsSettingsManager";
 
 // Singleton instance
 let ttsInstance: TTSController | null = null;
+let initializationPromise: Promise<void> | null = null;
 
 // State change listeners (per componenti React)
 type StateListener = (info: TTSStateInfo) => void;
@@ -39,17 +48,92 @@ function notifyVoicesReady(voices: SpeechSynthesisVoice[], selected: SpeechSynth
   });
 }
 
+/**
+ * Carica i valori TTS iniziali:
+ * - Se esistono valori locali modificati dall'utente → usa quelli
+ * - Altrimenti → usa valori dall'archivio TTS_SETTINGS
+ * - Fallback → usa default hardcoded
+ */
+async function loadInitialSettings(): Promise<LocalTTSSettings> {
+  const localSettings = getLocalTTSSettings();
+  
+  // Se l'utente ha modificato le impostazioni, usa quelle
+  if (localSettings && isUserModified()) {
+    console.log('🔊 TTS: Using user-modified settings:', localSettings);
+    return localSettings;
+  }
+  
+  // Altrimenti, prova a caricare dall'archivio
+  try {
+    const archive = await fetchTTSSettingsArchive();
+    if (archive?.defaults?.italian) {
+      const archiveSettings: LocalTTSSettings = {
+        rate: archive.defaults.italian.rate,
+        pitch: archive.defaults.italian.pitch,
+        volume: archive.defaults.italian.volume
+      };
+      console.log('🔊 TTS: Using archive defaults:', archiveSettings);
+      // Salva come impostazioni locali (non marcate come modificate)
+      saveLocalTTSSettings(archiveSettings);
+      return archiveSettings;
+    }
+  } catch (error) {
+    console.warn('🔊 TTS: Could not load archive settings:', error);
+  }
+  
+  // Fallback hardcoded
+  const defaults: LocalTTSSettings = { rate: 0.97, pitch: 1.0, volume: 1.0 };
+  console.log('🔊 TTS: Using hardcoded defaults:', defaults);
+  return defaults;
+}
+
+async function initializeTTS(): Promise<TTSController> {
+  const settings = await loadInitialSettings();
+  
+  ttsInstance = createTTSController({
+    lang: "it-IT",
+    defaultRate: settings.rate,
+    defaultPitch: settings.pitch,
+    defaultVolume: settings.volume,
+    onStateChange: notifyStateChange,
+    onVoicesReady: notifyVoicesReady,
+  });
+  
+  console.log(`🔊 TTS Controller inizializzato (rate: ${settings.rate}, lang: it-IT)`);
+  return ttsInstance;
+}
+
 function getTTS(): TTSController {
   if (!ttsInstance) {
+    // Inizializzazione sincrona con valori default, poi aggiorna async
+    const localSettings = getLocalTTSSettings();
+    const rate = localSettings?.rate ?? 0.97;
+    const pitch = localSettings?.pitch ?? 1.0;
+    const volume = localSettings?.volume ?? 1.0;
+    
     ttsInstance = createTTSController({
       lang: "it-IT",
-      defaultRate: 0.97, // Leggermente più lento per bambini
-      defaultPitch: 1.0,
-      defaultVolume: 1.0,
+      defaultRate: rate,
+      defaultPitch: pitch,
+      defaultVolume: volume,
       onStateChange: notifyStateChange,
       onVoicesReady: notifyVoicesReady,
     });
-    console.log('🔊 TTS Controller inizializzato (rate: 0.97, lang: it-IT)');
+    
+    console.log(`🔊 TTS Controller inizializzato sync (rate: ${rate}, lang: it-IT)`);
+    
+    // Avvia inizializzazione async per aggiornare con valori archivio se necessario
+    if (!initializationPromise) {
+      initializationPromise = loadInitialSettings().then(settings => {
+        if (ttsInstance) {
+          ttsInstance.setParams({ 
+            newRate: settings.rate, 
+            newPitch: settings.pitch, 
+            newVolume: settings.volume 
+          });
+        }
+      });
+    }
   }
   return ttsInstance;
 }
@@ -121,9 +205,23 @@ export const tts = {
 
   /**
    * Imposta nuovi parametri (rate, pitch, volume)
+   * Marca automaticamente come modificato dall'utente se chiamato esplicitamente
    */
-  setParams: (params: { newRate?: number; newPitch?: number; newVolume?: number }): void => {
+  setParams: (params: { newRate?: number; newPitch?: number; newVolume?: number }, markUserModified: boolean = true): void => {
     getTTS().setParams(params);
+    
+    // Salva in localStorage e marca come modificato dall'utente
+    if (markUserModified && (params.newRate !== undefined || params.newPitch !== undefined || params.newVolume !== undefined)) {
+      const current = getLocalTTSSettings() || { rate: 0.97, pitch: 1.0, volume: 1.0 };
+      const updated: LocalTTSSettings = {
+        rate: params.newRate ?? current.rate,
+        pitch: params.newPitch ?? current.pitch,
+        volume: params.newVolume ?? current.volume,
+        voiceURI: current.voiceURI
+      };
+      markAsUserModified();
+      saveLocalTTSSettings(updated);
+    }
   },
 
   /**
