@@ -174,7 +174,7 @@ export const initializeTTSFromArchive = async (
  * Sovrascrive i valori locali
  */
 export const restoreRecommendedSettings = async (
-  setParams: (params: { newRate?: number; newPitch?: number; newVolume?: number }) => void
+  setParams: (params: { newRate?: number; newPitch?: number; newVolume?: number }, markUserModified?: boolean) => void
 ): Promise<LocalTTSSettings> => {
   // Clear user modified flag
   clearUserModified();
@@ -189,7 +189,7 @@ export const restoreRecommendedSettings = async (
         volume: archive.defaults.italian.volume
       }
     : {
-        rate: 0.97,
+        rate: 0.94,
         pitch: 1.0,
         volume: 1.0
       };
@@ -197,12 +197,12 @@ export const restoreRecommendedSettings = async (
   // Save as local settings (but not marked as user-modified)
   saveLocalTTSSettings(defaults);
   
-  // Apply to TTS controller
+  // Apply to TTS controller (with markUserModified=false to avoid re-marking)
   setParams({
     newRate: defaults.rate,
     newPitch: defaults.pitch,
     newVolume: defaults.volume
-  });
+  }, false);
   
   console.log('TTSSettingsManager: Restored recommended settings:', defaults);
   return defaults;

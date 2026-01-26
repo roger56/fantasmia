@@ -48,6 +48,9 @@ function notifyVoicesReady(voices: SpeechSynthesisVoice[], selected: SpeechSynth
   });
 }
 
+// Voice preferences from archive (loaded async)
+let archiveVoicePreferences: string[] = ['Microsoft Elsa', 'Google italiano', 'Italian'];
+
 /**
  * Carica i valori TTS iniziali:
  * - Se esistono valori locali modificati dall'utente → usa quelli
@@ -72,7 +75,11 @@ async function loadInitialSettings(): Promise<LocalTTSSettings> {
         pitch: archive.defaults.italian.pitch,
         volume: archive.defaults.italian.volume
       };
-      console.log('🔊 TTS: Using archive defaults:', archiveSettings);
+      // Salva anche le preferenze voce dall'archivio
+      if (archive.voicePreferences?.['it-IT']) {
+        archiveVoicePreferences = archive.voicePreferences['it-IT'];
+      }
+      console.log('🔊 TTS: Using archive defaults:', archiveSettings, 'voice prefs:', archiveVoicePreferences);
       // Salva come impostazioni locali (non marcate come modificate)
       saveLocalTTSSettings(archiveSettings);
       return archiveSettings;
@@ -95,6 +102,8 @@ async function initializeTTS(): Promise<TTSController> {
     defaultRate: settings.rate,
     defaultPitch: settings.pitch,
     defaultVolume: settings.volume,
+    preferredVoiceURI: settings.voiceURI,
+    voicePreferences: archiveVoicePreferences,
     onStateChange: notifyStateChange,
     onVoicesReady: notifyVoicesReady,
   });
@@ -110,12 +119,15 @@ function getTTS(): TTSController {
     const rate = localSettings?.rate ?? 0.97;
     const pitch = localSettings?.pitch ?? 1.0;
     const volume = localSettings?.volume ?? 1.0;
+    const voiceURI = localSettings?.voiceURI;
     
     ttsInstance = createTTSController({
       lang: "it-IT",
       defaultRate: rate,
       defaultPitch: pitch,
       defaultVolume: volume,
+      preferredVoiceURI: voiceURI,
+      voicePreferences: archiveVoicePreferences,
       onStateChange: notifyStateChange,
       onVoicesReady: notifyVoicesReady,
     });
@@ -127,7 +139,7 @@ function getTTS(): TTSController {
       initializationPromise = loadInitialSettings().then(settings => {
         if (ttsInstance) {
           ttsInstance.setParams({ 
-            newRate: settings.rate, 
+            newRate: settings.rate,
             newPitch: settings.pitch, 
             newVolume: settings.volume 
           });
@@ -191,9 +203,20 @@ export const tts = {
 
   /**
    * Imposta una voce specifica tramite URI
+   * Salva anche in localStorage come preferenza utente
    */
   setVoiceByURI: (voiceURI: string): void => {
     getTTS().setVoiceByURI(voiceURI);
+    
+    // Salva la voce selezionata in localStorage
+    const current = getLocalTTSSettings() || { rate: 0.97, pitch: 1.0, volume: 1.0 };
+    const updated: LocalTTSSettings = {
+      ...current,
+      voiceURI
+    };
+    markAsUserModified();
+    saveLocalTTSSettings(updated);
+    console.log('🔊 TTS: Voice preference saved:', voiceURI);
   },
 
   /**
