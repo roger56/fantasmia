@@ -19,6 +19,8 @@ export interface TTSControllerOptions {
   defaultRate?: number;
   defaultPitch?: number;
   defaultVolume?: number;
+  preferredVoiceURI?: string;
+  voicePreferences?: string[];
   onStateChange?: (info: TTSStateInfo) => void;
   onVoicesReady?: (voices: SpeechSynthesisVoice[], selected: SpeechSynthesisVoice | null) => void;
 }
@@ -76,6 +78,8 @@ export function createTTSController(options: TTSControllerOptions = {}): TTSCont
     defaultRate = 1.0,
     defaultPitch = 1.0,
     defaultVolume = 1.0,
+    preferredVoiceURI,
+    voicePreferences,
     onStateChange,
     onVoicesReady,
   } = options;
@@ -90,6 +94,7 @@ export function createTTSController(options: TTSControllerOptions = {}): TTSCont
   let selectedVoice: SpeechSynthesisVoice | null = null;
   let voices: SpeechSynthesisVoice[] = [];
   let currentUtterance: SpeechSynthesisUtterance | null = null;
+  let storedVoiceURI = preferredVoiceURI;
 
   function notifyState(): void {
     if (onStateChange) {
@@ -104,8 +109,22 @@ export function createTTSController(options: TTSControllerOptions = {}): TTSCont
     }
   }
 
-  function findBestVoice(): SpeechSynthesisVoice | null {
+  function findBestVoice(voicePreferences?: string[]): SpeechSynthesisVoice | null {
     if (voices.length === 0) return null;
+    
+    // Se ci sono preferenze dall'archivio, cerca prima quelle
+    if (voicePreferences && voicePreferences.length > 0) {
+      for (const pref of voicePreferences) {
+        const match = voices.find(v => 
+          v.name.toLowerCase().includes(pref.toLowerCase()) && 
+          v.lang.startsWith('it')
+        );
+        if (match) {
+          console.log('🔊 TTS: Found preferred voice from archive:', match.name);
+          return match;
+        }
+      }
+    }
     
     // Priorità: voci italiane neural/natural
     const italianVoices = voices.filter(v => v.lang.startsWith('it'));
@@ -125,7 +144,18 @@ export function createTTSController(options: TTSControllerOptions = {}): TTSCont
   function loadVoices(): void {
     voices = speechSynthesis.getVoices();
     if (voices.length > 0 && !selectedVoice) {
-      selectedVoice = findBestVoice();
+      // Prima prova a usare la voce salvata dall'utente
+      if (storedVoiceURI) {
+        const savedVoice = voices.find(v => v.voiceURI === storedVoiceURI);
+        if (savedVoice) {
+          selectedVoice = savedVoice;
+          console.log('🔊 TTS: Using saved voice:', savedVoice.name);
+        }
+      }
+      // Altrimenti cerca la migliore voce in base alle preferenze archivio
+      if (!selectedVoice) {
+        selectedVoice = findBestVoice(voicePreferences);
+      }
       if (onVoicesReady) {
         onVoicesReady(voices, selectedVoice);
       }
