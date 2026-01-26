@@ -26,7 +26,7 @@ export const useStoryReading = ({ story, onStoryUpdate, storyType }: UseStoryRea
   const [isTranslating, setIsTranslating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [pendingTranslation, setPendingTranslation] = useState<TranslationResult | null>(null);
-  const [ttsState, setTTSState] = useState<TTSStateInfo>({ state: 'idle', idx: 0, total: 0 });
+  const [ttsState, setTTSState] = useState<TTSStateInfo>({ state: 'idle', idx: 0, total: 0, text: '' });
   const [currentStoryId, setCurrentStoryId] = useState<string | null>(null);
   const { toast } = useToast();
 
