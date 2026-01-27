@@ -13,6 +13,7 @@ import ContentUpdateOverlay from "@/components/shared/ContentUpdateOverlay";
 import RuntimeUpdateOverlay from "@/components/shared/RuntimeUpdateOverlay";
 import BootstrapLoadingOverlay from "@/components/shared/BootstrapLoadingOverlay";
 import OneTimeSessionBanner from "@/components/shared/OneTimeSessionBanner";
+import RoomBanner from "@/components/shared/RoomBanner";
 import { fantasMiaDB } from "@/utils/indexedDB";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -99,6 +100,7 @@ import UserReadingStories from "./pages/UserReadingStories";
 import AGUserStoryDetail from "./components/shared/AGUserStoryDetail";
 import OneTimeAccess from "./pages/OneTimeAccess";
 import AdminOneTimeLinks from "./pages/admin/AdminOneTimeLinks";
+import JoinRoom from "./pages/JoinRoom";
 import ProtectedRouteGuard from "./components/shared/ProtectedRouteGuard";
 import { usePopstateGuard } from "./hooks/usePopstateGuard";
 
@@ -191,9 +193,11 @@ const AppContent = () => {
         <AdminHotkeyListener />
         <OneTimeSessionChecker />
         <OneTimeSessionBanner />
+        <RoomBanner />
         <ProtectedRouteGuard>
         <Routes>
           <Route path="/" element={<NewHome />} />
+          <Route path="/join/:room" element={<JoinRoom />} />
           <Route path="/one-time" element={<OneTimeAccess />} />
           <Route path="/about" element={<About />} />
           <Route path="/company" element={<Company />} />
