@@ -6,14 +6,21 @@ La funzionalità **Classroom** permette a un Superuser (SU) di creare uno spazio
 
 ---
 
-## 🔴 STATO ATTUALE: NON FUNZIONANTE
+## ✅ STATO ATTUALE: IMPLEMENTATO
 
-Il sistema presenta un **problema critico**: l'API Vercel per la gestione delle stanze (`/api/admin/rooms`) **non esiste ancora** o non implementa gli endpoint necessari.
+L'API Vercel `/api/admin/rooms` è **attiva e funzionante** su `https://fantasmia-ai.vercel.app/api/admin/rooms`.
 
-### Sintomi osservati:
-- **"Token non valido"**: L'API ritorna 401/403 perché l'endpoint non gestisce `action: "claim"`
-- **Redirect al login Lovable**: Il link `/join/:room?token=...` viene intercettato da un sistema di autenticazione (probabilmente il proxy Lovable) prima di raggiungere la tua app
-- **Stanza funziona solo localmente**: La stanza creata in `SuperuserClassroom.tsx` usa stato React locale (`useState`), non persiste su server
+### Azioni supportate dall'API:
+| Action | Auth | Scopo |
+|--------|------|-------|
+| `create` | Bearer JWT (ADMIN) | SU crea nuova stanza, ottiene room code + token + link |
+| `claim` | Token nel body | NSU/SU entra nella stanza, riceve sessionInfo + roomState |
+| `turn` | Bearer JWT (ADMIN) | SU avvia/ferma turno, imposta turnEndsAt |
+| `room_patch` | Bearer JWT (ADMIN) | SU aggiorna promptSeed |
+
+### Note:
+- **Preview proxy**: Per test multi-browser, pubblicare l'app su URL pubblico (fantasmia.it)
+- **Persistenza**: Lo stato stanza è in-memory sul server Vercel (reset al redeploy)
 
 ---
 
@@ -192,58 +199,25 @@ Il sistema presenta un **problema critico**: l'API Vercel per la gestione delle 
 
 ---
 
-## 🔴 PROBLEMI IDENTIFICATI
+## ✅ IMPLEMENTAZIONE COMPLETATA
 
-### Problema 1: API Vercel Mancante
+### SuperuserClassroom.tsx
 
-**File**: `src/utils/roomSessionManager.ts` linea 35
+Il file `src/pages/SuperuserClassroom.tsx` ora chiama l'API reale:
 
-```typescript
-const ROOMS_API_URL = 'https://fantasmia-ai.vercel.app/api/admin/rooms';
-```
+- **Creazione stanza**: `POST /api/admin/rooms` con `action: "create"`, `room_name`, `turn_s`, `ttl_h`
+- **Controllo turni**: `action: "turn"` con `turnActive: true/false` e opzionale `turnEndsAt`
+- **Aggiornamento spunto**: `action: "room_patch"` con `promptSeed`
 
-Questa API deve supportare:
+### roomSessionManager.ts
 
-| Action | Metodo | Scopo |
-|--------|--------|-------|
-| `create` | POST + adminJwt | SU crea nuova stanza |
-| `claim` | POST | NSU/SU entra nella stanza con token |
-| `turn` | POST + adminJwt | SU avvia/ferma/salta turno |
-| `room_patch` | POST + adminJwt | SU aggiorna spunto comune |
-| `close` | POST + adminJwt | SU chiude la stanza |
+Il file `src/utils/roomSessionManager.ts` gestisce:
 
-### Problema 2: Stanza Solo Locale
+- **claimRoom()**: Valida token e ottiene sessione
+- **refreshRoomState()**: Polling ogni 3s per sincronizzare turnActive/turnEndsAt/promptSeed
+- **setTurn() / setPromptSeed()**: Azioni SU per controllare turni e spunto
 
-**File**: `src/pages/SuperuserClassroom.tsx` linea 63-74
-
-```typescript
-// TODO: Call API to create room
-// await fetch('/api/rooms', { method: 'POST', body: ... })
-
-setActiveRoom({
-  token,
-  room: roomId,
-  // ...questo stato esiste SOLO nel browser del SU!
-});
-```
-
-La stanza viene creata **solo nello stato React locale**. Non esiste persistenza server-side.
-
-### Problema 3: Link Intercettato
-
-Quando si apre il link in un altro browser:
-
-1. Il browser fa GET a `/join/room_xxx?token=yyy`
-2. Lovable preview proxy potrebbe richiedere autenticazione
-3. L'utente vede la pagina di login Lovable invece di JoinRoom.tsx
-
-**Soluzione**: Questo problema si risolve **pubblicando l'app** su dominio custom o Lovable published URL.
-
----
-
-## ✅ COSA SERVE PER FAR FUNZIONARE IL SISTEMA
-
-### 1. Implementare API Vercel `/api/admin/rooms`
+### Per testare
 
 ```typescript
 // api/admin/rooms.ts (da creare su Vercel)
