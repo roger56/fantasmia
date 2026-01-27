@@ -57,6 +57,7 @@ import AlbumCreator from "./pages/AlbumCreator";
 import SuperuserArchive from "./pages/SuperuserArchive";
 import SuperuserUsers from "./pages/SuperuserUsers";
 import SuperuserSettings from "./pages/SuperuserSettings";
+import SuperuserClassroom from "./pages/SuperuserClassroom";
 import SuperuserPasswordChange from "./pages/SuperuserPasswordChange";
 import SuperuserPaymentSettings from "./pages/SuperuserPaymentSettings";
 import ParoleChiamanoEditor from "./pages/ParoleChiamanoEditor";
@@ -221,6 +222,7 @@ const AppContent = () => {
           <Route path="/superuser-archive" element={<SuperuserArchive />} />
           <Route path="/superuser-users" element={<SuperuserUsers />} />
           <Route path="/superuser-settings" element={<SuperuserSettings />} />
+          <Route path="/superuser-classroom" element={<SuperuserClassroom />} />
           <Route path="/superuser-password-change" element={<SuperuserPasswordChange />} />
           <Route path="/superuser-payment-settings" element={<SuperuserPaymentSettings />} />
           <Route path="/parole-chiamano" element={<ParoleChiamanoEditor />} />

@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Palette, Mail, Globe, CreditCard, Settings, Shield, Sparkles, Plus, Trash2, Users, Volume2 } from 'lucide-react';
+import { ArrowLeft, Mail, Globe, CreditCard, Settings, Shield, Sparkles, Plus, Trash2, Users, Volume2, School } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import { fantasMiaDB } from '@/utils/indexedDB';
@@ -334,11 +334,11 @@ const SuperuserSettings = () => {
 
   const settingsOptions = [
     {
-      title: 'Scelta colori del sistema',
-      description: 'Personalizza la palette colori dell\'applicazione',
-      icon: Palette,
-      action: () => handleSettingClick('Scelta colori del sistema'),
-      showTooltip: true
+      title: 'Gestione Classroom',
+      description: 'Crea e gestisci stanze collaborative per attività di gruppo',
+      icon: School,
+      action: () => navigate('/superuser-classroom'),
+      showTooltip: false
     },
     {
       title: 'Indirizzo email predefinito',
