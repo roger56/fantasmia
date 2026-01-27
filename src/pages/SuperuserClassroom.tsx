@@ -6,17 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, School, Play, Square, SkipForward, Copy, Users, Clock, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, School, Play, Square, SkipForward, Copy, Users, Clock, Sparkles, Loader2, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
 import { RoomState } from '@/utils/roomSessionManager';
+import { getAdminToken, adminLogin, adminCheck } from '@/lib/adminAuth';
 
 // API Endpoint
 const ROOMS_API_URL = 'https://fantasmia-ai.vercel.app/api/admin/rooms';
-
-// Ottieni admin JWT da adminAuth (sessionStorage)
-import { getAdminToken } from '@/lib/adminAuth';
 
 function getAdminJwt(): string | null {
   return getAdminToken();
@@ -36,6 +34,11 @@ const SuperuserClassroom = () => {
   const { toast } = useToast();
   const { isChecking, isAuthorized } = useSuperuserGuard();
 
+  // API Authentication state
+  const [isApiAuthenticated, setIsApiAuthenticated] = useState<boolean | null>(null);
+  const [apiPassword, setApiPassword] = useState('');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
   // Room creation
   const [roomName, setRoomName] = useState('');
   const [turnDuration, setTurnDuration] = useState(300); // 5 min default (in secondi)
@@ -46,6 +49,48 @@ const SuperuserClassroom = () => {
   const [activeRoom, setActiveRoom] = useState<ActiveRoomData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [timerDisplay, setTimerDisplay] = useState('--:--');
+
+  // Verifica se esiste già un JWT valido all'avvio
+  useEffect(() => {
+    const checkApiAuth = async () => {
+      const token = getAdminToken();
+      if (token) {
+        // Verifica se il token è ancora valido
+        const isValid = await adminCheck();
+        setIsApiAuthenticated(isValid);
+      } else {
+        setIsApiAuthenticated(false);
+      }
+    };
+    
+    if (isAuthorized) {
+      checkApiAuth();
+    }
+  }, [isAuthorized]);
+
+  // Handler per autenticazione API
+  const handleApiLogin = async () => {
+    if (!apiPassword.trim()) {
+      toast({ title: 'Inserisci la password API', variant: 'destructive' });
+      return;
+    }
+
+    setIsAuthenticating(true);
+    try {
+      await adminLogin(apiPassword);
+      setIsApiAuthenticated(true);
+      setApiPassword('');
+      toast({ title: 'Autenticazione completata!' });
+    } catch (error) {
+      toast({ 
+        title: 'Errore autenticazione', 
+        description: error instanceof Error ? error.message : 'Password non valida',
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
 
   // Aggiorna il timer ogni secondo
   useEffect(() => {
@@ -348,6 +393,73 @@ const SuperuserClassroom = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // API Authentication check - richiedi password API se non autenticato
+  if (isApiAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!isApiAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <HomeButton />
+        <div className="max-w-md mx-auto pt-20">
+          <Card className="border-2 border-amber-500/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-amber-600" />
+                Autenticazione API richiesta
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-slate-600">
+                Per gestire le Classroom è necessario autenticarsi con la password API.
+              </p>
+              <div>
+                <Label htmlFor="apiPassword">Password API</Label>
+                <Input
+                  id="apiPassword"
+                  type="password"
+                  placeholder="Inserisci password API..."
+                  value={apiPassword}
+                  onChange={(e) => setApiPassword(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleApiLogin()}
+                  className="mt-1"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/superuser-settings')}
+                  className="flex-1"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Indietro
+                </Button>
+                <Button 
+                  onClick={handleApiLogin} 
+                  disabled={isAuthenticating || !apiPassword.trim()}
+                  className="flex-1"
+                >
+                  {isAuthenticating ? (
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  ) : (
+                    <Lock className="w-4 h-4 mr-1" />
+                  )}
+                  Autentica
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
