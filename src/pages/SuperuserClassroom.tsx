@@ -15,10 +15,11 @@ import { RoomState } from '@/utils/roomSessionManager';
 // API Endpoint
 const ROOMS_API_URL = 'https://fantasmia-ai.vercel.app/api/admin/rooms';
 
-// Ottieni admin JWT dal localStorage
+// Ottieni admin JWT da adminAuth (sessionStorage)
+import { getAdminToken } from '@/lib/adminAuth';
+
 function getAdminJwt(): string | null {
-  const token = localStorage.getItem('fantasmia_su_token');
-  return token;
+  return getAdminToken();
 }
 
 interface ActiveRoomData {
