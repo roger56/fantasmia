@@ -6,11 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, School, Play, Square, SkipForward, Copy, Users, Clock, Sparkles, Loader2, Lock } from 'lucide-react';
+import { ArrowLeft, School, SkipForward, Copy, Users, Clock, Sparkles, Loader2, Lock, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
-import { RoomState } from '@/utils/roomSessionManager';
+import { nextTurn, setPromptSeed as apiSetPromptSeed } from '@/utils/roomSessionManager';
 import { getAdminToken, adminLogin, adminCheck } from '@/lib/adminAuth';
 
 // API Endpoint
@@ -20,13 +20,20 @@ function getAdminJwt(): string | null {
   return getAdminToken();
 }
 
-interface ActiveRoomData {
+// API V2 Room State interface (for SU management)
+interface SUActiveRoom {
   token: string;
   room: string;
   roomName: string;
+  activityTitle: string;
+  roomMode: 'CONTINUA_TU' | 'CAMPBELL' | 'PROPP';
   expiresAt: number;
   turnS: number;
-  state: RoomState;
+  promptSeed: string;
+  storySoFar: string;
+  writers: string[];
+  currentWriterIndex: number;
+  turnEndsAt: number | null;
 }
 
 const SuperuserClassroom = () => {
@@ -41,12 +48,13 @@ const SuperuserClassroom = () => {
 
   // Room creation
   const [roomName, setRoomName] = useState('');
-  const [turnDuration, setTurnDuration] = useState(300); // 5 min default (in secondi)
+  const [activityTitle, setActivityTitle] = useState('');
+  const [turnDuration, setTurnDuration] = useState(180); // 3 min default (in secondi)
   const [promptSeed, setPromptSeed] = useState('');
   const [ttlHours, setTtlHours] = useState(4); // 4 ore default
   
   // Active room state
-  const [activeRoom, setActiveRoom] = useState<ActiveRoomData | null>(null);
+  const [activeRoom, setActiveRoom] = useState<SUActiveRoom | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [timerDisplay, setTimerDisplay] = useState('--:--');
 
@@ -55,7 +63,6 @@ const SuperuserClassroom = () => {
     const checkApiAuth = async () => {
       const token = getAdminToken();
       if (token) {
-        // Verifica se il token è ancora valido
         const isValid = await adminCheck();
         setIsApiAuthenticated(isValid);
       } else {
@@ -94,20 +101,15 @@ const SuperuserClassroom = () => {
 
   // Aggiorna il timer ogni secondo
   useEffect(() => {
-    if (!activeRoom?.state.turnActive || !activeRoom?.state.turnEndsAt) {
+    if (!activeRoom?.turnEndsAt) {
       setTimerDisplay('--:--');
       return;
     }
 
     const interval = setInterval(() => {
-      const remaining = Math.max(0, activeRoom.state.turnEndsAt! - Date.now());
+      const remaining = Math.max(0, activeRoom.turnEndsAt! - Date.now());
       if (remaining <= 0) {
         setTimerDisplay('00:00');
-        // Turno scaduto, aggiorna stato locale
-        setActiveRoom(prev => prev ? {
-          ...prev,
-          state: { ...prev.state, turnActive: false, turnEndsAt: null }
-        } : null);
       } else {
         const mins = Math.floor(remaining / 60000);
         const secs = Math.floor((remaining % 60000) / 1000);
@@ -116,7 +118,43 @@ const SuperuserClassroom = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [activeRoom?.state.turnEndsAt, activeRoom?.state.turnActive]);
+  }, [activeRoom?.turnEndsAt]);
+
+  // Polling room state every 3s when active
+  useEffect(() => {
+    if (!activeRoom) return;
+
+    const pollState = async () => {
+      try {
+        const response = await fetch(ROOMS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_state', room: activeRoom.room })
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const rs = data.room_state;
+        
+        if (rs) {
+          setActiveRoom(prev => prev ? {
+            ...prev,
+            storySoFar: rs.story_so_far || '',
+            writers: rs.writers || [],
+            currentWriterIndex: rs.current_writer_index ?? 0,
+            turnEndsAt: rs.turn_ends_at ?? null,
+            promptSeed: rs.prompt_seed || ''
+          } : null);
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    };
+
+    const interval = setInterval(pollState, 3000);
+    return () => clearInterval(interval);
+  }, [activeRoom?.room]);
 
   // CREATE ROOM - API call action="create"
   const handleCreateRoom = async () => {
@@ -142,6 +180,8 @@ const SuperuserClassroom = () => {
         body: JSON.stringify({
           action: 'create',
           room_name: roomName.trim(),
+          activity_title: activityTitle.trim() || roomName.trim(),
+          room_mode: 'CONTINUA_TU',
           turn_s: turnDuration,
           ttl_h: ttlHours
         })
@@ -154,24 +194,24 @@ const SuperuserClassroom = () => {
 
       const data = await response.json();
       
-      // data contiene: ok, action, room, ttl_h, turn_s, room_name, expires_at, token, link
       setActiveRoom({
-        token: data.token,
+        token: data.token || '',
         room: data.room,
         roomName: data.room_name || roomName.trim(),
-        expiresAt: new Date(data.expires_at).getTime(),
-        turnS: data.turn_s,
-        state: {
-          turnActive: false,
-          turnEndsAt: null,
-          promptSeed: promptSeed.trim() || null,
-          updatedAt: Date.now()
-        }
+        activityTitle: activityTitle.trim() || roomName.trim(),
+        roomMode: 'CONTINUA_TU',
+        expiresAt: data.expires_at,
+        turnS: data.turn_s || turnDuration,
+        promptSeed: promptSeed.trim(),
+        storySoFar: '',
+        writers: [],
+        currentWriterIndex: 0,
+        turnEndsAt: null
       });
 
       // Se c'è un promptSeed iniziale, invialo
-      if (promptSeed.trim()) {
-        await sendPromptSeed(data.token, promptSeed.trim(), adminJwt);
+      if (promptSeed.trim() && adminJwt) {
+        await apiSetPromptSeed(data.room, promptSeed.trim(), adminJwt);
       }
 
       toast({ 
@@ -191,174 +231,35 @@ const SuperuserClassroom = () => {
     }
   };
 
-  // PROMPT SEED - API call action="room_patch"
-  const sendPromptSeed = async (token: string, seed: string, jwt: string): Promise<boolean> => {
-    try {
-      const response = await fetch(ROOMS_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwt}`
-        },
-        body: JSON.stringify({
-          action: 'room_patch',
-          token,
-          promptSeed: seed
-        })
-      });
-
-      if (!response.ok) {
-        console.error('room_patch failed:', response.status);
-        return false;
-      }
-
-      const data = await response.json();
-      
-      // Aggiorna stato locale con roomState restituito
-      if (data.roomState) {
-        setActiveRoom(prev => prev ? {
-          ...prev,
-          state: {
-            turnActive: data.roomState.turnActive ?? prev.state.turnActive,
-            turnEndsAt: data.roomState.turnEndsAt ?? prev.state.turnEndsAt,
-            promptSeed: data.roomState.promptSeed,
-            updatedAt: Date.now()
-          }
-        } : null);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('sendPromptSeed error:', error);
-      return false;
-    }
-  };
-
-  // TURN - API call action="turn"
-  const sendTurnAction = async (turnActive: boolean, turnEndsAt?: number): Promise<boolean> => {
-    if (!activeRoom) return false;
-
-    const adminJwt = getAdminJwt();
-    if (!adminJwt) {
-      toast({ title: 'Sessione scaduta', variant: 'destructive' });
-      return false;
-    }
-
-    try {
-      const body: any = {
-        action: 'turn',
-        token: activeRoom.token,
-        turnActive
-      };
-
-      if (turnActive && turnEndsAt) {
-        body.turnEndsAt = turnEndsAt;
-      }
-
-      const response = await fetch(ROOMS_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminJwt}`
-        },
-        body: JSON.stringify(body)
-      });
-
-      if (!response.ok) {
-        console.error('turn action failed:', response.status);
-        return false;
-      }
-
-      const data = await response.json();
-
-      // Aggiorna stato locale
-      if (data.roomState) {
-        setActiveRoom(prev => prev ? {
-          ...prev,
-          state: {
-            turnActive: data.roomState.turnActive,
-            turnEndsAt: data.roomState.turnEndsAt,
-            promptSeed: data.roomState.promptSeed ?? prev.state.promptSeed,
-            updatedAt: Date.now()
-          }
-        } : null);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('sendTurnAction error:', error);
-      return false;
-    }
-  };
-
   // Copy join link
   const handleCopyLink = useCallback(() => {
     if (!activeRoom) return;
-    // Usa il link pubblico, non window.location.origin che potrebbe essere il preview
     const baseUrl = 'https://fantasmia.it';
     const link = `${baseUrl}/join/${encodeURIComponent(activeRoom.room)}?token=${encodeURIComponent(activeRoom.token)}`;
     navigator.clipboard.writeText(link);
     toast({ title: 'Link copiato negli appunti!' });
   }, [activeRoom, toast]);
 
-  // Start turn
-  const handleStartTurn = async () => {
-    if (!activeRoom) return;
-    const endsAt = Date.now() + (activeRoom.turnS * 1000);
-    
-    // Aggiorna UI ottimisticamente
-    setActiveRoom(prev => prev ? {
-      ...prev,
-      state: { ...prev.state, turnActive: true, turnEndsAt: endsAt }
-    } : null);
-
-    const success = await sendTurnAction(true, endsAt);
-    if (success) {
-      toast({ title: 'Turno avviato!' });
-    } else {
-      // Rollback UI
-      setActiveRoom(prev => prev ? {
-        ...prev,
-        state: { ...prev.state, turnActive: false, turnEndsAt: null }
-      } : null);
-      toast({ title: 'Errore avvio turno', variant: 'destructive' });
-    }
-  };
-
-  // Stop turn
-  const handleStopTurn = async () => {
-    if (!activeRoom) return;
-    
-    // Aggiorna UI ottimisticamente
-    setActiveRoom(prev => prev ? {
-      ...prev,
-      state: { ...prev.state, turnActive: false, turnEndsAt: null }
-    } : null);
-
-    const success = await sendTurnAction(false);
-    if (success) {
-      toast({ title: 'Turno terminato' });
-    } else {
-      toast({ title: 'Errore stop turno', variant: 'destructive' });
-    }
-  };
-
-  // Next turn (stop + start)
+  // Next turn
   const handleNextTurn = async () => {
     if (!activeRoom) return;
-    const endsAt = Date.now() + (activeRoom.turnS * 1000);
-    
-    // Aggiorna UI ottimisticamente
-    setActiveRoom(prev => prev ? {
-      ...prev,
-      state: { ...prev.state, turnActive: true, turnEndsAt: endsAt }
-    } : null);
+    const adminJwt = getAdminJwt();
+    if (!adminJwt) {
+      toast({ title: 'Sessione scaduta', variant: 'destructive' });
+      return;
+    }
 
-    const success = await sendTurnAction(true, endsAt);
-    if (success) {
-      toast({ title: 'Nuovo turno avviato!' });
+    const result = await nextTurn(activeRoom.room, adminJwt, activeRoom.turnS);
+    if (result.success && result.roomState) {
+      setActiveRoom(prev => prev ? {
+        ...prev,
+        currentWriterIndex: result.roomState!.current_writer_index,
+        turnEndsAt: result.roomState!.turn_ends_at,
+        writers: result.roomState!.writers
+      } : null);
+      toast({ title: 'Turno avanzato!' });
     } else {
-      toast({ title: 'Errore prossimo turno', variant: 'destructive' });
+      toast({ title: 'Errore avanzamento turno', variant: 'destructive' });
     }
   };
 
@@ -372,18 +273,20 @@ const SuperuserClassroom = () => {
       return;
     }
 
-    const success = await sendPromptSeed(activeRoom.token, promptSeed.trim(), adminJwt);
+    const success = await apiSetPromptSeed(activeRoom.room, promptSeed.trim(), adminJwt);
     if (success) {
+      setActiveRoom(prev => prev ? { ...prev, promptSeed: promptSeed.trim() } : null);
       toast({ title: 'Spunto aggiornato!' });
     } else {
       toast({ title: 'Errore aggiornamento spunto', variant: 'destructive' });
     }
   };
 
-  // Close room (solo locale - la room scadrà automaticamente sul server)
+  // Close room
   const handleCloseRoom = () => {
     setActiveRoom(null);
     setRoomName('');
+    setActivityTitle('');
     setPromptSeed('');
     toast({ title: 'Stanza chiusa localmente', description: 'La room scadrà automaticamente sul server' });
   };
@@ -397,7 +300,7 @@ const SuperuserClassroom = () => {
     );
   }
 
-  // API Authentication check - richiedi password API se non autenticato
+  // API Authentication check
   if (isApiAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -464,6 +367,8 @@ const SuperuserClassroom = () => {
     );
   }
 
+  const currentWriter = activeRoom?.writers[activeRoom.currentWriterIndex] || 'Nessuno';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <HomeButton />
@@ -509,6 +414,21 @@ const SuperuserClassroom = () => {
                 />
               </div>
 
+              <div>
+                <Label htmlFor="activityTitle">Titolo attività *</Label>
+                <Input
+                  id="activityTitle"
+                  placeholder="Es: Cosa succede se... scoppia la ridarola?"
+                  value={activityTitle}
+                  onChange={(e) => setActivityTitle(e.target.value)}
+                  className="mt-1"
+                  autoComplete="off"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Questo titolo sarà visibile a tutti i partecipanti
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="turnDuration">Durata turno (secondi)</Label>
@@ -518,7 +438,7 @@ const SuperuserClassroom = () => {
                     min={15}
                     max={600}
                     value={turnDuration}
-                    onChange={(e) => setTurnDuration(Math.max(15, Math.min(600, parseInt(e.target.value) || 300)))}
+                    onChange={(e) => setTurnDuration(Math.max(15, Math.min(600, parseInt(e.target.value) || 180)))}
                     className="mt-1"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
@@ -584,9 +504,9 @@ const SuperuserClassroom = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <h2 className="text-xl font-bold text-emerald-800">{activeRoom.roomName}</h2>
+                    <h2 className="text-xl font-bold text-emerald-800">{activeRoom.activityTitle}</h2>
                     <p className="text-sm text-emerald-600">
-                      Room: <code className="bg-emerald-100 px-2 py-0.5 rounded">{activeRoom.room}</code>
+                      Stanza: <code className="bg-emerald-100 px-2 py-0.5 rounded">{activeRoom.room}</code>
                     </p>
                     <p className="text-xs text-emerald-500 mt-1">
                       Scade: {new Date(activeRoom.expiresAt).toLocaleString()}
@@ -605,15 +525,15 @@ const SuperuserClassroom = () => {
               </CardContent>
             </Card>
 
-            {/* Turn Controls */}
+            {/* Writers & Turn Control */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
-                    Controllo Turni
+                    <Users className="w-5 h-5" />
+                    Partecipanti ({activeRoom.writers.length})
                   </span>
-                  {activeRoom.state.turnActive && (
+                  {activeRoom.turnEndsAt && activeRoom.turnEndsAt > Date.now() && (
                     <Badge variant="default" className="bg-green-500">
                       TURNO ATTIVO
                     </Badge>
@@ -621,35 +541,67 @@ const SuperuserClassroom = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-4 mb-4">
+                {activeRoom.writers.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">
+                    In attesa che i partecipanti si uniscano...
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {activeRoom.writers.map((writer, index) => (
+                      <Badge
+                        key={writer}
+                        variant={index === activeRoom.currentWriterIndex ? 'default' : 'outline'}
+                        className={index === activeRoom.currentWriterIndex ? 'bg-emerald-600' : ''}
+                      >
+                        {writer}
+                        {index === activeRoom.currentWriterIndex && <span className="ml-1">✍️</span>}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4">
                   <div className="text-center">
                     <p className="text-4xl font-mono font-bold text-primary">
                       {timerDisplay}
                     </p>
                     <p className="text-xs text-muted-foreground">Tempo rimanente</p>
                   </div>
-                  <div className="flex-1 flex gap-2">
-                    {!activeRoom.state.turnActive ? (
-                      <Button onClick={handleStartTurn} className="flex-1 bg-green-600 hover:bg-green-700">
-                        <Play className="w-4 h-4 mr-1" />
-                        Avvia Turno
-                      </Button>
-                    ) : (
-                      <>
-                        <Button onClick={handleStopTurn} variant="destructive" className="flex-1">
-                          <Square className="w-4 h-4 mr-1" />
-                          Stop
-                        </Button>
-                        <Button onClick={handleNextTurn} variant="outline" className="flex-1">
-                          <SkipForward className="w-4 h-4 mr-1" />
-                          Prossimo
-                        </Button>
-                      </>
-                    )}
+                  <div className="flex-1">
+                    <p className="text-sm mb-2">
+                      <strong>Ora scrive:</strong> {currentWriter}
+                    </p>
+                    <Button 
+                      onClick={handleNextTurn} 
+                      className="w-full"
+                      disabled={activeRoom.writers.length === 0}
+                    >
+                      <SkipForward className="w-4 h-4 mr-1" />
+                      Prossimo Turno
+                    </Button>
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Durata turno configurata: {Math.floor(activeRoom.turnS / 60)}m {activeRoom.turnS % 60}s
+                <p className="text-xs text-muted-foreground mt-2">
+                  Durata turno: {Math.floor(activeRoom.turnS / 60)}m {activeRoom.turnS % 60}s
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Story So Far */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5" />
+                  Storia finora
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-white border rounded-lg p-4 min-h-32 max-h-64 overflow-auto">
+                  {activeRoom.storySoFar ? (
+                    <p className="whitespace-pre-wrap">{activeRoom.storySoFar}</p>
+                  ) : (
+                    <p className="text-muted-foreground italic">La storia non è ancora iniziata...</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -676,10 +628,10 @@ const SuperuserClassroom = () => {
                     Aggiorna spunto
                   </Button>
                 </div>
-                {activeRoom.state.promptSeed && (
+                {activeRoom.promptSeed && (
                   <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-sm text-amber-800">
-                      <strong>Spunto attivo:</strong> {activeRoom.state.promptSeed}
+                      <strong>Spunto attivo:</strong> {activeRoom.promptSeed}
                     </p>
                   </div>
                 )}
