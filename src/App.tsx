@@ -102,6 +102,7 @@ import AGUserStoryDetail from "./components/shared/AGUserStoryDetail";
 import OneTimeAccess from "./pages/OneTimeAccess";
 import AdminOneTimeLinks from "./pages/admin/AdminOneTimeLinks";
 import JoinRoom from "./pages/JoinRoom";
+import Classroom from "./pages/Classroom";
 import ProtectedRouteGuard from "./components/shared/ProtectedRouteGuard";
 import { usePopstateGuard } from "./hooks/usePopstateGuard";
 
@@ -199,6 +200,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<NewHome />} />
           <Route path="/join/:room" element={<JoinRoom />} />
+          <Route path="/classroom/:room" element={<Classroom />} />
           <Route path="/one-time" element={<OneTimeAccess />} />
           <Route path="/about" element={<About />} />
           <Route path="/company" element={<Company />} />

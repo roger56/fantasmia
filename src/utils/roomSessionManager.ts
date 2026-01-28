@@ -1,25 +1,28 @@
 // ============= ROOM SESSION MANAGEMENT (CLASSROOM) =============
-// Gestisce sessioni stanza multi-device con turni sincronizzati via API
+// Gestisce sessioni stanza multi-device con turni sincronizzati via API V2
 
 import { setCurrentProfileId } from './profileManager';
 
 // ============= INTERFACES =============
 
 export interface RoomState {
-  turnActive: boolean;
-  turnEndsAt: number | null; // ms epoch
-  promptSeed: string | null; // spunto comune
-  updatedAt?: number;
+  activity_title: string;
+  room_mode: 'CONTINUA_TU' | 'CAMPBELL' | 'PROPP';
+  prompt_seed: string;
+  story_so_far: string;
+  writers: string[];
+  current_writer_index: number;
+  turn_ends_at: number | null; // ms epoch
+  expires_at: number; // ms epoch
 }
 
 export interface RoomSession {
   token: string;
   room: string;
-  expires_at: number; // ms epoch
-  roleFromClaim: 'NSU_SESSION' | 'SU';
   room_name: string;
-  turn_s: number; // durata turno in secondi
-  inRoom: boolean;
+  writer_id: string; // "Writer 1", "Writer 2", etc.
+  writer_index: number; // 0, 1, 2...
+  expires_at: number; // ms epoch
   roomState: RoomState;
 }
 
@@ -27,13 +30,13 @@ export interface ClaimRoomResult {
   success: boolean;
   session?: RoomSession;
   error?: string;
-  errorCode?: 'TOKEN_MISSING' | 'TOKEN_EXPIRED' | 'TOKEN_INVALID' | 'NETWORK_ERROR' | 'ROOM_EXPIRED';
+  errorCode?: 'TOKEN_MISSING' | 'TOKEN_EXPIRED' | 'TOKEN_INVALID' | 'NETWORK_ERROR' | 'ROOM_EXPIRED' | 'ROOM_NOT_FOUND';
 }
 
 // ============= CONSTANTS =============
 
 const ROOMS_API_URL = 'https://fantasmia-ai.vercel.app/api/admin/rooms';
-const ROOM_SESSION_STORAGE_KEY = 'fantasmia_room_session_v1';
+const ROOM_SESSION_STORAGE_KEY = 'fantasmia_room_session_v2';
 const POLLING_INTERVAL_MS = 3000; // 3 secondi come da specifica
 
 // ============= LOCAL STORAGE HELPERS =============
@@ -61,11 +64,15 @@ function getRoomSessionFromStorage(): RoomSession | null {
 
 function saveRoomSession(session: RoomSession): void {
   localStorage.setItem(ROOM_SESSION_STORAGE_KEY, JSON.stringify(session));
-  console.log('💾 Room session salvata, room:', session.room, 'scade:', new Date(session.expires_at).toLocaleString());
+  console.log('💾 Room session salvata, room:', session.room, 'writer:', session.writer_id);
 }
 
 // ============= API CALLS =============
 
+/**
+ * Join a room as a new writer (NSU entry point)
+ * API: action="join"
+ */
 export async function claimRoom(room: string, token: string): Promise<ClaimRoomResult> {
   if (!room || !token) {
     return { success: false, error: 'Room o token mancante', errorCode: 'TOKEN_MISSING' };
@@ -75,15 +82,15 @@ export async function claimRoom(room: string, token: string): Promise<ClaimRoomR
     const response = await fetch(ROOMS_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'claim', room, token })
+      body: JSON.stringify({ action: 'join', room })
     });
 
     if (response.status === 410) {
       return { success: false, error: 'La stanza è scaduta.', errorCode: 'ROOM_EXPIRED' };
     }
 
-    if (response.status === 401 || response.status === 403) {
-      return { success: false, error: 'Token non valido.', errorCode: 'TOKEN_INVALID' };
+    if (response.status === 404) {
+      return { success: false, error: 'Stanza non trovata.', errorCode: 'ROOM_NOT_FOUND' };
     }
 
     if (!response.ok) {
@@ -97,20 +104,25 @@ export async function claimRoom(room: string, token: string): Promise<ClaimRoomR
 
     const data = await response.json();
     
-    // Costruisci sessione da risposta API
+    // data contiene: success, writer_id, writer_index, room_state
+    const roomState = data.room_state;
+    
     const session: RoomSession = {
       token,
       room,
-      expires_at: new Date(data.session.expires_at).getTime(),
-      roleFromClaim: data.session.role || 'NSU_SESSION',
-      room_name: data.session.room_name || room,
-      turn_s: data.session.turn_s || 180, // default 3 minuti
-      inRoom: true,
+      room_name: roomState.room_name || room,
+      writer_id: data.writer_id,
+      writer_index: data.writer_index,
+      expires_at: roomState.expires_at,
       roomState: {
-        turnActive: data.roomState?.turnActive ?? false,
-        turnEndsAt: data.roomState?.turnEndsAt ?? null,
-        promptSeed: data.roomState?.promptSeed ?? null,
-        updatedAt: data.roomState?.updatedAt ?? Date.now()
+        activity_title: roomState.activity_title || '',
+        room_mode: roomState.room_mode || 'CONTINUA_TU',
+        prompt_seed: roomState.prompt_seed || '',
+        story_so_far: roomState.story_so_far || '',
+        writers: roomState.writers || [],
+        current_writer_index: roomState.current_writer_index ?? 0,
+        turn_ends_at: roomState.turn_ends_at ?? null,
+        expires_at: roomState.expires_at
       }
     };
 
@@ -121,22 +133,32 @@ export async function claimRoom(room: string, token: string): Promise<ClaimRoomR
     const roomProfileId = `room_${room.substring(0, 8)}`;
     setCurrentProfileId(roomProfileId);
 
-    console.log('✅ Room claim success:', session.room_name, 'role:', session.roleFromClaim);
+    console.log('✅ Room join success:', session.room_name, 'writer:', session.writer_id);
     return { success: true, session };
 
   } catch (error) {
-    console.error('Room claim error:', error);
+    console.error('Room join error:', error);
     return { success: false, error: 'Errore di rete', errorCode: 'NETWORK_ERROR' };
   }
 }
 
+/**
+ * Get current room state (polling)
+ * API: action="get_state"
+ */
 export async function refreshRoomState(session: RoomSession): Promise<RoomState | null> {
   try {
     const response = await fetch(ROOMS_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'claim', room: session.room, token: session.token })
+      body: JSON.stringify({ action: 'get_state', room: session.room })
     });
+
+    if (response.status === 404) {
+      console.warn('Room not found during refresh');
+      clearRoomSession();
+      return null;
+    }
 
     if (!response.ok) {
       console.warn('Room state refresh failed:', response.status);
@@ -144,12 +166,17 @@ export async function refreshRoomState(session: RoomSession): Promise<RoomState 
     }
 
     const data = await response.json();
+    const roomState = data.room_state;
     
     const newState: RoomState = {
-      turnActive: data.roomState?.turnActive ?? false,
-      turnEndsAt: data.roomState?.turnEndsAt ?? null,
-      promptSeed: data.roomState?.promptSeed ?? null,
-      updatedAt: Date.now()
+      activity_title: roomState.activity_title || '',
+      room_mode: roomState.room_mode || 'CONTINUA_TU',
+      prompt_seed: roomState.prompt_seed || '',
+      story_so_far: roomState.story_so_far || '',
+      writers: roomState.writers || [],
+      current_writer_index: roomState.current_writer_index ?? 0,
+      turn_ends_at: roomState.turn_ends_at ?? null,
+      expires_at: roomState.expires_at
     };
 
     // Aggiorna sessione in localStorage
@@ -164,14 +191,76 @@ export async function refreshRoomState(session: RoomSession): Promise<RoomState 
   }
 }
 
+/**
+ * Submit text contribution (NSU during their turn)
+ * API: action="submit_text"
+ */
+export async function submitText(
+  session: RoomSession, 
+  text: string
+): Promise<{ success: boolean; error?: string; roomState?: RoomState }> {
+  try {
+    const response = await fetch(ROOMS_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        action: 'submit_text', 
+        room: session.room, 
+        writer_id: session.writer_id,
+        text
+      })
+    });
+
+    if (response.status === 403) {
+      return { success: false, error: 'Non è il tuo turno' };
+    }
+
+    if (response.status === 404) {
+      return { success: false, error: 'Stanza non trovata' };
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { success: false, error: errorData.error || 'Errore invio testo' };
+    }
+
+    const data = await response.json();
+    const roomState = data.room_state;
+    
+    const newState: RoomState = {
+      activity_title: roomState.activity_title || '',
+      room_mode: roomState.room_mode || 'CONTINUA_TU',
+      prompt_seed: roomState.prompt_seed || '',
+      story_so_far: roomState.story_so_far || '',
+      writers: roomState.writers || [],
+      current_writer_index: roomState.current_writer_index ?? 0,
+      turn_ends_at: roomState.turn_ends_at ?? null,
+      expires_at: roomState.expires_at
+    };
+
+    // Aggiorna sessione in localStorage
+    const updatedSession: RoomSession = { ...session, roomState: newState };
+    saveRoomSession(updatedSession);
+
+    return { success: true, roomState: newState };
+
+  } catch (error) {
+    console.error('Submit text error:', error);
+    return { success: false, error: 'Errore di rete' };
+  }
+}
+
 // ============= SU CONTROL ACTIONS =============
 
-export async function setTurn(
-  session: RoomSession, 
-  turnActive: boolean, 
+/**
+ * Advance to next turn (SU only)
+ * API: action="next_turn"
+ */
+export async function nextTurn(
+  room: string,
   adminJwt: string,
-  turnEndsAt?: number
-): Promise<boolean> {
+  turnS: number = 180
+): Promise<{ success: boolean; roomState?: RoomState }> {
   try {
     const response = await fetch(ROOMS_API_URL, {
       method: 'POST',
@@ -180,46 +269,48 @@ export async function setTurn(
         'Authorization': `Bearer ${adminJwt}`
       },
       body: JSON.stringify({ 
-        action: 'turn', 
-        room: session.room, 
-        token: session.token,
-        turnActive,
-        turnEndsAt: turnActive ? (turnEndsAt ?? Date.now() + session.turn_s * 1000) : null
+        action: 'next_turn', 
+        room,
+        turn_s: turnS
       })
     });
 
     if (!response.ok) {
-      console.error('setTurn failed:', response.status);
-      return false;
+      console.error('next_turn failed:', response.status);
+      return { success: false };
     }
 
     const data = await response.json();
+    const roomState = data.room_state;
     
-    // Aggiorna stato locale
-    if (data.roomState) {
-      const updatedSession: RoomSession = {
-        ...session,
-        roomState: {
-          turnActive: data.roomState.turnActive,
-          turnEndsAt: data.roomState.turnEndsAt,
-          promptSeed: data.roomState.promptSeed ?? session.roomState.promptSeed,
-          updatedAt: Date.now()
-        }
+    if (roomState) {
+      const newState: RoomState = {
+        activity_title: roomState.activity_title || '',
+        room_mode: roomState.room_mode || 'CONTINUA_TU',
+        prompt_seed: roomState.prompt_seed || '',
+        story_so_far: roomState.story_so_far || '',
+        writers: roomState.writers || [],
+        current_writer_index: roomState.current_writer_index ?? 0,
+        turn_ends_at: roomState.turn_ends_at ?? null,
+        expires_at: roomState.expires_at
       };
-      saveRoomSession(updatedSession);
+      return { success: true, roomState: newState };
     }
 
-    console.log('✅ Turn updated:', turnActive);
-    return true;
+    return { success: true };
 
   } catch (error) {
-    console.error('setTurn error:', error);
-    return false;
+    console.error('nextTurn error:', error);
+    return { success: false };
   }
 }
 
+/**
+ * Update prompt seed (SU only)
+ * API: action="room_patch" (if available) or custom action
+ */
 export async function setPromptSeed(
-  session: RoomSession, 
+  room: string,
   promptSeed: string,
   adminJwt: string
 ): Promise<boolean> {
@@ -232,8 +323,7 @@ export async function setPromptSeed(
       },
       body: JSON.stringify({ 
         action: 'room_patch', 
-        room: session.room, 
-        token: session.token,
+        room,
         promptSeed
       })
     });
@@ -241,21 +331,6 @@ export async function setPromptSeed(
     if (!response.ok) {
       console.error('setPromptSeed failed:', response.status);
       return false;
-    }
-
-    const data = await response.json();
-    
-    // Aggiorna stato locale
-    if (data.roomState) {
-      const updatedSession: RoomSession = {
-        ...session,
-        roomState: {
-          ...session.roomState,
-          promptSeed: data.roomState.promptSeed,
-          updatedAt: Date.now()
-        }
-      };
-      saveRoomSession(updatedSession);
     }
 
     console.log('✅ Prompt seed updated');
@@ -276,7 +351,7 @@ export function getRoomSession(): RoomSession | null {
 export function isRoomSessionActive(): boolean {
   const session = getRoomSession();
   if (!session) return false;
-  return session.inRoom && session.expires_at > Date.now();
+  return session.expires_at > Date.now();
 }
 
 export function getRoomRemainingTimeMs(): number {
@@ -287,26 +362,30 @@ export function getRoomRemainingTimeMs(): number {
 
 export function getTurnRemainingTimeMs(): number {
   const session = getRoomSession();
-  if (!session || !session.roomState.turnActive || !session.roomState.turnEndsAt) return 0;
-  return Math.max(0, session.roomState.turnEndsAt - Date.now());
+  if (!session || !session.roomState.turn_ends_at) return 0;
+  return Math.max(0, session.roomState.turn_ends_at - Date.now());
+}
+
+export function isMyTurn(): boolean {
+  const session = getRoomSession();
+  if (!session) return false;
+  return session.roomState.current_writer_index === session.writer_index;
 }
 
 export function isTurnActive(): boolean {
   const session = getRoomSession();
-  if (!session || !session.roomState.turnActive) return false;
-  if (!session.roomState.turnEndsAt) return false;
-  return session.roomState.turnEndsAt > Date.now();
+  if (!session || !session.roomState.turn_ends_at) return false;
+  return session.roomState.turn_ends_at > Date.now();
 }
 
 export function isEditableForNSU(): boolean {
-  const session = getRoomSession();
-  if (!session) return false;
-  if (session.roleFromClaim === 'SU') return true; // SU sempre editabile
-  return isTurnActive();
+  return isMyTurn() && isTurnActive();
 }
 
 export function clearRoomSession(): void {
   localStorage.removeItem(ROOM_SESSION_STORAGE_KEY);
+  // Also clear old v1 session if exists
+  localStorage.removeItem('fantasmia_room_session_v1');
   console.log('🚪 Room session cleared');
   
   // Pulisci history per sicurezza

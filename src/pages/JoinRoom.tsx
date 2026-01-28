@@ -35,9 +35,9 @@ const JoinRoom: React.FC = () => {
         setRoomName(result.session.room_name);
         setStatus('success');
         
-        // Redirect alla home dopo 1.5 secondi
+        // Redirect alla classroom dopo 1.5 secondi
         setTimeout(() => {
-          navigate('/', { replace: true });
+          navigate(`/classroom/${room}`, { replace: true });
         }, 1500);
       } else {
         setStatus('error');

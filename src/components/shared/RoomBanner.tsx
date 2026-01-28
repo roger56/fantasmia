@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DoorOpen, Clock, LogOut, Pencil, Lock, AlertCircle } from 'lucide-react';
+import { DoorOpen, Clock, LogOut, Pencil, Lock, AlertCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   getRoomSession, 
@@ -8,6 +8,7 @@ import {
   getRoomRemainingTimeMs,
   getTurnRemainingTimeMs,
   isTurnActive,
+  isMyTurn,
   clearRoomSession,
   refreshRoomState,
   getPollingInterval
@@ -19,6 +20,7 @@ const RoomBanner: React.FC = () => {
   const [roomCountdown, setRoomCountdown] = useState('');
   const [turnCountdown, setTurnCountdown] = useState('');
   const [turnIsActive, setTurnIsActive] = useState(false);
+  const [myTurn, setMyTurn] = useState(false);
 
   // Polling per sincronizzazione stato stanza
   useEffect(() => {
@@ -84,6 +86,7 @@ const RoomBanner: React.FC = () => {
       const turnMs = getTurnRemainingTimeMs();
       const turnActive = isTurnActive();
       setTurnIsActive(turnActive);
+      setMyTurn(isMyTurn());
       
       if (turnActive && turnMs > 0) {
         const turnSeconds = Math.ceil(turnMs / 1000);
@@ -115,8 +118,7 @@ const RoomBanner: React.FC = () => {
     return null;
   }
 
-  const isNSU = session.roleFromClaim === 'NSU_SESSION';
-  const canEdit = !isNSU || turnIsActive;
+  const currentWriter = session.roomState.writers[session.roomState.current_writer_index] || 'Nessuno';
   const isUrgent = getRoomRemainingTimeMs() <= 15 * 60 * 1000; // Meno di 15 minuti
 
   return (
@@ -148,32 +150,38 @@ const RoomBanner: React.FC = () => {
               </span>
             </div>
 
-            {/* Badge ruolo */}
-            <span className="px-2 py-0.5 bg-white/20 rounded text-xs font-medium">
-              {session.roleFromClaim === 'SU' ? 'Moderatore' : 'Partecipante'}
+            {/* Badge writer */}
+            <span className="px-2 py-0.5 bg-white/20 rounded text-xs font-medium flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              {session.writer_id}
             </span>
           </div>
 
-          {/* Stato turno (se NSU) */}
-          {isNSU && (
-            <div className="flex items-center gap-2">
-              {turnIsActive ? (
-                <div className="flex items-center gap-2 bg-green-500/30 px-3 py-1 rounded-full">
-                  <Pencil className="w-3.5 h-3.5" />
-                  <span className="text-sm font-medium">
-                    Turno attivo: {turnCountdown}
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 bg-amber-500/30 px-3 py-1 rounded-full">
-                  <Lock className="w-3.5 h-3.5" />
-                  <span className="text-sm">
-                    In attesa del turno
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Stato turno */}
+          <div className="flex items-center gap-2">
+            {myTurn && turnIsActive ? (
+              <div className="flex items-center gap-2 bg-green-500/30 px-3 py-1 rounded-full">
+                <Pencil className="w-3.5 h-3.5" />
+                <span className="text-sm font-medium">
+                  È il tuo turno! {turnCountdown}
+                </span>
+              </div>
+            ) : turnIsActive ? (
+              <div className="flex items-center gap-2 bg-amber-500/30 px-3 py-1 rounded-full">
+                <Lock className="w-3.5 h-3.5" />
+                <span className="text-sm">
+                  Turno: {currentWriter} ({turnCountdown})
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-slate-500/30 px-3 py-1 rounded-full">
+                <Lock className="w-3.5 h-3.5" />
+                <span className="text-sm">
+                  In attesa del turno
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Pulsante Esci */}
           <Button
@@ -188,11 +196,11 @@ const RoomBanner: React.FC = () => {
         </div>
 
         {/* Spunto comune (se presente) */}
-        {session.roomState.promptSeed && (
+        {session.roomState.prompt_seed && (
           <div className="mt-2 pt-2 border-t border-white/20">
             <p className="text-sm opacity-90">
               <span className="font-medium">Spunto comune:</span>{' '}
-              <span className="italic">"{session.roomState.promptSeed}"</span>
+              <span className="italic">"{session.roomState.prompt_seed}"</span>
             </p>
           </div>
         )}
