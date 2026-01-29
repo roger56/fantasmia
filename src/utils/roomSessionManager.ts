@@ -13,11 +13,12 @@ export interface RoomState {
   writers: string[];
   current_writer_index: number;
   turn_ends_at: number | null; // ms epoch
+  turn_paused: boolean; // turno in pausa
+  turn_remaining_ms: number | null; // ms rimanenti quando in pausa
   expires_at: number; // ms epoch
 }
 
 export interface RoomSession {
-  token: string;
   room: string;
   room_name: string;
   writer_id: string; // "Writer 1", "Writer 2", etc.
@@ -30,7 +31,7 @@ export interface ClaimRoomResult {
   success: boolean;
   session?: RoomSession;
   error?: string;
-  errorCode?: 'TOKEN_MISSING' | 'TOKEN_EXPIRED' | 'TOKEN_INVALID' | 'NETWORK_ERROR' | 'ROOM_EXPIRED' | 'ROOM_NOT_FOUND';
+  errorCode?: 'ROOM_EXPIRED' | 'ROOM_NOT_FOUND' | 'NETWORK_ERROR';
 }
 
 // ============= CONSTANTS =============
@@ -67,15 +68,32 @@ function saveRoomSession(session: RoomSession): void {
   console.log('💾 Room session salvata, room:', session.room, 'writer:', session.writer_id);
 }
 
+// ============= HELPERS =============
+
+function parseRoomState(rs: any): RoomState {
+  return {
+    activity_title: rs.activity_title || '',
+    room_mode: rs.room_mode || 'CONTINUA_TU',
+    prompt_seed: rs.prompt_seed || '',
+    story_so_far: rs.story_so_far || '',
+    writers: rs.writers || [],
+    current_writer_index: rs.current_writer_index ?? 0,
+    turn_ends_at: rs.turn_ends_at ?? null,
+    turn_paused: rs.turn_paused ?? false,
+    turn_remaining_ms: rs.turn_remaining_ms ?? null,
+    expires_at: rs.expires_at
+  };
+}
+
 // ============= API CALLS =============
 
 /**
  * Join a room as a new writer (NSU entry point)
  * API: action="join"
  */
-export async function claimRoom(room: string, token: string): Promise<ClaimRoomResult> {
-  if (!room || !token) {
-    return { success: false, error: 'Room o token mancante', errorCode: 'TOKEN_MISSING' };
+export async function claimRoom(room: string): Promise<ClaimRoomResult> {
+  if (!room) {
+    return { success: false, error: 'Room mancante', errorCode: 'ROOM_NOT_FOUND' };
   }
 
   try {
@@ -98,7 +116,7 @@ export async function claimRoom(room: string, token: string): Promise<ClaimRoomR
       return { 
         success: false, 
         error: errorData.error || 'Errore accesso stanza', 
-        errorCode: 'TOKEN_INVALID' 
+        errorCode: 'NETWORK_ERROR' 
       };
     }
 
@@ -108,22 +126,12 @@ export async function claimRoom(room: string, token: string): Promise<ClaimRoomR
     const roomState = data.room_state;
     
     const session: RoomSession = {
-      token,
       room,
       room_name: roomState.room_name || room,
       writer_id: data.writer_id,
       writer_index: data.writer_index,
       expires_at: roomState.expires_at,
-      roomState: {
-        activity_title: roomState.activity_title || '',
-        room_mode: roomState.room_mode || 'CONTINUA_TU',
-        prompt_seed: roomState.prompt_seed || '',
-        story_so_far: roomState.story_so_far || '',
-        writers: roomState.writers || [],
-        current_writer_index: roomState.current_writer_index ?? 0,
-        turn_ends_at: roomState.turn_ends_at ?? null,
-        expires_at: roomState.expires_at
-      }
+      roomState: parseRoomState(roomState)
     };
 
     // Salva in localStorage
@@ -166,18 +174,7 @@ export async function refreshRoomState(session: RoomSession): Promise<RoomState 
     }
 
     const data = await response.json();
-    const roomState = data.room_state;
-    
-    const newState: RoomState = {
-      activity_title: roomState.activity_title || '',
-      room_mode: roomState.room_mode || 'CONTINUA_TU',
-      prompt_seed: roomState.prompt_seed || '',
-      story_so_far: roomState.story_so_far || '',
-      writers: roomState.writers || [],
-      current_writer_index: roomState.current_writer_index ?? 0,
-      turn_ends_at: roomState.turn_ends_at ?? null,
-      expires_at: roomState.expires_at
-    };
+    const newState = parseRoomState(data.room_state);
 
     // Aggiorna sessione in localStorage
     const updatedSession: RoomSession = { ...session, roomState: newState };
@@ -225,18 +222,7 @@ export async function submitText(
     }
 
     const data = await response.json();
-    const roomState = data.room_state;
-    
-    const newState: RoomState = {
-      activity_title: roomState.activity_title || '',
-      room_mode: roomState.room_mode || 'CONTINUA_TU',
-      prompt_seed: roomState.prompt_seed || '',
-      story_so_far: roomState.story_so_far || '',
-      writers: roomState.writers || [],
-      current_writer_index: roomState.current_writer_index ?? 0,
-      turn_ends_at: roomState.turn_ends_at ?? null,
-      expires_at: roomState.expires_at
-    };
+    const newState = parseRoomState(data.room_state);
 
     // Aggiorna sessione in localStorage
     const updatedSession: RoomSession = { ...session, roomState: newState };
@@ -260,7 +246,7 @@ export async function nextTurn(
   room: string,
   adminJwt: string,
   turnS: number = 180
-): Promise<{ success: boolean; roomState?: RoomState }> {
+): Promise<{ success: boolean; roomState?: RoomState; error?: string }> {
   try {
     const response = await fetch(ROOMS_API_URL, {
       method: 'POST',
@@ -275,45 +261,44 @@ export async function nextTurn(
       })
     });
 
+    if (response.status === 401) {
+      return { success: false, error: 'Sessione scaduta, rifai login' };
+    }
+
+    if (response.status === 409) {
+      const errorData = await response.json().catch(() => ({}));
+      if (errorData.error?.includes('no writers')) {
+        return { success: false, error: 'Prima fai entrare almeno un partecipante' };
+      }
+      return { success: false, error: errorData.error || 'Errore turno' };
+    }
+
     if (!response.ok) {
       console.error('next_turn failed:', response.status);
-      return { success: false };
+      return { success: false, error: 'Errore avanzamento turno' };
     }
 
     const data = await response.json();
-    const roomState = data.room_state;
-    
-    if (roomState) {
-      const newState: RoomState = {
-        activity_title: roomState.activity_title || '',
-        room_mode: roomState.room_mode || 'CONTINUA_TU',
-        prompt_seed: roomState.prompt_seed || '',
-        story_so_far: roomState.story_so_far || '',
-        writers: roomState.writers || [],
-        current_writer_index: roomState.current_writer_index ?? 0,
-        turn_ends_at: roomState.turn_ends_at ?? null,
-        expires_at: roomState.expires_at
-      };
-      return { success: true, roomState: newState };
+    if (data.room_state) {
+      return { success: true, roomState: parseRoomState(data.room_state) };
     }
 
     return { success: true };
 
   } catch (error) {
     console.error('nextTurn error:', error);
-    return { success: false };
+    return { success: false, error: 'Errore di rete' };
   }
 }
 
 /**
- * Update prompt seed (SU only)
- * API: action="room_patch" (if available) or custom action
+ * Pause current turn (SU only)
+ * API: action="pause_turn"
  */
-export async function setPromptSeed(
+export async function pauseTurn(
   room: string,
-  promptSeed: string,
   adminJwt: string
-): Promise<boolean> {
+): Promise<{ success: boolean; roomState?: RoomState; error?: string }> {
   try {
     const response = await fetch(ROOMS_API_URL, {
       method: 'POST',
@@ -322,24 +307,89 @@ export async function setPromptSeed(
         'Authorization': `Bearer ${adminJwt}`
       },
       body: JSON.stringify({ 
-        action: 'room_patch', 
-        room,
-        promptSeed
+        action: 'pause_turn', 
+        room
       })
     });
 
-    if (!response.ok) {
-      console.error('setPromptSeed failed:', response.status);
-      return false;
+    if (response.status === 401) {
+      return { success: false, error: 'Sessione scaduta, rifai login' };
     }
 
-    console.log('✅ Prompt seed updated');
-    return true;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { success: false, error: errorData.error || 'Errore pausa turno' };
+    }
+
+    const data = await response.json();
+    if (data.room_state) {
+      return { success: true, roomState: parseRoomState(data.room_state) };
+    }
+
+    return { success: true };
 
   } catch (error) {
-    console.error('setPromptSeed error:', error);
-    return false;
+    console.error('pauseTurn error:', error);
+    return { success: false, error: 'Errore di rete' };
   }
+}
+
+/**
+ * Resume paused turn (SU only)
+ * API: action="resume_turn"
+ */
+export async function resumeTurn(
+  room: string,
+  adminJwt: string
+): Promise<{ success: boolean; roomState?: RoomState; error?: string }> {
+  try {
+    const response = await fetch(ROOMS_API_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminJwt}`
+      },
+      body: JSON.stringify({ 
+        action: 'resume_turn', 
+        room
+      })
+    });
+
+    if (response.status === 401) {
+      return { success: false, error: 'Sessione scaduta, rifai login' };
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { success: false, error: errorData.error || 'Errore ripresa turno' };
+    }
+
+    const data = await response.json();
+    if (data.room_state) {
+      return { success: true, roomState: parseRoomState(data.room_state) };
+    }
+
+    return { success: true };
+
+  } catch (error) {
+    console.error('resumeTurn error:', error);
+    return { success: false, error: 'Errore di rete' };
+  }
+}
+
+/**
+ * Update prompt seed (SU only) - included in create, not separate action
+ * NOTE: prompt_seed should be set during room creation
+ */
+export async function setPromptSeed(
+  room: string,
+  promptSeed: string,
+  adminJwt: string
+): Promise<boolean> {
+  // NOTE: L'API attuale non supporta room_patch separato
+  // Il prompt_seed va impostato durante la creazione della stanza
+  console.warn('setPromptSeed: action non supportata, usare create con prompt_seed');
+  return false;
 }
 
 // ============= SESSION MANAGEMENT =============
@@ -362,7 +412,15 @@ export function getRoomRemainingTimeMs(): number {
 
 export function getTurnRemainingTimeMs(): number {
   const session = getRoomSession();
-  if (!session || !session.roomState.turn_ends_at) return 0;
+  if (!session) return 0;
+  
+  // Se in pausa, usa turn_remaining_ms
+  if (session.roomState.turn_paused && session.roomState.turn_remaining_ms != null) {
+    return session.roomState.turn_remaining_ms;
+  }
+  
+  // Altrimenti calcola da turn_ends_at
+  if (!session.roomState.turn_ends_at) return 0;
   return Math.max(0, session.roomState.turn_ends_at - Date.now());
 }
 
@@ -374,11 +432,26 @@ export function isMyTurn(): boolean {
 
 export function isTurnActive(): boolean {
   const session = getRoomSession();
-  if (!session || !session.roomState.turn_ends_at) return false;
+  if (!session) return false;
+  
+  // Se in pausa, il turno è "attivo" ma congelato
+  if (session.roomState.turn_paused) return true;
+  
+  if (!session.roomState.turn_ends_at) return false;
   return session.roomState.turn_ends_at > Date.now();
 }
 
+export function isTurnPaused(): boolean {
+  const session = getRoomSession();
+  if (!session) return false;
+  return session.roomState.turn_paused;
+}
+
 export function isEditableForNSU(): boolean {
+  // NSU può editare se è il suo turno E turno attivo E NON in pausa
+  const session = getRoomSession();
+  if (!session) return false;
+  if (session.roomState.turn_paused) return false;
   return isMyTurn() && isTurnActive();
 }
 

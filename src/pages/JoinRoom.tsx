@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, DoorOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,7 +7,6 @@ import { claimRoom, disableOTSessionIfRoomActive } from '@/utils/roomSessionMana
 
 const JoinRoom: React.FC = () => {
   const { room } = useParams<{ room: string }>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
   const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading');
@@ -15,18 +14,17 @@ const JoinRoom: React.FC = () => {
   const [roomName, setRoomName] = useState<string>('');
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    
-    if (!room || !token) {
+    if (!room) {
       setStatus('error');
-      setErrorMessage('Link non valido. Manca il codice stanza o il token.');
+      setErrorMessage('Link non valido. Manca il codice stanza.');
       return;
     }
 
     const doJoin = async () => {
       setStatus('loading');
       
-      const result = await claimRoom(room, token);
+      // Join senza token - l'API assegna automaticamente un writer_id
+      const result = await claimRoom(room);
       
       if (result.success && result.session) {
         // Disabilita eventuali sessioni OT attive
@@ -46,7 +44,7 @@ const JoinRoom: React.FC = () => {
     };
 
     doJoin();
-  }, [room, searchParams, navigate]);
+  }, [room, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center p-4">
