@@ -378,18 +378,98 @@ export async function resumeTurn(
 }
 
 /**
- * Update prompt seed (SU only) - included in create, not separate action
- * NOTE: prompt_seed should be set during room creation
+ * Stop current turn (SU only)
+ * API: action="stop_turn"
  */
-export async function setPromptSeed(
+export async function stopTurn(
   room: string,
-  promptSeed: string,
   adminJwt: string
-): Promise<boolean> {
-  // NOTE: L'API attuale non supporta room_patch separato
-  // Il prompt_seed va impostato durante la creazione della stanza
-  console.warn('setPromptSeed: action non supportata, usare create con prompt_seed');
-  return false;
+): Promise<{ success: boolean; roomState?: RoomState; error?: string }> {
+  try {
+    const response = await fetch(ROOMS_API_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminJwt}`
+      },
+      body: JSON.stringify({ 
+        action: 'stop_turn', 
+        room
+      })
+    });
+
+    if (response.status === 401) {
+      return { success: false, error: 'Sessione scaduta, rifai login' };
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { success: false, error: errorData.error || 'Errore stop turno' };
+    }
+
+    const data = await response.json();
+    if (data.room_state) {
+      return { success: true, roomState: parseRoomState(data.room_state) };
+    }
+
+    return { success: true };
+
+  } catch (error) {
+    console.error('stopTurn error:', error);
+    return { success: false, error: 'Errore di rete' };
+  }
+}
+
+// ============= LIST ROOMS (DASHBOARD) =============
+
+export interface RoomListItem {
+  room: string;
+  room_state: RoomState & { room_name: string };
+}
+
+/**
+ * List all active rooms (Admin Dashboard)
+ * API: action="list_rooms"
+ */
+export async function listRooms(
+  adminJwt: string
+): Promise<{ success: boolean; rooms?: RoomListItem[]; error?: string }> {
+  try {
+    const response = await fetch(ROOMS_API_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminJwt}`
+      },
+      body: JSON.stringify({ action: 'list_rooms' })
+    });
+
+    if (response.status === 401) {
+      return { success: false, error: 'Sessione scaduta, rifai login' };
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { success: false, error: errorData.error || 'Errore caricamento stanze' };
+    }
+
+    const data = await response.json();
+    
+    // data.rooms è un array di { room, room_state }
+    const rooms: RoomListItem[] = (data.rooms || []).map((r: any) => ({
+      room: r.room,
+      room_state: {
+        ...parseRoomState(r.room_state),
+        room_name: r.room_state?.room_name || r.room
+      }
+    }));
+
+    return { success: true, rooms };
+
+  } catch (error) {
+    console.error('listRooms error:', error);
+    return { success: false, error: 'Errore di rete' };
+  }
 }
 
 // ============= SESSION MANAGEMENT =============
