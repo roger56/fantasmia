@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, Clock, Send, Users, BookOpen, AlertCircle } from 'lucide-react';
+import { Loader2, Clock, Send, Users, BookOpen, AlertCircle, Pause } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,13 +61,32 @@ const Classroom: React.FC = () => {
     return () => clearInterval(interval);
   }, [session]);
 
-  // Turn countdown timer
+  // Turn countdown timer - gestisce anche lo stato di pausa
   useEffect(() => {
-    if (!roomState?.turn_ends_at) {
+    if (!roomState) {
       setCountdown('--:--');
       return;
     }
 
+    // Se in pausa, mostra il tempo residuo fisso
+    if (roomState.turn_paused) {
+      if (roomState.turn_remaining_ms != null) {
+        const mins = Math.floor(roomState.turn_remaining_ms / 60000);
+        const secs = Math.floor((roomState.turn_remaining_ms % 60000) / 1000);
+        setCountdown(`${mins}:${secs.toString().padStart(2, '0')}`);
+      } else {
+        setCountdown('PAUSA');
+      }
+      return;
+    }
+
+    // Se nessun turno attivo
+    if (!roomState.turn_ends_at) {
+      setCountdown('--:--');
+      return;
+    }
+
+    // Countdown normale
     const updateCountdown = () => {
       const remaining = Math.max(0, roomState.turn_ends_at! - Date.now());
       if (remaining <= 0) {
@@ -82,7 +101,7 @@ const Classroom: React.FC = () => {
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [roomState?.turn_ends_at]);
+  }, [roomState?.turn_ends_at, roomState?.turn_paused, roomState?.turn_remaining_ms]);
 
   // Room expiry countdown
   useEffect(() => {
@@ -135,8 +154,11 @@ const Classroom: React.FC = () => {
     : false;
   
   const currentWriter = roomState?.writers[roomState.current_writer_index] || 'Nessuno';
+  const turnPaused = roomState?.turn_paused ?? false;
   const turnActive = roomState?.turn_ends_at ? roomState.turn_ends_at > Date.now() : false;
-  const canWrite = isMyTurn && turnActive;
+  
+  // NSU può scrivere solo se è il suo turno, turno attivo E NON in pausa
+  const canWrite = isMyTurn && turnActive && !turnPaused;
 
   if (loading) {
     return (
@@ -201,6 +223,17 @@ const Classroom: React.FC = () => {
         </div>
       </div>
 
+      {/* Pausa banner - visibile a tutti quando il turno è in pausa */}
+      {turnPaused && (
+        <div className="bg-amber-500 text-white py-3 px-4">
+          <div className="max-w-4xl mx-auto flex items-center justify-center gap-2">
+            <Pause className="w-5 h-5" />
+            <span className="font-medium">TURNO IN PAUSA</span>
+            <span className="text-amber-100">- L'insegnante ha messo in pausa l'attività</span>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
       <main className="flex-1 p-4 overflow-auto">
         <div className="max-w-4xl mx-auto space-y-4">
@@ -244,17 +277,29 @@ const Classroom: React.FC = () => {
 
           {/* Area di scrittura */}
           <Card className={`border-2 transition-colors ${
-            canWrite 
-              ? 'border-emerald-500 bg-white shadow-lg' 
-              : 'border-slate-200 bg-slate-50'
+            turnPaused
+              ? 'border-amber-400 bg-amber-50'
+              : canWrite 
+                ? 'border-emerald-500 bg-white shadow-lg' 
+                : 'border-slate-200 bg-slate-50'
           }`}>
             <CardHeader className="py-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">
-                  {canWrite ? 'È il tuo turno! Scrivi...' : 'Il tuo contributo'}
+                  {turnPaused 
+                    ? 'Turno in pausa...'
+                    : canWrite 
+                      ? 'È il tuo turno! Scrivi...' 
+                      : 'Il tuo contributo'
+                  }
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  {turnActive && (
+                  {turnPaused ? (
+                    <Badge variant="secondary" className="bg-amber-500 text-white">
+                      <Pause className="w-3 h-3 mr-1" />
+                      PAUSA
+                    </Badge>
+                  ) : turnActive ? (
                     <Badge 
                       variant={isMyTurn ? 'default' : 'secondary'}
                       className={isMyTurn ? 'bg-emerald-600' : ''}
@@ -262,12 +307,20 @@ const Classroom: React.FC = () => {
                       <Clock className="w-3 h-3 mr-1" />
                       {countdown}
                     </Badge>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-0 space-y-3">
-              {canWrite ? (
+              {turnPaused ? (
+                <div className="text-center py-8 text-amber-700">
+                  <Pause className="w-8 h-8 mx-auto mb-2 opacity-70" />
+                  <p className="font-medium">Attività in pausa</p>
+                  <p className="text-sm mt-1 text-amber-600">
+                    Tempo residuo: <strong>{countdown}</strong>
+                  </p>
+                </div>
+              ) : canWrite ? (
                 <>
                   <Textarea
                     value={contribution}

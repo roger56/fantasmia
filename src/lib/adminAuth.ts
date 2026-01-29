@@ -5,8 +5,7 @@
  */
 
 const ADMIN_LOGIN_URL = import.meta.env.VITE_ADMIN_LOGIN_URL || 'https://fantasmia-ai.vercel.app/api/admin/login';
-const ADMIN_ME_URL = import.meta.env.VITE_ADMIN_ME_URL || 'https://fantasmia-ai.vercel.app/api/admin/me';
-const ADMIN_LOGOUT_URL = import.meta.env.VITE_ADMIN_LOGOUT_URL || 'https://fantasmia-ai.vercel.app/api/admin/logout';
+const ROOMS_API_URL = 'https://fantasmia-ai.vercel.app/api/admin/rooms';
 
 const ADMIN_TOKEN_KEY = 'admin_jwt_token';
 
@@ -33,7 +32,6 @@ export async function adminLogin(password: string): Promise<void> {
   const response = await fetch(ADMIN_LOGIN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
     body: JSON.stringify({ password })
   });
   
@@ -61,14 +59,21 @@ export async function adminLogin(password: string): Promise<void> {
 }
 
 /**
- * Check if admin session is valid
+ * Check if admin session is valid using action="status" on /rooms API
  * @returns true if authenticated, false otherwise
  */
 export async function adminCheck(): Promise<boolean> {
+  const token = getAdminToken();
+  if (!token) return false;
+
   try {
-    const response = await fetch(ADMIN_ME_URL, {
-      method: 'GET',
-      credentials: 'include'
+    const response = await fetch(ROOMS_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ action: 'status' })
     });
     return response.ok;
   } catch {
@@ -77,12 +82,8 @@ export async function adminCheck(): Promise<boolean> {
 }
 
 /**
- * Logout admin user (invalidate session cookie and clear token)
+ * Logout admin user (clear token only - no API call needed)
  */
 export async function adminLogout(): Promise<void> {
-  await fetch(ADMIN_LOGOUT_URL, {
-    method: 'POST',
-    credentials: 'include'
-  });
   clearAdminToken();
 }
