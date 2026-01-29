@@ -4,37 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, School, SkipForward, Copy, Users, Sparkles, Loader2, Lock, BookOpen, Pause, Play } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ArrowLeft, School, Sparkles, Loader2, Lock, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import { useSuperuserGuard } from '@/hooks/useSuperuserGuard';
-import { nextTurn, pauseTurn, resumeTurn, type RoomState } from '@/utils/roomSessionManager';
+import { listRooms, type RoomListItem } from '@/utils/roomSessionManager';
 import { getAdminToken, adminLogin, adminCheck } from '@/lib/adminAuth';
+import { RoomCard } from '@/components/classroom/RoomCard';
 
 // API Endpoint
 const ROOMS_API_URL = 'https://fantasmia-ai.vercel.app/api/admin/rooms';
 
 function getAdminJwt(): string | null {
   return getAdminToken();
-}
-
-// API V2 Room State interface (for SU management)
-interface SUActiveRoom {
-  room: string;
-  roomName: string;
-  activityTitle: string;
-  roomMode: 'CONTINUA_TU' | 'CAMPBELL' | 'PROPP';
-  expiresAt: number;
-  turnS: number;
-  promptSeed: string;
-  storySoFar: string;
-  writers: string[];
-  currentWriterIndex: number;
-  turnEndsAt: number | null;
-  turnPaused: boolean;
-  turnRemainingMs: number | null;
 }
 
 const SuperuserClassroom = () => {
@@ -47,17 +31,18 @@ const SuperuserClassroom = () => {
   const [apiPassword, setApiPassword] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // Room creation
+  // Room creation form
   const [roomName, setRoomName] = useState('');
   const [activityTitle, setActivityTitle] = useState('');
   const [turnDuration, setTurnDuration] = useState(180); // 3 min default (in secondi)
   const [promptSeed, setPromptSeed] = useState('');
   const [ttlHours, setTtlHours] = useState(4); // 4 ore default
+  const [isCreating, setIsCreating] = useState(false);
   
-  // Active room state
-  const [activeRoom, setActiveRoom] = useState<SUActiveRoom | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [timerDisplay, setTimerDisplay] = useState('--:--');
+  // Dashboard state - MULTI-ROOM
+  const [rooms, setRooms] = useState<RoomListItem[]>([]);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   // Verifica se esiste già un JWT valido all'avvio
   useEffect(() => {
@@ -100,88 +85,37 @@ const SuperuserClassroom = () => {
     }
   };
 
-  // Aggiorna il timer ogni secondo - basato su room_state
+  // Fetch rooms list
+  const fetchRooms = useCallback(async () => {
+    const adminJwt = getAdminJwt();
+    if (!adminJwt) return;
+
+    try {
+      const result = await listRooms(adminJwt);
+      if (result.success && result.rooms) {
+        setRooms(result.rooms);
+        setLastRefresh(new Date());
+      } else if (result.error?.includes('scaduta')) {
+        setIsApiAuthenticated(false);
+        toast({ title: 'Sessione scaduta, rifai login', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Error fetching rooms:', error);
+    }
+  }, [toast]);
+
+  // Polling rooms every 3 seconds
   useEffect(() => {
-    if (!activeRoom) {
-      setTimerDisplay('--:--');
-      return;
-    }
+    if (!isApiAuthenticated) return;
 
-    // Se in pausa, mostra tempo residuo fisso
-    if (activeRoom.turnPaused) {
-      if (activeRoom.turnRemainingMs != null) {
-        const mins = Math.floor(activeRoom.turnRemainingMs / 60000);
-        const secs = Math.floor((activeRoom.turnRemainingMs % 60000) / 1000);
-        setTimerDisplay(`${mins}:${secs.toString().padStart(2, '0')}`);
-      } else {
-        setTimerDisplay('IN PAUSA');
-      }
-      return;
-    }
+    // Fetch iniziale
+    setIsLoadingRooms(true);
+    fetchRooms().finally(() => setIsLoadingRooms(false));
 
-    // Se nessun turno attivo
-    if (!activeRoom.turnEndsAt) {
-      setTimerDisplay('--:--');
-      return;
-    }
-
-    // Countdown normale
-    const interval = setInterval(() => {
-      const remaining = Math.max(0, activeRoom.turnEndsAt! - Date.now());
-      if (remaining <= 0) {
-        setTimerDisplay('00:00');
-      } else {
-        const mins = Math.floor(remaining / 60000);
-        const secs = Math.floor((remaining % 60000) / 1000);
-        setTimerDisplay(`${mins}:${secs.toString().padStart(2, '0')}`);
-      }
-    }, 1000);
-
+    // Polling ogni 3 secondi
+    const interval = setInterval(fetchRooms, 3000);
     return () => clearInterval(interval);
-  }, [activeRoom?.turnEndsAt, activeRoom?.turnPaused, activeRoom?.turnRemainingMs]);
-
-  // Helper per aggiornare activeRoom da room_state
-  const updateActiveRoomFromState = useCallback((rs: RoomState) => {
-    setActiveRoom(prev => prev ? {
-      ...prev,
-      storySoFar: rs.story_so_far || '',
-      writers: rs.writers || [],
-      currentWriterIndex: rs.current_writer_index ?? 0,
-      turnEndsAt: rs.turn_ends_at ?? null,
-      turnPaused: rs.turn_paused ?? false,
-      turnRemainingMs: rs.turn_remaining_ms ?? null,
-      promptSeed: rs.prompt_seed || ''
-    } : null);
-  }, []);
-
-  // Polling room state every 3s when active
-  useEffect(() => {
-    if (!activeRoom) return;
-
-    const pollState = async () => {
-      try {
-        const response = await fetch(ROOMS_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_state', room: activeRoom.room })
-        });
-
-        if (!response.ok) return;
-
-        const data = await response.json();
-        const rs = data.room_state;
-        
-        if (rs) {
-          updateActiveRoomFromState(rs);
-        }
-      } catch (error) {
-        console.error('Polling error:', error);
-      }
-    };
-
-    const interval = setInterval(pollState, 3000);
-    return () => clearInterval(interval);
-  }, [activeRoom?.room, updateActiveRoomFromState]);
+  }, [isApiAuthenticated, fetchRooms]);
 
   // CREATE ROOM - API call action="create"
   const handleCreateRoom = async () => {
@@ -196,7 +130,7 @@ const SuperuserClassroom = () => {
       return;
     }
 
-    setIsLoading(true);
+    setIsCreating(true);
     try {
       const response = await fetch(ROOMS_API_URL, {
         method: 'POST',
@@ -228,26 +162,18 @@ const SuperuserClassroom = () => {
 
       const data = await response.json();
       
-      setActiveRoom({
-        room: data.room,
-        roomName: data.room_name || roomName.trim(),
-        activityTitle: activityTitle.trim() || roomName.trim(),
-        roomMode: 'CONTINUA_TU',
-        expiresAt: data.expires_at,
-        turnS: data.turn_s || turnDuration,
-        promptSeed: promptSeed.trim(),
-        storySoFar: '',
-        writers: [],
-        currentWriterIndex: 0,
-        turnEndsAt: null,
-        turnPaused: false,
-        turnRemainingMs: null
-      });
-
+      // Reset form
+      setRoomName('');
+      setActivityTitle('');
+      setPromptSeed('');
+      
       toast({ 
         title: 'Stanza creata!', 
-        description: `Room: ${data.room} - Link pronto per la condivisione`
+        description: `Room: ${data.room} - Il polling aggiornerà la lista`
       });
+
+      // Forza refresh immediato
+      fetchRooms();
 
     } catch (error) {
       console.error('Create room error:', error);
@@ -257,92 +183,13 @@ const SuperuserClassroom = () => {
         variant: 'destructive' 
       });
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   };
 
-  // Copy join link - NO TOKEN, solo room
-  const handleCopyLink = useCallback(() => {
-    if (!activeRoom) return;
-    const baseUrl = 'https://fantasmia.it';
-    const link = `${baseUrl}/join/${encodeURIComponent(activeRoom.room)}`;
-    navigator.clipboard.writeText(link);
-    toast({ title: 'Link copiato negli appunti!' });
-  }, [activeRoom, toast]);
-
-  // Next turn
-  const handleNextTurn = async () => {
-    if (!activeRoom) return;
-    const adminJwt = getAdminJwt();
-    if (!adminJwt) {
-      toast({ title: 'Sessione scaduta', variant: 'destructive' });
-      return;
-    }
-
-    const result = await nextTurn(activeRoom.room, adminJwt, activeRoom.turnS);
-    if (result.success && result.roomState) {
-      updateActiveRoomFromState(result.roomState);
-      toast({ title: 'Turno avanzato!' });
-    } else {
-      toast({ 
-        title: 'Errore avanzamento turno', 
-        description: result.error || 'Errore sconosciuto',
-        variant: 'destructive' 
-      });
-    }
-  };
-
-  // Pause turn
-  const handlePauseTurn = async () => {
-    if (!activeRoom) return;
-    const adminJwt = getAdminJwt();
-    if (!adminJwt) {
-      toast({ title: 'Sessione scaduta', variant: 'destructive' });
-      return;
-    }
-
-    const result = await pauseTurn(activeRoom.room, adminJwt);
-    if (result.success && result.roomState) {
-      updateActiveRoomFromState(result.roomState);
-      toast({ title: 'Turno in pausa' });
-    } else {
-      toast({ 
-        title: 'Errore pausa', 
-        description: result.error || 'Errore sconosciuto',
-        variant: 'destructive' 
-      });
-    }
-  };
-
-  // Resume turn
-  const handleResumeTurn = async () => {
-    if (!activeRoom) return;
-    const adminJwt = getAdminJwt();
-    if (!adminJwt) {
-      toast({ title: 'Sessione scaduta', variant: 'destructive' });
-      return;
-    }
-
-    const result = await resumeTurn(activeRoom.room, adminJwt);
-    if (result.success && result.roomState) {
-      updateActiveRoomFromState(result.roomState);
-      toast({ title: 'Turno ripreso!' });
-    } else {
-      toast({ 
-        title: 'Errore ripresa', 
-        description: result.error || 'Errore sconosciuto',
-        variant: 'destructive' 
-      });
-    }
-  };
-
-  // Close room
-  const handleCloseRoom = () => {
-    setActiveRoom(null);
-    setRoomName('');
-    setActivityTitle('');
-    setPromptSeed('');
-    toast({ title: 'Stanza chiusa localmente', description: 'La room scadrà automaticamente sul server' });
+  const handleSessionExpired = () => {
+    setIsApiAuthenticated(false);
+    toast({ title: 'Sessione scaduta, rifai login', variant: 'destructive' });
   };
 
   // Security check
@@ -365,7 +212,7 @@ const SuperuserClassroom = () => {
 
   if (!isApiAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
         <HomeButton />
         <div className="max-w-md mx-auto pt-20">
           <Card className="border-2 border-amber-500/30">
@@ -376,7 +223,7 @@ const SuperuserClassroom = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted-foreground">
                 Per gestire le Classroom è necessario autenticarsi con la password API.
               </p>
               <div>
@@ -421,13 +268,11 @@ const SuperuserClassroom = () => {
     );
   }
 
-  const currentWriter = activeRoom?.writers[activeRoom.currentWriterIndex] || 'Nessuno';
-  const isTurnActiveAndNotPaused = activeRoom?.turnEndsAt && activeRoom.turnEndsAt > Date.now() && !activeRoom.turnPaused;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
       <HomeButton />
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6 pt-4">
           <div className="flex items-center">
             <Button 
@@ -438,281 +283,165 @@ const SuperuserClassroom = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                 <School className="w-6 h-6 text-primary" />
-                Gestione Classroom
+                Dashboard Classroom
               </h1>
-              <p className="text-slate-600">Crea e gestisci stanze collaborative</p>
+              <p className="text-muted-foreground">
+                Gestisci tutte le stanze attive • {rooms.length} stanze
+              </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchRooms}
+              disabled={isLoadingRooms}
+            >
+              <RefreshCw className={`w-4 h-4 mr-1 ${isLoadingRooms ? 'animate-spin' : ''}`} />
+              Aggiorna
+            </Button>
+            {lastRefresh && (
+              <span className="text-xs text-muted-foreground">
+                {lastRefresh.toLocaleTimeString()}
+              </span>
+            )}
           </div>
         </div>
 
-        {!activeRoom ? (
-          /* CREATE ROOM FORM */
-          <Card className="border-2 border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <School className="w-5 h-5" />
-                Crea nuova stanza
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label htmlFor="roomName">Nome stanza *</Label>
-                <Input
-                  id="roomName"
-                  placeholder="Es: Classe 3B - Laboratorio Storie"
-                  value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
-                  className="mt-1"
-                  autoComplete="off"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="activityTitle">Titolo attività *</Label>
-                <Input
-                  id="activityTitle"
-                  placeholder="Es: Cosa succede se... scoppia la ridarola?"
-                  value={activityTitle}
-                  onChange={(e) => setActivityTitle(e.target.value)}
-                  className="mt-1"
-                  autoComplete="off"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Questo titolo sarà visibile a tutti i partecipanti
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Colonna sinistra: Form creazione */}
+          <div className="lg:col-span-1">
+            <Card className="border-2 border-primary/20 sticky top-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <School className="w-5 h-5" />
+                  Crea nuova stanza
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="turnDuration">Durata turno (secondi)</Label>
+                  <Label htmlFor="roomName">Nome stanza *</Label>
                   <Input
-                    id="turnDuration"
-                    type="number"
-                    min={15}
-                    max={600}
-                    value={turnDuration}
-                    onChange={(e) => setTurnDuration(Math.max(15, Math.min(600, parseInt(e.target.value) || 180)))}
+                    id="roomName"
+                    placeholder="Es: Classe 3B"
+                    value={roomName}
+                    onChange={(e) => setRoomName(e.target.value)}
                     className="mt-1"
+                    autoComplete="off"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {Math.floor(turnDuration / 60)}m {turnDuration % 60}s (min 15s, max 10m)
-                  </p>
                 </div>
+
                 <div>
-                  <Label htmlFor="ttlHours">Durata stanza (ore)</Label>
+                  <Label htmlFor="activityTitle">Titolo attività</Label>
                   <Input
-                    id="ttlHours"
-                    type="number"
-                    min={1}
-                    max={24}
-                    value={ttlHours}
-                    onChange={(e) => setTtlHours(Math.max(1, Math.min(24, parseInt(e.target.value) || 4)))}
+                    id="activityTitle"
+                    placeholder="Es: Cosa succede se..."
+                    value={activityTitle}
+                    onChange={(e) => setActivityTitle(e.target.value)}
                     className="mt-1"
+                    autoComplete="off"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    La stanza scade dopo {ttlHours} ore
-                  </p>
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="promptSeed">
-                  Spunto comune (opzionale)
-                  <Sparkles className="w-4 h-4 inline ml-1 text-amber-500" />
-                </Label>
-                <Textarea
-                  id="promptSeed"
-                  placeholder="Es: Scrivi una storia che inizia con 'Era una notte tempestosa...'"
-                  value={promptSeed}
-                  onChange={(e) => setPromptSeed(e.target.value.slice(0, 600))}
-                  className="mt-1"
-                  rows={3}
-                  maxLength={600}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {promptSeed.length}/600 caratteri
-                </p>
-              </div>
-
-              <Button 
-                onClick={handleCreateRoom} 
-                disabled={isLoading || !roomName.trim()}
-                className="w-full"
-                size="lg"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                ) : (
-                  <School className="w-5 h-5 mr-2" />
-                )}
-                {isLoading ? 'Creazione in corso...' : 'Crea Stanza'}
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          /* ACTIVE ROOM MANAGEMENT */
-          <div className="space-y-4">
-            {/* Room Info */}
-            <Card className="border-2 border-emerald-500/30 bg-emerald-50/50">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <h2 className="text-xl font-bold text-emerald-800">{activeRoom.activityTitle}</h2>
-                    <p className="text-sm text-emerald-600">
-                      Stanza: <code className="bg-emerald-100 px-2 py-0.5 rounded">{activeRoom.room}</code>
-                    </p>
-                    <p className="text-xs text-emerald-500 mt-1">
-                      Scade: {new Date(activeRoom.expiresAt).toLocaleString()}
-                    </p>
+                    <Label htmlFor="turnDuration" className="text-xs">Turno (sec)</Label>
+                    <Input
+                      id="turnDuration"
+                      type="number"
+                      min={15}
+                      max={600}
+                      value={turnDuration}
+                      onChange={(e) => setTurnDuration(Math.max(15, Math.min(600, parseInt(e.target.value) || 180)))}
+                      className="mt-1"
+                    />
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleCopyLink}>
-                      <Copy className="w-4 h-4 mr-1" />
-                      Copia link
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={handleCloseRoom}>
-                      Chiudi stanza
-                    </Button>
+                  <div>
+                    <Label htmlFor="ttlHours" className="text-xs">Durata (ore)</Label>
+                    <Input
+                      id="ttlHours"
+                      type="number"
+                      min={1}
+                      max={24}
+                      value={ttlHours}
+                      onChange={(e) => setTtlHours(Math.max(1, Math.min(24, parseInt(e.target.value) || 4)))}
+                      className="mt-1"
+                    />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Writers & Turn Control */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Partecipanti ({activeRoom.writers.length})
-                  </span>
-                  {activeRoom.turnPaused ? (
-                    <Badge variant="secondary" className="bg-amber-500 text-white">
-                      IN PAUSA
-                    </Badge>
-                  ) : isTurnActiveAndNotPaused ? (
-                    <Badge variant="default" className="bg-green-500">
-                      TURNO ATTIVO
-                    </Badge>
-                  ) : null}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {activeRoom.writers.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">
-                    In attesa che i partecipanti si uniscano...
+                <div>
+                  <Label htmlFor="promptSeed" className="flex items-center gap-1">
+                    <span>Spunto</span>
+                    <Sparkles className="w-3 h-3 text-amber-500" />
+                  </Label>
+                  <Textarea
+                    id="promptSeed"
+                    placeholder="Opzionale..."
+                    value={promptSeed}
+                    onChange={(e) => setPromptSeed(e.target.value.slice(0, 600))}
+                    className="mt-1"
+                    rows={2}
+                    maxLength={600}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {promptSeed.length}/600
                   </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {activeRoom.writers.map((writer, index) => (
-                      <Badge
-                        key={writer}
-                        variant={index === activeRoom.currentWriterIndex ? 'default' : 'outline'}
-                        className={index === activeRoom.currentWriterIndex ? 'bg-emerald-600' : ''}
-                      >
-                        {writer}
-                        {index === activeRoom.currentWriterIndex && <span className="ml-1">✍️</span>}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-4">
-                  <div className="text-center min-w-[100px]">
-                    <p className={`text-4xl font-mono font-bold ${activeRoom.turnPaused ? 'text-amber-600' : 'text-primary'}`}>
-                      {activeRoom.turnPaused ? 'PAUSA' : timerDisplay}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {activeRoom.turnPaused ? `Residuo: ${timerDisplay}` : 'Tempo rimanente'}
-                    </p>
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <p className="text-sm">
-                      <strong>Ora scrive:</strong> {currentWriter}
-                    </p>
-                    
-                    {/* Controlli turno */}
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={handleNextTurn} 
-                        className="flex-1"
-                        disabled={activeRoom.writers.length === 0}
-                      >
-                        <SkipForward className="w-4 h-4 mr-1" />
-                        Prossimo Turno
-                      </Button>
-                      
-                      {/* Pulsante Pausa/Riprendi */}
-                      {activeRoom.turnPaused ? (
-                        <Button 
-                          onClick={handleResumeTurn} 
-                          variant="secondary"
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <Play className="w-4 h-4 mr-1" />
-                          Riprendi
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={handlePauseTurn} 
-                          variant="secondary"
-                          className="bg-amber-600 hover:bg-amber-700 text-white"
-                          disabled={!isTurnActiveAndNotPaused}
-                        >
-                          <Pause className="w-4 h-4 mr-1" />
-                          Pausa
-                        </Button>
-                      )}
-                    </div>
-                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Durata turno: {Math.floor(activeRoom.turnS / 60)}m {activeRoom.turnS % 60}s
-                </p>
-              </CardContent>
-            </Card>
 
-            {/* Story So Far */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5" />
-                  Storia finora
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-white border rounded-lg p-4 min-h-32 max-h-64 overflow-auto">
-                  {activeRoom.storySoFar ? (
-                    <p className="whitespace-pre-wrap">{activeRoom.storySoFar}</p>
+                <Button 
+                  onClick={handleCreateRoom} 
+                  disabled={isCreating || !roomName.trim()}
+                  className="w-full"
+                >
+                  {isCreating ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
-                    <p className="text-muted-foreground italic">La storia non è ancora iniziata...</p>
+                    <School className="w-4 h-4 mr-2" />
                   )}
-                </div>
+                  {isCreating ? 'Creazione...' : 'Crea Stanza'}
+                </Button>
               </CardContent>
             </Card>
+          </div>
 
-            {/* Prompt Display (read-only, set at creation) */}
-            {activeRoom.promptSeed && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-amber-500" />
-                    Spunto Comune
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm text-amber-800">
-                      {activeRoom.promptSeed}
-                    </p>
-                  </div>
+          {/* Colonna destra: Lista stanze */}
+          <div className="lg:col-span-2">
+            {isLoadingRooms && rooms.length === 0 ? (
+              <div className="flex items-center justify-center h-48">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : rooms.length === 0 ? (
+              <Card className="border-dashed border-2">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <School className="w-12 h-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-muted-foreground">
+                    Nessuna stanza attiva
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Crea una nuova stanza per iniziare
+                  </p>
                 </CardContent>
               </Card>
+            ) : (
+              <ScrollArea className="h-[calc(100vh-200px)]">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 pr-4">
+                  {rooms.map((roomData) => (
+                    <RoomCard
+                      key={roomData.room}
+                      roomData={roomData}
+                      adminJwt={getAdminJwt() || ''}
+                      defaultTurnS={turnDuration}
+                      onSessionExpired={handleSessionExpired}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
